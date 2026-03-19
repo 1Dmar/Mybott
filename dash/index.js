@@ -605,6 +605,14 @@ app.get(["/api/u/:id", "/api/user/:id"], async (req, res) => {
     }
 });
 
+async function findOpenTicketByUser(userId) {
+    return await Ticket.findOne({ userId, status: "open" });
+}
+
+async function findOpenTicketByChannel(channelId) {
+    return await Ticket.findOne({ channelId, status: "open" });
+}
+
 async function checkIfAdmin(userId) {
     try {
         const guildResponse = await axios.get(`https://discord.com/api/v10/guilds/${SUPPORT_SERVER_ID}/members/${userId}`, {
@@ -1700,7 +1708,7 @@ client1.on("messageCreate", async (message) => {
                             deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
                         },
                         {
-                            id: guild.roles.everyone,
+                            id: message.guild.roles.everyone,
                             deny: [PermissionsBitField.Flags.ViewChannel],
                         },
                     ]);
