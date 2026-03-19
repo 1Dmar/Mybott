@@ -1753,7 +1753,9 @@ app.get('/:serverId/overview', async (req, res) => {
     let activeCount = 0;
 
     // الحصول على جميع قنوات السيرفر من الكاش
-    const channels = message.guild.channels.cache;
+    const guild = client.guilds.cache.get(serverId);
+    if (!guild) return res.status(404).send('Server not found');
+    const channels = guild.channels.cache;
 
     // المرور على كل قناة للتحقق من نشاطها
     channels.forEach(channel => {
