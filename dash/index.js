@@ -1773,11 +1773,9 @@ app.get('/:serverId/overview', async (req, res) => {
         }
     });
 
-    const guild = await client.guilds.fetch(serverId);
-        if (!guild) {
-            return res.status(404).json({ error: "Guild not found." });
-
-        }
+    // guild already declared above and fetched from cache, but if we need a fresh fetch:
+    // const freshGuild = await client.guilds.fetch(serverId).catch(() => null);
+    // if (!freshGuild) return res.status(404).json({ error: "Guild not found." });
     const { id: userId, username, avatar, global_name } = req.user || {};
     
     if (req.isAuthenticated()) {
