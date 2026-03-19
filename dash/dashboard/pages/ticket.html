@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Archived Ticket Chat</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-light: #dbeafe;
+      --gray-light: #f3f4f6;
+      --gray-medium: #e5e7eb;
+      --white: #ffffff;
+      --text-dark: #1e293b;
+      --text-muted: #6b7280;
+      --radius: 12px;
+      --shadow-light: rgba(0, 0, 0, 0.05);
+      --shadow-dropdown: rgba(0, 0, 0, 0.1);
+      --font: 'Inter', sans-serif;
+      --avatar-size: 40px;
+      --dropdown-bg: #ffffff;
+      --dropdown-radius: 8px;
+      --dropdown-item-hover: #f3f4f6;
+      --max-width-desktop: 900px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--gray-light);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ------ Header ------ */
+    header {
+      background: var(--blue);
+      color: var(--white);
+      padding: 1rem 1.5rem;
+      box-shadow: 0 2px 4px var(--shadow-light);
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* ------ Main Container ------ */
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .chat-window {
+      width: 100%;
+      max-width: var(--max-width-desktop);
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px var(--shadow-light);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ------ Banner ------ */
+    .banner {
+      background: var(--blue-light);
+      color: var(--blue);
+      text-align: center;
+      padding: 0.75rem 1rem;
+      font-weight: 500;
+      border-bottom: 1px solid var(--gray-medium);
+    }
+
+    /* ------ Messages List ------ */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .messages::-webkit-scrollbar-thumb {
+      background-color: var(--gray-medium);
+      border-radius: 3px;
+    }
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    /* ------ Message Item ------ */
+    .message-item {
+      display: flex;
+      align-items: flex-start;
+      position: relative; /* for dropdown fallback */
+    }
+    .message-item.user {
+      flex-direction: row-reverse;
+    }
+
+    /* ------ Avatar ------ */
+    .avatar {
+      width: var(--avatar-size);
+      height: var(--avatar-size);
+      border-radius: 50%;
+      background-color: var(--gray-medium);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1rem;
+      flex-shrink: 0;
+      cursor: pointer;
+      position: relative;
+    }
+    .message-item.user .avatar {
+      background-color: var(--blue);
+    }
+    .message-item.mod .avatar {
+      background-color: var(--text-muted);
+    }
+
+    /* If avatarUrl is available, show it as background image */
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    /* ------ Content Bubble ------ */
+    .bubble {
+      max-width: 75%;
+      background: var(--gray-light);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin: 0 0.75rem;
+      box-shadow: 0 1px 3px var(--shadow-light);
+      position: relative;
+    }
+    .message-item.user .bubble {
+      background: var(--blue-light);
+    }
+
+    /* ------ Username & ID Line ------ */
+    .meta {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .meta .username {
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .meta .userid {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* ------ Message Text ------ */
+    .message-text {
+      font-size: 1rem;
+      color: var(--text-dark);
+      word-break: break-word;
+    }
+
+    /* ------ Timestamp ------ */
+    .timestamp {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 0.5rem;
+    }
+
+    /* ------ Dropdown Menu (fixed) ------ */
+    .dropdown {
+      position: fixed;
+      background: var(--dropdown-bg);
+      border-radius: var(--dropdown-radius);
+      box-shadow: 0 2px 8px var(--shadow-dropdown);
+      overflow: hidden;
+      display: none;
+      z-index: 1000;
+      min-width: 140px;
+    }
+    .dropdown.visible {
+      display: block;
+    }
+    .dropdown-item {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      color: var(--text-dark);
+      cursor: pointer;
+      display: block;
+      text-decoration: none;
+    }
+    .dropdown-item:hover {
+      background: var(--dropdown-item-hover);
+    }
+
+    /* ------ Footer ------ */
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: var(--white);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--gray-medium);
+    }
+
+    /* ------ Responsive ------ */
+    @media (max-width: 768px) {
+      header {
+        font-size: 1.25rem;
+        padding: 0.75rem 1rem;
+      }
+      .chat-window {
+        max-width: 100%;
+      }
+      .bubble {
+        max-width: 100%;
+      }
+      .avatar {
+        width: 32px;
+        height: 32px;
+      }
+      .meta {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    Archived Ticket <span id="ticket-id" style="font-weight: normal;"></span>
+  </header>
+
+  <main>
+    <div class="chat-window">
+      <div class="banner">This ticket has been closed and archived</div>
+      <div class="messages" id="messages">
+        <!-- Messages will be inserted here -->
+      </div>
+    </div>
+  </main>
+
+  <footer>&copy; 2025 Support System</footer>
+
+  <script>
+    const API_BASE = "http://194.15.36.95:9504/api";
+
+    // Extract ticketId from path: "/tickets/:ticketId/messages"
+    function getTicketIdFromPath() {
+      const path = window.location.pathname; 
+      // Expected: "/tickets/ihazj_Tl/messages"
+      const parts = path.split('/').filter(Boolean);
+      // parts = ["tickets", "{ticketId}", "messages"]
+      if (parts.length >= 3 && parts[0] === 'tickets' && parts[2] === 'messages') {
+        return parts[1];
+      }
+      return null;
+    }
+
+    // Format ISO → "HH:MM AM/PM at DD MMM YYYY"
+    function formatDate(iso) {
+      const date = new Date(iso);
+      return date.toLocaleString('en-US', {
+        hour: 'numeric', minute: '2-digit',
+        day: '2-digit', month: 'short', year: 'numeric'
+      }).replace(',', ' at');
+    }
+
+    // Fetch user info (username and avatarUrl) from API
+    async function fetchUserInfo(userId) {
+      try {
+        const res = await fetch(`/api/u/${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error('No user data');
+        return await res.json(); 
+        // Expect { username: "...", avatarUrl: "https://..." }
+      } catch {
+        return { username: `User_${userId.slice(-4)}`, avatarUrl: null };
+      }
+    }
+
+    // Render messages
+    async function renderMessages(messages) {
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      // Pre-fetch user info for all unique userIds
+      const uniqueIds = [...new Set(messages.map(m => m.authorId))];
+      const userMap = {};
+      await Promise.all(uniqueIds.map(async id => {
+        userMap[id] = await fetchUserInfo(id);
+      }));
+
+      messages.forEach(msg => {
+        const userInfo = userMap[msg.authorId] || { username: 'Unknown', avatarUrl: null };
+
+        // Message wrapper
+        const item = document.createElement('div');
+        item.className = `message-item ${msg.direction === 'user' ? 'user' : 'mod'}`;
+
+         // const response = await fetch(`/api/u/${userId}`);
+
+           // const data = await response.json();
+        // Avatar
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        if (userInfo.avatar) {
+          const img = document.createElement('img');
+          img.src = userInfo.avatar;
+          img.alt = userInfo.username;
+          avatar.appendChild(img);
+        } else {
+          avatar.textContent = userInfo.global_name.slice(0, 2).toUpperCase();
+        }
+
+        // Bubble
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+
+        // Meta (username and userId)
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+
+        const uname = document.createElement('span');
+        uname.className = 'username';
+        uname.textContent = `${userInfo.global_name} (${userInfo.username})`;
+
+        const uidSpan = document.createElement('span');
+        uidSpan.className = 'userid';
+        uidSpan.textContent = `[${msg.direction === 'user' ? 'Member' : 'Moderator'}]`;
+
+        meta.appendChild(uname);
+        meta.appendChild(uidSpan);
+
+        // Message text
+        const text = document.createElement('div');
+        text.className = 'message-text';
+        text.textContent = msg.content;
+
+        // Timestamp
+        const time = document.createElement('div');
+        time.className = 'timestamp';
+        time.textContent = formatDate(msg.timestamp);
+
+        bubble.appendChild(meta);
+        bubble.appendChild(text);
+        bubble.appendChild(time);
+
+        // Dropdown menu
+        const dropdown = document.createElement('div');
+        dropdown.className = 'dropdown';
+        dropdown.innerHTML = `
+          <div class="dropdown-item" data-action="copy">Copy ID</div>
+          <div class="dropdown-item" data-action="report">Report</div>
+          <a href="/u/${msg.authorId}" class="dropdown-item" data-action="info">Info</a>
+        `;
+
+        // Toggle dropdown on avatar, username, or userId click
+        function toggleDropdown(event) {
+          event.stopPropagation();
+          document.querySelectorAll('.dropdown.visible').forEach(dd => {
+            if (dd !== dropdown) dd.classList.remove('visible');
+          });
+          const rect = event.currentTarget.getBoundingClientRect();
+          // Position dropdown just below the clicked element
+          dropdown.style.top = `${rect.bottom + 6}px`;
+          dropdown.style.left = `${rect.left}px`;
+          dropdown.classList.toggle('visible');
+        }
+
+        avatar.addEventListener('click', toggleDropdown);
+        uname.addEventListener('click', toggleDropdown);
+        uidSpan.addEventListener('click', toggleDropdown);
+
+        // Handle dropdown actions
+        dropdown.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const action = e.target.dataset.action;
+          if (action === 'copy') {
+            try {
+              await navigator.clipboard.writeText(msg.authorId);
+              alert('User ID copied to clipboard');
+            } catch {
+              alert('Failed to copy');
+            }
+          } else if (action === 'report') {
+            window.location.href = `/report?user=${encodeURIComponent(msg.authorId)}`;
+          }
+          dropdown.classList.remove('visible');
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', () => {
+          dropdown.classList.remove('visible');
+        });
+
+        item.appendChild(avatar);
+        item.appendChild(bubble);
+        item.appendChild(dropdown);
+        container.appendChild(item);
+      });
+
+      // Scroll to bottom
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Load messages from API
+    async function loadMessages(ticketId) {
+      try {
+        const res = await fetch(`/api/tickets/${encodeURIComponent(ticketId)}/messages`);
+        if (!res.ok) throw new Error('Failed to fetch messages');
+        const data = await res.json();
+        await renderMessages(data);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('messages').innerHTML =
+          `<p style="color:red; text-align:center; margin-top:1rem;">
+             Unable to load messages. Please try again later.
+           </p>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const ticketId = getTicketIdFromPath();
+      if (ticketId) {
+        document.getElementById('ticket-id').textContent = `#${ticketId}`;
+        loadMessages(ticketId);
+      } else {
+        document.getElementById('ticket-id').textContent = '';
+        document.getElementById('messages').innerHTML =
+          `<p style="color:var(--text-muted); text-align:center; margin-top:1rem;">
+             No ticket ID detected in URL path.
+           </p>`;
+      }
+    });
+  </script>
+</body>
+</html>

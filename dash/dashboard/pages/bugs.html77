@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام التحديثات الفاخر</title>
+    <style>
+        :root {
+            --gold: linear-gradient(45deg, #FFD700, #D4AF37);
+            --diamond-border: linear-gradient(45deg, #B9F2FF, #FFFFFF);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: #0F0F0F;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* صفحة الإرسال */
+        .admin-panel {
+            max-width: 800px;
+            margin: 5rem auto;
+            padding: 3rem;
+            background: rgba(15, 15, 15, 0.95);
+            border: 2px solid var(--gold);
+            border-radius: 25px;
+            backdrop-filter: blur(25px);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+        }
+
+        /* بطاقة التحديث الفاخرة */
+        .update-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            background: linear-gradient(145deg, #1A1A1A 30%, #2A2A2A 70%);
+            padding: 3rem;
+            border-radius: 30px;
+            border: 3px solid;
+            border-image: var(--gold);
+            border-image-slice: 1;
+            width: 90%;
+            max-width: 600px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            backdrop-filter: blur(30px);
+            box-shadow: 0 0 100px rgba(255, 215, 0, 0.3);
+            z-index: 9999;
+        }
+
+        .update-card.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .card-header {
+            position: relative;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+            margin-bottom: 2rem;
+        }
+
+        .card-title {
+            font-size: 2.5rem;
+            background: var(--gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            background: var(--gold);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .card-content {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* تأثيرات الخلفية الفاخرة */
+        .card-bg-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 30px;
+        }
+
+        .card-bg-effect::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0) 70%);
+            filter: blur(50px);
+        }
+
+        /* عناصر التحكم */
+        textarea {
+            width: 100%;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--gold);
+            color: white;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .send-btn {
+            background: var(--gold);
+            padding: 1.5rem 3rem;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: block;
+            margin: 0 auto;
+            color: #000;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- صفحة الإرسال -->
+    <div class="admin-panel">
+        <h1 style="text-align: center; color: var(--gold); margin-bottom: 2rem;">لوحة التحكم الفاخرة</h1>
+        <textarea id="updateContent" placeholder="✍️ اكتب التحديث هنا..."></textarea>
+        <button class="send-btn" onclick="sendUpdate()">إرسال التحديث 💎</button>
+    </div>
+
+    <!-- بطاقة التحديث -->
+    <div class="update-card" id="updateCard">
+        <div class="card-bg-effect"></div>
+        <div class="card-header">
+            <button class="close-btn" onclick="closeCard()">×</button>
+            <h1 class="card-title">📣 تحديث جديد</h1>
+        </div>
+        <div class="card-content" id="cardContent"></div>
+    </div>
+
+    <script>
+        let currentUpdateId = null;
+
+        function sendUpdate() {
+            const content = document.getElementById('updateContent').value;
+            if (!content) return alert('الرجاء إدخال محتوى التحديث');
+            
+            const updateId = Date.now().toString();
+            currentUpdateId = updateId;
+            
+            const updateData = {
+                id: updateId,
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('luxuryUpdate', JSON.stringify(updateData));
+            localStorage.removeItem('lastSeenUpdate');
+            alert('✅ تم إرسال التحديث بجودة 600,000$');
+            document.getElementById('updateContent').value = '';
+        }
+
+        function showUpdateCard() {
+            const updateData = JSON.parse(localStorage.getItem('luxuryUpdate'));
+            const lastSeen = localStorage.getItem('lastSeenUpdate');
+            
+            if (!updateData || lastSeen === updateData.id) return;
+            
+            document.getElementById('cardContent').textContent = updateData.content;
+            document.getElementById('updateCard').classList.add('active');
+        }
+
+        function closeCard() {
+            localStorage.setItem('lastSeenUpdate', currentUpdateId);
+            document.getElementById('updateCard').classList.remove('active');
+        }
+
+        // التحقق من التحديثات عند التحميل
+        window.onload = () => {
+            showUpdateCard();
+            // تأثيرات الخلفية الديناميكية
+            document.querySelectorAll('.card-bg-effect').forEach(effect => {
+                effect.style.setProperty('--x', Math.random() * 100 + '%');
+                effect.style.setProperty('--y', Math.random() * 100 + '%');
+            });
+        }
+    </script>
+</body>
+</html>

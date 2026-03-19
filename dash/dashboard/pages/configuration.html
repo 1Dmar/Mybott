@@ -1,0 +1,802 @@
+<!-- public/config.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProMcBot – Server Configuration</title>
+
+  <!-- Google Font: Inter (modern, clean) -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Boxicons & Font Awesome for Icons -->
+  <link
+    href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+    rel="stylesheet"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    integrity="sha512-papQ1rWpao4s2VYbXr28n+g7uZ0L/I+UC8ZPZiEwIz8pb2uk4tJntyv1mLy12eGZ+f1e+II6XxXgV+z0iX5xg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <style>
+    /* ---------- Global Styles ---------- */
+    :root {
+      --bg-light: #f0f2f5;
+      --card-bg: #ffffff;
+      --accent-blue: #3b82f6;
+      --accent-light: #2563eb;
+      --text-dark: #1f2937;
+      --text-medium: #4b5563;
+      --border-gray: #d1d5db;
+      --shadow-weak: rgba(0, 0, 0, 0.04);
+      --shadow-strong: rgba(0, 0, 0, 0.1);
+      --border-radius: 10px;
+      --transition-fast: 0.15s ease-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg-light);
+      font-family: "Inter", sans-serif;
+      color: var(--text-dark);
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .page-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--accent-light);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ---------- Cards Grid ---------- */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-gray);
+      border-radius: var(--border-radius);
+      box-shadow: 0 2px 8px var(--shadow-weak);
+      overflow: hidden;
+      position: relative;
+      transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+    .card:hover {
+      box-shadow: 0 4px 16px var(--shadow-strong);
+      border-color: var(--accent-blue);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background-color: var(--accent-blue);
+      color: #fff;
+    }
+    .card-header .left-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .card-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      background-color: #fff;
+      border: 2px solid #fff;
+    }
+    .card-header .title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+    .card-header .menu-icon {
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+
+    .card-body {
+      padding: 1rem 1.25rem;
+    }
+
+    /* ---------- Locked Overlay ---------- */
+    .locked-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+      text-align: center;
+      padding: 1rem;
+      border-radius: var(--border-radius);
+      z-index: 10;
+    }
+    .locked-overlay i {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ---------- Form Inputs ---------- */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-medium);
+      margin-bottom: 0.25rem;
+    }
+    .form-group input[type="text"],
+    .form-group textarea {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border-gray);
+      border-radius: 6px;
+      font-size: 1rem;
+      color: var(--text-dark);
+      background-color: #fafafa;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .form-group textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent-light);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+
+    /* ---------- Buttons ---------- */
+    .btn-primary {
+      background-color: var(--accent-light);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color var(--transition-fast);
+    }
+    .btn-primary:hover {
+      background-color: #1e40af;
+    }
+    .btn-primary i {
+      font-size: 1rem;
+    }
+
+    /* ---------- Advanced Dropdown ---------- */
+    .dropdown {
+      position: absolute;
+      top: 56px;
+      right: 16px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-gray);
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px var(--shadow-weak);
+      width: 220px;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      padding: 0.5rem 0;
+    }
+    .dropdown.active {
+      display: flex;
+    }
+    .dropdown-item {
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      color: var(--text-dark);
+      font-size: 0.95rem;
+    }
+    .dropdown-item:hover {
+      background-color: var(--bg-light);
+    }
+
+    /* ---------- Avatar & Status ---------- */
+    .avatar-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-gray);
+      margin-bottom: 0.5rem;
+    }
+    .avatar-section img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--border-gray);
+      object-fit: cover;
+      background-color: #fff;
+    }
+    .avatar-section .upload-btn {
+      background-color: var(--accent-light);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background-color var(--transition-fast);
+    }
+    .avatar-section .upload-btn:hover {
+      background-color: #1e40af;
+    }
+
+    .status-group {
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-gray);
+    }
+    .status-group label {
+      font-size: 0.875rem;
+      color: var(--text-medium);
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+    .status-group select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border-gray);
+      border-radius: 6px;
+      font-size: 1rem;
+      color: var(--text-dark);
+      background-color: #fafafa;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .status-group select:focus {
+      outline: none;
+      border-color: var(--accent-light);
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+    }
+
+    /* ---------- Permissions List ---------- */
+    .info-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    .info-list li {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .info-list li.green i {
+      color: #10b981; /* green */
+    }
+    .info-list li.red i {
+      color: #ef4444; /* red */
+    }
+    .info-list li i {
+      margin-right: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    /* ---------- Role Dropdown & Tags ---------- */
+    .role-dropdown {
+      position: relative;
+      margin-bottom: 0.75rem;
+    }
+    .role-select-btn {
+      width: 100%;
+      background-color: #fafafa;
+      border: 1px solid var(--border-gray);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: border-color var(--transition-fast);
+    }
+    .role-select-btn:hover {
+      border-color: var(--accent-light);
+    }
+    .selected-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      max-width: 70%;
+    }
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      background-color: var(--accent-blue);
+      color: #fff;
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.85rem;
+    }
+    .tag .remove-tag {
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .role-options {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      max-height: 220px;
+      overflow-y: auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-gray);
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px var(--shadow-weak);
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      margin-top: 4px;
+    }
+    .role-options.active {
+      display: flex;
+    }
+    .role-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .role-option.selected {
+      background-color: var(--bg-light);
+    }
+    .role-option:hover {
+      background-color: var(--bg-light);
+    }
+    .role-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #ccc;
+    }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 1.75rem;
+      }
+      .role-select-btn .selected-tags {
+        max-width: 60%;
+      }
+    }
+    @media (max-width: 480px) {
+      .role-select-btn .selected-tags {
+        max-width: 50%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- Page Title -->
+    <div class="page-title">
+      <i class="bx bxl-discord"></i> ProMcBot – Server Configuration
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="cards-grid">
+      <!-- 1) Bot Info Card -->
+      <div class="card" id="bot-info-card">
+        <div class="card-header">
+          <div class="left-header">
+            <img id="header-avatar" src="https://via.placeholder.com/40?text=Bot" alt="Bot Avatar" />
+            <span class="title">Bot Configuration</span>
+          </div>
+          <i class="fas fa-ellipsis-v menu-icon" id="menu-toggle"></i>
+        </div>
+        <div class="card-body">
+          <!-- Locked Overlay for non-premium -->
+          <div id="info-locked" class="locked-overlay" style="display: none;">
+            <i class="fas fa-lock"></i>
+            <div>Premium Feature Only</div>
+            <small style="margin-top: .5rem; color: #ddd;">Upgrade to Tier 1 to unlock</small>
+          </div>
+
+          <!-- Advanced Dropdown (Avatar + Status) -->
+          <div class="dropdown" id="advanced-dropdown">
+            <div class="avatar-section">
+              <img id="avatar-img" src="https://via.placeholder.com/50?text=Bot" alt="Bot Avatar" />
+              <button class="upload-btn" id="upload-avatar-btn">
+                <i class="fas fa-upload"></i>
+                <span>Set Avatar</span>
+              </button>
+            </div>
+            <div class="status-group">
+              <label for="select-status">Bot Status</label>
+              <select id="select-status">
+                <option value="online">🟢 Online</option>
+                <option value="idle">🌙 Idle</option>
+                <option value="dnd">⛔ Do Not Disturb</option>
+                <option value="invisible">⚪ Invisible</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Nickname + Description -->
+          <div class="form-group">
+            <label for="input-nickname">Bot Nickname</label>
+            <input type="text" id="input-nickname" placeholder="E.g. ProMcBot" />
+          </div>
+          <div class="form-group">
+            <label for="textarea-description">Description</label>
+            <textarea
+              id="textarea-description"
+              placeholder="Powered by ProMcBot ✨"
+            ></textarea>
+          </div>
+
+          <!-- Display Current Bot Roles (as colored tags) -->
+          <div class="form-group">
+            <label>Bot’s Current Roles</label>
+            <div id="bot-current-roles" class="selected-tags">
+              <!-- Filled by script -->
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <button class="btn-primary" id="btn-save-info">
+            <i class="fas fa-save"></i>
+            <span>Save Changes</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2) Permissions Card -->
+      <div class="card" id="permissions-card">
+        <div class="card-header" style="background-color: var(--accent-blue);">
+          <i class="bx bxs-shield"></i>
+          <span class="title">Bot Permissions</span>
+        </div>
+        <div class="card-body">
+          <div id="permissions-list">
+            <p>Loading permissions…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) Advanced Role Assignment Card -->
+      <div class="card" id="roles-card">
+        <div class="card-header" style="background-color: var(--accent-light);">
+          <i class="bx bxs-user-check"></i>
+          <span class="title">Advanced Role Assignment</span>
+        </div>
+        <div class="card-body">
+          <div class="role-dropdown">
+            <!-- Button to open dropdown -->
+            <div class="role-select-btn" id="role-select-btn">
+              <div class="selected-tags" id="selected-tags"></div>
+              <i class="fas fa-plus"></i>
+            </div>
+            <!-- The dropdown options -->
+            <div class="role-options" id="role-options"></div>
+          </div>
+          <button class="btn-primary" id="btn-save-roles" style="margin-top: 1rem;">
+            <i class="fas fa-check"></i>
+            <span>Update Roles</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Axios for AJAX calls -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script>
+    // Helper: create element with attributes and children
+    function createElem(tag, attrs = {}, ...children) {
+      const el = document.createElement(tag);
+      for (let key in attrs) {
+        if (key === "class") el.className = attrs[key];
+        else if (key === "style") el.style.cssText = attrs[key];
+        else el.setAttribute(key, attrs[key]);
+      }
+      children.forEach(c => {
+        if (typeof c === "string") el.appendChild(document.createTextNode(c));
+        else if (c instanceof Node) el.appendChild(c);
+      });
+      return el;
+    }
+
+    // 0) Extract serverId from URL path
+    const pathSegments = window.location.pathname.split("/").filter(s => s.length > 0);
+    const serverId = pathSegments[0] || null;
+    if (!serverId) {
+      alert("Error: Cannot determine server ID from URL.");
+      throw new Error("No serverId in URL.");
+    }
+
+    // References to HTML elements
+    const menuToggle = document.getElementById("menu-toggle");
+    const advancedDropdown = document.getElementById("advanced-dropdown");
+    const infoLockedOverlay = document.getElementById("info-locked");
+    const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
+    const avatarImg = document.getElementById("avatar-img");
+    const headerAvatar = document.getElementById("header-avatar");
+    const selectStatus = document.getElementById("select-status");
+    const inputNickname = document.getElementById("input-nickname");
+    const textareaDescription = document.getElementById("textarea-description");
+    const botCurrentRoles = document.getElementById("bot-current-roles");
+    const btnSaveInfo = document.getElementById("btn-save-info");
+    const permissionsList = document.getElementById("permissions-list");
+    const roleSelectBtn = document.getElementById("role-select-btn");
+    const roleOptionsDiv = document.getElementById("role-options");
+    const selectedTagsDiv = document.getElementById("selected-tags");
+    const btnSaveRoles = document.getElementById("btn-save-roles");
+
+    let currentConfig = null;
+    let allRoles = [];
+    let botRolePosition = 0;
+
+    // 1) Fetch GET /config/:serverId
+    axios.get(`/config/${encodeURIComponent(serverId)}`)
+      .then(res => {
+        const { config, roles, botRolePosition: botPos, missingPermissions } = res.data;
+        currentConfig = config;
+        allRoles = roles;
+        botRolePosition = botPos;
+
+        // 1a) If not premium, show locked overlay
+    /*   if (config.premiumTier < 1) {
+          infoLockedOverlay.style.display = "flex";
+        }*/
+
+        // 1b) Populate Avatar in header and dropdown
+        headerAvatar.src = config.avatarURL || "https://i.ibb.co/nNLFKLhs/7df0b585344a4e68c64e52c419129aa4.webp";
+        avatarImg.src = config.avatarURL || "https://i.ibb.co/nNLFKLhs/7df0b585344a4e68c64e52c419129aa4.webp";
+
+        // 1c) Populate Status, Nickname, Description
+        selectStatus.value = config.status || "online";
+        inputNickname.value = config.nickname || "";
+        textareaDescription.value = config.description || "Powered by ProMcBot ✨";
+
+        // 1d) Display current bot roles above Role Assignment
+        botCurrentRoles.innerHTML = "";
+        if (config.assignedRoles.length === 0) {
+          botCurrentRoles.textContent = "No roles assigned.";
+        } else {
+          config.assignedRoles.forEach(rId => {
+            const role = roles.find(r => r.id === rId);
+            if (role) {
+              const tag = createElem(
+                "div",
+                { class: "tag", style: `background-color:${role.color || "#3b82f6"};` },
+                createElem("span", {}, role.name)
+              );
+              botCurrentRoles.appendChild(tag);
+            }
+          });
+        }
+
+        // 1e) Permissions: show green for having, red for missing
+        const requiredPerms = [
+          "MANAGE_ROLES",
+          "BAN_MEMBERS",
+          "KICK_MEMBERS",
+          "MANAGE_CHANNELS",
+          "SEND_MESSAGES",
+          "EMBED_LINKS",
+        ];
+        permissionsList.innerHTML = "";
+        const ul = createElem("ul", { class: "info-list" });
+        requiredPerms.forEach(perm => {
+          const hasPerm = !missingPermissions.includes(perm);
+          const li = createElem(
+            "li",
+            { class: hasPerm ? "green" : "red" },
+            createElem("i", { class: hasPerm ? "bx bxs-check-circle" : "bx bxs-x-circle" }),
+            ` ${perm}`
+          );
+          ul.appendChild(li);
+        });
+        permissionsList.appendChild(ul);
+
+        // 1f) Build Role Dropdown UI
+        buildRoleDropdown(roles, config.assignedRoles);
+      })
+      .catch(err => {
+        console.error("Error fetching /config/:serverId:", err.response || err.message);
+        alert("Failed to load configuration. See console for details.");
+      });
+
+    // 2) Toggle Advanced Dropdown (three-dot menu)
+    menuToggle.addEventListener("click", () => {
+      advancedDropdown.classList.toggle("active");
+    });
+    document.addEventListener("click", e => {
+      if (!advancedDropdown.contains(e.target) && e.target !== menuToggle) {
+        advancedDropdown.classList.remove("active");
+      }
+    });
+
+    // 3) Avatar Upload (prompt for URL)
+    uploadAvatarBtn.addEventListener("click", () => {
+      const url = prompt("Enter the URL of your avatar image:");
+      if (url) {
+        avatarImg.src = url;
+        headerAvatar.src = url;
+      }
+    });
+
+    // 4) Save Bot Info (Nickname + Description; avatar/status only if premium)
+    btnSaveInfo.addEventListener("click", () => {
+      const newNickname = inputNickname.value.trim();
+      let newDescription = textareaDescription.value.trim();
+      if (!newDescription.includes("Powered by ProMcBot")) {
+        newDescription = `Powered by ProMcBot ✨ – ${newDescription}`;
+      }
+
+      const payload = { nickname: newNickname, description: newDescription };
+      if (currentConfig.premiumTier >= 1) {
+        payload.avatarURL = avatarImg.src.trim();
+        payload.status = selectStatus.value;
+      }
+
+      axios.patch(`/config/${encodeURIComponent(serverId)}/info`, payload)
+        .then(res => {
+          currentConfig = res.data.config;
+          alert("✅ Bot information updated.");
+          if (currentConfig.premiumTier >= 1) {
+            infoLockedOverlay.style.display = "none";
+          }
+        })
+        .catch(err => {
+          console.error("Error saving bot info:", err.response || err.message);
+          alert("❌ Failed to save bot info. Check console.");
+        });
+    });
+
+    // 5) Build Role Dropdown UI
+    function buildRoleDropdown(roles, assignedRoleIds) {
+      roleOptionsDiv.innerHTML = "";
+      selectedTagsDiv.innerHTML = "";
+
+      roles.forEach(r => {
+        const isChecked = assignedRoleIds.includes(r.id);
+        const option = createElem(
+          "div",
+          {
+            class: `role-option${isChecked ? " selected" : ""}`,
+            "data-role-id": r.id,
+            "data-role-pos": r.position
+          },
+          createElem("span", {
+            class: "role-color-dot",
+            style: `background-color:${r.color || "#ccc"};`
+          }),
+          createElem("span", {}, r.name)
+        );
+        if (isChecked) {
+          addTag(r.id, r.name, r.color);
+        }
+        roleOptionsDiv.appendChild(option);
+      });
+
+      roleOptionsDiv.querySelectorAll(".role-option").forEach(opt => {
+        opt.addEventListener("click", () => {
+          const roleId = opt.getAttribute("data-role-id");
+          const roleName = opt.textContent.trim();
+          const rolePos = Number(opt.getAttribute("data-role-pos"));
+
+          if (currentConfig.premiumTier < 1) {
+            alert("❌ This feature is premium only. Upgrade to Tier 1.");
+            return;
+          }
+          if (rolePos >= botRolePosition) {
+            alert(`❌ Cannot assign "${roleName}". Its position (${rolePos}) is not below the bot’s position (${botRolePosition}).`);
+            return;
+          }
+
+          if (opt.classList.contains("selected")) {
+            opt.classList.remove("selected");
+            removeTag(roleId);
+          } else {
+            opt.classList.add("selected");
+            addTag(roleId, roleName, r.color);
+          }
+        });
+      });
+    }
+
+    // 6) Add / Remove Tags for Selected Roles
+    function addTag(roleId, roleName, roleColor) {
+      const tag = createElem(
+        "div",
+        { class: "tag", "data-role-id": roleId, style: `background-color:${roleColor || "#3b82f6"};` },
+        createElem("span", {}, roleName),
+        createElem("i", { class: "fas fa-times remove-tag" })
+      );
+      tag.querySelector(".remove-tag").addEventListener("click", () => {
+        const opt = roleOptionsDiv.querySelector(`.role-option[data-role-id="${roleId}"]`);
+        if (opt) opt.classList.remove("selected");
+        tag.remove();
+      });
+      selectedTagsDiv.appendChild(tag);
+    }
+    function removeTag(roleId) {
+      const tag = selectedTagsDiv.querySelector(`.tag[data-role-id="${roleId}"]`);
+      if (tag) tag.remove();
+    }
+
+    // 7) Toggle Role Options Dropdown
+    roleSelectBtn.addEventListener("click", () => {
+      roleOptionsDiv.classList.toggle("active");
+    });
+    document.addEventListener("click", e => {
+      if (!roleOptionsDiv.contains(e.target) && e.target !== roleSelectBtn) {
+        roleOptionsDiv.classList.remove("active");
+      }
+    });
+
+    // 8) Save Role Assignments
+    btnSaveRoles.addEventListener("click", () => {
+      const selectedRoleIds = Array.from(
+        selectedTagsDiv.querySelectorAll(".tag")
+      ).map(tag => tag.getAttribute("data-role-id"));
+
+      axios.patch(`/config/${encodeURIComponent(serverId)}/roles`, {
+        assignedRoles: selectedRoleIds
+      })
+        .then(res => {
+          currentConfig = res.data.config;
+          alert("✅ Assigned roles updated.");
+        })
+        .catch(err => {
+          console.error("Error saving roles:", err.response || err.message);
+          if (err.response && err.response.status === 403) {
+            alert("❌ This feature is premium only. Upgrade to Tier 1.");
+          } else if (err.response && err.response.status === 400) {
+            alert("❌ " + (err.response.data?.error || "Invalid roles selected."));
+          } else {
+            alert("❌ Failed to update roles. Check console.");
+          }
+        });
+    });
+  </script>
+</body>
+</html>

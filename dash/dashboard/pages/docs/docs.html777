@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Base</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: #0a0f1c;
+            color: #fff;
+            display: flex;
+        }
+
+        /* Grid Background */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/grid-me.png') repeat;
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #16243a;
+            height: 100vh;
+            padding-top: 20px;
+            position: fixed;
+            transition: 0.3s;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar h2 {
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            transition: 0.3s;
+        }
+
+        .sidebar.collapsed h2 {
+            display: none;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: #ddd;
+            padding: 12px 20px;
+            text-decoration: none;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .sidebar.collapsed a span {
+            display: none;
+        }
+
+        .sidebar a:hover {
+            background: #1abc9c;
+            color: #fff;
+        }
+
+        /* Toggle Button */
+        .toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: 10px;
+            background: #1abc9c;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Content */
+        .content {
+            margin-left: 270px;
+            padding: 20px;
+            width: calc(100% - 270px);
+            transition: 0.3s;
+        }
+
+        .sidebar.collapsed + .content {
+            margin-left: 90px;
+            width: calc(100% - 90px);
+        }
+
+        section {
+            background: #16243a;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        h1, h2 {
+            color: #fff;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1e2a3a;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            left: 15px;
+            font-size: 12px;
+            color: #1abc9c;
+            font-weight: bold;
+        }
+
+        .method-get { color: #1abc9c; }
+        .method-post { color: #ff7f50; }
+
+        /* Alert Cards */
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .alert i {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .alert.note { background: #007bff; }
+        .alert.warning { background: #ffcc00; color: #000; }
+        .alert.info { background: #1abc9c; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar { width: 200px; }
+            .sidebar.collapsed { width: 60px; }
+            .content { margin-left: 210px; width: calc(100% - 210px); }
+            .sidebar.collapsed + .content { margin-left: 80px; width: calc(100% - 80px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+        <h2>Knowledge Base</h2>
+        <a href="#introduction"><i class="fas fa-home"></i> <span>Introduction</span></a>
+        <a href="#get-started"><i class="fas fa-play"></i> <span>Get Started</span></a>
+        <a href="#api"><i class="fas fa-code"></i> <span>API Docs</span></a>
+        <a href="#user-guide"><i class="fas fa-book"></i> <span>User Guide</span></a>
+        <a href="#changelog"><i class="fas fa-history"></i> <span>Changelog</span></a>
+    </div>
+
+    <div class="content">
+        <section id="introduction">
+            <h1>Enhance <span style="color: #007bff;">Team</span> <span style="color: #1abc9c;">Efficiency</span></h1>
+            <p>Welcome to the Knowledge Base. Here, you'll find all the documentation to help you integrate and use our software.</p>
+        </section>
+
+        <section id="get-started">
+            <h2>Get Started</h2>
+            <p>Follow these steps to install:</p>
+            <div class="code-block" data-lang="bash">
+                <pre>npm install my-app</pre>
+            </div>
+        </section>
+
+        <section id="api">
+            <h2>API Documentation</h2>
+            <div class="code-block method-get" data-lang="GET">
+                <pre>GET /api/users
+{
+    "id": 1,
+    "name": "John Doe"
+}</pre>
+            </div>
+            <div class="code-block method-post" data-lang="POST">
+                <pre>POST /api/users
+{
+    "name": "Jane Doe",
+    "email": "jane@example.com"
+}</pre>
+            </div>
+        </section>
+
+        <section id="user-guide">
+            <h2>User Guide</h2>
+            <p>Navigate the dashboard and explore features.</p>
+        </section>
+
+        <section id="changelog">
+            <h2>Changelog</h2>
+            <p>Version 1.0.1 - Bug fixes and improvements.</p>
+
+            <div class="alert note">
+                <i class="fas fa-info-circle"></i> Note: This is an important update.
+            </div>
+
+            <div class="alert warning">
+                <i class="fas fa-exclamation-triangle"></i> Warning: Ensure backups before updating.
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.querySelector(".sidebar").classList.toggle("collapsed");
+        }
+    </script>
+
+</body>
+</html>

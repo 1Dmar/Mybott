@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<!-- Coding by CodingNepal || www.codingnepalweb.com -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Boxicons CSS -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>ProMcBot - Your Servers</title>
+<style>
+      /* Import Google font - Poppins */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+:root {
+  --white-color: #fff;
+  --blue-color: #4070f4;
+  --grey-color: #707070;
+  --grey-color-light: #aaa;
+      --ggff: #f1efef;
+
+}
+body {
+  background-color: var(--ggff);
+  transition: all 0.5s ease;
+
+}
+body.dark {
+  background-color: #1f2a35;
+}
+body.dark {
+     --white-color: #17212b;
+    --blue-color: #fff;
+    --grey-color: #f2f2f2;
+    --grey-color-light: #aaa;
+          --ggff: #17212b;
+
+}
+
+.language-dropdown {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: #fff;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .language-dropdown a {
+            display: block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .language-dropdown a:hover {
+            background-color: #eee;
+        }
+
+/* navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  left: 0;
+  background-color: var(--white-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  z-index: 1000;
+  box-shadow: 0 0 2px var (--grey-color-light);
+justify-content: space-around;
+}
+
+.tag {
+    display: inline-block;
+    border-radius: 16em;
+    padding: 0.2em 0.5em 0.3em;
+    padding: -0.8em 0.5em -1.7em;
+    border-radius: 2px;
+    background: hsl(0deg 89.68% 63.28% / 52%);
+    color: #fff;
+    font-weight: 600;
+    margin: 0.25em 0.6em;
+}
+h1.tag {
+    margin-left: 0;
+    margin-right: 0
+}
+
+.tag-sm {
+    font-size: .7em;
+    display: inline-block;
+    letter-spacing: .15ch;
+    font-weight: 400
+}
+
+.tag-lg {
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.tag-bg {
+    background: var(#454e56)
+}
+
+.tag-green,.tag-pro {
+    background: var(--green);
+    color: #fff
+}
+
+
+
+.tag-purple {
+    background: var(--purple);
+    color: #fff
+}
+
+.tag-contrast {
+    background: var(--text-color);
+    color: #a481d5;
+}
+.tag-minimum-viable-product,.tag-mvp {
+    color: #fff;
+    background-image: linear-gradient(90deg,#ff8901,#db1d5f);
+    font-weight: 700
+}
+
+.logo_item {
+  display: flex;
+  align-items: center;
+  column-gap: 10px;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--grey-color);
+}
+.navbar img {
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.search_bar {
+  height: 47px;
+  max-width: 430px;
+  width: 100%;
+}
+.search_bar input {
+  height: 100%;
+  width: 100%;
+  border-radius: 25px;
+  font-size: 18px;
+  outline: none;
+  background-color: var(--white-color);
+  color: var(--grey-color);
+  border: 1px solid var(--grey-color-light);
+  padding: 0 20px;
+}
+.navbar_content {
+  display: flex;
+  align-items: center;
+  column-gap: 25px;
+}
+.navbar_content i {
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--grey-color);
+}
+
+/* sidebar */
+.sidebar {
+  background-color: var(--white-color);
+  width: 260px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 80px 20px;
+  z-index: 100;
+  overflow-y: scroll;
+  box-shadow: 0 0 1px var(--grey-color-light);
+  transition: all 0.5s ease;
+}
+.sidebar.close {
+  padding: 60px 0;
+  width: 80px;
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+    
+.menu_content {
+  position: relative;
+}
+.menu_title {
+  margin: 15px 0;
+  padding: 0 20px;
+  font-size: 18px;
+}
+.sidebar.close .menu_title {
+  padding: 6px 30px;
+}
+.menu_title::before {
+  color: var(--grey-color);
+  white-space: nowrap;
+}
+.menu_dahsboard::before {
+  content: "Dashboard";
+}
+.menu_editor::before {
+  content: "Status";
+}
+.menu_setting::before {
+  content: "Other";
+}
+.sidebar.close .menu_title::before {
+  content: "";
+  position: absolute;
+  height: 2px;
+  width: 18px;
+  border-radius: 12px;
+  background: var(--grey-color-light);
+}
+.menu_items {
+  padding: 0;
+  list-style: none;
+}
+.navlink_icon {
+  position: relative;
+  font-size: 22px;
+  min-width: 50px;
+  line-height: 40px;
+  display: inline-block;
+  text-align: center;
+  border-radius: 6px;
+}
+.navlink_icon::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: calc(100% + 100px);
+  left: -20px;
+}
+.navlink_icon:hover {
+  background: var(--blue-color);
+}
+.sidebar .nav_link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--grey-color);
+  white-space: nowrap;
+}
+.sidebar.close .navlink {
+  display: none;
+}
+.nav_link:hover {
+  color: var(--white-color);
+  background: var(--blue-color);
+}
+.sidebar.close .nav_link:hover {
+  background: var(--white-color);
+}
+.submenu_item {
+  cursor: pointer;
+}
+.submenu {
+  display: none;
+}
+.submenu_item .arrow-left {
+  position: absolute;
+  right: 10px;
+  display: inline-block;
+  margin-right: auto;
+}
+.sidebar.close .submenu {
+  display: none;
+}
+.show_submenu ~ .submenu {
+  display: block;
+}
+.show_submenu .arrow-left {
+  transform: rotate(90deg);
+}
+.submenu .sublink {
+  padding: 15px 15px 15px 52px;
+}
+.bottom_content {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  width: 260px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+}
+.bottom {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  left: 0;
+  justify-content: space-around;
+  padding: 18px 0;
+  text-align: center;
+  width: 100%;
+  color: var(--grey-color);
+  border-top: 1px solid var(--grey-color-light);
+  background-color: var(--white-color);
+}
+.bottom i {
+  font-size: 20px;
+}
+.bottom span {
+  font-size: 18px;
+}
+.sidebar.close .bottom_content {
+  width: 50px;
+  left: 15px;
+}
+.sidebar.close .bottom span {
+  display: none;
+}
+.sidebar.hoverable .collapse_sidebar {
+  display: none;
+}
+#sidebarOpen {
+  display: none;
+}
+@media screen and (max-width: 768px) {
+  #sidebarOpen {
+    font-size: 25px;
+    display: block;
+    margin-right: 10px;
+    cursor: pointer;
+    color: var(--grey-color);
+  }
+  .sidebar.close {
+    left: -100%;
+  }
+  .search_bar {
+    display: none;
+  }
+  .sidebar.close .bottom_content {
+    left: -100%;
+  }
+}
+</style>  </head>
+  <body>
+
+
+    <!-- navbar -->
+    <nav class="navbar">
+      <div class="logo_item">
+        <i class="bx bx-menu" id="sidebarOpen"></i>
+        <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+      </div>
+
+      <div class="search_bar">
+        <input type="text" placeholder="Search" />
+      </div>
+
+      <div class="navbar_content">
+        <i class="bi bi-grid"></i>
+        <i class='bx bx-sun' id="darkLight"></i>
+<i class="bx bx-card"></i>
+        <i class='bx bx-bell' ></i>
+        <img src=${avatar} alt="" class="profile" />
+      </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar">
+      <div class="menu_content">
+        <ul class="menu_items">
+          <div class="menu_title menu_dahsboard"></div>
+          <!-- duplicate or remove this li tag if you want to add or remove navlink with submenu -->
+          
+          <!-- start -->
+          <li class="item">
+            <a href="/dashboard" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-grid-alt"></i>
+              </span>
+              <span class="navlink">Overview</span>
+          
+            </a>
+          </li>
+          <!-- end -->
+
+          <!-- start -->
+          <li class="item">
+            <a href="/servers" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-diamond"></i>
+              </span>
+              <span class="navlink">Servers</span>
+          
+            </a>
+          </li>
+
+        </ul>
+
+    
+   
+        <ul class="menu_items">
+          <div class="menu_title menu_setting"></div>
+          <li class="item">
+            <a href="#" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-dock-left"></i>
+              </span>
+              <span class="navlink">Documents</span>
+            </a>
+          </li>
+        
+          <li class="item">
+            <a href="/api/logout" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-log-out"></i>
+              </span>
+              <span class="navlink">Logout</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Sidebar Open / Close -->
+
+        <div class="bottom_content">
+          <div class="bottom expand_sidebar">
+            <span> Expand</span>
+            <i class='bx bx-log-in' ></i>
+          </div>
+
+          <div class="bottom collapse_sidebar">
+            <span> Collapse</span>
+            <i class='bx bx-log-out'></i>
+          </div>
+        </div>
+      </div>
+
+    </nav>
+
+    <section class="main-content">
+         <style>
+        .server-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .main-content {
+            padding: 44px;
+            position: relative;
+            bottom: -9rem;
+            text-align: -webkit-center;
+            margin-left: 260px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .sidebar.close ~ .main-content {
+            margin-left: 80px;
+        }
+
+        h4 {
+            color: var(--grey-color);
+        }
+
+        @media screen and (min-width: 1201px) {
+            .card {
+                width: 20%;
+            }
+            .sidebar {
+                width: 260px;
+            }
+        }
+
+        @media screen and (max-width: 1200px) {
+            .card {
+                width: 30%;
+            }
+        }
+
+        @media screen and (max-width: 992px) {
+            .card {
+                width: 45%;
+            }
+        }
+
+        @media screen and (max-width: 736px) {
+            .sidebar,
+            .sidebar.close {
+                width: 39%;
+            }
+
+            .sidebar.close ~ .main-content {
+                margin-left: 0;
+            }
+
+            .card {
+                width: 47%;
+            }
+        }
+
+        @media screen and (max-width: 672px) {
+            .sidebar,
+            .sidebar.close {
+                width: 100%;
+            }
+
+            .sidebar.close ~ .main-content {
+                        margin-left: -63px;
+            }
+
+            .card {
+                width: 74%;
+            }
+        }
+
+        .navbar {
+            height: 60px;
+        }
+
+        @import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
+        :root {
+            --primary: #323232;
+            --light-bg: var(--white-color);
+            --border: #eee;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+            font-family: Lato;
+        }
+
+        .card {
+            width: 70%;
+            max-width: 1100px;
+            background-color: var(--white-color);
+            padding: 3rem;
+            color: var(--grey-color);
+            box-shadow: 0 4px 8px rgb(0 0 0 / 36%);
+        }
+
+        .card__header {
+            display: flex;
+            align-items: center;
+            margin-top: -15px;
+        }
+
+        .card__profile img {
+            border-radius: 50%;
+            height: 5rem;
+            width: 5rem;
+            object-fit: cover;
+        }
+
+        .card__name {
+            margin-left: 1.25rem;
+        }
+
+        .card__handle {
+            display: flex;
+            align-items: center;
+            margin-top: 3px;
+        }
+
+        .card__button {
+            margin-left: auto;
+        }
+
+        .card__button button {
+            display: flex;
+            align-items: center;
+            font-size: 1.05rem;
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            border: none;
+            height: 40px;
+            width: 100px;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .card__button button:active {
+            transform: scale(0.96);
+        }
+
+        .card__heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .circle {
+            height: 3px;
+            width: 3px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 8px;
+        }
+
+        .border {
+            border-radius: 5px;
+            height: 2px;
+            background-color: var(--border);
+            border: none;
+            margin: 1.25rem 0;
+        }
+
+        .navlinks {
+            list-style: none;
+            display: flex;
+            margin-bottom: 1.25rem;
+        }
+
+        .navlinks li {
+            opacity: 0.5;
+            transition: opacity 200ms ease-in-out;
+            cursor: pointer;
+        }
+
+        .navlinks li:first-child {
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        .navlinks li:hover {
+            opacity: 1;
+        }
+
+        .navlinks li + li {
+            margin-left: 20px;
+        }
+
+        .date {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .date svg {
+            margin-left: 5px;
+            height: 1rem;
+            width: 1rem;
+        }
+
+        .heading {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .insights {
+            margin: 2rem 0;
+            display: flex;
+            flex: 1;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .insights .insight {
+            width: 280px;
+            padding: 1rem;
+            border-radius: 8px;
+            outline: none;
+            transition: all 200ms ease-in-out;
+        }
+
+        .insights .insight:hover {
+            color: white;
+            background-color: var(--primary);
+            outline: none;
+        }
+
+        .insights .insight .heading {
+            display: flex;
+            align-items: center;
+        }
+
+        .insights .insight .heading .score {
+            margin-left: auto;
+        }
+
+        .insights .insight .heading .score span {
+            color: #44c790;
+        }
+
+        .insights .insight .heading span {
+            font-size: 0.8rem;
+        }
+
+        .insight + .insight {
+            margin-left: 1rem;
+        }
+
+        .number {
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .number .info {
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+        }
+
+        .number .info svg {
+            height: 15px;
+            width: 15px;
+        }
+
+        @media (max-width: 1381px) {
+            .insights {
+                justify-content: center;
+            }
+
+            .insights .insight:nth-child(3) {
+                margin-top: 1rem;
+            }
+        }
+
+        @media (max-width: 990px) {
+            .insights {
+                justify-content: center;
+            }
+
+            .insights .insight + .insight {
+                margin: 0;
+                margin-top: 1rem;
+            }
+        }
+
+        @media (max-width: 740px) {
+            .card {
+width: 122%;            }
+
+            .navlinks {
+                display: none;
+            }
+        }
+
+        @media (max-width: 545px) {
+            .card__button button {
+                width: 40px;
+                justify-content: center;
+            }
+
+            .card__button button span {
+                display: none;
+            }
+
+            .card__button button svg {
+                margin-right: 0;
+            }
+        }
+
+        @media (max-width: 475px) {
+            .card__button {
+                display: none;
+            }
+        }
+    </style>
+        <div class="card">
+            <div class="card__header">
+                <div class="card__profile">
+                    <img src="${avatar}" alt="${username}" />
+                </div>
+                <div class="card__name">
+                    <h2>test</h2>
+                    <div class="card__handle">
+                        <span class="handle">@${username}</span>
+                        <span class="circle"></span>
+                        <span class="category">${userId}</span>
+                    </div>
+                </div>
+                <div class="card__button">
+                    <button>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        <span>Edit</span>
+                    </button>
+                </div>
+            </div>
+            <hr class="border" />
+            <ul class="navlinks">
+                <li>Home</li>
+            </ul>
+            <h4>Statistics</h4>
+            <div class="insights">
+                <div class="insight">
+                    <div class="heading">
+                        <h5>Overall</h5>
+                        <div class="score"><span>2.5</span>/5</div>
+                    </div>
+                    <div class="number">120
+                        <div class="info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-graph-up" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0Zm14.293 9.207L10 5.914l-3 3-3-3L1.5 8.5 0 7l5-5 3 3 3-3 5.5 5.5-1.207 1.207Z"/>
+                            </svg>
+                            <span>+2</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="heading">
+                        <h5>API Calls</h5>
+                        <div class="score"><span>3.5</span>/5</div>
+                    </div>
+                    <div class="number">150
+                        <div class="info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-graph-up" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0Zm14.293 9.207L10 5.914l-3 3-3-3L1.5 8.5 0 7l5-5 3 3 3-3 5.5 5.5-1.207 1.207Z"/>
+                            </svg>
+                            <span>+10</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="heading">
+                        <h5>Latency</h5>
+                        <div class="score"><span>1.5</span>/5</div>
+                    </div>
+                    <div class="number">300ms
+                        <div class="info">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-graph-down" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M0 0h1v15h15v1H0V0Zm15 15H1V1h14v14ZM5.646 6.646 10 11.293l3.354-3.647-1.207-1.207-2.147 2.146-3.207-3.207L4 8l-2-2 2-2 1.646 1.646Z"/>
+                            </svg>
+                            <span>-5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="main-content">
+        <div class="card">
+            <div class="card__header">
+                <div class="card__profile">
+                    <img src="${avatar}" alt="${username}" />
+                </div>
+                <div class="card__name">
+                    <h2>API Keys</h2>
+                </div>
+                <div class="card__button">
+                    <button id="createApiKeyButton">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus">
+                            <path d="M12 5v14m-7-7h14"></path>
+                        </svg>
+                        <span>New</span>
+                    </button>
+                </div>
+            </div>
+            <hr class="border" />
+            <!-- API Key List Here -->
+        </div>
+    </section>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.getElementById('createApiKeyButton').addEventListener('click', function() {
+            Swal.fire({
+                title: 'Create New API Key',
+                input: 'text',
+                inputLabel: 'Enter a name for your API key',
+                showCancelButton: true,
+                confirmButtonText: 'Create',
+                background: 'rgba(0,0,0,0.8)',
+                backdrop: `
+                    rgba(0,0,0,0.4)
+                    left top
+                    no-repeat
+                `,
+                preConfirm: (keyName) => {
+                    if (!keyName) {
+                        Swal.showValidationMessage('You need to enter a name!')
+                    } else {
+                        return { keyName: keyName }
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Handle API key creation logic here
+                    console.log('New API key created:', result.value.keyName);
+                }
+            });
+        });
+    </script>
+
+
+
+
+<script>
+    function showUnblacklistSwal(guildId, expiresAt, isPermanent) {
+        let remainingTime = expiresAt - Date.now();
+        let days = Math.floor(remainingTime / (1000 * 60 * 60 * 24));
+        remainingTime -= days * 1000 * 60 * 60 * 24;
+        let hours = Math.floor(remainingTime / (1000 * 60 * 60));
+        remainingTime -= hours * 1000 * 60 * 60;
+        let minutes = Math.floor(remainingTime / (1000 * 60));
+        remainingTime -= minutes * 1000 * 60;
+        let seconds = Math.floor(remainingTime / 1000);
+
+        let timeString = '';
+        if (days > 0) timeString += ${days}d ;
+        if (hours > 0) timeString += ${hours}h ;
+        if (minutes > 0) timeString += ${minutes}m ;
+        if (seconds > 0) timeString += ${seconds}s;
+
+        Swal.fire({
+            title: 'Unblacklist Server',
+            html: <p>These commands are sensitive. If the blacklist is not removed from the server, please contact support.</p>
+                   <p>Time remaining: ${timeString}</p>
+                   <div class="swal2-content">
+                       <a href="https://discord.com/invite/your_invite_code" class="swal2-confirm swal2-styled" style="display: inline-block;">Join Support Server</a>
+                   </div>,
+            showCancelButton: true,
+            cancelButtonText: 'Close',
+            confirmButtonText: 'Unblacklist'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Call API to unblacklist server
+                unblacklistServer(guildId);
+            }
+        });
+    }
+
+    function unblacklistServer(guildId) {
+        // Implement unblacklist server API call here
+        //console.log(Unblacklisting server with ID: ${guildId});
+        alert("Welcome to ProMcBot Dashboard.\n " +
+                "We apologize that the system for removing your server from the blacklist is currently unavailable" +
+                ", We are working on it Thank you ❤️️");
+    }
+</script>
+
+
+
+
+
+
+    <!-- JavaScript -->
+    <script>const body = document.querySelector("body");
+const darkLight = document.querySelector("#darkLight");
+const sidebar = document.querySelector(".sidebar");
+const submenuItems = document.querySelectorAll(".submenu_item");
+const sidebarOpen = document.querySelector("#sidebarOpen");
+const sidebarClose = document.querySelector(".collapse_sidebar");
+const sidebarExpand = document.querySelector(".expand_sidebar");
+sidebarOpen.addEventListener("click", () => sidebar.classList.toggle("close"));
+
+sidebarClose.addEventListener("click", () => {
+  sidebar.classList.add("close", "hoverable");
+});
+sidebarExpand.addEventListener("click", () => {
+  sidebar.classList.remove("close", "hoverable");
+});
+
+/*sidebar.addEventListener("mouseenter", () => {
+  if (sidebar.classList.contains("hoverable")) {
+    sidebar.classList.remove("close");
+  }
+});
+sidebar.addEventListener("mouseleave", () => {
+  if (sidebar.classList.contains("hoverable")) {
+    sidebar.classList.add("close");
+  }
+});*/
+
+// تطبيق الوضع الداكن عند تحميل الصفحة إذا تم اختياره مسبقًا
+document.addEventListener('DOMContentLoaded', () => {
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  if (currentTheme === 'dark') {
+    body.classList.add('dark');
+    darkLight.classList.replace("bx-sun", "bx-moon");
+  }
+});
+
+// تبديل الوضع الداكن والفاتح عند النقر على الزر
+darkLight.addEventListener("click", () => {
+  body.classList.toggle('dark');
+  if (body.classList.contains('dark')) {
+    localStorage.setItem('theme', 'dark');
+    darkLight.classList.replace("bx-sun", "bx-moon");
+  } else {
+    localStorage.setItem('theme', 'light');
+    darkLight.classList.replace("bx-moon", "bx-sun");
+  }
+});
+
+submenuItems.forEach((item, index) => {
+  item.addEventListener("click", () => {
+    const isExpanded = item.classList.toggle("show_submenu");
+    if (isExpanded) {
+      localStorage.setItem('activeSubmenu', index);
+    } else if (parseInt(localStorage.getItem('activeSubmenu')) === index) {
+      localStorage.removeItem('activeSubmenu');
+    }
+
+   document.addEventListener('DOMContentLoaded', () => {
+  const currentTheme = localStorage.getItem('activeSubmenu') || index;
+  if (currentTheme === 'activeSubmenu') {
+    body.classList.add('activeSubmenu');
+    darkLight.classList.replace("activeSubmenu", "activeSubmenu");
+  }
+});
+      
+  });
+});
+
+// تطبيق حالة القائمة الفرعية المحفوظة
+document.addEventListener('DOMContentLoaded', () => {
+  const activeSubmenuIndex = parseInt(localStorage.getItem('activeSubmenu'));
+  if (!isNaN(activeSubmenuIndex)) {
+    const activeSubmenu = submenuItems[activeSubmenuIndex];
+    if (activeSubmenu) {
+      activeSubmenu.classList.add("show_submenu");
+    }
+  }
+});
+
+if (window.innerWidth < 768) {
+  sidebar.classList.add("close");
+} else {
+  sidebar.classList.remove("close");
+}
+
+//new code
+</script>
+    
+  </body>
+</html>

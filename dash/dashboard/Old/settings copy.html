@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Settings</title>
+    <style>body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1f2a35;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    padding: 20px;
+    color: #fff;
+}
+
+.content {
+    display: flex;
+    gap: 40px; /* المسافة بين البطاقتين */
+    align-items: flex-start;
+    z-index: 1;
+}
+
+.card {
+    background: #17212b;
+    border: 2px solid #17212b;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgb(0 0 0 / 36%);
+    padding: 30px;
+    width: 350px;
+    max-width: 100%;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.hidden {
+    display: none;
+}
+
+.blur {
+    filter: blur(5px);
+}
+
+#blacklist-card {
+    background: rgba(255, 69, 58, 0.9);
+    border: 2px solid rgba(255, 69, 58, 1);
+    color: white;
+    position: absolute;
+    top: 20px;
+    z-index: 10;
+    backdrop-filter: none;
+}
+
+#blacklist-card a {
+    color: white;
+    text-decoration: underline;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    text-align: left;
+    font-weight: bold;
+    
+}
+
+input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #1f2a35;
+    
+    border-radius: 8px;
+    background: #17212b;
+    color: white;
+}
+
+button {
+    background-color: #007bff;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+    background-color: #007bff;
+    transform: scale(1.05);
+}
+
+button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+        transform: scale(1);
+}
+
+input:disabled, select:disabled {
+    background: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+}
+
+    </style>
+</head>
+<body>
+     <div id="blacklist-card" class="card hidden">
+        <h1>Server Blacklisted</h1>
+        <p>This server is blacklisted and you cannot use the bot here.</p>
+        <p>Contact <a href="#">ProMcBot Support</a> for more information.</p>
+    </div>
+    <div id="content" class="content">
+        <div id="server-setup" class="card">
+            <h2>Server Setup</h2>
+            <form id="server-setup-form">
+                <label for="serverName">Server Name:</label>
+                <input type="text" id="serverName" name="serverName" required>
+                <label for="serverType">Server Type:</label>
+                <select id="serverType" name="serverType">
+                    <option value="java">Java</option>
+                    <option value="bedrock">Bedrock</option>
+                    <option value="custom" disabled>Custom (Membership Required)</option>
+                </select>
+                <div id="javaSettings">
+                    <label for="javaIP">Java IP:</label>
+                    <input type="text" id="javaIP" name="javaIP">
+                    <label for="javaPort">Java Port:</label>
+                    <input type="number" id="javaPort" name="javaPort" value="25565">
+                </div>
+                <div id="bedrockSettings" class="hidden">
+                    <label for="bedrockIP">Bedrock IP:</label>
+                    <input type="text" id="bedrockIP" name="bedrockIP">
+                    <label for="bedrockPort">Bedrock Port:</label>
+                    <input type="number" id="bedrockPort" name="bedrockPort" value="19132">
+                </div>
+                <button type="submit">Save Settings</button>
+            </form>
+        </div>
+        <div id="server-options" class="card">
+            <h2>Server Options</h2>
+            <form id="server-options-form">
+                <label for="language">Language:</label>
+                <select id="language" name="language">
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                </select>
+                <label for="mention">Mention:</label>
+                <select id="mention" name="mention">
+                    <option value="none">Nothing (Default)</option>
+                    <option value="everyone">@everyone</option>
+                    <option value="here">@here</option>
+                </select>
+                <button type="submit">Save Options</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const serverId = window.location.pathname.split('/')[1];
+            const blacklistResponse = await fetch(`/api/blacklist/${serverId}`);
+            const blacklistData = await blacklistResponse.json();
+            if (blacklistData.blacklisted) {
+                document.getElementById('blacklist-card').classList.remove('hidden');
+                document.getElementById('content').classList.add('blur');
+                document.querySelectorAll('.card input, .card select, .card button').forEach(el => el.disabled = true);
+            }
+
+            const serverTypeSelect = document.getElementById('serverType');
+            const javaSettings = document.getElementById('javaSettings');
+            const bedrockSettings = document.getElementById('bedrockSettings');
+
+            serverTypeSelect.addEventListener('change', () => {
+                if (serverTypeSelect.value === 'java') {
+                    javaSettings.classList.remove('hidden');
+                    bedrockSettings.classList.add('hidden');
+                } else if (serverTypeSelect.value === 'bedrock') {
+                    javaSettings.classList.add('hidden');
+                    bedrockSettings.classList.remove('hidden');
+                }
+            });
+
+            document.getElementById('server-setup-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = Object.fromEntries(formData.entries());
+                console.log('Server setup data:', data);  // Log data before sending
+                try {
+                    const response = await fetch(`/${serverId}/settings`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                } catch (error) {
+                    console.error('Error saving settings:', error);
+                    alert('Error saving settings');
+                }
+            });
+
+            document.getElementById('server-options-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.target);
+                const data = Object.fromEntries(formData.entries());
+                console.log('Server options data:', data);  // Log data before sending
+                try {
+                    const response = await fetch(`/${serverId}/options`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    });
+                    const result = await response.json();
+                    alert(result.message);
+                } catch (error) {
+                    console.error('Error saving options:', error);
+                    alert('Error saving options');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Status</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Material+Icons');
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+
+        body {
+            background: hsl(210, 90%, 1%);
+            color: hsl(210, 95%, 93%);
+            font-family: "Quicksand", sans-serif;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            font-size: 22px;
+            padding: 12px;
+            background: hsla(210, 90%, 1%, 88%);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 10px hsl(210, 90%, 1%);
+        }
+
+        .title-main {
+            font-size: 48px;
+            margin: 50px 0 20px;
+            color: hsl(210, 95%, 88%);
+        }
+
+        button {
+            background: hsl(210, 15%, 10%);
+            color: white;
+            padding: 14px;
+            font-size: 16px;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: hsl(210, 10%, 15%);
+        }
+
+        .list {
+            padding: 6px;
+            border-radius: 24px;
+            margin: 20px 0;
+        }
+
+        .list .item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-radius: 20px;
+            background: hsl(210, 14%, 7%);
+            margin-bottom: 10px;
+        }
+
+        .list i {
+            font-size: 24px;
+            color: white;
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .status-text {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .online { color: green; }
+        .offline { color: red; }
+        .maintenance { color: yellow; }
+
+        /* NEW: status bar styles */
+        .bar-status {
+            margin-top: 8px;
+            width: 100%;
+            height: 8px;
+            border-radius: 8px;
+            background: gray;
+            transition: background 0.3s;
+        }
+
+        .bar-online {
+            background: #28a745;
+        }
+
+        .bar-maintenance {
+            background: #fd7e14;
+        }
+
+        .bar-offline {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Main Screen</h1>
+        </div>
+
+        <div class="title-main">Status</div>
+        <p>Device Name</p>
+
+        <button onclick="fetchServerStatus()">Refresh</button>
+
+        <div class="list">
+            <div class="item">
+                <i class="material-icons">cloud</i>
+                <div>
+                    <div class="name">ProMcBot</div>
+                    <div class="status-text" id="promcbot-status">Checking...</div>
+                    <div class="bar-status" id="promcbot-bar"></div>
+                </div>
+            </div>
+
+            <div class="item">
+                <i class="material-icons">dashboard</i>
+                <div>
+                    <div class="name">Dashboard Server</div>
+                    <div class="status-text" id="dashboard-status">Checking...</div>
+                    <div class="bar-status" id="dashboard-bar"></div>
+                </div>
+            </div>
+
+            <div class="item">
+                <i class="material-icons">api</i>
+                <div>
+                    <div class="name">API Server</div>
+                    <div class="status-text" id="api-server-status">Checking...</div>
+                    <div class="bar-status" id="api-server-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchServerStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const servers = await response.json();
+
+                servers.forEach(server => {
+                    const id = server.name.toLowerCase().replace(/ /g, '-');
+                    const statusElement = document.getElementById(`${id}-status`);
+                    const barElement = document.getElementById(`${id}-bar`);
+
+                    if (!statusElement || !barElement) return;
+
+                    statusElement.classList.remove("online", "maintenance", "offline");
+                    barElement.classList.remove("bar-online", "bar-maintenance", "bar-offline");
+
+                    if (server.status === "running") {
+                        statusElement.innerHTML = "Online";
+                        statusElement.classList.add("online");
+                        barElement.classList.add("bar-online");
+                    } else if (server.status === "starting") {
+                        statusElement.innerHTML = "Online";
+                        statusElement.classList.add("online");
+                        barElement.classList.add("bar-online");
+                    } else {
+                        statusElement.innerHTML = "Offline";
+                        statusElement.classList.add("offline");
+                        barElement.classList.add("bar-offline");
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching server status:", error);
+            }
+        }
+
+        window.onload = function () {
+            fetchServerStatus();
+            setInterval(fetchServerStatus, 10000);
+        };
+        window.onload = function () {
+  // Load last known status
+  document.querySelectorAll('.bar-status').forEach(bar => {
+    const id = bar.id.replace('-bar', '');
+    const lastStatus = localStorage.getItem(id);
+    if (lastStatus) {
+      bar.classList.add(`bar-${lastStatus}`);
+      const statusText = document.getElementById(`${id}-status`);
+      if (statusText) {
+        statusText.innerText = lastStatus.charAt(0).toUpperCase() + lastStatus.slice(1);
+        statusText.classList.add(lastStatus);
+      }
+    }
+  });
+
+  fetchServerStatus();
+  setInterval(fetchServerStatus, 10000);
+};
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Auto Responder</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #4070f4;
+            --primary-light: #6e8ff5;
+            --primary-dark: #2853d4;
+            --success: #28a745;
+            --success-light: #4cce68;
+            --danger: #dc3545;
+            --danger-light: #e9717d;
+            --warning: #ffc107;
+            --dark: #17212b;
+            --darker: #0e151c;
+            --light: #f1efef;
+            --lighter: #f8f9fa;
+            --card-bg: #fff;
+            --text: #333;
+            --text-light: #707070;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --premium-gradient: linear-gradient(135deg, #ffd700, #ff9800);
+            --blacklist-gradient: linear-gradient(135deg, #dc3545, #8b0000);
+            --java-gradient: linear-gradient(135deg, #4b6cb7, #182848);
+            --bedrock-gradient: linear-gradient(135deg, #00b09b, #96c93d);
+        }
+
+        body.dark {
+            --card-bg: #1f2a35;
+            --text: #f2f2f2;
+            --text-light: #aaa;
+            --light: #17212b;
+            --lighter: #1f2a35;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--text);
+            min-height: 100vh;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            left: 0;
+            background-color: var(--card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 70px;
+            transition: var(--transition);
+        }
+
+        .logo_item {
+            display: flex;
+            align-items: center;
+            column-gap: 10px;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .navbar img {
+            width: 35px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .search_bar {
+            height: 47px;
+            max-width: 430px;
+            width: 100%;
+        }
+        
+        .search_bar input {
+            height: 100%;
+            width: 100%;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            background-color: var(--lighter);
+            color: var(--text);
+            border: 1px solid var(--text-light);
+            padding: 0 20px;
+            transition: var(--transition);
+        }
+        
+        .search_bar input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(64, 112, 244, 0.2);
+        }
+        
+        .navbar_content {
+            display: flex;
+            align-items: center;
+            column-gap: 25px;
+            position: relative;
+        }
+        
+        .navbar_content i {
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text);
+            position: relative;
+            transition: var(--transition);
+        }
+        
+        .navbar_content i:hover {
+            color: var(--primary);
+        }
+        
+        .mobile-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--text);
+        }
+        
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dropdown menus */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--card-bg);
+            min-width: 220px;
+            box-shadow: var(--shadow);
+            z-index: 1100;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: var(--transition);
+            top: 50px;
+        }
+        
+        .dropdown-content a {
+            color: var(--text);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: var(--transition);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .dropdown-content a:hover {
+            background-color: rgba(64, 112, 244, 0.1);
+            color: var(--primary);
+        }
+        
+        .dropdown-content a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .dropdown-header {
+            padding: 15px 16px;
+            font-weight: 600;
+            background: rgba(64, 112, 244, 0.1);
+            color: var(--primary);
+            border-bottom: 1px solid rgba(64, 112, 244, 0.2);
+        }
+        
+        .show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .notification-dropdown {
+            min-width: 350px;
+        }
+        
+        .notification-item {
+            display: flex;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .notification-item:hover {
+            background-color: rgba(64, 112, 244, 0.05);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(64, 112, 244, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--primary);
+            font-size: 18px;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .notification-time {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        .view-all {
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--card-bg);
+            width: 260px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding: 80px 20px 20px;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 0 0 1px var(--text-light);
+            transition: var(--transition);
+        }
+        
+        /* Fixed tag styling */
+        .navlink-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
+        
+        .tag-new {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .tag-pro {
+            background: var(--premium-gradient);
+            color: #fff;
+        }
+        
+        .tag-ult {
+            background: #7F00FF;
+            color: #fff;
+        }
+        
+        .menu_content {
+            position: relative;
+        }
+        
+        .menu_title {
+            margin: 20px 0 10px;
+            padding: 0 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-light);
+        }
+        
+        .menu_items {
+            padding: 0;
+            list-style: none;
+        }
+        
+        .navlink_icon {
+            position: relative;
+            font-size: 22px;
+            min-width: 50px;
+            line-height: 40px;
+            display: inline-block;
+            text-align: center;
+            border-radius: 6px;
+            transition: var(--transition);
+        }
+        
+        .sidebar .nav_link {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text);
+            white-space: nowrap;
+            transition: var(--transition);
+            margin-bottom: 5px;
+        }
+        
+        .nav_link:hover {
+            color: white;
+            background: var(--primary);
+        }
+        
+        .nav_link:hover .navlink_icon {
+            color: white;
+        }
+        
+        .sidebar .nav_link_on {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            white-space: nowrap;
+            transition: var(--transition);
+            margin-bottom: 5px;
+            background: var(--primary);
+        }
+        
+        .nav_link_on .navlink_icon {
+            color: white;
+        }
+        
+        .bottom_content {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 0 20px;
+        }
+        
+        .bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            color: var(--text);
+            border-top: 1px solid var(--text-light);
+            background-color: var(--card-bg);
+            border-radius: 8px;
+        }
+        
+        .bottom i {
+            font-size: 20px;
+        }
+        
+        .bottom span {
+            font-size: 16px;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 90px 30px 30px;
+            margin-left: 260px;
+            transition: var(--transition);
+            flex: 1;
+        }
+        
+        /* Auto Responder Styles */
+        .auto-responder-header {
+            margin-bottom: 30px;
+        }
+        
+        .auto-responder-header h1 {
+            font-size: 2.5rem;
+            color: var(--text);
+            background: linear-gradient(90deg, var(--primary), #7289da);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .auto-responder-header p {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            max-width: 800px;
+            margin-top: 10px;
+        }
+        
+        /* Form Card */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+            transition: var(--transition);
+        }
+        
+        .form-card h2 {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        
+        .form-group input, 
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: var(--lighter);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        
+        .form-group input:focus, 
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(64, 112, 244, 0.2);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(64, 112, 244, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success);
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+        }
+        
+        /* Responses Table */
+        .responses-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        
+        .responses-card h2 {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table_header {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 0.5fr;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(64, 112, 244, 0.05);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .table_row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 0.5fr;
+            gap: 15px;
+            padding: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            align-items: center;
+            transition: var(--transition);
+        }
+        
+        .table_row:hover {
+            background: rgba(64, 112, 244, 0.03);
+        }
+        
+        .table_row:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status.active {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+        }
+        
+        .status.inactive {
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .btn_primary_small {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+        
+        .btn_delete {
+            background: var(--danger);
+        }
+        
+        .btn_primary_small:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .no-responses {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        .no-responses i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .no-responses p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        /* Auto Response Form Overlay */
+        .auto-response-form {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1100;
+            width: 90%;
+            max-width: 700px;
+            display: none;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .auto-response-form h2 {
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .blur {
+            filter: blur(5px);
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Blacklist Card */
+        #blacklist-card {
+            background: rgba(255, 69, 58, 0.9);
+            border: 2px solid rgba(255, 69, 58, 1);
+            color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        #blacklist-card a {
+            color: white;
+            text-decoration: underline;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .table_header,
+            .table_row {
+                grid-template-columns: 1fr 1fr 0.8fr 0.8fr 0.5fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding-top: 90px;
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+            
+            .table_header,
+            .table_row {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .table_header :nth-child(3),
+            .table_header :nth-child(4),
+            .table_row :nth-child(3),
+            .table_row :nth-child(4) {
+                display: none;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search_bar {
+                display: none;
+            }
+            
+            .navbar {
+                padding: 15px 20px;
+            }
+            
+            .auto-responder-header h1 {
+                font-size: 2rem;
+            }
+            
+            .form-card, .responses-card {
+                padding: 20px;
+            }
+            
+            .table_header,
+            .table_row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .table_header :nth-child(2),
+            .table_row :nth-child(2) {
+                display: none;
+            }
+            
+            .auto-response-form {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .navbar_content {
+                column-gap: 15px;
+            }
+            
+            .auto-responder-header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .auto-responder-header p {
+                font-size: 1rem;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Overlay for modals -->
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+        </div>
+
+        <div class="search_bar">
+            <input type="text" placeholder="Search" />
+        </div>
+
+        <div class="navbar_content">
+            <i class="bi bi-grid"></i>
+            
+            <!-- Notifications dropdown -->
+            <div class="dropdown">
+                <i class='bx bx-bell' id="notificationBtn"></i>
+                <div class="notification-badge">3</div>
+                <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+                    <div class="dropdown-header">
+                        <i class='bx bx-bell'></i> Notifications
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-user-plus'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">New Member Joined</div>
+                            <div class="notification-desc">JohnDoe joined your server</div>
+                            <div class="notification-time">5 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-server'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Server Restart</div>
+                            <div class="notification-desc">Minecraft server will restart in 10 minutes</div>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-crown'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Premium Expiring</div>
+                            <div class="notification-desc">Your premium subscription ends in 3 days</div>
+                            <div class="notification-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="view-all">
+                        View All Notifications
+                    </div>
+                </div>
+            </div>
+            
+            <i class='bx bx-sun' id="darkLight"></i>
+            
+            <!-- User dropdown -->
+            <div class="dropdown">
+                <img src="https://cdn.discordapp.com/avatars/123456789012345678/a_1a2b3c4d5e6f7g8h9i0j.webp" alt="" class="profile" id="userBtn" />
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header">
+                        <img src="https://cdn.discordapp.com/avatars/123456789012345678/a_1a2b3c4d5e6f7g8h9i0j.webp" alt="" class="profile" style="width: 40px; height: 40px; margin-right: 10px;" />
+                        John Doe (johndoe)
+                    </div>
+                    <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+                    <a href="#"><i class='bx bx-cog'></i> Account Settings (soon)</a>
+                    <a href="#"><i class='bx bx-coin-stack'></i> Billing & Plans (soon)</a>
+                    <a href="#"><i class='bx bx-shield'></i> Privacy & Security (soon)</a>
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px;">
+                        <a href="/api/logout" style="color: var(--danger);"><i class='bx bx-log-out'></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="menu_content">
+            <ul class="menu_items">
+                <div class="menu_title"><span>Dashboard</span></div>
+                <li class="item">
+                    <a href="/${serverId}/overview" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-stats"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Overview</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/settings" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-slider-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Configuration</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/premium" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-crown"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Premium</span>
+                            <span class="tag tag-new">New</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="menu_items">
+                <div class="menu_title"><span>Module Settings</span></div>
+                <li class="item">
+                    <a href="/${serverId}/auto_responder" class="nav_link_on">
+                        <span class="navlink_icon">
+                            <i class="bx bx-bot"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Auto Responder</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/roles" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-palette"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Roles</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/activity" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-chat"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Activity</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/embeds" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-message-square-edit"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Embeds</span>
+                            <span class="tag tag-ult">Ultimate</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/${serverId}/moderation" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cog"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Moderation</span>
+                            <span class="tag tag-pro">Pro</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+            <ul class="menu_items">
+                <div class="menu_title"><span>Other</span></div>
+                <li class="item">
+                    <a href="/invite" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cube-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Invite Me</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/api/logout" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-log-out"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Logout</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="bottom_content">
+                <div class="bottom expand_sidebar">
+                    <i class='bx bx-chevron-left'></i>
+                    <span>Collapse</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <section class="main-content" id="mainContent">
+        <!-- Header -->
+        <div class="auto-responder-header">
+            <h1>Auto Responder</h1>
+            <p>Set up automatic responses to specific triggers in your Discord server</p>
+        </div>
+        
+        <!-- Blacklist Banner (only shown if blacklisted) -->
+        <div class="form-card" id="blacklist-card">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <i class='bx bx-error-circle' style="font-size: 2.5rem; color: white;"></i>
+                <div>
+                    <h3>Server Blacklisted</h3>
+                    <p>This server has been blacklisted due to policy violations. Auto responder settings cannot be modified.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Add New Response Button -->
+        <div class="form-card">
+            <button class="btn" id="addNewBtn" onclick="showAutoResponderForm()">
+                <i class='bx bx-plus'></i> Add New Auto Response
+            </button>
+        </div>
+        
+        <!-- Responses Table -->
+        <div class="responses-card">
+            <h2>
+                <i class='bx bx-list-ul'></i> Auto Responses
+            </h2>
+            
+            <div id="autoResponseList">
+                <div class="table_header">
+                    <p>Trigger</p>
+                    <p>Response</p>
+                    <p>Status</p>
+                    <p>Created</p>
+                    <p>Actions</p>
+                </div>
+                
+                <div id="autoResponseTable">
+                    <!-- Responses will be loaded here -->
+                </div>
+                
+                <div class="spinner hidden" id="loadingSpinner"></div>
+                
+                <div class="no-responses" id="noResponses">
+                    <i class='bx bx-bot'></i>
+                    <p>No auto responses set up yet</p>
+                    <p>Click "Add New Auto Response" to create your first one</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Auto Response Form -->
+    <div class="auto-response-form" id="autoResponseCard">
+        <h2><i class='bx bx-plus'></i> Add New Auto Response</h2>
+        
+        <form id="autoResponseForm" onsubmit="submitForm(event)">
+            <div class="form-group">
+                <label for="trigger">Trigger Phrase</label>
+                <input type="text" id="trigger" name="trigger" placeholder="e.g., !help" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="response">Response</label>
+                <textarea id="response" name="response" rows="3" placeholder="Enter the response message" required></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="replyType">Response Type</label>
+                    <select id="replyType" name="replyType">
+                        <option value="message">Regular Message</option>
+                        <option value="embed">Embed Message</option>
+                        <option value="dm">Direct Message</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cooldown">Cooldown (seconds)</label>
+                    <input type="number" id="cooldown" name="cooldown" min="0" value="5">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="allowedRoles">Allowed Roles (comma separated)</label>
+                    <input type="text" id="allowedRoles" name="allowedRoles" placeholder="e.g., Admin, Moderator">
+                </div>
+                
+                <div class="form-group">
+                    <label for="disallowedRoles">Disallowed Roles (comma separated)</label>
+                    <input type="text" id="disallowedRoles" name="disallowedRoles" placeholder="e.g., Muted, Banned">
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-danger" onclick="closeForm()">Cancel</button>
+                <button type="submit" class="btn btn-success">Save Response</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Server ID from URL
+        const serverId = window.location.pathname.split('/')[1] || "default-server-id";
+
+        // DOM Elements
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const darkLight = document.getElementById('darkLight');
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const userBtn = document.getElementById('userBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        const mainContent = document.getElementById('mainContent');
+        const autoResponseCard = document.getElementById('autoResponseCard');
+        const addNewBtn = document.getElementById('addNewBtn');
+        const autoResponseTable = document.getElementById('autoResponseTable');
+        const noResponses = document.getElementById('noResponses');
+        const overlay = document.getElementById('overlay');
+        const blacklistCard = document.getElementById('blacklist-card');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set theme based on preference
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark');
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+            }
+            
+            // Fetch auto responses
+            fetchAutoResponses();
+            
+            // Check blacklist status
+            checkBlacklistStatus();
+        });
+
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('show');
+        });
+        
+        // Close sidebar when clicking on overlay
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('show');
+            notificationDropdown.classList.remove('show');
+            userDropdown.classList.remove('show');
+        });
+        
+        // Theme toggle
+        darkLight.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Dropdown functionality
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+            userDropdown.classList.remove('show');
+        });
+        
+        userBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+            notificationDropdown.classList.remove('show');
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+
+        // Auto Responder Functions
+        function showAutoResponderForm() {
+            mainContent.classList.add('blur');
+            autoResponseCard.style.display = 'block';
+            overlay.style.display = 'block';
+            addNewBtn.style.display = 'none';
+        }
+
+        function closeForm() {
+            mainContent.classList.remove('blur');
+            autoResponseCard.style.display = 'none';
+            overlay.style.display = 'none';
+            addNewBtn.style.display = 'block';
+            document.getElementById('autoResponseForm').reset();
+        }
+
+        async function submitForm(event) {
+            event.preventDefault();
+            
+            const trigger = document.getElementById('trigger').value;
+            const response = document.getElementById('response').value;
+            const replyType = document.getElementById('replyType').value;
+            const cooldown = document.getElementById('cooldown').value;
+            const allowedRoles = document.getElementById('allowedRoles').value.split(',').map(role => role.trim());
+            const disallowedRoles = document.getElementById('disallowedRoles').value.split(',').map(role => role.trim());
+
+            try {
+                const res = await fetch(`/${serverId}/auto_responder`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        trigger,
+                        response,
+                        replyType,
+                        cooldown,
+                        allowedRoles,
+                        disallowedRoles
+                    })
+                });
+
+                if (res.ok) {
+                    const result = await res.json();
+                    addAutoResponse({
+                        trigger,
+                        response,
+                        date: new Date().toLocaleDateString(),
+                        status: 'active'
+                    });
+                    closeForm();
+                    showNotification('Auto-response added successfully!', 'success');
+                } else {
+                    showNotification('Failed to add auto-response.', 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to add auto-response.', 'error');
+            }
+        }
+
+        function addAutoResponse({ trigger, response, date, status }) {
+            // Hide no responses message
+            noResponses.style.display = 'none';
+            
+            // Create new row
+            const row = document.createElement('div');
+            row.className = 'table_row';
+            row.innerHTML = `
+                <p>${trigger}</p>
+                <p>${response.length > 50 ? response.substring(0, 50) + '...' : response}</p>
+                <p><span class="status ${status}"></span> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
+                <p>${date}</p>
+                <div class="btn_box">
+                    <button class="btn_primary_small" onclick="toggleStatus('${trigger}')">${status === 'active' ? 'Disable' : 'Enable'}</button>
+                    <button class="btn_primary_small btn_delete" onclick="deleteRow('${trigger}')">Delete</button>
+                </div>
+            `;
+            
+            autoResponseTable.appendChild(row);
+        }
+
+        async function deleteRow(trigger) {
+            if (!confirm('Are you sure you want to delete this auto-response?')) return;
+            
+            try {
+                const res = await fetch(`/${serverId}/auto_responder/${trigger}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    showNotification('Auto-response deleted successfully!', 'success');
+                    fetchAutoResponses();
+                } else {
+                    const result = await res.json();
+                    showNotification(`Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to delete auto-response.', 'error');
+            }
+        }
+
+        async function toggleStatus(trigger) {
+            try {
+                const res = await fetch(`/${serverId}/auto_responder/${trigger}/toggle`, {
+                    method: 'POST'
+                });
+                
+                if (res.ok) {
+                    showNotification('Auto-response status updated!', 'success');
+                    fetchAutoResponses();
+                } else {
+                    const result = await res.json();
+                    showNotification(`Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to update auto-response status.', 'error');
+            }
+        }
+
+        async function fetchAutoResponses() {
+            try {
+                loadingSpinner.classList.remove('hidden');
+                noResponses.style.display = 'none';
+                
+                // In a real implementation, this would fetch from your API
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const mockResponses = [
+                    {
+                        trigger: "!help",
+                        response: "Here's a list of available commands: !status, !players, !ip",
+                        date: "2023-10-15",
+                        status: "active"
+                    },
+                    {
+                        trigger: "!status",
+                        response: "Server is currently online with 12/50 players",
+                        date: "2023-10-10",
+                        status: "active"
+                    },
+                    {
+                        trigger: "!website",
+                        response: "Check out our website at https://example.com",
+                        date: "2023-10-05",
+                        status: "inactive"
+                    }
+                ];
+                
+                // Clear table
+                autoResponseTable.innerHTML = '';
+                
+                if (mockResponses.length === 0) {
+                    noResponses.style.display = 'block';
+                    return;
+                }
+                
+                noResponses.style.display = 'none';
+                
+                // Add responses to table
+                mockResponses.forEach(response => {
+                    addAutoResponse(response);
+                });
+            } catch (error) {
+                console.error('Error fetching auto responses:', error);
+                showNotification('Failed to load auto responses.', 'error');
+            } finally {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        async function checkBlacklistStatus() {
+            try {
+                // In a real implementation, this would fetch from your API
+                const mockBlacklistData = {
+                    blacklisted: false,
+                    reason: ""
+                };
+                
+                if (mockBlacklistData.blacklisted) {
+                    blacklistCard.style.display = 'block';
+                    mainContent.classList.add('blur');
+                    
+                    // Disable form inputs
+                    const formInputs = document.querySelectorAll('input, select, textarea, button');
+                    formInputs.forEach(input => {
+                        input.disabled = true;
+                    });
+                    
+                    // Hide add new button
+                    addNewBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error checking blacklist status:', error);
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: var(--border-radius);
+                color: white;
+                font-weight: 500;
+                z-index: 1200;
+                box-shadow: var(--shadow);
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            // Set background color based on type
+            if (type === 'success') {
+                notification.style.backgroundColor = 'var(--success)';
+            } else if (type === 'error') {
+                notification.style.backgroundColor = 'var(--danger)';
+            } else {
+                notification.style.backgroundColor = 'var(--primary)';
+            }
+            
+            notification.textContent = message;
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease-out';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Refresh auto responses every 30 seconds
+        setInterval(fetchAutoResponses, 30000);
+    </script>
+</body>
+</html>

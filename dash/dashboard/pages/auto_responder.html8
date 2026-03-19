@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<!-- Coding by CodingNepal || www.codingnepalweb.com -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Boxicons CSS -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>ProMcBot - Auto-Responder</title>
+<style>
+      /* Import Google font - Poppins */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+:root {
+  --white-color: #fff;
+  --blue-color: #4070f4;
+  --grey-color: #707070;
+  --grey-color-light: #aaa;
+    --ggff: #f1efef;
+}
+body {
+  background-color: var(--ggff);
+  transition: all 0.5s ease;
+
+}
+body.dark {
+  background-color: #17212b;
+}
+body.dark {
+     --white-color: #1f2a35;
+    --blue-color: #fff;
+    --grey-color: #f2f2f2;
+    --grey-color-light: #aaa;
+     --ggff: #17212b;
+}
+
+.language-dropdown {
+            display: none;
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: #fff;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .language-dropdown a {
+            display: block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .language-dropdown a:hover {
+            background-color: #eee;
+        }
+#blacklist-card {
+    background: rgba(255, 69, 58, 0.9);
+    border: 2px solid rgba(255, 69, 58, 1);
+    color: white;
+    position: absolute;
+    top: 20px;
+    z-index: 100000;
+    backdrop-filter: none;
+}
+
+#blacklist-card a {
+    color: white;
+    text-decoration: underline;
+}
+/* navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  left: 0;
+  background-color: var(--white-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  z-index: 1000;
+  box-shadow: 0 0 2px var (--grey-color-light);
+justify-content: space-around;
+}
+
+.tag {
+    display: inline-block;
+    border-radius: 16em;
+    padding: 0.2em 0.5em 0.3em;
+    padding: -0.8em 0.5em -1.7em;
+    border-radius: 2px;
+    background: hsl(0deg 89.68% 63.28% / 52%);
+    color: #fff;
+    font-weight: 600;
+    margin: 0.25em 0.6em;
+}
+h1.tag {
+    margin-left: 0;
+    margin-right: 0
+}
+
+.tag-sm {
+    font-size: .7em;
+    display: inline-block;
+    letter-spacing: .15ch;
+    font-weight: 400
+}
+
+.tag-lg {
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+
+.tag-bg {
+    background: var(#454e56)
+}
+
+.tag-green,.tag-pro {
+    background: var(--green);
+    color: #fff
+}
+
+
+
+.tag-purple {
+    background: var(--purple);
+    color: #fff
+}
+
+.tag-contrast {
+    background: var(--text-color);
+    color: #a481d5;
+}
+.tag-minimum-viable-product,.tag-mvp {
+    color: #fff;
+    background-image: linear-gradient(90deg,#ff8901,#db1d5f);
+    font-weight: 700
+}
+
+.logo_item {
+  display: flex;
+  align-items: center;
+  column-gap: 10px;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--grey-color);
+}
+.navbar img {
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.search_bar {
+  height: 47px;
+  max-width: 430px;
+  width: 100%;
+}
+.search_bar input {
+  height: 100%;
+  width: 100%;
+  border-radius: 25px;
+  font-size: 18px;
+  outline: none;
+  background-color: var(--white-color);
+  color: var(--grey-color);
+  border: 1px solid var(--grey-color-light);
+  padding: 0 20px;
+}
+.navbar_content {
+  display: flex;
+  align-items: center;
+  column-gap: 25px;
+}
+.navbar_content i {
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--grey-color);
+}
+
+/* sidebar */
+.sidebar {
+  background-color: var(--white-color);
+  width: 260px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  padding: 80px 20px;
+  z-index: 100;
+  overflow-y: scroll;
+  box-shadow: 0 0 1px var(--grey-color-light);
+  transition: all 0.5s ease;
+}
+.sidebar.close {
+  padding: 60px 0;
+  width: 80px;
+}
+.sidebar::-webkit-scrollbar {
+  display: none;
+}
+    
+.menu_content {
+  position: relative;
+}
+.menu_title {
+  margin: 15px 0;
+  padding: 0 20px;
+  font-size: 18px;
+}
+.sidebar.close .menu_title {
+  padding: 6px 30px;
+}
+.menu_title::before {
+  color: var(--grey-color);
+  white-space: nowrap;
+}
+.menu_dahsboard::before {
+  content: "Dashboard";
+}
+.menu_editor::before {
+  content: "Module Settings";
+}
+.menu_setting::before {
+  content: "Other";
+}
+.sidebar.close .menu_title::before {
+  content: "";
+  position: absolute;
+  height: 2px;
+  width: 18px;
+  border-radius: 12px;
+  background: var(--grey-color-light);
+}
+.menu_items {
+  padding: 0;
+  list-style: none;
+}
+.navlink_icon {
+  position: relative;
+  font-size: 22px;
+  min-width: 50px;
+  line-height: 40px;
+  display: inline-block;
+  text-align: center;
+  border-radius: 6px;
+}
+.navlink_icon::before {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: calc(100% + 100px);
+  left: -20px;
+}
+    
+    #blacklist-card {
+    background: rgba(255, 69, 58, 0.9);
+    border: 2px solid rgba(255, 69, 58, 1);
+    color: white;
+    position: absolute;
+    top: 20px;
+    z-index: 100000;
+    backdrop-filter: none;
+}
+
+#blacklist-card a {
+    color: white;
+    text-decoration: underline;
+}
+.navlink_icon:hover {
+  background: var(--blue-color);
+}
+    .tag {
+    display: inline-block;
+    border-radius: 16em;
+    padding: 0.2em 0.5em 0.3em;
+    padding: -0.8em 0.5em -1.7em;
+    border-radius: 2px;
+    background: hsl(0deg 89.68% 63.28% / 52%);
+    color: #fff;
+    font-weight: 600;
+    margin: 0.25em 0.6em;
+}
+h1.tag {
+    margin-left: 0;
+    margin-right: 0
+}
+    .tag-lg {
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
+.sidebar .nav_link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 15px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--grey-color);
+  white-space: nowrap;
+}
+.sidebar.close .navlink {
+  display: none;
+}
+.nav_link:hover {
+  color: var(--white-color);
+  background: var(--blue-color);
+}
+.sidebar.close .nav_link:hover {
+  background: var(--white-color);
+}
+.submenu_item {
+  cursor: pointer;
+}
+.submenu {
+  display: none;
+}
+.submenu_item .arrow-left {
+  position: absolute;
+  right: 10px;
+  display: inline-block;
+  margin-right: auto;
+}
+.sidebar.close .submenu {
+  display: none;
+}
+.show_submenu ~ .submenu {
+  display: block;
+}
+.show_submenu .arrow-left {
+  transform: rotate(90deg);
+}
+.submenu .sublink {
+  padding: 15px 15px 15px 52px;
+}
+.bottom_content {
+  position: fixed;
+  bottom: 60px;
+  left: 0;
+  width: 260px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+}
+.bottom {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  left: 0;
+  justify-content: space-around;
+  padding: 18px 0;
+  text-align: center;
+  width: 100%;
+  color: var(--grey-color);
+  border-top: 1px solid var(--grey-color-light);
+  background-color: var(--white-color);
+}
+.bottom i {
+  font-size: 20px;
+}
+.bottom span {
+  font-size: 18px;
+}
+.sidebar.close .bottom_content {
+  width: 50px;
+  left: 15px;
+}
+.sidebar.close .bottom span {
+  display: none;
+}
+.sidebar.hoverable .collapse_sidebar {
+  display: none;
+}
+#sidebarOpen {
+  display: none;
+}
+@media screen and (max-width: 768px) {
+  #sidebarOpen {
+    font-size: 25px;
+    display: block;
+    margin-right: 10px;
+    cursor: pointer;
+    color: var(--grey-color);
+  }
+  .sidebar.close {
+    left: -100%;
+  }
+  .search_bar {
+    display: none;
+  }
+  .sidebar.close .bottom_content {
+    left: -100%;
+  }
+}
+</style>  </head>
+  <body>
+
+
+  
+    <!-- navbar -->
+    <nav class="navbar">
+      <div class="logo_item">
+        <i class="bx bx-menu" id="sidebarOpen"></i>
+        <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+      </div>
+
+      <div class="search_bar">
+        <input type="text" placeholder="Search" />
+      </div>
+
+      <div class="navbar_content">
+        <i class="bi bi-grid"></i>
+        <i class='bx bx-sun' id="darkLight"></i>
+<i class="bx bx-card"></i>
+        <i class='bx bx-bell' ></i>
+        <img src=${avatar} alt="" class="profile" />
+      </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar">
+      <div class="menu_content">
+        <ul class="menu_items">
+          <div class="menu_title menu_dahsboard"></div>
+          <!-- duplicate or remove this li tag if you want to add or remove navlink with submenu -->
+          
+          <!-- start -->
+          <li class="item">
+            <a href="/dashboard" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-grid-alt"></i>
+              </span>
+              <span class="navlink">Overview</span>
+          
+            </a>
+          </li>
+          <!-- end -->
+
+          <!-- start -->
+          <li class="item">
+            <a href="/membership" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-diamond"></i>
+              </span>
+              <span class="navlink">Membership</span> <span class="tag tag-new tag-lg"> New</span>
+          
+            </a>
+          </li>
+          <!-- end -->
+
+        </ul>
+
+        <ul class="menu_items">
+          <div class="menu_title menu_editor"></div>
+          <!-- duplicate these li tag if you want to add or remove navlink only -->
+          <!-- Start -->
+          <li class="item">
+            <a href="/${serverId}/auto_responder" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-paper-plane"></i>
+              </span>
+              <span class="navlink">Auto Responder</span>
+            </a>
+          </li>
+            
+              <li class="item">
+            <a href="/${serverId}/logs" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-calendar"></i>
+              </span>
+              <span class="navlink">Logs</span>
+            </a>
+          </li>
+            
+            <li class="item">
+            <a href="/${serverId}/moderation" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bxs-check-shield"></i>
+              </span>
+              <span class="navlink">Moderation</span>
+            </a>
+          </li>
+            
+              <li class="item">
+            <a href="/${serverId}/activity" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bxs-leaf"></i>
+              </span>
+              <span class="navlink">Activity</span>
+            </a>
+          </li>
+            
+          <!-- End -->
+          
+        </ul>
+        <ul class="menu_items">
+          <div class="menu_title menu_setting"></div>
+          <li class="item">
+            <a href="#" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-dock-left"></i>
+              </span>
+              <span class="navlink">Documents</span>
+            </a>
+          </li>
+          <li class="item">
+            <a href="/${serverId}/settings" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-cog"></i>
+              </span>
+              <span class="navlink">Setting</span>
+            </a>
+          </li>
+          <li class="item">
+            <a href="/api/logout" class="nav_link">
+              <span class="navlink_icon">
+                <i class="bx bx-log-out"></i>
+              </span>
+              <span class="navlink">Logout</span>
+            </a>
+          </li>
+        </ul>
+
+        <!-- Sidebar Open / Close -->
+
+        <div class="bottom_content">
+          <div class="bottom expand_sidebar">
+            <span> Expand</span>
+            <i class='bx bx-log-in' ></i>
+          </div>
+
+          <div class="bottom collapse_sidebar">
+            <span> Collapse</span>
+            <i class='bx bx-log-out'></i>
+          </div>
+        </div>
+      </div>
+
+    </nav>
+
+   
+<section class="main-content">
+    <style>
+     
+       
+        .main-content {
+            padding: 20px;
+            margin-left: 260px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .sidebar.close ~ .main-content {
+            margin-left: 80px;
+        }
+
+        h4 {
+            color: var(--grey-color);
+        }
+
+         @media screen and (min-width: 1201px) {
+            .card {
+                width: 20%;
+            }
+              .sidebar {
+            width: 260px;
+        }
+        }
+        
+        @media screen and (max-width: 1200px) {
+            .card {
+                width: 30%;
+            }
+        }
+
+        @media screen and (max-width: 992px) {
+            .card {
+                width: 45%;
+            }
+        }
+
+        @media screen and (max-width: 736px) {
+            .sidebar,
+            .sidebar.close {
+                width: 39%;
+            }
+
+            .sidebar.close ~ .main-content {
+                margin-left: 0;
+            }
+
+            .card {
+                width: 47%;
+            }
+        }
+        
+          @media screen and (max-width: 672px) {
+            .sidebar,
+            .sidebar.close {
+                width: 100%;
+            }
+
+            .sidebar.close ~ .main-content {
+                margin-left: 0;
+            }
+
+            .card {
+                width: 74%;
+            }
+        }
+
+        .navbar {
+            height: 60px;
+        }
+
+       
+
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+        }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: all 0.3s ease;
+    }
+    .main_content {
+      max-width: 500px;
+      margin: auto;
+      text-align: center;
+    }
+        
+        
+    .btn_primary {
+      background-color: #4070f4;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .btn_primary:hover {
+      background-color: #265df2;
+    }
+    .auto-response-card {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+      display: none;
+    }
+    .field {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .label_field {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .input_field {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .blur {
+      filter: blur(5px);
+    }
+    .table_content {
+      margin-top: 35px;
+      padding-bottom: 20px;
+    }
+    .table_header {
+      display: grid;
+      grid-template-columns: 1.5fr 1.5fr 1fr 1.5fr 1fr;
+      padding: 0 20px;
+    }
+    .table_header p {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--grey-color-light);
+    }
+    .table_body {
+      margin: 10px 0 0;
+    }
+    .table_row {
+      display: grid;
+      grid-template-columns: 1.5fr 1.5fr 1fr 1.5fr 1fr;
+      border-radius: 10px;
+      padding: 15px 20px;
+      background-color: var(--white-color);
+      box-shadow: 0 0 2px var(--grey-color-light);
+    }
+    .table_row:not(:last-child) {
+      margin-bottom: 15px;
+    }
+    .table_row p {
+      color: var(--grey-color);
+    }
+    .table_row span {
+      color: var(--grey-color-light);
+      font-size: 14px;
+    }
+    .status {
+      display: inline-block;
+      height: 12px;
+      width: 12px;
+      background-color: var(--grey-color-light);
+      border-radius: 50%;
+    }
+    .status.active {
+      background-color: var(--blue-color);
+    }
+    .status.inactive {
+      background-color: #ff3f3f;
+    }
+    .status.completed {
+      background-color: #20bd71;
+    }
+    .btn_box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      column-gap: 15px;
+    }
+    .btn_primary_small {
+      height: 40px;
+      width: 100%;
+      border: none;
+      outline: none;
+      color: var(--white-color);
+      font-size: 15px;
+      font-weight: 500;
+      border-radius: 12px;
+      background-color: var(--blue-color);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn_primary_small:hover {
+      background-color: #265df2;
+    }
+    .btn_delete {
+      background-color: #ff3f3f;
+    }
+    .btn_delete:hover {
+      background-color: #ff1a1a;
+    }
+  </style>
+
+  <div class="main_content" id="mainContent">
+    <button class="btn_primary" id="addNewBtn" onclick="showAutoResponderForm()">Add New</button>
+    <div id="autoResponseList" class="table_content" style="display: none;">
+      <div class="table_header">
+        <p>Trigger</p>
+        <p>Response</p>
+        <p>Status</p>
+        <p>Date</p>
+        <p>Actions</p>
+      </div>
+      <div class="table_body" id="autoResponseTable"></div>
+    </div>
+  </div>
+
+  <div class="auto-response-card" id="autoResponseCard">
+    <form id="autoResponseForm" onsubmit="submitForm(event)">
+      <div class="field">
+        <label for="trigger" class="label_field">Trigger</label>
+        <input type="text" id="trigger" class="input_field" placeholder="Enter trigger word or phrase" required>
+      </div>
+      <div class="field">
+        <label for="response" class="label_field">Response</label>
+        <input type="text" id="response" class="input_field" placeholder="Enter auto-response" required>
+      </div>
+      <div class="field">
+        <label for="replyType" class="label_field">Reply Type</label>
+        <select id="replyType" class="input_field">
+          <option value="message">Message</option>
+          <option value="reply">Reply</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="allowedRoles" class="label_field">Allowed Roles (comma separated)</label>
+        <input type="text" id="allowedRoles" class="input_field" placeholder="Enter role IDs (leave empty for all)">
+      </div>
+      <div class="field">
+        <label for="disallowedRoles" class="label_field">Disallowed Roles (comma separated)</label>
+        <input type="text" id="disallowedRoles" class="input_field" placeholder="Enter role IDs (leave empty for none)">
+      </div>
+      <button type="submit" class="btn_primary">Add</button>
+    </form>
+  </div>
+
+  <script>
+    const serverId = ${serverId}; // Replace this with actual serverId
+
+    function showAutoResponderForm() {
+      document.getElementById('mainContent').classList.add('blur');
+      document.getElementById('autoResponseCard').style.display = 'block';
+      document.getElementById('addNewBtn').style.display = 'none';
+    }
+
+    async function submitForm(event) {
+      event.preventDefault();
+
+      const trigger = document.getElementById('trigger').value;
+      const response = document.getElementById('response').value;
+      const replyType = document.getElementById('replyType').value;
+      const allowedRoles = document.getElementById('allowedRoles').value.split(',').map(role => role.trim());
+      const disallowedRoles = document.getElementById('disallowedRoles').value.split(',').map(role => role.trim());
+
+      try {
+        const res = await fetch(`/${serverId}/auto_responder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ trigger, response, replyType, allowedRoles, disallowedRoles })
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          addAutoResponse(result);
+          alert('Auto-response added successfully!');
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        alert('Failed to add auto-response.');
+      }
+
+      document.getElementById('mainContent').classList.remove('blur');
+      document.getElementById('autoResponseCard').style.display = 'none';
+      document.getElementById('addNewBtn').style.display = 'block';
+    }
+
+    function addAutoResponse({ trigger, response, date }) {
+      var table = document.getElementById("autoResponseTable");
+      var row = document.createElement("div");
+      row.className = "table_row";
+      row.innerHTML = `
+        <p>${trigger}</p>
+        <p>${response}</p>
+        <p><span class="status active"></span> Active</p>
+        <p>soon</p>
+        <div class="btn_box">
+          <button class="btn_primary_small btn_delete" onclick="deleteRow('${trigger}')">Delete</button>
+        </div>
+      `;
+      table.appendChild(row);
+      document.getElementById("autoResponseList").style.display = 'block';
+      document.getElementById("trigger").value = "";
+      document.getElementById("response").value = "";
+      document.getElementById("replyType").value = "message";
+      document.getElementById("allowedRoles").value = "";
+      document.getElementById("disallowedRoles").value = "";
+    }
+
+    async function deleteRow(trigger) {
+      try {
+        const res = await fetch(`/${serverId}/auto_responder/${trigger}`, {
+          method: 'DELETE'
+        });
+        const result = await res.json();
+        if (res.ok) {
+          alert('Auto-response deleted successfully!');
+          fetchAutoResponses();
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        alert('Failed to delete auto-response.');
+      }
+    }
+
+    async function fetchAutoResponses() {
+      try {
+        const res = await fetch(`/${serverId}/auto_responderr`);
+        const autoResponses = await res.json();
+
+        // Clear the table before adding new rows
+        const table = document.getElementById("autoResponseTable");
+        table.innerHTML = "";
+
+        await autoResponses.forEach(({ trigger, response, date }) => {
+          addAutoResponse({ trigger, response, date });
+        });
+
+        if (autoResponses.length === 0) {
+          document.getElementById('autoResponseList').style.display = 'none';
+          document.getElementById('addNewBtn').style.display = 'block';
+        } else {
+          document.getElementById('autoResponseList').style.display = 'block';
+          document.getElementById('addNewBtn').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error fetching auto responses:', error);
+      }
+    }
+
+    fetchAutoResponses();
+    setInterval(fetchAutoResponses, 60000); // Update every 30 seconds
+      
+  
+  </script>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const serverId = window.location.pathname.split('/')[1];
+              const blacklistResponse = await fetch(`/api/blacklist/${serverId}`);
+            const blacklistData = await blacklistResponse.json();
+            if (blacklistData.blacklisted) {
+                document.getElementById('blacklist-card').classList.remove('hidden');
+                document.getElementById('content').classList.add('blur');
+                document.querySelectorAll('.card input, .card select, .card button').forEach(el => el.disabled = true);
+            }
+
+            const serverTypeSelect = document.getElementById('serverType');
+            const javaSettings = document.getElementById('javaSettings');
+            const bedrockSettings = document.getElementById('bedrockSettings');
+
+            serverTypeSelect.addEventListener('change', () => {
+                if (serverTypeSelect.value === 'java') {
+                    javaSettings.classList.remove('hidden');
+                    bedrockSettings.classList.add('hidden');
+                } else if (serverTypeSelect.value === 'bedrock') {
+                    javaSettings.classList.add('hidden');
+                    bedrockSettings.classList.remove('hidden');
+                }
+            });
+        });
+    </script>
+
+
+
+    <!-- JavaScript -->
+    <script>const body = document.querySelector("body");
+const darkLight = document.querySelector("#darkLight");
+const sidebar = document.querySelector(".sidebar");
+const submenuItems = document.querySelectorAll(".submenu_item");
+const sidebarOpen = document.querySelector("#sidebarOpen");
+const sidebarClose = document.querySelector(".collapse_sidebar");
+const sidebarExpand = document.querySelector(".expand_sidebar");
+sidebarOpen.addEventListener("click", () => sidebar.classList.toggle("close"));
+
+sidebarClose.addEventListener("click", () => {
+  sidebar.classList.add("close", "hoverable");
+});
+sidebarExpand.addEventListener("click", () => {
+  sidebar.classList.remove("close", "hoverable");
+});
+
+/*sidebar.addEventListener("mouseenter", () => {
+  if (sidebar.classList.contains("hoverable")) {
+    sidebar.classList.remove("close");
+  }
+});
+sidebar.addEventListener("mouseleave", () => {
+  if (sidebar.classList.contains("hoverable")) {
+    sidebar.classList.add("close");
+  }
+});*/
+
+// تطبيق الوضع الداكن عند تحميل الصفحة إذا تم اختياره مسبقًا
+document.addEventListener('DOMContentLoaded', () => {
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  if (currentTheme === 'dark') {
+    body.classList.add('dark');
+    darkLight.classList.replace("bx-sun", "bx-moon");
+  }
+});
+
+// تبديل الوضع الداكن والفاتح عند النقر على الزر
+darkLight.addEventListener("click", () => {
+  body.classList.toggle('dark');
+  if (body.classList.contains('dark')) {
+    localStorage.setItem('theme', 'dark');
+    darkLight.classList.replace("bx-sun", "bx-moon");
+  } else {
+    localStorage.setItem('theme', 'light');
+    darkLight.classList.replace("bx-moon", "bx-sun");
+  }
+});
+
+submenuItems.forEach((item, index) => {
+  item.addEventListener("click", () => {
+    const isExpanded = item.classList.toggle("show_submenu");
+    if (isExpanded) {
+      localStorage.setItem('activeSubmenu', index);
+    } else if (parseInt(localStorage.getItem('activeSubmenu')) === index) {
+      localStorage.removeItem('activeSubmenu');
+    }
+
+   document.addEventListener('DOMContentLoaded', () => {
+  const currentTheme = localStorage.getItem('activeSubmenu') || index;
+  if (currentTheme === 'activeSubmenu') {
+    body.classList.add('activeSubmenu');
+    darkLight.classList.replace("activeSubmenu", "activeSubmenu");
+  }
+});
+      
+  });
+});
+
+// تطبيق حالة القائمة الفرعية المحفوظة
+document.addEventListener('DOMContentLoaded', () => {
+  const activeSubmenuIndex = parseInt(localStorage.getItem('activeSubmenu'));
+  if (!isNaN(activeSubmenuIndex)) {
+    const activeSubmenu = submenuItems[activeSubmenuIndex];
+    if (activeSubmenu) {
+      activeSubmenu.classList.add("show_submenu");
+    }
+  }
+});
+
+if (window.innerWidth < 768) {
+  sidebar.classList.add("close");
+} else {
+  sidebar.classList.remove("close");
+}
+
+//new code
+</script>
+    
+  </body>
+</html>
+
+
+  
+ 

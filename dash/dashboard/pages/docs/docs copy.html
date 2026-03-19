@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism-tomorrow.min.css">
+    <style>
+        body.dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass:hover {
+            backdrop-filter: blur(12px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .category {
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .category-name {
+            padding: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-list {
+            padding-left: 1rem;
+        }
+
+        .doc-card {
+            border: 1px solid;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .doc-card .header {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-card .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.5rem;
+            cursor: pointer;
+        }
+
+        pre {
+            position: relative;
+            padding-top: 2rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.5rem;
+            cursor: pointer;
+        }
+
+        .markdown-content h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-content h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-content h3 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .markdown-content p {
+            margin-bottom: 1rem;
+        }
+
+        .command-card {
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .command-header {
+            background: #2d3748;
+            color: white;
+            padding: 0.5rem;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .command-body {
+            padding: 0.5rem;
+        }
+
+        .command-footer {
+            background: #2d3748;
+            color: white;
+            padding: 0.5rem;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .highlighted {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .blur-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(20px);
+            z-index: -1;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .notification {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        .get-card {
+            background-color: #03a9f482;
+            border-color: #3182ce;
+        }
+
+        .post-card {
+            background-color: #fefcbf;
+            border-color: #d69e2e;
+        }
+
+        .note-card {
+            background-color: #c6f6d5;
+            border-color: #38a169;
+        }
+
+        .example-card {
+            background-color: #bee3f8;
+            border-color: #3182ce;
+        }
+
+        .js-card {
+            background-color: #fbd38d;
+            border-color: #dd6b20;
+        }
+
+        .shell-card {
+            background-color: #fed7e2;
+            border-color: #d53f8c;
+        }
+    </style>
+</head>
+
+<body class="dark-mode min-h-screen flex flex-col items-center">
+    <div class="blur-background"></div>
+    <div class="navbar glass w-full p-4 flex items-center justify-between">
+        <h1 class="text-3xl font-bold">Docs</h1>
+        <button id="theme-toggle" class="p-2 rounded">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <div class="container flex flex-grow w-full max-w-7xl mt-4">
+        <div id="sidebar" class="sidebar glass p-4 w-1/4">
+            <!-- Sidebar content here -->
+        </div>
+        <div id="content" class="content glass p-4 w-3/4 ml-4 markdown-content">
+            <!-- Content will be loaded here -->
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.getElementById('content');
+            const themeToggle = document.getElementById('theme-toggle');
+                    const owner = '1Dmar'; // استبدلها باسم المستخدم الخاص بك في GitHub
+            const repo = 'PelicanDocs'; // استبدلها باسم المستودع الخاص بك في GitHub
+            const docsPath = 'docs';
+
+            const converter = new showdown.Converter();
+            converter.setOption('tables', true);
+            converter.setOption('tasklists', true);
+
+            function addCopyButtons() {
+                document.querySelectorAll('pre').forEach(pre => {
+                    if (!pre.querySelector('.copy-btn')) {
+                        const button = document.createElement('button');
+                        button.textContent = 'Copy';
+                        button.classList.add('copy-btn');
+                        button.addEventListener('click', () => {
+                            navigator.clipboard.writeText(pre.innerText).then(() => {
+                                button.textContent = 'Copied!';
+                                setTimeout(() => button.textContent = 'Copy', 2000);
+                            });
+                        });
+                        pre.appendChild(button);
+                    }
+                });
+            }
+
+            function loadMarkdown(path) {
+                fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${path}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Network response was not ok: ${response.statusText}`);
+                        }
+                        return response.text();
+                    })
+                    .then(text => {
+                        const htmlContent = converter.makeHtml(text);
+                        content.innerHTML = htmlContent;
+                        Prism.highlightAll();
+                        addCopyButtons();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching the markdown file:', error);
+                        content.innerHTML = '<p>Something went wrong! ' + error.message + '</p>';
+                    });
+            }
+
+            fetch(`/api/docs`)
+                .then(response => response.json())
+                .then(categories => {
+                    // Add priority docs first
+                    categories[0].forEach(file => {
+                        fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`)
+                            .then(response => response.json())
+                            .then(docs => {
+                                docs.forEach(doc => {
+                                    const fileItem = document.createElement('li');
+                                    const fileLink = document.createElement('a');
+                                    fileLink.textContent = doc.name.replace(/^\d+-/, ''); // Remove numbers from name
+                                    fileLink.href = `#`;
+                                    fileLink.addEventListener('click', (event) => {
+                                        event.preventDefault();
+                                        loadMarkdown(doc.path);
+                                    });
+                                    fileItem.appendChild(fileLink);
+                                    sidebar.appendChild(fileItem);
+                                });
+                            });
+                    });
+
+                    // Add other categories
+                    for (const category in categories) {
+                        if (category !== '0' && category !== 'final') {
+                            const categoryDiv = document.createElement('div');
+                            categoryDiv.classList.add('category');
+
+                            const categoryHeader = document.createElement('div');
+                            categoryHeader.classList.add('category-name');
+                            categoryHeader.textContent = category;
+                            categoryHeader.addEventListener('click', () => {
+                                const fileList = categoryDiv.querySelector('.file-list');
+                                fileList.classList.toggle('hidden');
+                            });
+
+                            categoryDiv.appendChild(categoryHeader);
+
+                            const fileList = document.createElement('ul');
+                            fileList.classList.add('file-list', 'hidden');
+
+                            categories[category].forEach(file => {
+                                fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`)
+                                    .then(response => response.json())
+                                    .then(docs => {
+                                        docs.forEach(doc => {
+                                            const fileItem = document.createElement('li');
+                                            const fileLink = document.createElement('a');
+                                            fileLink.textContent = doc.name.replace(/^\d+-/, ''); // Remove numbers from name
+                                            fileLink.href = `#`;
+                                            fileLink.addEventListener('click', (event) => {
+                                                event.preventDefault();
+                                                loadMarkdown(doc.path);
+                                            });
+                                            fileItem.appendChild(fileLink);
+                                            fileList.appendChild(fileItem);
+                                        });
+                                    });
+                            });
+
+                            categoryDiv.appendChild(fileList);
+                            sidebar.appendChild(categoryDiv);
+                        }
+                    }
+
+                    // Add final docs
+                    categories.final.forEach(file => {
+                        fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file.path}`)
+                            .then(response => response.json())
+                            .then(docs => {
+                                docs.forEach(doc => {
+                                    const fileItem = document.createElement('li');
+                                    const fileLink = document.createElement('a');
+                                    fileLink.textContent = doc.name.replace(/^\d+-/, ''); // Remove numbers from name
+                                    fileLink.href = `#`;
+                                    fileLink.addEventListener('click', (event) => {
+                                        event.preventDefault();
+                                        loadMarkdown(doc.path);
+                                    });
+                                    fileItem.appendChild(fileLink);
+                                    sidebar.appendChild(fileItem);
+                                });
+                            });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching the list of files:', error);
+                    sidebar.innerHTML = '<p>Failed to load documentation categories. ' + error.message + '</p>';
+                });
+
+            function createCard(type, content) {
+                const card = document.createElement('div');
+                card.classList.add('doc-card');
+
+                if (type === 'Get') {
+                    card.classList.add('get-card');
+                } else if (type === 'Post') {
+                    card.classList.add('post-card');
+                } else if (type === 'Note') {
+                    card.classList.add('note-card');
+                } else if (type === 'Example') {
+                    card.classList.add('example-card');
+                } else if (type === 'JS') {
+                    card.classList.add('js-card');
+                } else if (type === 'Shell') {
+                    card.classList.add('shell-card');
+                }
+
+                const header = document.createElement('div');
+                header.classList.add('header');
+                header.textContent = type;
+
+                const body = document.createElement('div');
+                body.innerHTML = content;
+
+                card.appendChild(header);
+                card.appendChild(body);
+
+                return card;
+            }
+
+           /* function fetchDocs() {
+                fetch('/api/docs')
+                    .then(response => response.json())
+                    .then(data => {
+                        for (const category in data) {
+                            const categoryDiv = document.createElement('div');
+                            categoryDiv.classList.add('category');
+
+                            const categoryNameDiv = document.createElement('div');
+                            categoryNameDiv.classList.add('category-name');
+                            categoryNameDiv.textContent = category;
+                            categoryNameDiv.addEventListener('click', () => {
+                                const fileList = categoryDiv.querySelector('.file-list');
+                                fileList.classList.toggle('hidden');
+                            });
+
+                            const fileList = document.createElement('div');
+                            fileList.classList.add('file-list');
+
+                            data[category].forEach(file => {
+                                const fileItem = document.createElement('div');
+                                fileItem.classList.add('file-item');
+                                fileItem.textContent = file.name;
+                                fileItem.addEventListener('click', () => {
+                                    loadMarkdown(file.path);
+                                });
+                                fileList.appendChild(fileItem);
+                            });
+
+                            categoryDiv.appendChild(categoryNameDiv);
+                            categoryDiv.appendChild(fileList);
+                            sidebar.appendChild(categoryDiv);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching docs:', error);
+                    });
+            }*/
+
+            fetchDocs();
+
+            // Load initial markdown file or any specific file from URL hash
+            const initialPath = location.hash ? location.hash.substring(1).replace(/_/g, '/') : `${docsPath}/ONE-*/Introduction-1.md`;
+            loadMarkdown(initialPath);
+
+            // Toggle theme
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+            });
+        });
+    </script>
+</body>
+
+</html>

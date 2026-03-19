@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>ProMcBot</title>
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+
+    /* ==== Global & Glassmorphism ==== */
+
+    body {
+
+      margin:0;
+
+      font-family: 'Inter', sans-serif;
+
+      background: #f0f2f5;
+
+      color: #333;
+
+    }
+
+    .glass {
+
+      background: rgba(255,255,255,0.4);
+
+      backdrop-filter: blur(16px);
+
+      border-radius: 12px;
+
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+
+    }
+
+    a { text-decoration:none; color: inherit; }
+
+    /* ==== Header ==== */
+
+    header {
+
+      position: sticky; top:0; z-index:100;
+
+      display: flex; align-items:center; justify-content:space-between;
+
+      padding: 1rem 2rem;
+
+    }
+
+    nav a { margin: 0 1rem; font-weight:500; }
+
+    #lang-select {
+
+      background: rgba(255,255,255,0.6);
+
+      border: none; padding: 0.4rem; border-radius: 6px;
+
+      font-size: 0.9rem;
+
+    }
+
+    /* ==== Hero ==== */
+
+    .hero {
+
+      text-align: center; padding: 4rem 1rem;
+
+    }
+
+    .badge {
+
+      display: inline-flex;
+
+      align-items:center;
+
+      padding: .25rem .75rem;
+
+      border-radius: 999px;
+
+      font-size: .85rem;
+
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+
+      backdrop-filter: blur(12px);
+
+      margin-bottom: 1rem;
+
+    }
+
+    .badge .dot { 
+
+      width: .6rem; height: .6rem; border-radius:50%;
+
+      background: #22c55e; margin-right:.5rem;
+
+    }
+
+    h1 { font-size: 2.5rem; line-height:1.2; margin: .5rem 0; }
+
+    .highlight { color: #635bff; }
+
+    .hero p { color: #555; font-size:1.1rem; max-width:600px; margin: .5rem auto 2rem; }
+
+    .btn {
+
+      display:inline-block;
+
+      padding: .9rem 2rem;
+
+      border:none;
+
+      border-radius:8px;
+
+      font-size:1rem;
+
+      font-weight:600;
+
+      cursor:pointer;
+
+      transition:transform .2s;
+
+    }
+      
+       .btn1 {
+     /* display:inline-block;*/
+    padding: .2rem 0.25rem;
+      border:none;
+      border-radius:5px;
+    /*  font-size:1rem;*/
+   /*   font-weight:600;*/
+      cursor:pointer;
+      transition:transform .2s;
+
+    }
+
+    .btn-primary {
+
+      background: rgba(99,91,255,0.85);
+
+      color:#fff;
+
+      backdrop-filter: blur(12px);
+
+    }
+
+    .btn-primary:hover { transform:scale(1.03) }
+
+    /* ==== Best Server of the Month Card ==== */
+
+    .monthly-card {
+
+      margin: 2rem auto 0;
+
+      padding: 1.75rem;
+
+      max-width: 340px;
+
+      text-align: center;
+
+    }
+
+    .monthly-card h3 {
+
+      margin-bottom: 0.75rem;
+
+      font-size: 1.3rem;
+
+    }
+
+    .monthly-card p {
+
+      font-size: 1rem;
+
+      color: #555;
+
+    }
+
+    /* ==== FAQ ==== */
+
+    #faq { max-width: 700px; margin:3rem auto; padding:0 1rem; }
+
+    .faq-item { margin-bottom:1rem; }
+
+    .faq-q {
+
+      cursor:pointer;
+
+      padding:1rem;
+
+      border:1px solid rgba(0,0,0,0.1);
+
+      border-radius:8px;
+
+    }
+
+    .faq-q:hover { background: rgba(0,0,0,0.03) }
+
+    .faq-a {
+
+      max-height:0; overflow:hidden;
+
+      transition: max-height .3s ease;
+
+      padding:0 1rem;
+
+      border-left:2px solid #635bff;
+
+      margin-top:.5rem;
+
+    }
+
+    .faq-a.open { 
+
+      max-height:200px; 
+
+      padding:1rem;
+
+    }
+
+    /* ==== Footer ==== */
+
+    footer {
+
+      text-align:center;
+
+      padding:1.5rem 1rem;
+
+      font-size:.9rem;
+
+      color:#666;
+
+    }
+
+    /* ==== Cookie Banner ==== */
+
+    #cookie-banner {
+
+      position: fixed; bottom:1rem; left:50%; transform:translateX(-50%);
+
+      background:#fff; padding:1rem 1.5rem; border-radius:8px;
+
+      box-shadow:0 4px 16px rgba(0,0,0,0.1);
+
+      display:flex; align-items:center; gap:1rem;
+
+      max-width:90%; font-size:.95rem;
+
+    }
+
+    #cookie-banner button {
+
+      padding:.5rem 1rem;
+
+      border:none; border-radius:6px;
+
+      background:#f5c32c; font-weight:600;
+
+      cursor:pointer;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- HEADER -->
+
+  <header class="glass">
+
+    <div class="logo"><strong>ProMcBot</strong></div>
+
+    <nav>
+
+      <a href="#hero" data-key="nav_home">Home</a>
+
+      <a href="#faq" data-key="nav_faq">FAQ</a>
+        
+<a id="authButton" href="/loading-auth" class="btn1 btn-primary">Login</a>
+    
+</nav>
+    <!--<select id="lang-select">
+
+      <option value="en">EN</option>
+
+      <option value="es">ES</option>
+
+      <option value="fr">FR</option>
+
+      <option value="ar">AR</option>
+
+    </select>-->
+
+  </header>
+
+  <!-- HERO -->
+
+  <section id="hero" class="hero">
+
+    <div class="badge glass">
+
+      <span class="dot"></span>
+
+      <span data-key="badge_new">New</span>
+
+      &nbsp;<span data-key="badge_tool">Minecraft ProMcTurbo Plugin</span>
+
+    </div>
+
+    <h1>
+
+      <span data-key="hero_line1">Link your</span><br>
+
+      <span class="highlight" data-key="hero_highlight">Discord & Minecraft</span><br>
+
+      <span data-key="hero_line2">servers seamlessly</span>
+
+    </h1>
+
+    <p data-key="hero_sub">
+
+      Manage your Minecraft servers directly from Discord with ease and control.
+
+    </p>
+
+    <button class="btn btn-primary" data-key="hero_cta">Get Started</button>
+
+    <!-- Best Server of the Month Card -->
+
+    <div class="glass monthly-card">
+
+      <h3 data-key="monthly_title">Best Server of the Month</h3>
+
+      <p data-key="monthly_name"><strong>MinecraftHub</strong> — Voted by you!</p>
+
+    </div>
+
+  </section>
+
+  <!-- FAQ -->
+
+  <section id="faq">
+
+    <h2 data-key="faq_title">Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q1">What is ProMcBot?</div>
+
+      <div class="faq-a" data-key="faq_a1">
+
+        ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control.
+
+      </div>
+
+    </div>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q2">How do I connect my server?</div>
+
+      <div class="faq-a" data-key="faq_a2">
+
+        Invite ProMcBot to Discord, run the /link command, and follow the prompts to authorize your Minecraft server.
+
+      </div>
+
+    </div>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q3">Is it free?</div>
+
+      <div class="faq-a" data-key="faq_a3">
+
+        Yes—ProMcBot’s core linking functionality is completely free, with optional premium addons coming soon.
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    © ProMcBot 2024–<span id="year"></span>
+
+  </footer>
+
+  <!-- COOKIE BANNER -->
+
+  <div id="cookie-banner" hidden>
+
+    <span data-key="cookie_text">We use cookies to enhance your experience.</span>
+
+    <button id="cookie-ok" data-key="cookie_btn">Okay</button>
+
+  </div>
+
+  <script>
+const authButton = document.getElementById('authButton');
+    // --- Cookie helpers ---
+
+    function setCookie(name, value, days=365) {
+
+      const expires = new Date(Date.now() + days*864e5).toUTCString();
+
+      document.cookie = name+'='+encodeURIComponent(value)+'; expires='+expires+'; path=/';
+
+    }
+
+    function getCookie(name) {
+
+      return document.cookie.split('; ').reduce((r, v) => {
+
+        const parts = v.split('=');
+
+        return parts[0] === name ? decodeURIComponent(parts[1]) : r
+
+      }, '');
+
+    }
+
+    // --- Auto-update year ---
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // --- Translations map (same as before) ---
+
+    const translations = {
+
+      /* ... your existing translations object ... */
+
+    };
+
+    // --- Internationalization via cookies ---
+
+    const langSelect = document.getElementById('lang-select');
+
+    function applyTranslations(lang) {
+
+      document.querySelectorAll('[data-key]').forEach(el => {
+
+        const key = el.getAttribute('data-key');
+
+        if (translations[lang] && translations[lang][key]) {
+
+          el.innerHTML = translations[lang][key];
+
+        }
+
+      });
+
+    }
+
+    langSelect.addEventListener('change', () => {
+
+      setCookie('pmc_lang', langSelect.value, 365);
+
+      applyTranslations(langSelect.value);
+
+    });
+
+    // on load: read cookie or default
+
+    const savedLang = getCookie('pmc_lang') || 'en';
+
+    langSelect.value = savedLang;
+
+    applyTranslations(savedLang);
+
+    // --- FAQ Accordion ---
+
+    document.querySelectorAll('.faq-q').forEach(q => {
+
+      q.addEventListener('click', () => {
+
+        q.nextElementSibling.classList.toggle('open');
+
+      });
+
+    });
+
+    // --- Cookie consent banner via cookies ---
+
+    const banner = document.getElementById('cookie-banner');
+
+    if (!getCookie('pmc_cookies_accepted')) {
+
+      banner.hidden = false;
+
+    }
+
+    document.getElementById('cookie-ok').addEventListener('click', () => {
+
+      setCookie('pmc_cookies_accepted', 'yes', 365);
+
+      banner.hidden = true;
+
+    });
+
+    // --- Smooth scroll for nav links ---
+
+    document.querySelectorAll('nav a').forEach(a => {
+
+      a.addEventListener('click', e => {
+
+        e.preventDefault();
+
+        document.querySelector(a.getAttribute('href'))
+
+                .scrollIntoView({ behavior: 'smooth' });
+
+      });
+
+    });
+      
+      
+  </script>
+
+    <script>document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const response = await fetch('/callback/check/userData');
+        const data = await response.json();
+        if (data.authenticated) {
+          // Show user dropdown
+          
+          const loginBtn = document.getElementById('loginButton');
+       
+          // Populate user data
+         document.getElementById('authButton').href = '/dashboard';
+          document.getElementById('authButton').textContent = data.user.username;
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      }
+    });
+</script>
+</body>
+
+</html>
+

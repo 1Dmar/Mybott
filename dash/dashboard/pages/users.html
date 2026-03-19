@@ -1,0 +1,2813 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ProMcBot - User Profile</title>
+
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <style>
+
+        /* Import Google font - Poppins */
+
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+
+        
+
+        * {
+
+            margin: 0;
+
+            padding: 0;
+
+            box-sizing: border-box;
+
+            font-family: "Poppins", sans-serif;
+
+        }
+
+        
+
+        :root {
+
+            --white-color: #fff;
+
+            --blue-color: #5865F2;
+
+            --grey-color: #707070;
+
+            --grey-color-light: #aaa;
+
+            --ggff: #f1efef;
+
+            --primary-color: #5865F2;
+
+            --success-color: #57F287;
+
+            --warning-color: #FEE75C;
+
+            --danger-color: #ED4245;
+
+            --dark-bg: #23272A;
+
+            --dark-card: #2b2d31;
+
+            --discord-purple: #5865F2;
+
+            --sidebar-width: 260px;
+
+            --discord-blurple: #5865F2;
+
+            --discord-green: #57F287;
+
+            --discord-yellow: #FEE75C;
+
+            --discord-red: #ED4245;
+
+            --discord-dark: #23272A;
+
+            --discord-darker: #1e2124;
+
+        }
+
+        
+
+        body {
+
+            background-color: var(--ggff);
+
+            transition: all 0.5s ease;
+
+            color: var(--grey-color);
+
+            min-height: 100vh;
+
+            display: flex;
+
+            flex-direction: column;
+
+        }
+
+        
+
+        body.dark {
+
+            background-color: var(--dark-bg);
+
+            --white-color: #2b2d31;
+
+            --blue-color: #5865F2;
+
+            --grey-color: #f2f2f2;
+
+            --grey-color-light: #aaa;
+
+            --ggff: #23272A;
+
+        }
+
+        /* Navbar - Fixed */
+
+        .navbar {
+
+            position: fixed;
+
+            top: 0;
+
+            width: 100%;
+
+            left: 0;
+
+            background-color: var(--white-color);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 15px 30px;
+
+            z-index: 1000;
+
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+            height: 70px;
+
+        }
+
+        .logo_item {
+
+            display: flex;
+
+            align-items: center;
+
+            column-gap: 10px;
+
+            font-size: 22px;
+
+            font-weight: 500;
+
+            color: var(--grey-color);
+
+        }
+
+        
+
+        .navbar img {
+
+            width: 35px;
+
+            height: 35px;
+
+            object-fit: cover;
+
+            border-radius: 50%;
+
+        }
+
+        
+
+        .search_bar {
+
+            height: 47px;
+
+            max-width: 430px;
+
+            width: 100%;
+
+        }
+
+        
+
+        .search_bar input {
+
+            height: 100%;
+
+            width: 100%;
+
+            border-radius: 25px;
+
+            font-size: 18px;
+
+            outline: none;
+
+            background-color: var(--white-color);
+
+            color: var(--grey-color);
+
+            border: 1px solid var(--grey-color-light);
+
+            padding: 0 20px;
+
+        }
+
+        
+
+        .navbar_content {
+
+            display: flex;
+
+            align-items: center;
+
+            column-gap: 25px;
+
+            position: relative;
+
+        }
+
+        
+
+        .navbar_content i {
+
+            cursor: pointer;
+
+            font-size: 20px;
+
+            color: var(--grey-color);
+
+            position: relative;
+
+        }
+
+        
+
+        .mobile-toggle {
+
+            display: none;
+
+            cursor: pointer;
+
+            font-size: 24px;
+
+            color: var(--grey-color);
+
+        }
+
+        
+
+        /* Notification badge */
+
+        .notification-badge {
+
+            position: absolute;
+
+            top: -5px;
+
+            right: -5px;
+
+            background: var(--danger-color);
+
+            color: white;
+
+            font-size: 10px;
+
+            width: 18px;
+
+            height: 18px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+        /* Dropdown menus */
+
+        .dropdown {
+
+            position: relative;
+
+            display: inline-block;
+
+        }
+
+        
+
+        .dropdown-content {
+
+            display: none;
+
+            position: absolute;
+
+            right: 0;
+
+            background-color: var(--white-color);
+
+            min-width: 220px;
+
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+
+            z-index: 1100;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+            transition: all 0.3s ease;
+
+        }
+
+        
+
+        body.dark .dropdown-content {
+
+            background-color: var(--dark-card);
+
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+
+        }
+
+        
+
+        .dropdown-content a {
+
+            color: var(--grey-color);
+
+            padding: 12px 16px;
+
+            text-decoration: none;
+
+            display: block;
+
+            transition: all 0.2s;
+
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+
+        }
+
+        
+
+        body.dark .dropdown-content a {
+
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+
+        }
+
+        
+
+        .dropdown-content a:hover {
+
+            background-color: rgba(88, 101, 242, 0.1);
+
+            color: var(--blue-color);
+
+        }
+
+        
+
+        .dropdown-content a i {
+
+            margin-right: 10px;
+
+            width: 20px;
+
+            text-align: center;
+
+        }
+
+        
+
+        .dropdown-header {
+
+            padding: 15px 16px;
+
+            font-weight: 600;
+
+            background: rgba(88, 101, 242, 0.1);
+
+            color: var(--blue-color);
+
+            border-bottom: 1px solid rgba(88, 101, 242, 0.2);
+
+        }
+
+        
+
+        body.dark .dropdown-header {
+
+            background: rgba(88, 101, 242, 0.2);
+
+        }
+
+        
+
+        .show {
+
+            display: block;
+
+            animation: fadeIn 0.3s ease-out;
+
+        }
+
+        
+
+        .notification-dropdown {
+
+            min-width: 350px;
+
+        }
+
+        
+
+        .notification-item {
+
+            display: flex;
+
+            padding: 12px 16px;
+
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+
+            cursor: pointer;
+
+            transition: all 0.2s;
+
+        }
+
+        
+
+        body.dark .notification-item {
+
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+
+        }
+
+        
+
+        .notification-item:hover {
+
+            background-color: rgba(88, 101, 242, 0.05);
+
+        }
+
+        
+
+        .notification-icon {
+
+            width: 40px;
+
+            height: 40px;
+
+            border-radius: 50%;
+
+            background: rgba(88, 101, 242, 0.1);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            margin-right: 15px;
+
+            color: var(--blue-color);
+
+            font-size: 18px;
+
+        }
+
+        
+
+        .notification-content {
+
+            flex: 1;
+
+        }
+
+        
+
+        .notification-title {
+
+            font-weight: 600;
+
+            margin-bottom: 4px;
+
+        }
+
+        
+
+        .notification-time {
+
+            font-size: 12px;
+
+            color: var(--grey-color);
+
+        }
+
+        
+
+        .view-all {
+
+            text-align: center;
+
+            padding: 12px;
+
+            font-weight: 600;
+
+            color: var(--blue-color);
+
+            cursor: pointer;
+
+        }
+
+        
+
+        /* Sidebar - Fixed Styles */
+
+        .sidebar {
+
+            background-color: var(--white-color);
+
+            width: var(--sidebar-width);
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            height: 100%;
+
+            padding: 80px 20px 20px;
+
+            z-index: 100;
+
+            overflow-y: auto;
+
+            box-shadow: 0 0 1px var(--grey-color-light);
+
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+        }
+
+        
+
+        /* Fixed tag styling */
+
+        .navlink-container {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            width: 100%;
+
+        }
+
+        
+
+        .tag {
+
+            display: inline-block;
+
+            padding: 3px 8px;
+
+            border-radius: 12px;
+
+            font-size: 0.75rem;
+
+            font-weight: 600;
+
+            margin-left: 8px;
+
+            vertical-align: middle;
+
+            line-height: 1.4;
+
+        }
+
+        
+
+        .tag-new {
+
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+
+            color: white;
+
+        }
+
+        
+
+        .tag-pro {
+
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+
+            color: #333;
+
+        }
+
+        
+
+        .tag-lg {
+
+            font-size: 0.8rem;
+
+        }
+
+        
+
+        .sidebar.close {
+
+            width: 85px;
+
+            padding: 80px 0 20px;
+
+        }
+
+        
+
+        .sidebar::-webkit-scrollbar {
+
+            display: none;
+
+        }
+
+        
+
+        .menu_content {
+
+            position: relative;
+
+        }
+
+        
+
+        .menu_title {
+
+            margin: 20px 0 10px;
+
+            padding: 0 15px;
+
+            font-size: 14px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.5px;
+
+            color: var(--grey-color-light);
+
+        }
+
+        
+
+        .sidebar.close .menu_title {
+
+            text-align: center;
+
+            padding: 15px 0;
+
+        }
+
+        
+
+        .sidebar.close .menu_title span {
+
+            display: none;
+
+        }
+
+        
+
+        .sidebar.close .menu_title::after {
+
+            content: "";
+
+            display: block;
+
+            width: 30px;
+
+            height: 2px;
+
+            background: var(--grey-color-light);
+
+            margin: 5px auto 0;
+
+        }
+
+        
+
+        .menu_items {
+
+            padding: 0;
+
+            list-style: none;
+
+        }
+
+        
+
+        .navlink_icon {
+
+            position: relative;
+
+            font-size: 22px;
+
+            min-width: 50px;
+
+            line-height: 40px;
+
+            display: inline-block;
+
+            text-align: center;
+
+            border-radius: 6px;
+
+            transition: all 0.3s;
+
+        }
+
+        
+
+        .navlink_icon::before {
+
+            content: "";
+
+            position: absolute;
+
+            height: 100%;
+
+            width: calc(100% + 100px);
+
+            left: -20px;
+
+        }
+
+        
+
+        .sidebar .nav_link {
+
+            display: flex;
+
+            align-items: center;
+
+            width: 100%;
+
+            padding: 10px 15px;
+
+            border-radius: 8px;
+
+            text-decoration: none;
+
+            color: var(--grey-color);
+
+            white-space: nowrap;
+
+            transition: all 0.2s;
+
+            margin-bottom: 5px;
+
+        }
+
+        
+
+        .sidebar.close .nav_link {
+
+            justify-content: center;
+
+        }
+
+        
+
+        .sidebar.close .navlink {
+
+            display: none;
+
+        }
+
+        
+
+        .nav_link:hover {
+
+            color: var(--white-color);
+
+            background: var(--blue-color);
+
+        }
+
+        
+
+        .nav_link:hover .navlink_icon {
+
+            color: white;
+
+        }
+
+        
+
+        .sidebar.close .nav_link:hover {
+
+            background: var(--blue-color);
+
+        }
+
+        
+
+        .sidebar.close .nav_link:hover .navlink_icon {
+
+            color: white;
+
+        }
+
+        
+
+        .bottom_content {
+
+            position: absolute;
+
+            bottom: 20px;
+
+            left: 0;
+
+            width: 100%;
+
+            cursor: pointer;
+
+            transition: all 0.5s ease;
+
+            padding: 0 20px;
+
+        }
+
+        
+
+        .bottom {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 12px 15px;
+
+            color: var(--grey-color);
+
+            border-top: 1px solid var(--grey-color-light);
+
+            background-color: var(--white-color);
+
+            border-radius: 8px;
+
+        }
+
+        
+
+        .sidebar.close .bottom {
+
+            justify-content: center;
+
+        }
+
+        
+
+        .bottom i {
+
+            font-size: 20px;
+
+        }
+
+        
+
+        .bottom span {
+
+            font-size: 16px;
+
+        }
+
+        
+
+        .sidebar.close .bottom span {
+
+            display: none;
+
+        }
+
+        
+
+        /* Main Content */
+
+        .main-content {
+
+            padding: 90px 30px 30px;
+
+            margin-left: var(--sidebar-width);
+
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+
+            flex: 1;
+
+        }
+
+        
+
+        .sidebar.close ~ .main-content {
+
+            margin-left: 85px;
+
+        }
+
+        
+
+        /* User Profile Styles */
+
+        .profile-container {
+
+            max-width: 1200px;
+
+            margin: 0 auto;
+
+            padding: 20px;
+
+        }
+
+        
+
+        .profile-banner {
+
+            height: 200px;
+
+            background-color: var(--discord-dark);
+
+            border-radius: 15px 15px 0 0;
+
+            position: relative;
+
+            background-size: cover;
+
+            background-position: center;
+
+        }
+
+        
+
+        .profile-header {
+
+            display: flex;
+
+            padding: 20px;
+
+            background: var(--white-color);
+
+            border-radius: 0 0 15px 15px;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+
+            border: 1px solid var(--grey-color-light);
+
+            position: relative;
+
+            margin-bottom: 30px;
+
+        }
+
+        
+
+        body.dark .profile-header {
+
+            background: var(--dark-card);
+
+            border-color: #36393f;
+
+        }
+
+        
+
+        .profile-avatar {
+
+            position: relative;
+
+            margin-top: -90px;
+
+            margin-right: 25px;
+
+        }
+
+        
+
+        .avatar-image {
+
+            width: 150px;
+
+            height: 150px;
+
+            border-radius: 50%;
+
+            border: 5px solid var(--white-color);
+
+            object-fit: cover;
+
+            background-color: var(--discord-blurple);
+
+        }
+
+        
+
+        body.dark .avatar-image {
+
+            border-color: var(--dark-card);
+
+        }
+
+        
+
+        .profile-info {
+
+            flex: 1;
+
+            padding: 20px 0;
+
+        }
+
+        
+
+        .username-row {
+
+            display: flex;
+
+            align-items: center;
+
+            margin-bottom: 10px;
+
+            flex-wrap: wrap;
+
+        }
+
+        
+
+        .global-name {
+
+            font-size: 2.2rem;
+
+            font-weight: 700;
+
+            margin-right: 15px;
+
+            color: var(--grey-color);
+
+        }
+
+        
+
+        .username {
+
+            font-size: 1.5rem;
+
+            color: var(--grey-color-light);
+
+            font-weight: 500;
+
+            margin-right: 15px;
+
+        }
+
+        
+
+        .user-id {
+
+            background: var(--discord-darker);
+
+            color: var(--grey-color-light);
+
+            padding: 4px 10px;
+
+            border-radius: 15px;
+
+            font-size: 0.9rem;
+
+            font-family: monospace;
+
+        }
+
+        
+
+        .badge-container {
+
+            display: flex;
+
+            gap: 10px;
+
+            margin: 15px 0;
+
+            flex-wrap: wrap;
+
+        }
+
+        
+
+        .badge {
+
+            display: flex;
+
+            align-items: center;
+
+            background: rgba(88, 101, 242, 0.1);
+
+            padding: 6px 12px;
+
+            border-radius: 20px;
+
+            font-size: 0.9rem;
+
+        }
+
+        
+
+        .badge-icon {
+
+            width: 20px;
+
+            height: 20px;
+
+            margin-right: 8px;
+
+            border-radius: 4px;
+
+        }
+
+        
+
+        .profile-stats {
+
+            display: flex;
+
+            gap: 30px;
+
+            margin-top: 20px;
+
+            flex-wrap: wrap;
+
+        }
+
+        
+
+        .stat-card {
+
+            background: var(--white-color);
+
+            border-radius: 12px;
+
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+
+            padding: 20px;
+
+            flex: 1;
+
+            min-width: 250px;
+
+            border: 1px solid var(--grey-color-light);
+
+        }
+
+        
+
+        body.dark .stat-card {
+
+            background: var(--dark-card);
+
+            border-color: #36393f;
+
+        }
+
+        
+
+        .stat-title {
+
+            font-size: 1rem;
+
+            color: var(--grey-color-light);
+
+            margin-bottom: 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+        
+
+        .stat-value {
+
+            font-size: 2.2rem;
+
+            font-weight: 700;
+
+            color: var(--blue-color);
+
+            margin-bottom: 10px;
+
+        }
+
+        
+
+        .stat-description {
+
+            font-size: 0.95rem;
+
+            color: var(--grey-color);
+
+            line-height: 1.5;
+
+        }
+
+        
+
+        .info-grid {
+
+            display: grid;
+
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+
+            gap: 20px;
+
+            margin-top: 30px;
+
+        }
+
+        
+
+        .info-card {
+
+            background: var(--white-color);
+
+            border-radius: 12px;
+
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+
+            padding: 25px;
+
+            border: 1px solid var(--grey-color-light);
+
+        }
+
+        
+
+        body.dark .info-card {
+
+            background: var(--dark-card);
+
+            border-color: #36393f;
+
+        }
+
+        
+
+        .card-title {
+
+            font-size: 1.3rem;
+
+            color: var(--blue-color);
+
+            margin-bottom: 20px;
+
+            padding-bottom: 12px;
+
+            border-bottom: 1px solid var(--grey-color-light);
+
+        }
+
+        
+
+        .info-item {
+
+            display: flex;
+
+            margin-bottom: 18px;
+
+            align-items: flex-start;
+
+        }
+
+        
+
+        .info-icon {
+
+            min-width: 36px;
+
+            height: 36px;
+
+            background: rgba(88, 101, 242, 0.1);
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            margin-right: 15px;
+
+            color: var(--blue-color);
+
+            font-size: 18px;
+
+        }
+
+        
+
+        .info-content {
+
+            flex: 1;
+
+        }
+
+        
+
+        .info-label {
+
+            font-size: 0.9rem;
+
+            color: var(--grey-color-light);
+
+            margin-bottom: 4px;
+
+        }
+
+        
+
+        .info-value {
+
+            font-size: 1.1rem;
+
+            color: var(--grey-color);
+
+            font-weight: 500;
+
+        }
+
+        
+
+        .badges-card {
+
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 15px;
+
+            margin-top: 10px;
+
+        }
+
+        
+
+        .badge-item {
+
+            background: rgba(88, 101, 242, 0.1);
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            text-align: center;
+
+            min-width: 100px;
+
+            transition: all 0.3s;
+
+        }
+
+        
+
+        .badge-item:hover {
+
+            transform: translateY(-5px);
+
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+
+        }
+
+        
+
+        .badge-item-icon {
+
+            width: 50px;
+
+            height: 50px;
+
+            margin: 0 auto 10px;
+
+            border-radius: 8px;
+
+        }
+
+        
+
+        .badge-item-name {
+
+            font-size: 0.9rem;
+
+            color: var(--grey-color);
+
+            font-weight: 500;
+
+        }
+
+        
+
+        /* Loading animation */
+
+        .loading {
+
+            display: flex;
+
+            justify-content: center;
+
+            padding: 50px;
+
+        }
+
+        
+
+        .loading-spinner {
+
+            width: 50px;
+
+            height: 50px;
+
+            border: 5px solid rgba(88, 101, 242, 0.1);
+
+            border-radius: 50%;
+
+            border-top-color: var(--blue-color);
+
+            animation: spin 1s ease-in-out infinite;
+
+        }
+
+        
+
+        .error-message {
+
+            background: var(--danger-color);
+
+            color: white;
+
+            padding: 20px;
+
+            border-radius: 12px;
+
+            text-align: center;
+
+            margin: 30px auto;
+
+            max-width: 600px;
+
+        }
+
+        
+
+        @keyframes spin {
+
+            to { transform: rotate(360deg); }
+
+        }
+
+        
+
+        @keyframes fadeIn {
+
+            from { opacity: 0; transform: translateY(10px); }
+
+            to { opacity: 1; transform: translateY(0); }
+
+        }
+
+        
+
+        /* Responsive Design */
+
+        @media screen and (max-width: 992px) {
+
+            .sidebar {
+
+                transform: translateX(-100%);
+
+                width: 280px;
+
+            }
+
+            
+
+            .sidebar.active {
+
+                transform: translateX(0);
+
+            }
+
+            
+
+            .main-content {
+
+                margin-left: 0;
+
+                padding-top: 90px;
+
+            }
+
+            
+
+            .mobile-toggle {
+
+                display: block;
+
+            }
+
+            
+
+            .sidebar.close {
+
+                transform: translateX(-100%);
+
+            }
+
+            
+
+            .sidebar.close ~ .main-content {
+
+                margin-left: 0;
+
+            }
+
+            
+
+            .profile-header {
+
+                flex-direction: column;
+
+                align-items: center;
+
+                text-align: center;
+
+            }
+
+            
+
+            .profile-avatar {
+
+                margin: -90px 0 20px 0;
+
+            }
+
+            
+
+            .username-row {
+
+                justify-content: center;
+
+            }
+
+            
+
+            .badge-container {
+
+                justify-content: center;
+
+            }
+
+        }
+
+        
+
+        @media screen and (max-width: 768px) {
+
+            .search_bar {
+
+                display: none;
+
+            }
+
+            
+
+            .notification-dropdown {
+
+                min-width: 300px;
+
+                right: -50px;
+
+            }
+
+            
+
+            .profile-stats {
+
+                flex-direction: column;
+
+            }
+
+            
+
+            .global-name {
+
+                font-size: 1.8rem;
+
+            }
+
+            
+
+            .username {
+
+                font-size: 1.2rem;
+
+            }
+
+        }
+
+        
+
+        @media screen and (max-width: 576px) {
+
+            .navbar {
+
+                padding: 15px;
+
+            }
+
+            
+
+            .notification-dropdown {
+
+                min-width: 280px;
+
+                right: -80px;
+
+            }
+
+            
+
+            .info-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <!-- navbar -->
+
+    <nav class="navbar">
+
+        <div class="logo_item">
+
+            <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+
+        </div>
+
+        <div class="search_bar">
+
+            <input type="text" placeholder="Search" />
+
+        </div>
+
+        <div class="navbar_content">
+
+            <i class="bi bi-grid"></i>
+
+            
+
+            <!-- Notifications dropdown -->
+
+            <div class="dropdown">
+
+                <i class='bx bx-bell' id="notificationBtn"></i>
+
+                <div class="notification-badge">3</div>
+
+                <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+
+                    <div class="dropdown-header">
+
+                        <i class='bx bx-bell'></i> Notifications
+
+                    </div>
+
+                    <div class="notification-item">
+
+                        <div class="notification-icon">
+
+                            <i class='bx bx-user-plus'></i>
+
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title">New Member Joined</div>
+
+                            <div class="notification-desc">JohnDoe joined your server</div>
+
+                            <div class="notification-time">5 minutes ago</div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="notification-item">
+
+                        <div class="notification-icon">
+
+                            <i class='bx bx-server'></i>
+
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title">Server Restart</div>
+
+                            <div class="notification-desc">Minecraft server will restart in 10 minutes</div>
+
+                            <div class="notification-time">1 hour ago</div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="notification-item">
+
+                        <div class="notification-icon">
+
+                            <i class='bx bx-crown'></i>
+
+                        </div>
+
+                        <div class="notification-content">
+
+                            <div class="notification-title">Premium Expiring</div>
+
+                            <div class="notification-desc">Your premium subscription ends in 3 days</div>
+
+                            <div class="notification-time">2 hours ago</div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="view-all">
+
+                        View All Notifications
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            
+
+            <i class='bx bx-sun' id="darkLight"></i>
+
+            
+
+            <!-- User dropdown -->
+
+            <div class="dropdown">
+
+                <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" class="profile" id="userBtn" />
+
+                <div class="dropdown-content" id="userDropdown">
+
+                    <div class="dropdown-header">
+
+                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" class="profile" style="width: 40px; height: 40px; margin-right: 10px;" />
+
+                        Admin User
+
+                    </div>
+
+                    <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+
+                    <a href="/account"><i class='bx bx-cog'></i> Account Settings</a>
+
+                    <a href="#"><i class='bx bx-shield-alt-2'></i> Security Settings</a>
+
+                    <a href="#"><i class='bx bx-lock-alt'></i> Privacy & Security</a>
+
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px;">
+
+                        <a href="/api/logout" style="color: var(--danger-color);"><i class='bx bx-log-out'></i> Logout</a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- sidebar -->
+
+    <nav class="sidebar" id="sidebar">
+
+        <div class="menu_content">
+
+            <ul class="menu_items">
+
+                <div class="menu_title"><span>Dashboard</span></div>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-stats"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Overview</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-slider-alt"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Configuration</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-crown"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Premium</span>
+
+                            <span class="tag tag-new">New</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+            <ul class="menu_items">
+
+                <div class="menu_title"><span>Module Settings</span></div>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-bot"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Auto Responder</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-palette"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Roles</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-notepad"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Logs</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-chat"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Activity</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-message-square-edit"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Embeds</span>
+
+                            <span class="tag tag-pro">Pro</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-shield-alt-2"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Moderation</span>
+
+                            <span class="tag tag-pro">Pro</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+            <ul class="menu_items">
+
+                <div class="menu_title"><span>Other</span></div>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-cube-alt"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Invite Me</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="/account" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-cog"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Setting</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+                <li class="item">
+
+                    <a href="#" class="nav_link">
+
+                        <span class="navlink_icon">
+
+                            <i class="bx bx-log-out"></i>
+
+                        </span>
+
+                        <div class="navlink-container">
+
+                            <span class="navlink">Logout</span>
+
+                        </div>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+            <div class="bottom_content">
+
+                <div class="bottom expand_sidebar">
+
+                    <i class='bx bx-chevron-left'></i>
+
+                    <span>Collapse</span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- Main Content -->
+
+    <section class="main-content">
+
+        <div class="profile-container">
+
+            <!-- Loading state -->
+
+            <div id="loading" class="loading">
+
+                <div class="loading-spinner"></div>
+
+            </div>
+
+            
+
+            <!-- Error state -->
+
+            <div id="error" class="error-message" style="display: none;">
+
+                <h3><i class='bx bx-error-circle'></i> User Not Found</h3>
+
+                <p>We couldn't find the user you're looking for. Please check the user ID and try again.</p>
+
+            </div>
+
+            
+
+            <!-- Profile content will be injected here -->
+
+            <div id="profile-content" style="display: none;">
+
+                <!-- Banner -->
+
+                <div class="profile-banner" id="user-banner"></div>
+
+                
+
+                <!-- Header with avatar and name -->
+
+                <div class="profile-header">
+
+                    <div class="profile-avatar">
+
+                        <img src="" alt="User Avatar" class="avatar-image" id="user-avatar">
+
+                    </div>
+
+                    
+
+                    <div class="profile-info">
+
+                        <div class="username-row">
+
+                            <h1 class="global-name" id="user-global-name">Loading...</h1>
+
+                            <div class="username" id="user-username">@username</div>
+
+                            <div class="user-id" id="user-id">ID: 1234567890</div>
+
+                        </div>
+
+                        
+
+                        <div class="badge-container" id="badge-container">
+
+                            <!-- Badges will be injected here -->
+
+                        </div>
+
+                        
+
+                        <div class="profile-stats">
+
+                            <div class="stat-card">
+
+                                <div class="stat-title">
+
+                                    <i class='bx bx-server'></i>
+
+                                    <span>Servers Managed</span>
+
+                                </div>
+
+                                <div class="stat-value" id="servers-count">12</div>
+
+                                <div class="stat-description">Total servers where this user has administrative permissions</div>
+
+                            </div>
+
+                            
+
+                            <div class="stat-card">
+
+                                <div class="stat-title">
+
+                                    <i class='bx bx-time-five'></i>
+
+                                    <span>Account Age</span>
+
+                                </div>
+
+                                <div class="stat-value" id="account-age">2.5</div>
+
+                                <div class="stat-description">Years since this Discord account was created</div>
+
+                            </div>
+
+                            
+
+                            <div class="stat-card">
+
+                                <div class="stat-title">
+
+                                    <i class='bx bx-crown'></i>
+
+                                    <span>Premium Status</span>
+
+                                </div>
+
+                                <div class="stat-value" id="premium-status">Active</div>
+
+                                <div class="stat-description">ProMcBot Premium subscription status</div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                
+
+                <!-- Additional info cards -->
+
+                <div class="info-grid">
+
+                    <div class="info-card">
+
+                        <h2 class="card-title">Account Information</h2>
+
+                        
+
+                        <div class="info-item">
+
+                            <div class="info-icon">
+
+                                <i class='bx bx-id-card'></i>
+
+                            </div>
+
+                            <div class="info-content">
+
+                                <div class="info-label">Discord ID</div>
+
+                                <div class="info-value" id="discord-id">123456789012345678</div>
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        <div class="info-item">
+
+                            <div class="info-icon">
+
+                                <i class='bx bx-calendar'></i>
+
+                            </div>
+
+                            <div class="info-content">
+
+                                <div class="info-label">Account Created</div>
+
+                                <div class="info-value" id="created-at">March 7, 2022</div>
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        <div class="info-item">
+
+                            <div class="info-icon">
+
+                                <i class='bx bx-user'></i>
+
+                            </div>
+
+                            <div class="info-content">
+
+                                <div class="info-label">Username</div>
+
+                                <div class="info-value" id="full-username">username#1234</div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    
+
+                    <div class="info-card">
+
+                        <h2 class="card-title">Achievements & Badges</h2>
+
+                        <p style="margin-bottom: 20px; color: var(--grey-color);">Recognized contributions and achievements</p>
+
+                        
+
+                        <div class="badges-card" id="badges-container">
+
+                            <!-- Badge items will be injected here -->
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        
+
+        <!-- Footer -->
+
+        <footer class="footer" style="margin-top: 50px; text-align: center; padding: 20px; color: var(--grey-color);">
+
+            <div class="footer-links" style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-bottom: 15px;">
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Home</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Features</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Pricing</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Documentation</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Support</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Privacy Policy</a>
+
+                <a href="#" style="color: var(--grey-color); text-decoration: none;">Terms of Service</a>
+
+            </div>
+
+            <div class="copyright">
+
+                &copy; 2023 ProMcBot. All rights reserved. Minecraft is a trademark of Mojang AB.
+
+            </div>
+
+        </footer>
+
+    </section>
+
+    <script>
+
+        // Get userId from URL
+
+        function getUserIdFromUrl() {
+
+            const path = window.location.pathname;
+
+            const segments = path.split('/');
+
+            
+
+            // Check for both /u/:id and /user/:id patterns
+
+            const userIndex = segments.findIndex(seg => seg === 'u' || seg === 'user');
+
+            if (userIndex !== -1 && segments.length > userIndex + 1) {
+
+                return segments[userIndex + 1];
+
+            }
+
+            
+
+            return null;
+
+        }
+
+        
+
+        // Format date as "Month Day, Year"
+
+        function formatDate(dateString) {
+
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+
+            const date = new Date(dateString);
+
+            return date.toLocaleDateString('en-US', options);
+
+        }
+
+        
+
+        // Calculate account age in years
+
+        function calculateAccountAge(createdAt) {
+
+            const createdDate = new Date(createdAt);
+
+            const today = new Date();
+
+            const diffTime = Math.abs(today - createdDate);
+
+            const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+
+            return diffYears.toFixed(1);
+
+        }
+
+        
+
+        // Fetch user data from API
+
+        async function fetchUserData(userId) {
+
+            try {
+
+                const response = await fetch(`/api/u/${userId}`);
+
+                if (!response.ok) {
+
+                    throw new Error('User not found');
+
+                }
+
+                return await response.json();
+
+            } catch (error) {
+
+                console.error('Error fetching user data:', error);
+
+                throw error;
+
+            }
+
+        }
+
+        
+
+        // Render user profile
+
+        function renderUserProfile(userData) {
+
+            // Set banner
+
+            const bannerEl = document.getElementById('user-banner');
+
+            bannerEl.style.backgroundColor = userData.banner || '#262b34';
+
+            
+
+            // Set avatar
+
+            const avatarEl = document.getElementById('user-avatar');
+
+            avatarEl.src = userData.avatar;
+
+            avatarEl.alt = `${userData.global_name}'s Avatar`;
+
+            
+
+            // Set names
+
+            document.getElementById('user-global-name').textContent = userData.global_name;
+
+            document.getElementById('user-username').textContent = `@${userData.username}`;
+
+            document.getElementById('user-id').textContent = `ID: ${userData.id}`;
+
+            document.getElementById('discord-id').textContent = userData.id;
+
+            document.getElementById('full-username').textContent = `${userData.username}`;
+
+            
+
+            // Set dates
+
+            document.getElementById('created-at').textContent = formatDate(userData.created_at);
+
+            document.getElementById('account-age').textContent = calculateAccountAge(userData.created_at);
+
+            
+
+            // Render badges
+
+            const badgeContainer = document.getElementById('badge-container');
+
+            const badgesContainer = document.getElementById('badges-container');
+
+            badgeContainer.innerHTML = '';
+
+            badgesContainer.innerHTML = '';
+
+            
+
+            userData.badges.forEach(badge => {
+
+                // Badges in header
+
+                const badgeEl = document.createElement('div');
+
+                badgeEl.className = 'badge';
+
+                badgeEl.innerHTML = `
+
+                    <img src="${badge.icon}" alt="${badge.name} badge" class="badge-icon">
+
+                    <span>${badge.name}</span>
+
+                `;
+
+                badgeContainer.appendChild(badgeEl);
+
+                
+
+                // Badges in achievements section
+
+                const badgeItem = document.createElement('div');
+
+                badgeItem.className = 'badge-item';
+
+                badgeItem.innerHTML = `
+
+                    <img src="${badge.icon}" alt="${badge.name}" class="badge-item-icon">
+
+                    <div class="badge-item-name">${badge.name}</div>
+
+                `;
+
+                badgesContainer.appendChild(badgeItem);
+
+            });
+
+            
+
+            // Show profile content
+
+            document.getElementById('profile-content').style.display = 'block';
+
+        }
+
+        
+
+        // Show error state
+
+        function showError() {
+
+            document.getElementById('loading').style.display = 'none';
+
+            document.getElementById('error').style.display = 'block';
+
+        }
+
+        
+
+        // Initialize page
+
+        async function initProfilePage() {
+
+            const userId = getUserIdFromUrl();
+
+            
+
+            if (!userId) {
+
+                showError();
+
+                return;
+
+            }
+
+            
+
+            try {
+
+                const userData = await fetchUserData(userId);
+
+                document.getElementById('loading').style.display = 'none';
+
+                renderUserProfile(userData);
+
+            } catch (error) {
+
+                showError();
+
+            }
+
+        }
+
+        
+
+        // Mobile sidebar toggle
+
+        const sidebar = document.getElementById('sidebar');
+
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        const darkLight = document.getElementById('darkLight');
+
+        const collapseBtn = document.querySelector('.expand_sidebar');
+
+        
+
+        // Auto-close sidebar after 0.5 seconds on desktop
+
+        setTimeout(() => {
+
+            if (window.innerWidth > 992) {
+
+                sidebar.classList.add('auto-close');
+
+                setTimeout(() => {
+
+                    sidebar.classList.add('close');
+
+                }, 1000);
+
+            }
+
+        }, 500);
+
+        
+
+        // Toggle sidebar
+
+        sidebarToggle.addEventListener('click', () => {
+
+            sidebar.classList.toggle('active');
+
+        });
+
+        
+
+        // Collapse sidebar
+
+        collapseBtn.addEventListener('click', () => {
+
+            sidebar.classList.add('auto-close');
+
+            setTimeout(() => {
+
+                sidebar.classList.add('close');
+
+            }, 400);
+
+        });
+
+        
+
+        // Expand sidebar
+
+        sidebar.addEventListener('click', (e) => {
+
+            if (e.target.closest('.nav_link') && sidebar.classList.contains('close')) {
+
+                sidebar.classList.remove('close', 'auto-close');
+
+            }
+
+        });
+
+        
+
+        // Theme toggle
+
+        darkLight.addEventListener('click', () => {
+
+            document.body.classList.toggle('dark');
+
+            if (document.body.classList.contains('dark')) {
+
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+
+                localStorage.setItem('theme', 'dark');
+
+            } else {
+
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+
+                localStorage.setItem('theme', 'light');
+
+            }
+
+        });
+
+        
+
+        // Apply saved theme
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const savedTheme = localStorage.getItem('theme');
+
+            if (savedTheme === 'dark') {
+
+                document.body.classList.add('dark');
+
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+
+            }
+
+            
+
+            // Close sidebar on mobile by default
+
+            if (window.innerWidth <= 992) {
+
+                sidebar.classList.remove('active');
+
+            }
+
+            
+
+            // Initialize profile page
+
+            initProfilePage();
+
+        });
+
+        
+
+        // Dropdown functionality
+
+        const notificationBtn = document.getElementById('notificationBtn');
+
+        const notificationDropdown = document.getElementById('notificationDropdown');
+
+        const userBtn = document.getElementById('userBtn');
+
+        const userDropdown = document.getElementById('userDropdown');
+
+        
+
+        notificationBtn.addEventListener('click', (e) => {
+
+            e.stopPropagation();
+
+            notificationDropdown.classList.toggle('show');
+
+            userDropdown.classList.remove('show');
+
+        });
+
+        
+
+        userBtn.addEventListener('click', (e) => {
+
+            e.stopPropagation();
+
+            userDropdown.classList.toggle('show');
+
+            notificationDropdown.classList.remove('show');
+
+        });
+
+        
+
+        // Close dropdowns when clicking outside
+
+        document.addEventListener('click', (e) => {
+
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+
+                notificationDropdown.classList.remove('show');
+
+            }
+
+            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+
+                userDropdown.classList.remove('show');
+
+            }
+
+        });
+
+        
+
+        // Handle resize
+
+        window.addEventListener('resize', () => {
+
+            if (window.innerWidth > 992) {
+
+                sidebar.classList.remove('active');
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>

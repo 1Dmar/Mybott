@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - EmbedBuilder</title>
+<style>body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    width: 80%;
+    max-width: 800px;
+    box-sizing: border-box;
+    margin: 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+form > div {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+input, textarea, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    resize: none;
+}
+
+#colorPicker {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.color-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #fff;
+    transition: transform 0.2s;
+}
+
+.color-circle:hover {
+    transform: scale(1.1);
+}
+
+#embedPreview {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    margin-top: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.field input, .field textarea {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.field button {
+    flex-shrink: 0;
+}
+
+</style>
+    </head>
+<body>
+   <div class="container">
+        <h1>Discord Embed Builder</h1>
+        <form id="embedForm">
+            <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title">
+            </div>
+            <div>
+                <label for="description">Description:</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <div id="fieldsContainer">
+                <label>Fields:</label>
+                <button type="button" id="addField">Add Field</button>
+            </div>
+            <div>
+                <label for="color">Color:</label>
+                <div id="colorPicker">
+                    <div class="color-circle" data-color="#FF6666" style="background-color: #FF6666;"></div>
+                    <div class="color-circle" data-color="#66FF66" style="background-color: #66FF66;"></div>
+                    <div class="color-circle" data-color="#6666FF" style="background-color: #6666FF;"></div>
+                    <div class="color-circle" data-color="#FFFF66" style="background-color: #FFFF66;"></div>
+                    <div class="color-circle" data-color="#FF66FF" style="background-color: #FF66FF;"></div>
+                </div>
+                <input type="color" id="color" name="color">
+            </div>
+            <div>
+                <label for="author">Author:</label>
+                <input type="text" id="author" name="author">
+            </div>
+            <div>
+                <label for="footer">Footer:</label>
+                <input type="text" id="footer" name="footer">
+            </div>
+            <div>
+                <label for="content">Content:</label>
+                <textarea id="content" name="content"></textarea>
+            </div>
+            <div>
+                <label for="method">Send via:</label>
+                <select id="method" name="method">
+                    <option value="webhook">Webhook</option>
+                    <option value="bot" disabled>Bot (Disabled)</option>
+                </select>
+            </div>
+            <div id="webhookUrlContainer">
+                <label for="webhookURL">Webhook URL:</label>
+                <input type="text" id="webhookURL" name="webhookURL">
+            </div>
+            <button type="submit">Send Embed</button>
+        </form>
+        <div id="embedPreview">
+            <!-- Preview area -->
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('embedForm');
+    const fieldsContainer = document.getElementById('fieldsContainer');
+    const addFieldButton = document.getElementById('addField');
+    const colorPicker = document.getElementById('colorPicker');
+    const colorInput = document.getElementById('color');
+    const methodSelect = document.getElementById('method');
+    const webhookUrlContainer = document.getElementById('webhookUrlContainer');
+    const embedPreview = document.getElementById('embedPreview');
+
+    addFieldButton.addEventListener('click', () => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'field';
+
+        const fieldNameInput = document.createElement('input');
+        fieldNameInput.type = 'text';
+        fieldNameInput.placeholder = 'Field Name';
+
+        const fieldValueInput = document.createElement('textarea');
+        fieldValueInput.placeholder = 'Field Value';
+
+        const removeFieldButton = document.createElement('button');
+        removeFieldButton.type = 'button';
+        removeFieldButton.textContent = 'Remove';
+        removeFieldButton.addEventListener('click', () => {
+            fieldDiv.remove();
+        });
+
+        fieldDiv.appendChild(fieldNameInput);
+        fieldDiv.appendChild(fieldValueInput);
+        fieldDiv.appendChild(removeFieldButton);
+        fieldsContainer.appendChild(fieldDiv);
+    });
+
+    colorPicker.addEventListener('click', (e) => {
+        if (e.target.classList.contains('color-circle')) {
+            colorInput.value = e.target.dataset.color;
+            updatePreview();
+        }
+    });
+
+    colorInput.addEventListener('input', updatePreview);
+
+    methodSelect.addEventListener('change', () => {
+        if (methodSelect.value === 'webhook') {
+            webhookUrlContainer.style.display = 'block';
+        } else {
+            webhookUrlContainer.style.display = 'none';
+        }
+        updatePreview();
+    });
+
+    form.addEventListener('input', updatePreview);
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const fields = [];
+        document.querySelectorAll('.field').forEach(fieldDiv => {
+            const name = fieldDiv.querySelector('input').value;
+            const value = fieldDiv.querySelector('textarea').value;
+            if (name && value) {
+                fields.push({ name, value });
+            }
+        });
+
+        const data = {
+            title: formData.get('title'),
+            description: formData.get('description'),
+            fields,
+            color: formData.get('color'),
+            author: formData.get('author'),
+            footer: formData.get('footer'),
+            content: formData.get('content'),
+            method: formData.get('method'),
+            webhookURL: formData.get('webhookURL')
+        };
+
+        try {
+            const response = await axios.post('/sendEmbed', data);
+            alert(response.data);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred while sending the embed.');
+        }
+    });
+
+    function updatePreview() {
+        const title = document.getElementById('title').value;
+        const description = document.getElementById('description').value;
+        const color = colorInput.value;
+        const author = document.getElementById('author').value;
+        const footer = document.getElementById('footer').value;
+        const content = document.getElementById('content').value;
+        const method = methodSelect.value;
+
+        embedPreview.innerHTML = `
+            <div style="border-left: 5px solid ${color}; padding: 10px; margin-bottom: 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.9);">
+                <strong>${title}</strong>
+                <p>${description}</p>
+            </div>
+            ${fieldsContainer.querySelectorAll('.field').length ? `<div style="margin-bottom: 10px;">${Array.from(fieldsContainer.querySelectorAll('.field')).map(fieldDiv => `<p><strong>${fieldDiv.querySelector('input').value}</strong>: ${fieldDiv.querySelector('textarea').value}</p>`).join('')}</div>` : ''}
+            ${author ? `<p><strong>Author:</strong> ${author}</p>` : ''}
+            ${footer ? `<p><strong>Footer:</strong> ${footer}</p>` : ''}
+            <div style="color: #777; font-size: 12px;">
+                <p>Method: ${method}</p>
+                ${method === 'webhook' ? '<p>Webhook URL: ' + document.getElementById('webhookURL').value + '</p>' : ''}
+            </div>
+            <p>${content}</p>
+        `;
+    }
+
+    updatePreview();
+});
+   </script>
+</body>
+</html>

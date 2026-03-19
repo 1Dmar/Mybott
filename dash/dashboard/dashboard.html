@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Dashboard</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        /* Import Google font - Poppins */
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        
+        :root {
+            --white-color: #fff;
+            --blue-color: #4070f4;
+            --grey-color: #707070;
+            --grey-color-light: #aaa;
+            --ggff: #f1efef;
+            --primary-color: #4070f4;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-bg: #17212b;
+            --dark-card: #1f2a35;
+            --minecraft-green: #3cb043;
+            --discord-purple: #7289da;
+            --sidebar-width: 260px;
+            --gradient-purple: linear-gradient(135deg, #8A2BE2, #4B0082);
+            --gradient-blue: linear-gradient(135deg, #4070f4, #6a11cb);
+        }
+        
+        body {
+            background-color: var(--ggff);
+            transition: all 0.5s ease;
+            color: var(--grey-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        body.dark {
+            background-color: var(--dark-bg);
+            --white-color: #1f2a35;
+            --blue-color: #4070f4;
+            --grey-color: #f2f2f2;
+            --grey-color-light: #aaa;
+            --ggff: #17212b;
+        }
+
+        /* Navbar - Fixed */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            left: 0;
+            background-color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 70px;
+        }
+
+        .logo_item {
+            display: flex;
+            align-items: center;
+            column-gap: 10px;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--grey-color);
+        }
+        
+        .navbar img {
+            width: 35px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .search_bar {
+            height: 47px;
+            max-width: 430px;
+            width: 100%;
+        }
+        
+        .search_bar input {
+            height: 100%;
+            width: 100%;
+            border-radius: 25px;
+            font-size: 18px;
+            outline: none;
+            background-color: var(--white-color);
+            color: var(--grey-color);
+            border: 1px solid var(--grey-color-light);
+            padding: 0 20px;
+        }
+        
+        .navbar_content {
+            display: flex;
+            align-items: center;
+            column-gap: 25px;
+            position: relative;
+        }
+        
+        .navbar_content i {
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--grey-color);
+            position: relative;
+        }
+        
+        .mobile-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey-color);
+        }
+        
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dropdown menus */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--white-color);
+            min-width: 220px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1100;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark .dropdown-content {
+            background-color: var(--dark-card);
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+        }
+        
+        .dropdown-content a {
+            color: var(--grey-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        body.dark .dropdown-content a {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .dropdown-content a:hover {
+            background-color: rgba(64, 112, 244, 0.1);
+            color: var(--blue-color);
+        }
+        
+        .dropdown-content a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .dropdown-header {
+            padding: 15px 16px;
+            font-weight: 600;
+            background: rgba(64, 112, 244, 0.1);
+            color: var(--blue-color);
+            border-bottom: 1px solid rgba(64, 112, 244, 0.2);
+        }
+        
+        body.dark .dropdown-header {
+            background: rgba(64, 112, 244, 0.2);
+        }
+        
+        .show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .notification-dropdown {
+            min-width: 350px;
+        }
+        
+        .notification-item {
+            display: flex;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        body.dark .notification-item {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .notification-item:hover {
+            background-color: rgba(64, 112, 244, 0.05);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(64, 112, 244, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--blue-color);
+            font-size: 18px;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .notification-time {
+            font-size: 12px;
+            color: var(--grey-color);
+        }
+        
+        .view-all {
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            color: var(--blue-color);
+            cursor: pointer;
+        }
+        
+        /* Sidebar - Fixed Styles */
+        .sidebar {
+            background-color: var(--white-color);
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding: 80px 20px 20px;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 0 0 1px var(--grey-color-light);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+        
+        /* Fixed tag styling */
+        .navlink-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
+        
+        .tag-new {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .tag-pro {
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            color: #333;
+        }
+        
+        .tag-lg {
+            font-size: 0.8rem;
+        }
+        
+        .sidebar.close {
+            width: 85px;
+            padding: 80px 0 20px;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .menu_content {
+            position: relative;
+        }
+        
+        .menu_title {
+            margin: 20px 0 10px;
+            padding: 0 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--grey-color-light);
+        }
+        
+        .sidebar.close .menu_title {
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        .sidebar.close .menu_title span {
+            display: none;
+        }
+        
+        .sidebar.close .menu_title::after {
+            content: "";
+            display: block;
+            width: 30px;
+            height: 2px;
+            background: var(--grey-color-light);
+            margin: 5px auto 0;
+        }
+        
+        .menu_items {
+            padding: 0;
+            list-style: none;
+        }
+        
+        .navlink_icon {
+            position: relative;
+            font-size: 22px;
+            min-width: 50px;
+            line-height: 40px;
+            display: inline-block;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .navlink_icon::before {
+            content: "";
+            position: absolute;
+            height: 100%;
+            width: calc(100% + 100px);
+            left: -20px;
+        }
+        
+        .sidebar .nav_link {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--grey-color);
+            white-space: nowrap;
+            transition: all 0.2s;
+            margin-bottom: 5px;
+        }
+        
+        .sidebar.close .nav_link {
+            justify-content: center;
+        }
+        
+        .sidebar.close .navlink {
+            display: none;
+        }
+        
+        .nav_link:hover {
+            color: var(--white-color);
+            background: var(--blue-color);
+        }
+        
+        .nav_link:hover .navlink_icon {
+            color: white;
+        }
+        
+        .sidebar.close .nav_link:hover {
+            background: var(--blue-color);
+        }
+        
+        .sidebar.close .nav_link:hover .navlink_icon {
+            color: white;
+        }
+        
+        .bottom_content {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            padding: 0 20px;
+        }
+        
+        .bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            color: var(--grey-color);
+            border-top: 1px solid var(--grey-color-light);
+            background-color: var(--white-color);
+            border-radius: 8px;
+        }
+        
+        .sidebar.close .bottom {
+            justify-content: center;
+        }
+        
+        .bottom i {
+            font-size: 20px;
+        }
+        
+        .bottom span {
+            font-size: 16px;
+        }
+        
+        .sidebar.close .bottom span {
+            display: none;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 90px 30px 30px;
+            margin-left: var(--sidebar-width);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            flex: 1;
+        }
+        
+        .sidebar.close ~ .main-content {
+            margin-left: 85px;
+        }
+        
+        /* Profile Page Styles */
+        .profile-header {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 40px;
+        }
+        
+        .welcome-banner {
+            background: var(--gradient-purple);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-banner::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+        }
+        
+        .welcome-banner h1 {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 10px;
+            max-width: 600px;
+        }
+        
+        .welcome-banner p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            max-width: 700px;
+        }
+        
+        .profile-overview {
+            display: flex;
+            gap: 20px;
+            background: var(--white-color);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        
+        body.dark .profile-overview {
+            background: var(--dark-card);
+        }
+        
+        .avatar-container {
+            position: relative;
+        }
+        
+        .avatar-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid var(--white-color);
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .online-status {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--success-color);
+            border: 2px solid var(--white-color);
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-info h2 {
+            font-size: 1.8rem;
+            color: var(--grey-color);
+            margin-bottom: 5px;
+        }
+        
+        .profile-id {
+            font-size: 0.9rem;
+            color: var(--grey-color-light);
+            margin-bottom: 15px;
+        }
+        
+        .profile-stats {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--blue-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--grey-color-light);
+        }
+        
+        .profile-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 992px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .profile-card {
+            background: var(--white-color);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        body.dark .profile-card {
+            background: var(--dark-card);
+            border-color: rgba(255,255,255,0.05);
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        body.dark .card-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .card-header i {
+            font-size: 28px;
+            margin-right: 15px;
+            color: var(--blue-color);
+            background: rgba(64, 112, 244, 0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-header h2 {
+            font-size: 1.6rem;
+            color: var(--grey-color);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--grey-color-light);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--grey-color);
+            word-break: break-all;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.02);
+            border-radius: 12px;
+        }
+        
+        body.dark .info-value {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        /* Enhanced API Key System */
+        .api-card {
+            background: var(--gradient-blue);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .api-card::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+        }
+        
+        .api-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .api-card p {
+            opacity: 0.9;
+            margin-bottom: 20px;
+            max-width: 500px;
+        }
+        
+        .api-key-container {
+            display: flex;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .api-key-value {
+            flex: 1;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .api-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .api-btn {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+        
+        .api-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+        
+        .api-btn.copy {
+            background: var(--success-color);
+        }
+        
+        .api-btn.regenerate {
+            background: var(--warning-color);
+            color: #333;
+        }
+        
+        .key-usage {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .usage-item {
+            text-align: center;
+        }
+        
+        .usage-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .usage-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .profile-footer {
+            text-align: center;
+            padding: 20px;
+            background: var(--white-color);
+            border-radius: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        body.dark .profile-footer {
+            background: var(--dark-card);
+            border-color: rgba(255,255,255,0.05);
+        }
+        
+        .profile-footer p {
+            color: var(--grey-color);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive Design */
+        @media screen and (max-width: 1200px) {
+            .profile-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media screen and (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding-top: 90px;
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+            
+            .sidebar.close {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.close ~ .main-content {
+                margin-left: 0;
+            }
+            
+            .welcome-banner h1 {
+                font-size: 2rem;
+            }
+            
+            .profile-overview {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .profile-stats {
+                justify-content: center;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .search_bar {
+                display: none;
+            }
+            
+            .welcome-banner {
+                padding: 20px;
+            }
+            
+            .welcome-banner h1 {
+                font-size: 1.8rem;
+            }
+            
+            .api-actions {
+                flex-wrap: wrap;
+            }
+            
+            .api-btn {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        
+        @media screen and (max-width: 576px) {
+            .navbar {
+                padding: 15px;
+            }
+            
+            .welcome-banner h1 {
+                font-size: 1.6rem;
+            }
+            
+            .key-usage {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .profile-card {
+            animation: fadeIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .profile-card:nth-child(1) { animation-delay: 0.1s; }
+        .profile-card:nth-child(2) { animation-delay: 0.2s; }
+    </style>
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+        </div>
+
+        <div class="search_bar">
+            <input type="text" placeholder="Search" />
+        </div>
+
+        <div class="navbar_content">
+            <i class="bi bi-grid"></i>
+            
+            <!-- Notifications dropdown -->
+            <div class="dropdown">
+                <i class='bx bx-bell' id="notificationBtn"></i>
+                <div class="notification-badge">3</div>
+                <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+                    <div class="dropdown-header">
+                        <i class='bx bx-bell'></i> Notifications
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-user-plus'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">New Member Joined</div>
+                            <div class="notification-desc">JohnDoe joined your server</div>
+                            <div class="notification-time">5 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-server'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Server Restart</div>
+                            <div class="notification-desc">Minecraft server will restart in 10 minutes</div>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-crown'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Premium Expiring</div>
+                            <div class="notification-desc">Your premium subscription ends in 3 days</div>
+                            <div class="notification-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="view-all">
+                        View All Notifications
+                    </div>
+                </div>
+            </div>
+            
+            <i class='bx bx-sun' id="darkLight"></i>
+            
+            <!-- User dropdown -->
+            <div class="dropdown">
+                <img src=${avatar} alt="" class="profile" id="userBtn" />
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header">
+                        <img src=${avatar} alt="" class="profile" style="width: 40px; height: 40px; margin-right: 10px;" />
+                        ${global_name} (${username})
+                    </div>
+                    <a href="/dashboard "><i class='bx bx-user'></i> My Profile</a>
+                    <a href="/account"><i class='bx bx-cog'></i> Account Settings (soon)</a>
+                    <a href="#"><i class='bx bx-coin-stack'></i> Billing & Plans (soon)</a>
+                    <a href="#"><i class='bx bx-shield'></i> Privacy & Security (soon)</a>
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px;">
+                        <a href="/api/logout" style="color: var(--danger-color);"><i class='bx bx-log-out'></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="menu_content">
+         <!--   <ul class="menu_items">
+                <div class="menu_title"><span>Dashboard</span></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-stats"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Overview</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-slider-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Configuration</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-crown"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Premium</span>
+                            <span class="tag tag-new">New</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="menu_items">
+                <div class="menu_title"><span>Module Settings</span></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-bot"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Auto Responder</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-palette"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Roles</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-notepad"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Logs</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>-->
+            <ul class="menu_items">
+                <div class="menu_title"><span>User</span></div>
+                <li class="item">
+                    <a href="/dashboard" class="nav_link active">
+                        <span class="navlink_icon">
+                            <i class="bx bx-user"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Profile</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/servers" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-server"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Servers</span>
+                        </div>
+                    </a>
+                </li>
+               <!-- <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-bug"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Bug Report</span>
+                        </div>
+                    </a>
+                </li>-->
+            </ul>
+           <ul class="menu_items">
+                <div class="menu_title"><span>Other</span></div>
+                <li class="item">
+                    <a href="/invitebot" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cube-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Invite Me</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/dashboard" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cog"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Setting</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="/api/logout" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-log-out"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Logout</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="bottom_content">
+                <div class="bottom expand_sidebar">
+                    <i class='bx bx-chevron-left'></i>
+                    <span>Collapse</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="welcome-banner">
+                <h1>Welcome to ProMcBot Dashboard, ${username}!</h1>
+                <p>Manage your profile, API keys, and server integrations all in one place</p>
+            </div>
+            
+            <div class="profile-overview">
+                <div class="avatar-container">
+                    <img src=${avatar} alt="User Avatar" class="avatar-image">
+                    <div class="online-status"></div>
+                </div>
+                <div class="profile-info">
+                    <h2>${global_name}</h2>
+                    <div class="profile-id">ID: ${userId}</div>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Servers</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Bots</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">Free</div>
+                            <div class="stat-label">Plan</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- User Info Card -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <i class='bx bx-user'></i>
+                    <h2>Personal Information</h2>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class='bx bx-at'></i> Username
+                        </div>
+                        <div class="info-value">${username}#0000</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class='bx bx-globe'></i> Global Name
+                        </div>
+                        <div class="info-value">${global_name}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class='bx bx-envelope'></i> Email Address
+                        </div>
+                        <div class="info-value">${email}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class='bx bx-id-card'></i> Discord ID
+                        </div>
+                        <div class="info-value">${userId}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class='bx bx-link'></i> Profile URL
+                        </div>
+                        <div class="info-value">http://promcbot.qzz.io/u/${userId}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- API Key Card -->
+            <div class="api-card">
+                <h3>API Key Management (soon)</h3>
+                <p>Your API key allows you to integrate ProMcBot with external services. Keep it secure and don't share it with others.</p>
+                
+                <div class="api-key-container">
+                    <div class="api-key-value">
+                        pmb_sk_1234567890abcdef1234567890abcdef
+                    </div>
+                </div>
+                
+                <div class="api-actions">
+                    <button class="api-btn copy">
+                        <i class='bx bx-copy'></i> Copy Key
+                    </button>
+                    <button class="api-btn regenerate">
+                        <i class='bx bx-refresh'></i> Regenerate
+                    </button>
+                </div>
+                
+                <div class="key-usage">
+                    <div class="usage-item">
+                        <div class="usage-value">42</div>
+                        <div class="usage-label">Requests (24h)</div>
+                    </div>
+                    <div class="usage-item">
+                        <div class="usage-value">98%</div>
+                        <div class="usage-label">Success Rate</div>
+                    </div>
+                    <div class="usage-item">
+                        <div class="usage-value">0</div>
+                        <div class="usage-label">Errors</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Footer -->
+        <div class="profile-footer">
+            <p>ProMcBot Dashboard v2.5.1 &copy; 2024 ProMcBot Team. All rights reserved</p>
+        </div>
+    </section>
+
+    <script>
+        // Mobile sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const darkLight = document.getElementById('darkLight');
+        const collapseBtn = document.querySelector('.expand_sidebar');
+        
+        // Auto-close sidebar after 0.5 seconds on desktop
+        setTimeout(() => {
+            if (window.innerWidth > 992) {
+                sidebar.classList.add('auto-close');
+                setTimeout(() => {
+                    sidebar.classList.add('close');
+                }, 1000);
+            }
+        }, 500);
+        
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Collapse sidebar
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.add('auto-close');
+            setTimeout(() => {
+                sidebar.classList.add('close');
+            }, 400);
+        });
+        
+        // Expand sidebar
+        sidebar.addEventListener('click', (e) => {
+            if (e.target.closest('.nav_link') && sidebar.classList.contains('close')) {
+                sidebar.classList.remove('close', 'auto-close');
+            }
+        });
+        
+        // Theme toggle
+        darkLight.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Apply saved theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+            }
+            
+            // Close sidebar on mobile by default
+            if (window.innerWidth <= 992) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Dropdown functionality
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const userBtn = document.getElementById('userBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+            userDropdown.classList.remove('show');
+        });
+        
+        userBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+            notificationDropdown.classList.remove('show');
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 992) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // API Key functionality
+        document.querySelector('.api-btn.copy').addEventListener('click', function() {
+            const apiKey = document.querySelector('.api-key-value').textContent.trim();
+            navigator.clipboard.writeText(apiKey);
+            
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="bx bx-check"></i> Copied!';
+            
+            setTimeout(() => {
+                this.innerHTML = originalText;
+            }, 2000);
+        });
+        
+        document.querySelector('.api-btn.regenerate').addEventListener('click', function() {
+            if (confirm('Are you sure you want to regenerate your API key? This will invalidate your current key.')) {
+                // Generate a new random API key
+                const chars = 'abcdef0123456789';
+                let newKey = 'pmb_sk_';
+                for (let i = 0; i < 32; i++) {
+                    newKey += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                
+                document.querySelector('.api-key-value').textContent = newKey;
+                
+                // Show success message
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bx bx-check"></i> Regenerated!';
+                
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discord Bot Dashboard</title>
+  <style>
+    /* public/styles.css */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1f2a35;
+      margin: 0;
+      padding: 0;
+        color:white;
+    }
+
+    #dashboard {
+      padding: 20px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+
+    #prefix {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+ #save-prefix[disabled] {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #007bff69;
+      color: white;
+      margin-left: 10px;
+        cursor: not-allowed;
+    }
+    #save-prefix {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .card {
+      background-color: #17212b;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      flex: 1 1 calc(33.333% - 40px);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card.custom-command {
+      background-color: #1a1a1a;
+      color: white;
+      border: 2px solid gold;
+      position: relative;
+      overflow: hidden;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.custom-command::before {
+      content: 'fddsffd';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 215, 0, 0.1);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .card.custom-command h3 {
+      margin: 0;
+      font-size: 1.5em;
+      color: gold;
+    }
+
+    .card.custom-command .membership-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 215, 0, 0.7);
+      color: black;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      backdrop-filter: blur(5px);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 1.5em;
+    }
+
+    .card p {
+      font-size: 1em;
+      color: #666;
+    }
+
+    .card .settings {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings button {
+      padding: 5px 10px;
+      border: none;
+     /* background-color: #007bff;*/
+          background-color: #007bff69;
+                  cursor: not-allowed;
+      color: white;
+      border-radius: 5px;
+      /*cursor: pointer;*/
+    }
+
+    .settings .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background-color: #ccc;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .settings .toggle-switch::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background-color: white;
+      border-radius: 50%;
+      top: 1px;
+      left: 1px;
+      transition: transform 0.3s;
+    }
+      .settings .toggle-switch.active {
+      background-color: #007bff69;
+                  cursor: not-allowed;
+
+}
+
+   /* .settings .toggle-switch.active {
+      background-color: #007bff;
+    }*/
+
+    .settings .toggle-switch.active::before {
+      transform: translateX(20px);
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+</head>
+<body>
+  <section id="dashboard">
+    <div class="controls">
+      <input type="text" id="prefix" placeholder="COMING SOON" disabled/>
+      <button id="save-prefix" disabled>Save</button>
+    </div>
+    <div class="cards-container" id="cards-container">
+      <!-- البطاقات ستُضاف هنا بواسطة JavaScript -->
+    </div>
+  </section>
+  <script>
+    // public/scripts.js
+    document.addEventListener('DOMContentLoaded', async () => {
+      const cardsContainer = document.getElementById('cards-container');
+      const prefixInput = document.getElementById('prefix');
+      const savePrefixButton = document.getElementById('save-prefix');
+
+      const commands = await fetch('/api/commands')
+        .then(res => res.json())
+        .catch(error => {
+          console.error('Error fetching commands:', error);
+          return [];
+        });
+
+      commands.forEach(command => {
+        if (!command.type || !command.name) {
+          console.error('Missing required fields in command:', command);
+          return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        if (command.custom) {
+          card.classList.add('custom-command');
+          const membershipTag = document.createElement('div');
+          membershipTag.className = 'membership-tag';
+          membershipTag.textContent = 'Premium';
+          card.appendChild(membershipTag);
+        }
+
+        const title = document.createElement('h3');
+        title.textContent = command.name;
+
+        const description = document.createElement('p');
+        description.textContent = command.description;
+
+        const settingsContainer = document.createElement('div');
+        settingsContainer.className = 'settings';
+
+        const settingsButton = document.createElement('button');
+        settingsButton.textContent = 'Settings';
+        settingsButton.addEventListener('click', () => {
+          Swal.fire({
+            title: `Settings for ${command.name}`,
+            html: `
+              <div>
+                <label for="aliases">Aliases:</label>
+                <input type="text" id="aliases" placeholder="Enter aliases" value="${command.settings.aliases || ''}" />
+              </div>
+              <div>
+                <label for="roles">Roles Restriction:</label>
+                <input type="text" id="roles" placeholder="Enter roles" value="${command.settings.roles || ''}" />
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Save',
+            preConfirm: () => {
+              const aliases = document.getElementById('aliases').value;
+              const roles = document.getElementById('roles').value;
+              return { aliases, roles };
+            }
+          }).then((result) => {
+            if (result.isConfirmed) {
+              command.settings = result.value;
+              updateCommand(command);
+            }
+          });
+        });
+
+        const toggleSwitch = document.createElement('div');
+        toggleSwitch.className = `toggle-switch ${command.enabled ? 'active' : ''}`;
+        toggleSwitch.addEventListener('click', () => {
+          toggleSwitch.classList.toggle('Active');
+          command.enabled = !command.enabled;
+          updateCommand(command);
+        });
+
+        settingsContainer.appendChild(settingsButton);
+        settingsContainer.appendChild(toggleSwitch);
+
+        card.appendChild(title);
+        card.appendChild(description);
+        card.appendChild(settingsContainer);
+
+        cardsContainer.appendChild(card);
+      });
+
+      savePrefixButton.addEventListener('click', () => {
+        const prefix = prefixInput.value;
+        fetch('/api/prefix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prefix })
+        }).then(res => res.text()).then(data => {
+          console.log('Prefix saved:', data);
+        });
+      });
+
+      async function updateCommand(command) {
+        if (!command.type || !command.name) {
+          console.error('Missing required fields:', command);
+          return;
+        }
+
+        await fetch('/api/commands', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(command)
+        });
+      }
+    });
+  </script>
+</body>
+</html>

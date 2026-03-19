@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Moderation System</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        /* Existing styles from premium page */
+        /* Import Google font - Poppins */
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        
+        :root {
+            --white-color: #fff;
+            --blue-color: #4070f4;
+            --grey-color: #707070;
+            --grey-color-light: #aaa;
+            --ggff: #f1efef;
+            --primary-color: #4070f4;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-bg: #17212b;
+            --dark-card: #1f2a35;
+            --minecraft-green: #3cb043;
+            --discord-purple: #7289da;
+            --tier1: linear-gradient(135deg, #ff7e5f, #feb47b);
+            --tier2: linear-gradient(135deg, #8A2BE2, #4B0082);
+            --gold: #ffd700;
+            --sidebar-width: 260px;
+        }
+        
+        body {
+            background-color: var(--ggff);
+            transition: all 0.5s ease;
+            color: var(--grey-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        body.dark {
+            background-color: var(--dark-bg);
+            --white-color: #1f2a35;
+            --blue-color: #4070f4;
+            --grey-color: #f2f2f2;
+            --grey-color-light: #aaa;
+            --ggff: #17212b;
+        }
+
+        /* Navbar - Fixed */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            left: 0;
+            background-color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 70px;
+        }
+
+        .logo_item {
+            display: flex;
+            align-items: center;
+            column-gap: 10px;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--grey-color);
+        }
+        
+        .navbar img {
+            width: 35px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .search_bar {
+            height: 47px;
+            max-width: 430px;
+            width: 100%;
+        }
+        
+        .search_bar input {
+            height: 100%;
+            width: 100%;
+            border-radius: 25px;
+            font-size: 18px;
+            outline: none;
+            background-color: var(--white-color);
+            color: var(--grey-color);
+            border: 1px solid var(--grey-color-light);
+            padding: 0 20px;
+        }
+        
+        .navbar_content {
+            display: flex;
+            align-items: center;
+            column-gap: 25px;
+            position: relative;
+        }
+        
+        .navbar_content i {
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--grey-color);
+            position: relative;
+        }
+        
+        .mobile-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--grey-color);
+        }
+        
+        /* Notification badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dropdown menus */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: var(--white-color);
+            min-width: 220px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1100;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark .dropdown-content {
+            background-color: var(--dark-card);
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
+        }
+        
+        .dropdown-content a {
+            color: var(--grey-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        body.dark .dropdown-content a {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .dropdown-content a:hover {
+            background-color: rgba(64, 112, 244, 0.1);
+            color: var(--blue-color);
+        }
+        
+        .dropdown-content a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .dropdown-header {
+            padding: 15px 16px;
+            font-weight: 600;
+            background: rgba(64, 112, 244, 0.1);
+            color: var(--blue-color);
+            border-bottom: 1px solid rgba(64, 112, 244, 0.2);
+        }
+        
+        body.dark .dropdown-header {
+            background: rgba(64, 112, 244, 0.2);
+        }
+        
+        .show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .notification-dropdown {
+            min-width: 350px;
+        }
+        
+        .notification-item {
+            display: flex;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        body.dark .notification-item {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .notification-item:hover {
+            background-color: rgba(64, 112, 244, 0.05);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(64, 112, 244, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--blue-color);
+            font-size: 18px;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .notification-time {
+            font-size: 12px;
+            color: var(--grey-color);
+        }
+        
+        .view-all {
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            color: var(--blue-color);
+            cursor: pointer;
+        }
+        
+        /* Sidebar - Fixed Styles */
+        .sidebar {
+            background-color: var(--white-color);
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding: 80px 20px 20px;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 0 0 1px var(--grey-color-light);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+        }
+        
+        /* Fixed tag styling */
+        .navlink-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            vertical-align: middle;
+            line-height: 1.4;
+        }
+        
+        .tag-new {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .tag-pro {
+            background: linear-gradient(135deg, #ffd700, #ff9800);
+            color: #333;
+        }
+        
+        .tag-lg {
+            font-size: 0.8rem;
+        }
+        
+        .sidebar.close {
+            width: 85px;
+            padding: 80px 0 20px;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .menu_content {
+            position: relative;
+        }
+        
+        .menu_title {
+            margin: 20px 0 10px;
+            padding: 0 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--grey-color-light);
+        }
+        
+        .sidebar.close .menu_title {
+            text-align: center;
+            padding: 15px 0;
+        }
+        
+        .sidebar.close .menu_title span {
+            display: none;
+        }
+        
+        .sidebar.close .menu_title::after {
+            content: "";
+            display: block;
+            width: 30px;
+            height: 2px;
+            background: var(--grey-color-light);
+            margin: 5px auto 0;
+        }
+        
+        .menu_items {
+            padding: 0;
+            list-style: none;
+        }
+        
+        .navlink_icon {
+            position: relative;
+            font-size: 22px;
+            min-width: 50px;
+            line-height: 40px;
+            display: inline-block;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .navlink_icon::before {
+            content: "";
+            position: absolute;
+            height: 100%;
+            width: calc(100% + 100px);
+            left: -20px;
+        }
+        
+        .sidebar .nav_link {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--grey-color);
+            white-space: nowrap;
+            transition: all 0.2s;
+            margin-bottom: 5px;
+        }
+        
+        .sidebar.close .nav_link {
+            justify-content: center;
+        }
+        
+        .sidebar.close .navlink {
+            display: none;
+        }
+        
+        .nav_link:hover {
+            color: var(--white-color);
+            background: var(--blue-color);
+        }
+        
+        .nav_link:hover .navlink_icon {
+            color: white;
+        }
+        
+        .sidebar.close .nav_link:hover {
+            background: var(--blue-color);
+        }
+        
+        .sidebar.close .nav_link:hover .navlink_icon {
+            color: white;
+        }
+        
+        .bottom_content {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            padding: 0 20px;
+        }
+        
+        .bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            color: var(--grey-color);
+            border-top: 1px solid var(--grey-color-light);
+            background-color: var(--white-color);
+            border-radius: 8px;
+        }
+        
+        .sidebar.close .bottom {
+            justify-content: center;
+        }
+        
+        .bottom i {
+            font-size: 20px;
+        }
+        
+        .bottom span {
+            font-size: 16px;
+        }
+        
+        .sidebar.close .bottom span {
+            display: none;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 90px 30px 30px;
+            margin-left: var(--sidebar-width);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            flex: 1;
+        }
+        
+        .sidebar.close ~ .main-content {
+            margin-left: 85px;
+        }
+        
+        /* Moderation Page Styles */
+        .moderation-header {
+            margin-bottom: 30px;
+        }
+        
+        .moderation-header h1 {
+            font-size: 2.5rem;
+            color: var(--grey-color);
+            margin-bottom: 10px;
+        }
+        
+        .moderation-header p {
+            font-size: 1.1rem;
+            color: var(--grey-color);
+            opacity: 0.8;
+        }
+        
+        .moderation-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--grey-color-light);
+            background: var(--white-color);
+            color: var(--grey-color);
+            font-size: 1rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-group label {
+            font-size: 0.9rem;
+        }
+        
+        .filter-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .filter-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--blue-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* User Cards Grid */
+        .user-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+        
+        .user-card {
+            background: var(--white-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 1px solid var(--grey-color-light);
+        }
+        
+        body.dark .user-card {
+            background: var(--dark-card);
+            border-color: #2a3947;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .user-header {
+            position: relative;
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
+        }
+        
+        body.dark .user-header {
+            background: linear-gradient(to bottom, #2a3947, #1f2a35);
+        }
+        
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--white-color);
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+        
+        .user-username {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--grey-color);
+        }
+        
+        .user-id {
+            font-size: 0.85rem;
+            color: var(--grey-color);
+            opacity: 0.7;
+            margin-bottom: 15px;
+        }
+        
+        .user-roles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .role-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            background: #e0e0e0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        body.dark .role-tag {
+            background: #2a3947;
+            color: #f2f2f2;
+        }
+        
+        .role-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .user-details {
+            padding: 20px;
+        }
+        
+        .user-type {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .user-type.member {
+            background: rgba(64, 112, 244, 0.15);
+            color: var(--blue-color);
+        }
+        
+        .user-type.bot {
+            background: rgba(114, 137, 218, 0.15);
+            color: var(--discord-purple);
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--grey-color);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--grey-color);
+            opacity: 0.7;
+        }
+        
+        .user-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn i {
+            font-size: 1.1rem;
+        }
+        
+        .action-btn.ban {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .action-btn.ban:hover {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .action-btn.kick {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+        
+        .action-btn.kick:hover {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .action-btn.mute {
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        .action-btn.mute:hover {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .action-btn.warn {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .action-btn.warn:hover {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .action-btn.nickname {
+            background: rgba(114, 137, 218, 0.1);
+            color: var(--discord-purple);
+        }
+        
+        .action-btn.nickname:hover {
+            background: var(--discord-purple);
+            color: white;
+        }
+        
+        .action-btn.timeout {
+            background: rgba(64, 112, 244, 0.1);
+            color: var(--blue-color);
+        }
+        
+        .action-btn.timeout:hover {
+            background: var(--blue-color);
+            color: white;
+        }
+        
+        .bot-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .bot-action-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            background: rgba(114, 137, 218, 0.1);
+            color: var(--discord-purple);
+        }
+        
+        .bot-action-btn:hover {
+            background: var(--discord-purple);
+            color: white;
+        }
+        
+        /* Responsive Design */
+        @media screen and (max-width: 1200px) {
+            .user-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+        
+        @media screen and (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding-top: 90px;
+            }
+            
+            .mobile-toggle {
+                display: block;
+            }
+            
+            .sidebar.close {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.close ~ .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .search_bar {
+                display: none;
+            }
+            
+            .notification-dropdown {
+                min-width: 300px;
+                right: -50px;
+            }
+            
+            .moderation-controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+        }
+        
+        @media screen and (max-width: 576px) {
+            .navbar {
+                padding: 15px;
+            }
+            
+            .notification-dropdown {
+                min-width: 280px;
+                right: -80px;
+            }
+            
+            .user-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .user-card {
+            animation: fadeIn 0.4s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .user-card:nth-child(1) { animation-delay: 0.1s; }
+        .user-card:nth-child(2) { animation-delay: 0.2s; }
+        .user-card:nth-child(3) { animation-delay: 0.3s; }
+        .user-card:nth-child(4) { animation-delay: 0.4s; }
+        .user-card:nth-child(5) { animation-delay: 0.5s; }
+        .user-card:nth-child(6) { animation-delay: 0.6s; }
+        .user-card:nth-child(7) { animation-delay: 0.7s; }
+        .user-card:nth-child(8) { animation-delay: 0.8s; }
+    </style>
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+        </div>
+
+        <div class="search_bar">
+            <input type="text" placeholder="Search" />
+        </div>
+
+        <div class="navbar_content">
+            <i class="bi bi-grid"></i>
+            
+            <!-- Notifications dropdown -->
+            <div class="dropdown">
+                <i class='bx bx-bell' id="notificationBtn"></i>
+                <div class="notification-badge">3</div>
+                <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+                    <div class="dropdown-header">
+                        <i class='bx bx-bell'></i> Notifications
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-user-plus'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">New Member Joined</div>
+                            <div class="notification-desc">JohnDoe joined your server</div>
+                            <div class="notification-time">5 minutes ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-server'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Server Restart</div>
+                            <div class="notification-desc">Minecraft server will restart in 10 minutes</div>
+                            <div class="notification-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class='bx bx-crown'></i>
+                        </div>
+                        <div class="notification-content">
+                            <div class="notification-title">Premium Expiring</div>
+                            <div class="notification-desc">Your premium subscription ends in 3 days</div>
+                            <div class="notification-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="view-all">
+                        View All Notifications
+                    </div>
+                </div>
+            </div>
+            
+            <i class='bx bx-sun' id="darkLight"></i>
+            
+            <!-- User dropdown -->
+            <div class="dropdown">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="" class="profile" id="userBtn" />
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="" class="profile" style="width: 40px; height: 40px; margin-right: 10px;" />
+                        Alex Morgan
+                    </div>
+                    <a href="#"><i class='bx bx-user'></i> My Profile</a>
+                    <a href="#"><i class='bx bx-cog'></i> Account Settings</a>
+                    <a href="#"><i class='bx bx-coin-stack'></i> Billing & Plans</a>
+                    <a href="#"><i class='bx bx-shield'></i> Privacy & Security</a>
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); margin-top: 5px; padding-top: 5px;">
+                        <a href="#" style="color: var(--danger-color);"><i class='bx bx-log-out'></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="menu_content">
+            <ul class="menu_items">
+                <div class="menu_title"><span>Dashboard</span></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-stats"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Overview</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-slider-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Configuration</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-crown"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Premium</span>
+                            <span class="tag tag-new">New</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="menu_items">
+                <div class="menu_title"><span>Module Settings</span></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-bot"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Auto Responder</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-palette"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Roles</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-notepad"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Logs</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-chat"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Activity</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-message-square-edit"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Embeds</span>
+                            <span class="tag tag-pro">Pro</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link active">
+                        <span class="navlink_icon">
+                            <i class="bx bx-shield-alt-2"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Moderation</span>
+                            <span class="tag tag-pro">Pro</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+            <ul class="menu_items">
+                <div class="menu_title"><span>Other</span></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cube-alt"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Invite Me</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cog"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Setting</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-log-out"></i>
+                        </span>
+                        <div class="navlink-container">
+                            <span class="navlink">Logout</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="bottom_content">
+                <div class="bottom expand_sidebar">
+                    <i class='bx bx-chevron-left'></i>
+                    <span>Collapse</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <!-- Header -->
+        <div class="moderation-header">
+            <h1>Server Moderation</h1>
+            <p>Manage your server members and bots efficiently</p>
+        </div>
+        
+        <!-- Controls -->
+        <div class="moderation-controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search members by name or ID...">
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label class="switch">
+                        <input type="checkbox" id="botToggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                    <span>Show Bots</span>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="switch">
+                        <input type="checkbox" id="roleFilter" checked>
+                        <span class="slider round"></span>
+                    </label>
+                    <span>Filter by Roles</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Grid -->
+        <div class="user-grid" id="userGrid">
+            <!-- User cards will be inserted here -->
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="#">Home</a>
+                <a href="#">Features</a>
+                <a href="#">Pricing</a>
+                <a href="#">Documentation</a>
+                <a href="#">Support</a>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+            <div class="copyright">
+                &copy; 2023 ProMcBot. All rights reserved. Minecraft is a trademark of Mojang AB.
+            </div>
+        </footer>
+    </section>
+
+    <script>
+        // Mobile sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const darkLight = document.getElementById('darkLight');
+        const collapseBtn = document.querySelector('.expand_sidebar');
+        
+        // Auto-close sidebar after 0.5 seconds on desktop
+        setTimeout(() => {
+            if (window.innerWidth > 992) {
+                sidebar.classList.add('auto-close');
+                setTimeout(() => {
+                    sidebar.classList.add('close');
+                }, 400);
+            }
+        }, 500);
+        
+        // Toggle sidebar
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+        
+        // Collapse sidebar
+        collapseBtn.addEventListener('click', () => {
+            sidebar.classList.add('auto-close');
+            setTimeout(() => {
+                sidebar.classList.add('close');
+            }, 400);
+        });
+        
+        // Expand sidebar
+        sidebar.addEventListener('click', (e) => {
+            if (e.target.closest('.nav_link') && sidebar.classList.contains('close')) {
+                sidebar.classList.remove('close', 'auto-close');
+            }
+        });
+        
+        // Theme toggle
+        darkLight.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Apply saved theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+            }
+            
+            // Close sidebar on mobile by default
+            if (window.innerWidth <= 992) {
+                sidebar.classList.remove('active');
+            }
+            
+            // Load moderation data
+            loadModerationData();
+        });
+        
+        // Dropdown functionality
+        const notificationBtn = document.getElementById('notificationBtn');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const userBtn = document.getElementById('userBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown.classList.toggle('show');
+            userDropdown.classList.remove('show');
+        });
+        
+        userBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('show');
+            notificationDropdown.classList.remove('show');
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 992) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Moderation Data
+        const moderationData = [
+            {
+                "id": "804999528129363998",
+                "username": ".iv2",
+                "avatar": "https://cdn.discordapp.com/avatars/804999528129363998/5db4de9a19079896517fd8c1d9aaf0fd.png?size=2048",
+                "banner": "fc2c639c7b0eb94cb61a1d9bc0b77f06",
+                "roles": [
+                    {"id": "1221411923627610192", "name": "Mod", "color": "#206694"},
+                    {"id": "1221411924563202108", "name": "Helper", "color": "#2ecc71"},
+                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
+                ],
+                "type": "member",
+                "messages": 1247,
+                "warnings": 2,
+                "status": "active"
+            },
+            {
+                "id": "1220005260857311294",
+                "username": "ProMcBot ✨",
+                "avatar": "https://cdn.discordapp.com/avatars/1220005260857311294/7df0b585344a4e68c64e52c419129aa4.png?size=2048",
+                "roles": [
+                    {"id": "1264196607621070903", "name": "ProMcBot", "color": "#7289da"},
+                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
+                ],
+                "type": "bot",
+                "messages": 9821,
+                "warnings": 0,
+                "status": "active",
+                "bot_owner": "Admin"
+            },
+            {
+                "id": "123456789012345678",
+                "username": "MineCrafter42",
+                "avatar": "https://cdn.discordapp.com/avatars/123456789012345678/a1b2c3d4e5f6g7h8i9j0.png?size=2048",
+                "roles": [
+                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"},
+                    {"id": "1221411923627610193", "name": "Builder", "color": "#e67e22"}
+                ],
+                "type": "member",
+                "messages": 543,
+                "warnings": 1,
+                "status": "active"
+            },
+            {
+                "id": "234567890123456789",
+                "username": "ServerHelperBot",
+                "avatar": "https://cdn.discordapp.com/avatars/234567890123456789/abcdef1234567890.png?size=2048",
+                "roles": [
+                    {"id": "1264196607621070903", "name": "Helper Bot", "color": "#3498db"},
+                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
+                ],
+                "type": "bot",
+                "messages": 3210,
+                "warnings": 0,
+                "status": "active",
+                "bot_owner": "Mod Team"
+            },
+            {
+                "id": "345678901234567890",
+                "username": "DiamondFinder",
+                "avatar": "https://cdn.discordapp.com/avatars/345678901234567890/1234567890abcdef.png?size=2048",
+                "roles": [
+                    {"id": "1221411923627610192", "name": "Mod", "color": "#206694"},
+                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
+                ],
+                "type": "member",
+                "messages": 2876,
+                "warnings": 0,
+                "status": "active"
+            },
+            {
+                "id": "456789012345678901",
+                "username": "RedstoneWizard",
+                "avatar": "https://cdn.discordapp.com/avatars/456789012345678901/a0b1c2d3e4f5g6h7i8j9.png?size=2048",
+                "roles": [
+                    {"id": "1221411923627610193", "name": "Builder", "color": "#e67e22"},
+                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
+                ],
+                "type": "member",
+                "messages": 876,
+                "warnings": 3,
+                "status": "muted"
+            },
+            {
+                "id": "567890123456789012",
+                "username": "MusicBot",
+                "avatar": "https://cdn.discordapp.com/avatars/567890123456789012/9876543210fedcba.png?size=2048",
+                "roles": [
+                    {"id": "1264196607621070904", "name": "Music Bot", "color": "#9b59b6"},
+                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
+                ],
+                "type": "bot",
+                "messages": 15432,
+                "warnings": 0,
+                "status": "active",
+                "bot_owner": "Admin"
+            },
+            {
+                "id": "678901234567890123",
+                "username": "NetherExplorer",
+                "avatar": "https://cdn.discordapp.com/avatars/678901234567890123/abcdef0123456789.png?size=2048",
+                "roles": [
+                    {"id": "1221411924563202108", "name": "Helper", "color": "#2ecc71"},
+                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
+                ],
+                "type": "member",
+                "messages": 1298,
+                "warnings": 0,
+                "status": "active"
+            }
+        ];
+
+        // Load moderation data
+        function loadModerationData() {
+            const userGrid = document.getElementById('userGrid');
+            userGrid.innerHTML = '';
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const showBots = document.getElementById('botToggle').checked;
+            
+            moderationData.forEach(user => {
+                // Filter by search term
+                if (searchTerm && !user.username.toLowerCase().includes(searchTerm) {
+                    return;
+                }
+                
+                // Filter by bot toggle
+                if (user.type === 'bot' && !showBots) {
+                    return;
+                }
+                
+                // Create user card
+                const userCard = document.createElement('div');
+                userCard.className = 'user-card';
+                
+                // Build roles HTML
+                let rolesHTML = '';
+                user.roles.forEach(role => {
+                    rolesHTML += `<div class="role-tag"><span class="role-color" style="background-color:${role.color}"></span>${role.name}</div>`;
+                });
+                
+                // Build actions HTML
+                let actionsHTML = '';
+                if (user.type === 'member') {
+                    actionsHTML = `
+                        <div class="user-actions">
+                            <button class="action-btn ban" onclick="moderateUser('${user.id}', 'ban')"><i class='bx bxs-user-x'></i> Ban</button>
+                            <button class="action-btn kick" onclick="moderateUser('${user.id}', 'kick')"><i class='bx bx-log-out-circle'></i> Kick</button>
+                            <button class="action-btn mute" onclick="moderateUser('${user.id}', 'mute')"><i class='bx bxs-microphone-off'></i> Mute</button>
+                            <button class="action-btn warn" onclick="moderateUser('${user.id}', 'warn')"><i class='bx bxs-error-alt'></i> Warn</button>
+                            <button class="action-btn nickname" onclick="moderateUser('${user.id}', 'nickname')"><i class='bx bx-rename'></i> Nickname</button>
+                            <button class="action-btn timeout" onclick="moderateUser('${user.id}', 'timeout')"><i class='bx bx-time'></i> Timeout</button>
+                        </div>
+                    `;
+                } else if (user.type === 'bot') {
+                    actionsHTML = `
+                        <div class="bot-actions">
+                            <button class="bot-action-btn" onclick="manageBot('${user.id}', 'restart')"><i class='bx bx-reset'></i> Restart Bot</button>
+                            <button class="bot-action-btn" onclick="manageBot('${user.id}', 'update')"><i class='bx bx-update'></i> Update Permissions</button>
+                        </div>
+                    `;
+                }
+                
+                // Build card HTML
+                userCard.innerHTML = `
+                    <div class="user-header">
+                        <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
+                        <h3 class="user-username">${user.username}</h3>
+                        <div class="user-id">ID: ${user.id}</div>
+                        <div class="user-roles">${rolesHTML}</div>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-type ${user.type}">${user.type === 'bot' ? 'BOT' : 'MEMBER'}</div>
+                        ${user.type === 'bot' ? `<div><strong>Owner:</strong> ${user.bot_owner}</div>` : ''}
+                        <div class="user-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${user.messages}</div>
+                                <div class="stat-label">Messages</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${user.warnings}</div>
+                                <div class="stat-label">Warnings</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${user.status}</div>
+                                <div class="stat-label">Status</div>
+                            </div>
+                        </div>
+                        ${actionsHTML}
+                    </div>
+                `;
+                
+                userGrid.appendChild(userCard);
+            });
+        }
+        
+        // Moderate user function
+        function moderateUser(userId, action) {
+            const user = moderationData.find(u => u.id === userId);
+            if (!user) return;
+            
+            let message = '';
+            switch(action) {
+                case 'ban':
+                    message = `Are you sure you want to ban ${user.username}?`;
+                    break;
+                case 'kick':
+                    message = `Are you sure you want to kick ${user.username}?`;
+                    break;
+                case 'mute':
+                    message = `Mute ${user.username} for how long?`;
+                    break;
+                case 'warn':
+                    message = `Send warning to ${user.username}`;
+                    break;
+                case 'nickname':
+                    message = `Change nickname for ${user.username}`;
+                    break;
+                case 'timeout':
+                    message = `Timeout ${user.username} for how long?`;
+                    break;
+            }
+            
+            alert(`Moderation Action: ${action.toUpperCase()}\n${message}`);
+            // In a real app, you would make an API call here
+        }
+        
+        // Manage bot function
+        function manageBot(botId, action) {
+            const bot = moderationData.find(b => b.id === botId && b.type === 'bot');
+            if (!bot) return;
+            
+            let message = '';
+            switch(action) {
+                case 'restart':
+                    message = `Restarting ${bot.username}...`;
+                    break;
+                case 'update':
+                    message = `Updating permissions for ${bot.username}...`;
+                    break;
+            }
+            
+            alert(`Bot Management: ${action.toUpperCase()}\n${message}`);
+            // In a real app, you would make an API call here
+        }
+        
+        // Setup event listeners for filters
+        document.getElementById('searchInput').addEventListener('input', loadModerationData);
+        document.getElementById('botToggle').addEventListener('change', loadModerationData);
+        document.getElementById('roleFilter').addEventListener('change', loadModerationData);
+    </script>
+</body>
+</html>

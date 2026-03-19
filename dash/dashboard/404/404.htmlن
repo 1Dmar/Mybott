@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+
+     <meta name="title" content="ProMcBot - 404" />
+  <meta name="description" content="Oops! The page you are looking for does not exist on ProMcBot." />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="http://45.140.165.216:1056/404" />
+  <meta property="og:title" content="ProMcBot - 404" />
+  <meta property="og:description" content="Oops! The page you are looking for does not exist on ProMcBot." />
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="http://45.140.165.216:1056/404" />
+  <meta property="twitter:title" content="ProMcBot - 404" />
+  <meta property="twitter:description" content="Oops! The page you are looking for does not exist on ProMcBot." />
+
+    <title>404 - Page Not Found</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #0D0D0D;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            width: 100%;
+            background: #1A1A1A;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .navbar img {
+            height: 50px;
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar ul li {
+            display: inline;
+        }
+
+        .navbar ul li a {
+            color: white;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .navbar ul li a:hover {
+            color: #f1c40f;
+        }
+
+        /* 404 Page */
+        .error-container {
+            max-width: 600px;
+            margin-top: 100px;
+        }
+
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            color: #f1c40f; /* Matches the theme */
+            text-shadow: 0px 0px 20px rgba(241, 196, 15, 0.7);
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { text-shadow: 0px 0px 20px rgba(241, 196, 15, 0.7); }
+            to { text-shadow: 0px 0px 35px rgba(241, 196, 15, 1); }
+        }
+
+        .error-message {
+            font-size: 24px;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .home-btn {
+            background-color: #5865F2;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 20px;
+            transition: 0.3s;
+        }
+
+        .home-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <img src="https://i.ibb.co/ccK6xS1S/7df0b585344a4e68c64e52c419129aa4.webp" alt="Bot Logo">
+        <ul>
+            <li><a href="/">Home</a></li>
+   </ul>
+    </nav>
+
+    <!-- 404 Error Page -->
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <div class="error-message">Oops! The page you are looking for doesn't exist.</div>
+        <a href="/" class="home-btn">Go Home</a>
+    </div>
+
+</body>
+</html>
+

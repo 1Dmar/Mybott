@@ -1,0 +1,91 @@
+const {
+  CommandInteraction,
+  ApplicationCommandType,
+  PermissionFlagsBits,
+  EmbedBuilder,
+} = require("discord.js");
+const fs = require('fs');
+const Langs = require("../../../Models/Langs");
+const Server = require("../../../Models/User");
+const translations = JSON.parse(fs.readFileSync('./public/json/translations.json', 'utf8'));
+
+async function getTranslatedMessage(guildId, messageKey) {
+  const userLang = await Langs.findOne({ guildId });
+  const language = userLang ? userLang.language : 'en';
+
+  return translations[language][messageKey];
+}
+
+module.exports = {
+  name: "setlanguage",
+  description: `Set mention action for announcements`,
+  userPermissions: PermissionFlagsBits.Administrator,
+  botPermissions: PermissionFlagsBits.SendMessages,
+  category: "Server",
+    type1: "slash",
+  type: ApplicationCommandType.ChatInput,
+  options: [
+    {
+      name: "language",
+      description: "Choose your server lang: en, ar, and more...",
+      type: 3,
+      required: true,
+      choices: [
+        { name: "English ( Default )", value: "en" },
+        { name: "Arabic", value: "ar" },
+        { name: "Chinese", value: "zh" },
+      ],
+    },
+  ],
+  run: async (client, interaction) => {
+    const language = interaction.options.getString('language');
+    const guildId = interaction.guild.id;
+    const Languagesetold = await Langs.findOne({ guildId });
+
+    if (!guildId) {
+      return interaction.reply({
+        content: "An error occurred: guildId is null",
+        ephemeral: true,
+      });
+    }
+
+    await Langs.findOneAndUpdate(
+      { guildIds: guildId },
+      { $set: { language: language } },
+      { upsert: true, new: true }
+    );
+
+    const membershipServer = await Server.findOne({ Id: guildId });
+    let langname;
+    if (language === 'en') {
+      langname = 'English ( Default )';
+    } else if (language === 'ar') {
+      langname = 'Arabic';
+    } else if (language === 'zh') {
+      langname = 'Chinese';
+    }
+    
+    const Languageset = await getTranslatedMessage(guildId, 'Languageset');
+
+    interaction.reply({
+      content: `${Languageset} ${language}`,
+      ephemeral: true,
+    });
+
+    const targetRoom = await client.channels.fetch('1273517280747065427');
+    if (!targetRoom) return console.error('Invalid target room ID!');
+
+    const embed = new EmbedBuilder()
+        .setColor(0x0099FF)
+        .setTitle(`New server language has been saved from ${interaction.guild.name}`)
+        .addFields(
+            { name: 'Server Id', value: `( ${guildId} )`, inline: true },
+            { name: 'Language', value: `( ${Languagesetold.language} ) => ${langname} (${language})`, inline: true },
+            { name: 'By', value: `${interaction.user.username}`, inline: false },
+            { name: 'isMemberShip?', value: `${membershipServer.ismembership ? "Yes" : "No"} (Plan ${membershipServer.plan})`, inline: false },
+        )
+        .setTimestamp();
+
+    await targetRoom.send({ embeds: [embed] });
+  },
+};

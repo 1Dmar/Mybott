@@ -1,0 +1,292 @@
+{
+  "MessageDelete": {
+    "title": "Message Deleted",
+    "description": "A message sent by {author} was deleted in {channel}.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "Message Content",
+        "value": "{content}",
+        "inline": true
+      },
+      {
+        "name": "Author",
+        "value": "<@{authorId}>",
+        "inline": true
+      }
+    ]
+  },
+  "MessageUpdate": {
+    "title": "Message Edited",
+    "description": "A message sent by {author} was edited in {channel}.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "Old Message",
+        "value": "{oldContent}",
+        "inline": true
+      },
+      {
+        "name": "New Message",
+        "value": "{newContent}",
+        "inline": true
+      },
+      {
+        "name": "Author",
+        "value": "<@{authorId}>",
+        "inline": true
+      }
+    ]
+  },
+  "GuildMemberAdd": {
+    "title": "Member Joined",
+    "description": "{member} has joined the server.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Member",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "GuildMemberRemove": {
+    "title": "Member Left",
+    "description": "{member} has left the server.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Member",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "RoleCreate": {
+    "title": "Role Created",
+    "description": "A new role named {role} has been created.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{iconURL}"
+    },
+    "fields": [
+      {
+        "name": "Role",
+        "value": "{role}",
+        "inline": true
+      }
+    ]
+  },
+  "RoleDelete": {
+    "title": "Role Deleted",
+    "description": "A role named {role} has been deleted.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{iconURL}"
+    },
+    "fields": [
+      {
+        "name": "Role",
+        "value": "{role}",
+        "inline": true
+      }
+    ]
+  },
+  "GuildBanAdd": {
+    "title": "Member Banned",
+    "description": "{member} has been banned from the server.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Member",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "GuildBanRemove": {
+    "title": "Member Unbanned",
+    "description": "{member} has been unbanned from the server.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Member",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "ChannelCreate": {
+    "title": "Channel Created",
+    "description": "A new channel named {channel} has been created.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{iconURL}"
+    },
+    "fields": [
+      {
+        "name": "Channel",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "ChannelDelete": {
+    "title": "Channel Deleted",
+    "description": "A channel named {channel} has been deleted.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{iconURL}"
+    },
+    "fields": [
+      {
+        "name": "Channel",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "EmojiCreate": {
+    "title": "Emoji Created",
+    "description": "A new emoji named {emoji} has been created.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{emojiURL}"
+    },
+    "fields": [
+      {
+        "name": "Emoji",
+        "value": "{emoji}",
+        "inline": true
+      }
+    ]
+  },
+  "EmojiDelete": {
+    "title": "Emoji Deleted",
+    "description": "An emoji named {emoji} has been deleted.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{emojiURL}"
+    },
+    "fields": [
+      {
+        "name": "Emoji",
+        "value": "{emoji}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateJoin": {
+    "title": "Voice Channel Join",
+    "description": "<@{memberId}> joined voice channel {channel}.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Channel",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateLeave": {
+    "title": "Voice Channel Leave",
+    "description": "<@{memberId}> left voice channel {channel}.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "Channel",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateMove": {
+    "title": "Voice Channel Move",
+    "description": "<@{memberId}> moved from voice channel {oldChannel} to {newChannel}.",
+    "footer": {
+      "text": "ProMcBot",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "From Channel",
+        "value": "{oldChannel}",
+        "inline": true
+      },
+      {
+        "name": "To Channel",
+        "value": "{newChannel}",
+        "inline": true
+      }
+    ]
+  }
+}

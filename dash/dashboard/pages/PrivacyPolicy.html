@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Temp Mail</title>
+    <style>
+        :root {
+            --primary-color: #1877f2;
+            --danger-color: #dc3545;
+            --background: #f0f2f5;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .email-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .email-tab {
+            padding: 10px 20px;
+            background: #e4e6eb;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .email-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        button.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .inbox {
+            margin-top: 20px;
+        }
+
+        .email-item {
+            background: var(--background);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Universal Temp Mail</h1>
+        
+        <div class="toolbar">
+            <button class="primary" onclick="generateNewEmail()">New Email</button>
+            <button onclick="refreshAllInboxes()">Refresh All</button>
+        </div>
+
+        <div class="email-tabs" id="emailTabs"></div>
+
+        <div class="inbox" id="inboxContainer">
+            <!-- Inbox content will be loaded here -->
+        </div>
+    </div>
+
+    <div id="notification"></div>
+
+    <script>
+        // Configuration
+        const DOMAINS = ['1secmail.com', '1secmail.net', '1secmail.org'];
+        const API_BASE = 'https://www.1secmail.com/api/v1/';
+        const POLL_INTERVAL = 15000;
+
+        // State management
+        let currentEmail = null;
+
+        // Initialize from localStorage
+        function init() {
+            const emails = getSavedEmails();
+            if (emails.length > 0) {
+                currentEmail = emails[0].email;
+            }
+            renderTabs();
+            pollInboxes();
+            setInterval(pollInboxes, POLL_INTERVAL);
+        }
+
+        // Generate new email
+        async function generateNewEmail() {
+            const username = Math.random().toString(36).substring(2, 12);
+            const domain = DOMAINS[Math.floor(Math.random() * DOMAINS.length)];
+            const email = `${username}@${domain}`;
+            
+            saveEmail(email);
+            currentEmail = email;
+            renderTabs();
+            showNotification('New email created!');
+            await checkInbox(email);
+        }
+
+        // Save email to localStorage
+        function saveEmail(email) {
+            const emails = getSavedEmails();
+            if (!emails.find(e => e.email === email)) {
+                emails.push({ email, createdAt: new Date().toISOString() });
+                localStorage.setItem('tempEmails', JSON.stringify(emails));
+            }
+        }
+
+        // Get all saved emails
+        function getSavedEmails() {
+            return JSON.parse(localStorage.getItem('tempEmails')) || [];
+        }
+
+        // Render email tabs
+        function renderTabs() {
+            const emails = getSavedEmails();
+            const tabs = emails.map(email => `
+                <div class="email-tab ${email.email === currentEmail ? 'active' : ''}" 
+                     onclick="switchEmail('${email.email}')">
+                    ${email.email}
+                </div>
+            `).join('');
+            
+            document.getElementById('emailTabs').innerHTML = tabs;
+            if (currentEmail) renderInbox(currentEmail);
+        }
+
+        // Switch active email
+        function switchEmail(email) {
+            currentEmail = email;
+            renderTabs();
+        }
+
+        // Render inbox for specific email
+        async function renderInbox(email) {
+            const messages = await getMessages(email);
+            const html = messages.map(msg => `
+                <div class="email-item">
+                    <h3>${msg.subject}</h3>
+                    <p>From: ${msg.from}</p>
+                    <p>${new Date(msg.date).toLocaleString()}</p>
+                    <button onclick="viewMessage('${email}', ${msg.id})">View</button>
+                </div>
+            `).join('');
+            
+            document.getElementById('inboxContainer').innerHTML = html || '<p>No messages found</p>';
+        }
+
+        // Get messages from API
+        async function getMessages(email) {
+            const [login, domain] = email.split('@');
+            try {
+                const response = await fetch(`${API_BASE}?action=getMessages&login=${login}&domain=${domain}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching messages:', error);
+                return [];
+            }
+        }
+
+        // View individual message
+        async function viewMessage(email, messageId) {
+            const [login, domain] = email.split('@');
+            try {
+                const response = await fetch(`${API_BASE}?action=readMessage&login=${login}&domain=${domain}&id=${messageId}`);
+                const message = await response.json();
+                alert(`Message Content:\n\n${message.textBody}`);
+            } catch (error) {
+                console.error('Error fetching message:', error);
+            }
+        }
+
+        // Poll all inboxes
+        async function pollInboxes() {
+            const emails = getSavedEmails();
+            for (const email of emails) {
+                await checkInbox(email.email);
+            }
+        }
+
+        // Check for new messages
+        async function checkInbox(email) {
+            const messages = await getMessages(email);
+            if (messages.length > 0) {
+                showNotification(`New messages in ${email}`);
+            }
+        }
+
+        // Refresh all inboxes
+        async function refreshAllInboxes() {
+            await pollInboxes();
+            if (currentEmail) renderInbox(currentEmail);
+            showNotification('All inboxes refreshed');
+        }
+
+        // Notification system
+        function showNotification(message, duration = 3000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, duration);
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

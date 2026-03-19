@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <title>ProMcBot - Premium</title>
+    <style>
+        /* Import Google font - Poppins */
+        @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap");
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        :root {
+            --white-color: #fff;
+            --blue-color: #4070f4;
+            --grey-color: #707070;
+            --grey-color-light: #aaa;
+            --ggff: #f1efef;
+            --primary-color: #4070f4;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --dark-bg: #17212b;
+            --dark-card: #1f2a35;
+            --premium-gold: #ffd700;
+            --premium-gradient: linear-gradient(135deg, #ffd700, #ff9800);
+        }
+        .introjs-tooltip {
+            background-color: #222;
+            color: #ffcc00;
+            border-radius: 8px;
+            font-size: 16px;
+            padding: 10px;
+        }
+
+        body {
+            background-color: var(--ggff);
+            transition: all 0.5s ease;
+        }
+        body.dark {
+            background-color: var(--dark-bg);
+        }
+        body.dark {
+            --white-color: #1f2a35;
+            --blue-color: #fff;
+            --grey-color: #f2f2f2;
+            --grey-color-light: #aaa;
+            --ggff: #17212b;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            left: 0;
+            background-color: var(--white-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            z-index: 1000;
+            box-shadow: 0 0 2px var(--grey-color-light);
+            justify-content: space-around;
+        }
+
+        .tag {
+            display: inline-block;
+            border-radius: 16em;
+            padding: 0.2em 0.5em 0.3em;
+            padding: -0.8em 0.5em -1.7em;
+            border-radius: 2px;
+            background: hsl(0deg 89.68% 63.28% / 52%);
+            color: #fff;
+            font-weight: 600;
+            margin: 0.25em 0.6em;
+        }
+        h1.tag {
+            margin-left: 0;
+            margin-right: 0
+        }
+
+        .tag-sm {
+            font-size: .7em;
+            display: inline-block;
+            letter-spacing: .15ch;
+            font-weight: 400
+        }
+
+        .tag-lg {
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .tag-bg {
+            background: var(#454e56)
+        }
+
+        .tag-green,.tag-pro {
+            background: var(--green);
+            color: #fff
+        }
+
+        .tag-purple {
+            background: var(--purple);
+            color: #fff
+        }
+
+        .tag-contrast {
+            background: var(--text-color);
+            color: #a481d5;
+        }
+        .tag-minimum-viable-product,.tag-mvp {
+            color: #fff;
+            background-image: linear-gradient(90deg,#ff8901,#db1d5f);
+            font-weight: 700
+        }
+
+        .logo_item {
+            display: flex;
+            align-items: center;
+            column-gap: 10px;
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--grey-color);
+        }
+        .navbar img {
+            width: 35px;
+            height: 35px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .search_bar {
+            height: 47px;
+            max-width: 430px;
+            width: 100%;
+        }
+        .search_bar input {
+            height: 100%;
+            width: 100%;
+            border-radius: 25px;
+            font-size: 18px;
+            outline: none;
+            background-color: var(--white-color);
+            color: var(--grey-color);
+            border: 1px solid var(--grey-color-light);
+            padding: 0 20px;
+        }
+        .navbar_content {
+            display: flex;
+            align-items: center;
+            column-gap: 25px;
+        }
+        .navbar_content i {
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--grey-color);
+        }
+
+        /* sidebar */
+        .sidebar {
+            background-color: var(--white-color);
+            width: 260px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            padding: 80px 20px;
+            z-index: 100;
+            overflow-y: scroll;
+            box-shadow: 0 0 1px var(--grey-color-light);
+            transition: all 0.5s ease;
+        }
+        .sidebar.close {
+            padding: 60px 0;
+            width: 80px;
+        }
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .menu_content {
+            position: relative;
+        }
+        .menu_title {
+            margin: 15px 0;
+            padding: 0 20px;
+            font-size: 18px;
+        }
+        .sidebar.close .menu_title {
+            padding: 6px 30px;
+        }
+        .menu_title::before {
+            color: var(--grey-color);
+            white-space: nowrap;
+        }
+        .menu_dahsboard::before {
+            content: "Dashboard";
+        }
+        .menu_editor::before {
+            content: "Module Settings";
+        }
+        .menu_setting::before {
+            content: "Other";
+        }
+        .sidebar.close .menu_title::before {
+            content: "";
+            position: absolute;
+            height: 2px;
+            width: 18px;
+            border-radius: 12px;
+            background: var(--grey-color-light);
+        }
+        .menu_items {
+            padding: 0;
+            list-style: none;
+        }
+        .navlink_icon {
+            position: relative;
+            font-size: 22px;
+            min-width: 50px;
+            line-height: 40px;
+            display: inline-block;
+            text-align: center;
+            border-radius: 6px;
+        }
+        .navlink_icon::before {
+            content: "";
+            position: absolute;
+            height: 100%;
+            width: calc(100% + 100px);
+            left: -20px;
+        }
+        .navlink_icon:hover {
+            background: var(--blue-color);
+        }
+        .tag {
+            display: inline-block;
+            border-radius: 16em;
+            padding: 0.2em 0.5em 0.3em;
+            padding: -0.8em 0.5em -1.7em;
+            border-radius: 2px;
+            background: hsl(0deg 89.68% 63.28% / 52%);
+            color: #fff;
+            font-weight: 600;
+            margin: 0.25em 0.6em;
+        }
+        h1.tag {
+            margin-left: 0;
+            margin-right: 0
+        }
+        .tag-lg {
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+        .sidebar .nav_link {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 4px 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--grey-color);
+            white-space: nowrap;
+        }
+        .sidebar.close .navlink {
+            display: none;
+        }
+        .nav_link:hover {
+            color: var(--white-color);
+            background: var(--blue-color);
+        }
+        .sidebar.close .nav_link:hover {
+            background: var(--white-color);
+        }
+        .submenu_item {
+            cursor: pointer;
+        }
+        .submenu {
+            display: none;
+        }
+        .submenu_item .arrow-left {
+            position: absolute;
+            right: 10px;
+            display: inline-block;
+            margin-right: auto;
+        }
+        .sidebar.close .submenu {
+            display: none;
+        }
+        .show_submenu ~ .submenu {
+            display: block;
+        }
+        .show_submenu .arrow-left {
+            transform: rotate(90deg);
+        }
+        .submenu .sublink {
+            padding: 15px 15px 15px 52px;
+        }
+        .bottom_content {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            width: 260px;
+            cursor: pointer;
+            transition: all 0.5s ease;
+        }
+        .bottom {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            left: 0;
+            justify-content: space-around;
+            padding: 18px 0;
+            text-align: center;
+            width: 100%;
+            color: var(--grey-color);
+            border-top: 1px solid var(--grey-color-light);
+            background-color: var(--white-color);
+        }
+        .bottom i {
+            font-size: 20px;
+        }
+        .bottom span {
+            font-size: 18px;
+        }
+        .sidebar.close .bottom_content {
+            width: 50px;
+            left: 15px;
+        }
+        .sidebar.close .bottom span {
+            display: none;
+        }
+        .sidebar.hoverable .collapse_sidebar {
+            display: none;
+        }
+        #sidebarOpen {
+            display: none;
+        }
+        @media screen and (max-width: 768px) {
+            #sidebarOpen {
+                font-size: 25px;
+                display: block;
+                margin-right: 10px;
+                cursor: pointer;
+                color: var(--grey-color);
+            }
+            .sidebar.close {
+                left: -100%;
+            }
+            .search_bar {
+                display: none;
+            }
+            .sidebar.close .bottom_content {
+                left: -100%;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px;
+            margin-left: 260px;
+            transition: margin-left 0.5s ease;
+        }
+
+        .sidebar.close ~ .main-content {
+            margin-left: 80px;
+        }
+
+        h4 {
+            color: var(--grey-color);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            z-index: 1;
+        }
+
+        .card {
+            background: var(--white-color);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark .card {
+            background: var(--dark-card);
+            border-color: #2a3947;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        body.dark .card-title {
+            border-bottom-color: #2a3947;
+        }
+
+        .card-title h2 {
+            font-size: 1.4rem;
+            color: var(--grey-color);
+        }
+
+        .premium-badge {
+            background: var(--premium-gradient);
+            color: #333;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--grey-color);
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: var(--white-color);
+            color: var(--grey-color);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        body.dark input, 
+        body.dark select, 
+        body.dark button {
+            background: #2a3947;
+            border-color: #364452;
+            color: #f0f0f0;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--blue-color);
+            box-shadow: 0 0 0 3px rgba(64, 112, 244, 0.2);
+        }
+
+        button {
+            background-color: var(--blue-color);
+            border: none;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #3058d8;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #3ba55d; }
+        .status-idle { background-color: #faa81a; }
+        .status-dnd { background-color: #ed4245; }
+        .status-invisible { background-color: #747f8d; }
+        
+        /* Premium specific styles */
+        .premium-hero {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--premium-gradient);
+            color: #fff;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .premium-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .premium-hero p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .plans-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .plan-card {
+            background: var(--white-color);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body.dark .plan-card {
+            background: var(--dark-card);
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .plan-card.popular {
+            border: 3px solid var(--premium-gold);
+        }
+        
+        .popular-tag {
+            position: absolute;
+            top: 15px;
+            right: -30px;
+            background: var(--premium-gold);
+            color: #333;
+            padding: 5px 35px;
+            transform: rotate(45deg);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .plan-name {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--premium-gold);
+        }
+        
+        .plan-price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--grey-color);
+        }
+        
+        .plan-features {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+        
+        .plan-features li {
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+        }
+        
+        body.dark .plan-features li {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+        
+        .plan-features li:last-child {
+            border-bottom: none;
+        }
+        
+        .plan-features li i {
+            color: var(--premium-gold);
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .benefits-section {
+            margin-top: 50px;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+        
+        .benefit-card {
+            background: var(--white-color);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        body.dark .benefit-card {
+            background: var(--dark-card);
+        }
+        
+        .benefit-icon {
+            font-size: 3rem;
+            color: var(--premium-gold);
+            margin-bottom: 20px;
+        }
+        
+        .benefit-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--premium-gold);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin: 25px 0 15px;
+            color: var(--grey-color);
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        body.dark .section-title {
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarOpen"></i>
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
+        </div>
+
+        <div class="search_bar">
+            <input type="text" placeholder="Search" />
+        </div>
+
+        <div class="navbar_content">
+            <i class="bi bi-grid"></i>
+            <i data-intro="Try to change your Theme_Color" class='bx bx-sun' id="darkLight"></i>
+            <i id="start-ttes" class="bx bx-card"></i>
+            <i class='bx bx-bell' ></i>
+            <img src="https://cdn.discordapp.com/avatars/123456789012345678/abcdef1234567890abcdef1234567890.webp" alt="User Avatar" class="profile" />
+        </div>
+    </nav>
+
+    <!-- sidebar -->
+    <nav class="sidebar">
+        <div class="menu_content">
+            <ul class="menu_items">
+                <div class="menu_title menu_dahsboard"></div>
+                <li class="item">
+                    <a href="overview.html" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-stats"></i>
+                        </span>
+                        <span class="navlink">Overview</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-slider-alt"></i>
+                        </span>
+                        <span class="navlink">Configuration</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="premium.html" class="nav_link active">
+                        <span class="navlink_icon">
+                            <i class="bx bx-crown"></i>
+                        </span>
+                        <span class="navlink">Premium</span>
+                        <span class="tag tag-new tag-lg"> New</span>
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="menu_items">
+                <div class="menu_title menu_editor"></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-bot"></i>
+                        </span>
+                        <span class="navlink">Auto Responder</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-palette"></i>
+                        </span>
+                        <span class="navlink">Roles</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-notepad"></i>
+                        </span>
+                        <span class="navlink">Logs</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-chat"></i>
+                        </span>
+                        <span class="navlink">Activity</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-message-square-edit"></i>
+                        </span>
+                        <span class="navlink">Embeds</span>
+                        <span class="bx bx-crown tag tag-new tag-lg"> Pro</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-shield-alt-2"></i>
+                        </span>
+                        <span class="navlink">Moderation</span>
+                        <span class="bx bx-crown tag tag-new tag-lg"> Pro</span>
+                    </a>
+                </li>
+            </ul>
+            <ul class="menu_items">
+                <div class="menu_title menu_setting"></div>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cube-alt"></i>
+                        </span>
+                        <span class="navlink">Invite Me</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-cog"></i>
+                        </span>
+                        <span class="navlink">Setting</span>
+                    </a>
+                </li>
+                <li class="item">
+                    <a href="#" class="nav_link">
+                        <span class="navlink_icon">
+                            <i class="bx bx-log-out"></i>
+                        </span>
+                        <span data-intro="If you want to logout" data-step="3" class="navlink">Logout</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="bottom_content">
+                <div class="bottom expand_sidebar">
+                    <span> Expand</span>
+                    <i class='bx bx-log-in' ></i>
+                </div>
+                <div data-intro="You Can Collapse This SideBar or Expand it" data-step="2" class="bottom collapse_sidebar">
+                    <span> Collapse</span>
+                    <i class='bx bx-log-out'></i>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="blacklist-card" class="card hidden">
+        <h1>Server Blacklisted</h1>
+        <p>This server is blacklisted and you cannot use the bot here.</p>
+        <p>Contact <a href="https://discord.gg/6FjFYStz5a">ProMcBot Support</a> for more information.</p>
+    </div>
+
+    <section class="main-content">
+        <div class="premium-hero">
+            <h1>ProMcBot Premium</h1>
+            <p>Unlock powerful features and enhance your server management with our premium subscription. Get access to exclusive tools, customization options, and priority support.</p>
+        </div>
+        
+        <div class="plans-container">
+            <div class="plan-card">
+                <div class="plan-name">Basic</div>
+                <div class="plan-price">$4.99<span class="per-month">/month</span></div>
+                <ul class="plan-features">
+                    <li><i class='bx bx-check'></i> Custom Bot Prefix</li>
+                    <li><i class='bx bx-check'></i> Auto Responder (10 triggers)</li>
+                    <li><i class='bx bx-check'></i> Basic Embed Customization</li>
+                    <li><i class='bx bx-check'></i> 500 Command Uses/month</li>
+                    <li><i class='bx bx-check'></i> Standard Support</li>
+                </ul>
+                <button class="select-plan">Select Plan</button>
+            </div>
+            
+            <div class="plan-card popular">
+                <div class="popular-tag">MOST POPULAR</div>
+                <div class="plan-name">Pro</div>
+                <div class="plan-price">$9.99<span class="per-month">/month</span></div>
+                <ul class="plan-features">
+                    <li><i class='bx bx-check'></i> All Basic Features</li>
+                    <li><i class='bx bx-check'></i> Advanced Auto Responder</li>
+                    <li><i class='bx bx-check'></i> Full Embed Customization</li>
+                    <li><i class='bx bx-check'></i> Custom Bot Status & Avatar</li>
+                    <li><i class='bx bx-check'></i> Unlimited Command Uses</li>
+                    <li><i class='bx bx-check'></i> Moderation Tools</li>
+                    <li><i class='bx bx-check'></i> Priority Support</li>
+                </ul>
+                <button class="select-plan">Select Plan</button>
+            </div>
+            
+            <div class="plan-card">
+                <div class="plan-name">Ultimate</div>
+                <div class="plan-price">$19.99<span class="per-month">/month</span></div>
+                <ul class="plan-features">
+                    <li><i class='bx bx-check'></i> All Pro Features</li>
+                    <li><i class='bx bx-check'></i> Multi-Server Management</li>
+                    <li><i class='bx bx-check'></i> Custom Plugin Integration</li>
+                    <li><i class='bx bx-check'></i> Dedicated Bot Instance</li>
+                    <li><i class='bx bx-check'></i> 24/7 Premium Support</li>
+                    <li><i class='bx bx-check'></i> Early Access to Features</li>
+                    <li><i class='bx bx-check'></i> Server Analytics</li>
+                </ul>
+                <button class="select-plan">Select Plan</button>
+            </div>
+        </div>
+        
+        <div class="benefits-section">
+            <h2 class="section-title">Premium Benefits</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class='bx bx-rocket'></i>
+                    </div>
+                    <h3 class="benefit-title">Priority Support</h3>
+                    <p>Get your questions answered faster with dedicated premium support channels and faster response times.</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class='bx bx-customize'></i>
+                    </div>
+                    <h3 class="benefit-title">Advanced Customization</h3>
+                    <p>Customize your bot's appearance, commands, and behavior to perfectly match your server's needs.</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class='bx bx-shield-quarter'></i>
+                    </div>
+                    <h3 class="benefit-title">Enhanced Moderation</h3>
+                    <p>Access powerful moderation tools including auto-mod, advanced logging, and customizable filters.</p>
+                </div>
+                
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class='bx bx-bar-chart-alt'></i>
+                    </div>
+                    <h3 class="benefit-title">Server Analytics</h3>
+                    <p>Gain insights into your server's activity with detailed analytics and statistics dashboards.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const body = document.querySelector("body");
+            const darkLight = document.querySelector("#darkLight");
+            
+            // Apply saved theme
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            if (currentTheme === 'dark') {
+                body.classList.add('dark');
+                darkLight.classList.replace("bx-sun", "bx-moon");
+            }
+            
+            // Toggle theme
+            darkLight.addEventListener("click", () => {
+                body.classList.toggle('dark');
+                if (body.classList.contains('dark')) {
+                    localStorage.setItem('theme', 'dark');
+                    darkLight.classList.replace("bx-sun", "bx-moon");
+                } else {
+                    localStorage.setItem('theme', 'light');
+                    darkLight.classList.replace("bx-moon", "bx-sun");
+                }
+            });
+            
+            // Sidebar functionality
+            const sidebar = document.querySelector(".sidebar");
+            const sidebarOpen = document.querySelector("#sidebarOpen");
+            const sidebarClose = document.querySelector(".collapse_sidebar");
+            const sidebarExpand = document.querySelector(".expand_sidebar");
+            
+            sidebarOpen.addEventListener("click", () => sidebar.classList.toggle("close"));
+            sidebarClose.addEventListener("click", () => {
+                sidebar.classList.add("close", "hoverable");
+                localStorage.setItem('sidebarState', 'closed');
+            });
+            sidebarExpand.addEventListener("click", () => {
+                sidebar.classList.remove("close", "hoverable");
+                localStorage.setItem('sidebarState', 'open');
+            });
+            
+            // Apply saved sidebar state
+            const sidebarState = localStorage.getItem('sidebarState') || 'closed';
+            if (sidebarState === 'closed') {
+                sidebar.classList.add("close", "hoverable");
+            } else {
+                sidebar.classList.remove("close", "hoverable");
+            }
+            
+            // Initialize intro.js tour
+            document.getElementById("start-ttes").addEventListener("click", function() {
+                introJs().start();
+            });
+            
+            // Plan selection
+            document.querySelectorAll('.select-plan').forEach(button => {
+                button.addEventListener('click', function() {
+                    const planName = this.closest('.plan-card').querySelector('.plan-name').textContent;
+                    Swal.fire({
+                        title: `Selected ${planName} Plan`,
+                        text: `You've selected the ${planName} plan. You'll be redirected to the payment page.`,
+                        icon: 'success',
+                        confirmButtonText: 'Continue to Payment'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

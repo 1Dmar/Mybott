@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${username} - Profile Settings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+/* Dark Mode Styles */
+
+body.dark {
+
+    background: #0D0D0D;
+
+    color: white;
+
+}
+
+body.dark .theme-toggle {
+
+    background: #1A1A1A;
+
+}
+
+/* Update all other .light-mode selectors similarly */
+        body {
+          /*  background: #0D0D0D;*/
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard {
+            width: 95%;
+            max-width: 800px;
+        }
+
+        /* Greeting Card */
+        .greeting-card {
+            background: #1A1A1A;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+            box-shadow: 0px 4px 15px rgba(241, 196, 15, 0.3);
+        }
+
+        .greeting-card h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background-color: #5865F2;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Profile Card */
+        .profile-container {
+            background: #1A1A1A;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0px 4px 15px rgba(241, 196, 15, 0.3);
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .banner {
+            width: 100%;
+            height: 150px;
+            border-radius: 12px 12px 0 0;
+            object-fit: cover;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #f1c40f;
+            margin-top: -40px;
+            background: #252525;
+        }
+
+        .profile-details {
+            margin-top: 10px;
+        }
+
+        .username {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .email {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .input-field {
+            background: #252525;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            color: white;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .input-field:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .id-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #252525;
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 18px;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* API Key Card */
+        .api-card {
+            background: #1A1A1A;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0px 4px 15px rgba(241, 196, 15, 0.3);
+            text-align: center;
+        }
+
+        .api-card small {
+            font-size: 12px;
+            opacity: 0.7;
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .greeting-card {
+                padding: 15px;
+            }
+
+            .profile-container {
+                padding: 15px;
+            }
+
+            .avatar {
+                width: 70px;
+                height: 70px;
+                margin-top: -35px;
+            }
+
+            .username {
+                font-size: 18px;
+            }
+
+            .input-field {
+                font-size: 14px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+        }
+
+    
+    /* Dark/Light Mode Toggle */
+    .theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #1A1A1A;
+        border-radius: 50%;
+        padding: 12px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        z-index: 1000;
+        transition: all 0.3s ease;
+    }
+    .theme-toggle:hover {
+        transform: scale(1.1);
+    }
+    .theme-toggle i {
+        font-size: 24px;
+        color: #f1c40f;
+    }
+
+    /* Light Mode Overrides */
+    body:not(.dark) {
+        background: #f8f9fa;
+        color: #2d3748;
+    }
+    body:not(.dark) .theme-toggle {
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    body:not(.dark) .theme-toggle i {
+        color: #4a5568;
+    }
+    body:not(.dark) .greeting-card,
+    body:not(.dark) .profile-container,
+    body:not(.dark) .api-card {
+        background: #ffffff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    body:not(.dark) .input-field,
+    body:not(.dark) .id-container {
+        background: #f7fafc;
+        color: #2d3748;
+        border: 1px solid #e2e8f0;
+    }
+    body:not(.dark) .btn {
+        background: #5865F2;
+        color: white;
+    }
+    body:not(.dark) .avatar {
+        border-color: #718096;
+    }
+    body:not(.dark) .copy-btn {
+        color: #4a5568;
+    }
+
+    /* Dark Mode Styles */
+    body.dark .theme-toggle {
+        background: #1A1A1A;
+    }
+    body.dark .theme-toggle i {
+        color: #f1c40f;
+    }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard">
+
+        <!-- Greeting Card -->
+        <div class="greeting-card">
+            <h2>Hello, <span>${username}</span>, Welcome back</h2>
+            <div class="buttons">
+                <a href="/servers" class="btn"><span class="material-icons">storage</span> Servers</a>
+                <a href="/bugs" class="btn"><span class="material-icons">bug_report</span> Report a Bug</a>
+            </div>
+        </div>
+
+        <!-- Profile Card -->
+        <div class="profile-container">
+            <img src="https://i.ibb.co/1YZpvv1Y/banner.jpg" id="banner" class="banner" alt="User Banner">
+            <img src="${avatar}" class="avatar">
+            <div class="profile-details">
+                <div class="username">${global_name}</div>
+                <div class="email">${email}</div>
+
+                <label for="nameInput">Change Your Username</label>
+                <input type="text" class="input-field" placeholder="${username}" disabled>
+                <label for="discordId">Your Profile URL</label>
+                <div class="id-container">
+                    <input type="text" class="input-field" placeholder="http://194.15.36.95:9504/u/${userId}" disabled>
+                    <button class="copy-btn" onclick="copyURL()">
+                        <span class="material-icons">content_copy</span>
+                    </button>
+                </div>
+
+                <label for="discordId">Your ID</label>
+
+                <div class="id-container">
+
+                    <input type="text" class="input-field" placeholder="${userId}" disabled>
+
+                    <button class="copy-btn" onclick="copyID()">
+
+                        <span class="material-icons">content_copy</span>
+
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- API Key Card -->
+        <div class="api-card">
+            <h3>Create API Key</h3>
+            <label for="apiName">API Name</label>
+            <input type="text" id="apiName" class="input-field" placeholder="API Name" disabled>
+            <label for="apiAction">Action Number</label>
+            <input type="text" id="apiAction" class="input-field" placeholder="Enter 1 for Bots, 2 for Minecraft" disabled>
+            <small>Note: If you want the API to work on all bot systems, enter 1. If you want it to work on Minecraft only, enter 2.</small>
+        </div>
+
+    </div>
+<script>
+    function copyID() {
+            const el = document.createElement('textarea');
+            el.value = '${userId}';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            alert('Copied!');
+        }
+    
+    function copyURL() {
+
+            const el = document.createElement('textarea');
+
+            el.value = 'http://194.15.36.95:9504/u/${userId}';
+
+            document.body.appendChild(el);
+
+            el.select();
+
+            document.execCommand('copy');
+
+            document.body.removeChild(el);
+
+            alert('Copied!');
+
+        }
+    
+
+/* Update all other .light-mode selectors similarly */
+    // Theme management with cookies
+
+  /* function setTheme(theme) {
+
+        document.body.classList.toggle('light-mode', theme === 'light');
+
+        document.getElementById('themeToggle').querySelector('i').textContent = 
+
+            theme === 'light' ? 'light_mode' : 'dark_mode';
+
+        document.cookie = `theme=${theme}; path=/; max-age=31536000`;
+
+    }
+
+    // Initialize theme from cookie
+
+    function initTheme() {
+
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('theme='));
+
+        const theme = cookie ? cookie.split('=')[1] : 'dark';
+
+        setTheme(theme);
+
+    }
+
+    // Initialize on load
+
+    initTheme();*/
+
+
+    // Get DOM elements
+
+    const body = document.body;
+
+    const themeToggle = document.getElementById('themeToggle');
+
+    const currentTheme = localStorage.getItem('theme') || 'light';
+
+    // Initialize theme
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        if (currentTheme === 'dark') {
+
+            body.classList.add('dark');
+
+            themeToggle.classList.replace("bx-sun", "bx-moon");
+
+        }
+
+        
+
+        // Update Material Icons to match bx-icons behavior
+
+        themeToggle.querySelector('i').textContent = 
+
+            currentTheme === 'dark' ? 'dark_mode' : 'light_mode';
+
+    });
+
+    // Theme toggle handler
+
+    themeToggle.addEventListener("click", () => {
+
+        body.classList.toggle('dark');
+
+        
+
+        if (body.classList.contains('dark')) {
+
+            localStorage.setItem('theme', 'dark');
+
+            themeToggle.querySelector('i').textContent = 'dark_mode';
+
+        } else {
+
+            localStorage.setItem('theme', 'light');
+
+            themeToggle.querySelector('i').textContent = 'light_mode';
+
+        }
+
+    });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>ProMcBot</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root { --bg-light: #f0f2f5; --bg-dark: #18191a; --text-light: #333; --text-dark: #e4e6eb; --accent: #5865f2; }
+    html[data-theme="light"] { background: var(--bg-light); color: var(--text-light); }
+    html[data-theme="dark"] { background: var(--bg-dark); color: var(--text-dark); }
+    body { margin:0; font-family: 'Inter', sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1rem; transition: background .3s, color .3s; }
+    .hidden { display: none; }
+    #dm-toggle { position: absolute; top:1rem; right:1rem; background:transparent; border:none; font-size:1.5rem; cursor:pointer; }
+    .container { max-width:400px; width:100%; text-align:center; }
+    h1 { font-size:4rem; margin:0; }
+    p { font-size:1.2rem; margin:1rem 0; }
+    a { color: var(--accent); text-decoration:none; font-weight:600; }
+    a:hover { text-decoration:underline; }
+    .form-card { background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.05); padding:2rem; }
+    html[data-theme="dark"] .form-card { background:rgba(24,25,26,0.85); }
+    label { display:block; margin:1rem 0 0.5rem; font-weight:500; text-align:left; }
+    input, textarea { width:100%; padding:0.75rem; border:1px solid rgba(0,0,0,0.2); border-radius:6px; font-family:inherit; }
+    textarea { resize:vertical; min-height:120px; }
+    .btn-primary { margin-top:1rem; width:100%; padding:0.9rem; background:var(--accent); color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:600; cursor:pointer; transition: transform .2s; }
+    .btn-primary:hover { transform:scale(1.02); }
+  </style>
+</head>
+<body>
+  <button id="dm-toggle">🌙</button>
+
+  <!-- 404 Container -->
+  <div id="page-404" class="container hidden">
+    <h1>404</h1>
+    <p>Oops! The page you’re looking for doesn’t exist.</p>
+    <p><a href="/?page=bug-report">Go to Bug Report</a></p>
+  </div>
+
+  <!-- Bug Report Form Container -->
+  <div id="page-bug" class="container hidden">
+    <div class="form-card">
+      <h2>Report a Bug</h2>
+      <form id="bug-form" action="/submit-bug" method="POST">
+        <label for="email">Your Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+
+        <label for="description">Bug Description</label>
+        <textarea id="description" name="description" placeholder="Describe the issue..." required></textarea>
+
+        <button type="submit" class="btn-primary">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Cookie helpers
+      function getCookie(name) {
+        return document.cookie.split('; ').reduce(function(r, v) {
+          var parts = v.split('=');
+          return parts[0] === name ? decodeURIComponent(parts[1]) : r;
+        }, '');
+      }
+      function setCookie(name, value, days) {
+        days = days || 365;
+        var expires = new Date(Date.now() + days*864e5).toUTCString();
+        document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+      }
+      // Dark mode init
+      var root = document.documentElement;
+      var theme = getCookie('theme') || 'light';
+      root.setAttribute('data-theme', theme);
+      var dmToggle = document.getElementById('dm-toggle');
+      dmToggle.textContent = theme === 'light' ? '🌙' : '☀️';
+      dmToggle.addEventListener('click', function() {
+        var current = root.getAttribute('data-theme');
+        var next = current === 'light' ? 'dark' : 'light';
+        root.setAttribute('data-theme', next);
+        setCookie('theme', next);
+        dmToggle.textContent = next === 'light' ? '🌙' : '☀️';
+      });
+
+      // Routing logic
+      var params = new URLSearchParams(window.location.search);
+      var page = params.get('page');
+      var view404 = document.getElementById('page-404');
+      var viewBug = document.getElementById('page-bug');
+      if (page === 'bug-report') {
+        viewBug.classList.remove('hidden');
+      } else {
+        view404.classList.remove('hidden');
+      }
+
+      // Prevent console errors if form elements missing
+      var form = document.getElementById('bug-form');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          // Additional client-side validation could go here
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

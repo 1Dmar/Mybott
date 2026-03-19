@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProMcBot - Home</title>
+  <meta name="title" content="ProMcBot - Home" />
+  <meta name="description" content="تحكم بخادم ديسكورد الخاص بك عن بُعد من خلال لوحة تحكم جديدة ومتطورة، واستعرض حالة الخادم بشكل محدث ودقيق مع استخدام نظام خاص و سريع للغاية" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="http://45.140.165.216:1056/" />
+  <meta property="og:title" content="ProMcBot - Home" />
+  <meta property="og:description" content="تحكم بخادم ديسكورد الخاص بك عن بُعد من خلال لوحة تحكم جديدة ومتطورة، واستعرض حالة الخادم بشكل محدث ودقيق مع استخدام نظام خاص و سريع للغاية" />
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="http://45.140.165.216:1056/" />
+  <meta property="twitter:title" content="ProMcBot - Home" />
+  <meta property="twitter:description" content="تحكم بخادم ديسكورد الخاص بك عن بُعد من خلال لوحة تحكم جديدة ومتطورة، واستعرض حالة الخادم بشكل محدث ودقيق مع استخدام نظام خاص و سريع للغاية" />
+
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <!-- Boxicons for Dark/Light toggle and icons in cards -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+  <style>
+    /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      background: #0D0D0D;
+      color: #f4f4f4;
+      text-align: center;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* Header */
+    .header {
+      background: #1A1A1A;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 40px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .header img {
+      height: 50px;
+      width: auto;
+      transition: transform 0.3s;
+    }
+    .header img:hover {
+      transform: scale(1.05);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .login-btn {
+      background-color: #5865F2;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    .login-btn:hover {
+      background-color: #4752c4;
+    }
+    .mode-toggle {
+      font-size: 26px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .mode-toggle:hover {
+      transform: scale(1.1);
+    }
+
+    /* Main Intro Section */
+    .main {
+      padding: 60px 20px;
+    }
+    .main h1 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+    .main p {
+      font-size: 1.125rem;
+      opacity: 0.85;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background-color: #5865F2;
+      padding: 12px 28px;
+      color: #fff;
+      border-radius: 5px;
+      font-weight: 500;
+      transition: transform 0.3s, background 0.3s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+      background-color: #4752c4;
+    }
+
+    /* Server Section with Infinite Scroll */
+    .server-container {
+      position: relative;
+      overflow: hidden;
+      margin-top: 50px;
+    }
+    .server-list-wrapper {
+      display: flex;
+      width: max-content;
+      animation: scroll 30s linear infinite;
+    }
+    .server-list {
+      display: flex;
+      gap: 30px;
+      padding: 20px;
+    }
+    .server {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #1A1A1A;
+      padding: 10px 15px;
+      border-radius: 10px;
+      border: 2px solid #333;
+      min-width: 180px;
+      transition: transform 0.3s;
+    }
+    .server:hover {
+      transform: translateY(-3px);
+    }
+    .server img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      border: 2px solid #5865F2;
+    }
+    @keyframes scroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* Pricing Section */
+    .pricing {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 50px 20px;
+      flex-wrap: wrap;
+    }
+    .card {
+      width: 300px;
+      padding: 25px 20px;
+      border-radius: 15px;
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .card h2 {
+      font-size: 1.75rem;
+      margin-bottom: 15px;
+    }
+    .card ul {
+      list-style: none;
+      margin: 15px 0;
+      padding: 0;
+    }
+    .card ul li {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0;
+      font-size: 1rem;
+    }
+    .card ul li span {
+      margin-right: 8px;
+      color: #5865F2;
+    }
+    .basic {
+      background: linear-gradient(135deg, #2A2A2A, #3A3A3A);
+      border: 2px solid #5865F2;
+    }
+    .premium {
+      background: linear-gradient(135deg, #ff8a00, #e52e71);
+      border: 3px solid #ff8a00;
+      color: #fff;
+    }
+    .premium::before {
+      content: ' PREMIUM ';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #ff8a00;
+      color: #fff;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    .btn-basic {
+      background: #5865F2;
+      color: #fff;
+    }
+    .btn-premium {
+      background: #ff8a00;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Common Card Styles for Updates, Bot Info, Membership, etc. */
+    .fancy-card {
+      position: relative;
+      background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+      border-radius: 15px;
+      padding: 30px 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.3s, box-shadow 0.3s;
+      color: #f4f4f4;
+      text-align: left;
+      max-width: 320px;
+      margin: 10px;
+      overflow: hidden;
+    }
+    .fancy-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .fancy-card .card-icon {
+      font-size: 2rem;
+      margin-bottom: 15px;
+      color: #5865F2; 
+    }
+    .fancy-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+    .fancy-card p {
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    /* Sections */
+    .section {
+      padding: 60px 20px;
+      background: #141414;
+      margin-top: 50px;
+    }
+    .section h2 {
+      margin-bottom: 40px;
+      font-size: 2rem;
+      color: #fff;
+    }
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    /* FAQ Items */
+    .faq-item {
+      text-align: left;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .faq-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .faq-item h3 {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+      position: relative;
+      padding-right: 25px;
+    }
+    .faq-item h3::after {
+      content: "\25BC";
+      position: absolute;
+      right: 0;
+      transition: transform 0.3s;
+    }
+    .faq-item.active h3::after {
+      transform: rotate(180deg);
+    }
+    .faq-item p {
+      display: none;
+      font-size: 0.95rem;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    /* Light Mode Overrides */
+    .light-mode {
+      background: #f4f4f4;
+      color: #333;
+    }
+    .light-mode a { color: inherit; }
+    .light-mode .header {
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .light-mode .mode-toggle { color: #333; }
+    .light-mode .login-btn {
+      background-color: #5865F2;
+      color: #fff;
+    }
+    .light-mode .server {
+      background: #fff;
+      border: 2px solid #ddd;
+      color: #333;
+    }
+    .light-mode .server img {
+      border-color: #5865F2;
+    }
+    .light-mode .card.basic {
+      background: linear-gradient(135deg, #fff, #f0f0f0);
+      border: 2px solid #5865F2;
+      color: #333;
+    }
+    .light-mode .card.premium {
+      background: linear-gradient(135deg, #ffefd5, #ffe4b5);
+      border: 3px solid #ff8a00;
+      color: #333;
+    }
+    .light-mode .fancy-card {
+      background: linear-gradient(135deg, #fff, #f0f0f0);
+      color: #333;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .light-mode .fancy-card .card-icon {
+      color: #ff8a00;
+    }
+    .light-mode .faq-item {
+      border-color: #ccc;
+    }
+    .light-mode .faq-item:hover {
+      background: rgba(0, 0, 0, 0.03);
+    }
+      
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: row;
+        padding: 15px;
+      }
+      .nav-right {
+        margin-top: 10px;
+      }
+      .main h1 {
+        font-size: 2rem;
+      }
+      .main p {
+        font-size: 1rem;
+      }
+      .pricing {
+        flex-direction: column;
+        align-items: center;
+      }
+      .server-list {
+        gap: 20px;
+        padding: 10px;
+      }
+      .fancy-card {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header with logo, login and dark/light toggle -->
+  <div class="header">
+    <img src="https://i.ibb.co/ccK6xS1S/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProBot Logo" />
+    <div class="nav-right">
+      <a href="/loading-auth" class="login-btn">Login</a>
+      <i class="bx bx-moon mode-toggle" id="themeToggle"></i>
+    </div>
+  </div>
+
+  <!-- Main Intro Section -->
+  <div class="main">
+    <h1>Make a Professional Discord Server!</h1>
+    <p>A customizable multipurpose bot for server settings, auto responder, logs, and moderation.</p>
+    <a href="/invitebot" class="btn">Add to Discord</a>
+  </div>
+
+  <!-- Server Section with Infinite Scroll -->
+  <div class="server-container">
+    <div class="server-list-wrapper">
+      <div class="server-list">
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/hypixel.net" alt="" />Hypixel</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/play.herosmc.xyz" alt="" />HerosMC</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/cubecraft.net" alt="" />CubeCraft</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/pika-network.net" alt="" />Pika-Network</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/bmc.mc-complex.com" alt="" />Comlex Gaming</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/best.fadecloud.com" alt="" />FadeCloud</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/trappedmc.com" alt="" />TrappedMc</div>
+      </div>
+      <!-- Duplicate list for endless scrolling -->
+      <div class="server-list">
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/hypixel.net" alt="" />Hypixel</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/play.herosmc.xyz" alt="" />HerosMC</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/cubecraft.net" alt="" />CubeCraft</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/pika-network.net" alt="" />Pika-Network</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/bmc.mc-complex.com" alt="" />Comlex Gaming</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/best.fadecloud.com" alt="" />FadeCloud</div>
+        <div class="server"><img src="https://api.mcstatus.io/v2/icon/trappedmc.com" alt="" />TrappedMc</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Cards Section -->
+  <div class="pricing">
+    <div class="card basic">
+      <h2>Basic Plan</h2>
+      <ul>
+        <li><span class="material-icons">check_circle</span> Standard Commands</li>
+        <li><span class="material-icons">check_circle</span> Simple Server Setup</li>
+        <li><span class="material-icons">check_circle</span> Basic Systems</li>
+      </ul>
+      <a href="#" class="btn btn-basic">Get Basic</a>
+    </div>
+
+    <div class="card premium">
+      <h2>Premium Plan</h2>
+      <ul>
+        <li><span class="material-icons">star</span> Vip Commands</li>
+        <li><span class="material-icons">star</span> Advanced Moderation</li>
+        <li><span class="material-icons">star</span> Custom Embed Messages</li>
+        <li><span class="material-icons">star</span> Priority Support</li>
+      </ul>
+      <a href="#" class="btn btn-premium">Upgrade to Premium</a>
+    </div>
+  </div>
+
+  <!-- Updates Cards Section (More Creative Design) -->
+  <section class="section" id="updates">
+    <h2>Latest Updates</h2>
+    <div class="card-container updates-cards">
+      <div class="fancy-card">
+        <i class="bx bx-bolt card-icon"></i>
+        <h3>Update 1</h3>
+        <p>New features, modern UI enhancements, and performance boosts.</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-bug card-icon"></i>
+        <h3>Update 2</h3>
+        <p>Improved responsiveness and bug fixes across devices.</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-rocket card-icon"></i>
+        <h3>Update 3</h3>
+        <p>New integrations with Discord and Minecraft, plus creative tweaks.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Discord Bot Info Cards Section (Fancy) -->
+  <section class="section" id="bot-info">
+    <h2>Discord Bot Info</h2>
+    <div class="card-container bot-info-cards">
+      <div class="fancy-card">
+        <i class="bx bx-user card-icon"></i>
+        <h3>Users</h3>
+        <p>${users}+</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-hash card-icon"></i>
+        <h3>Channels</h3>
+        <p>${channels}+</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-server card-icon"></i>
+        <h3>Servers</h3>
+        <p>${guilds}+</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-tachometer card-icon"></i>
+        <h3>CPU</h3>
+        <p>${cpu}% Usage</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Discord Servers Membership Section (Fancy) -->
+  <section class="section" id="discord-servers">
+    <h2>Top Servers Powered by Our Bot</h2>
+    <div class="card-container discord-membership">
+      <div class="fancy-card">
+        <i class="bx bx-group card-icon"></i>
+        <h3>${server1.name}</h3>
+        <p>Members: ${server1.memberCount}</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-group card-icon"></i>
+        <h3>${server2.name}</h3>
+        <p>Members: ${server2.memberCount}</p>
+      </div>
+      <div class="fancy-card">
+        <i class="bx bx-group card-icon"></i>
+        <h3>${server3.name}</h3>
+        <p>Members: ${server3.memberCount}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section" id="faq">
+    <h2>Frequently Asked Questions</h2>
+    <div class="faq-item">
+      <h3>How do I add the bot to my server?</h3>
+      <p>Click on the "Add to Discord" button and follow the authorization steps.</p>
+    </div>
+    <div class="faq-item">
+      <h3>What commands are available?</h3>
+      <p>Both basic and premium commands are available. Check the pricing section for details.</p>
+    </div>
+    <div class="faq-item">
+      <h3>How can I switch between dark and light mode?</h3>
+      <p>Use the toggle button in the top-right corner to switch modes.</p>
+    </div>
+  </section>
+
+  <!-- JavaScript for Dark/Light Toggle and FAQ Accordion -->
+  <script>
+    // Dark/Light mode toggle
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      if(document.body.classList.contains('light-mode')){
+        themeToggle.classList.replace('bx-moon', 'bx-sun');
+      } else {
+        themeToggle.classList.replace('bx-sun', 'bx-moon');
+      }
+    });
+
+    // FAQ accordion
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+      item.addEventListener('click', () => {
+        item.classList.toggle('active');
+        const answer = item.querySelector('p');
+        answer.style.display = (answer.style.display === 'block' ? 'none' : 'block');
+      });
+    });
+  </script>
+
+</body>
+</html>

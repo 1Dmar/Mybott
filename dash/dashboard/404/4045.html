@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:200,400,700" rel="stylesheet">
+    <style>* {
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+#notfound {
+  position: relative;
+  height: 100vh;
+  background-color: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notfound {
+  position: relative;
+  text-align: center;
+}
+
+.notfound-content {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+}
+
+.notfound .notfound-404 {
+  position: relative;
+  height: 200px;
+  margin: 0px auto 20px;
+}
+
+.notfound .notfound-404 h1 {
+  font-size: 236px;
+  font-weight: 200;
+  margin: 0px;
+  color: #211b19;
+  text-transform: uppercase;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%);
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.notfound .notfound-404 h2 {
+  font-size: 28px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: #211b19;
+  background: #fff;
+  padding: 10px 5px;
+  margin: auto;
+  display: inline-block;
+  position: absolute;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.notfound a {
+  font-weight: 700;
+  text-decoration: none;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 13px 23px;
+  background: #ff6300;
+  font-size: 18px;
+  -webkit-transition: 0.2s all;
+  transition: 0.2s all;
+}
+
+.notfound a:hover {
+  color: #ff6300;
+  background: #211b19;
+}
+
+.notfound-image {
+  position: absolute;
+  top: -226px;
+  left: -466px;
+  max-width: 333px;
+  z-index: 0;
+}
+
+.notfound-image img {
+    max-width: 174%;
+    left: -3vw;
+    top: 10vw;
+    height: auto;
+    display: block;
+    position: relative;
+	-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */
+}
+
+@media only screen and (max-width: 767px) {
+  .notfound-content {
+    margin-bottom: 20px;
+  }
+
+  .notfound .notfound-404 h1 {
+    font-size: 148px;
+  }
+}
+
+@media only screen and (min-width: 1920px) {
+  .notfound-content {
+    margin-bottom: 20px;
+  }
+    .notfound-image img {
+        max-width: 103%;
+        left: 8vw;
+        top: 9vw;
+        height: auto;
+        display: block;
+        position: relative;
+		-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */
+    }
+  .notfound .notfound-404 h1 {
+    font-size: 148px;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .notfound-content {
+    margin-bottom: 20px;
+  }
+   .notfound-image img {
+    max-width: 154%;
+    left: -1vw;
+    top: 20vw;
+    height: auto;
+    display: block;
+    position: relative;
+-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */}
+  .notfound .notfound-404 h1 {
+    font-size: 148px;
+  }
+}
+
+@media only screen and (max-width: 1360px) {
+  .notfound-content {
+    margin-bottom: 20px;
+  }
+    .notfound-image img {
+        max-width: 101%;
+        left: 16vw;
+        top: 15vw;
+        height: auto;
+        display: block;
+        position: relative;
+		-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */
+    }
+  .notfound .notfound-404 h1 {
+    font-size: 148px;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .notfound .notfound-404 {
+    height: 148px;
+    margin: 0px auto 10px;
+  }
+  .notfound .notfound-404 h1 {
+    font-size: 86px;
+  }
+  .notfound-image img {
+    max-width: 115%;
+    left: 7vw;
+    top: 42vw;
+    height: auto; 
+    display: block;
+    position: relative;
+	-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */
+}
+  .notfound .notfound-404 h2 {
+    font-size: 16px;
+  }
+  
+  .notfound-image img h2 {
+    max-width: 112%;
+    left: 36vw;
+    top: 37vw;
+    height: auto;
+    display: block;
+    position: relative;
+	-webkit-user-drag: none;
+            user-drag: none;
+            pointer-events: none; /* منع التفاعل مع الصورة */
+}
+
+  .notfound a {
+    padding: 7px 15px;
+    font-size: 14px;
+  }
+
+  .notfound-image {
+    max-width: 200px; /* Adjust for smaller screens */
+    top: -174px; /* Adjust the top position for smaller screens */
+    left: -174px; /* Adjust the left position for smaller screens */
+  }
+}
+</style>
+</head>
+<body>
+    <div id="notfound">
+        <div class="notfound">
+            <div class="notfound-content">
+                <div class="notfound-404">
+                    <h1>Oops!</h1>
+                    <h2>404 - The Page can't be found</h2>
+                </div>
+                <a href="/">Go TO Homepage</a>
+            </div>
+            <div class="notfound-image">
+                <img src="https://i.ibb.co/xMGQDp6/banner.png" alt="Image">
+            </div>
+        </div>
+    </div>
+<script>
+        // تعطيل الزر الأيمن للفأرة على الصورة
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const imgs = document.querySelectorAll('img');
+            imgs.forEach(img => {
+                img.oncontextmenu = function() {
+                    return false;
+                };
+            });
+        });
+    </script></body>
+</html>

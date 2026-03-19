@@ -1,0 +1,1287 @@
+const client = require("../index");
+const {
+    InteractionType,
+    ModalBuilder,
+    TextInputBuilder,
+    AttachmentBuilder,
+    TextInputStyle,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    StringSelectMenuBuilder
+} = require('discord.js');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const Jimp = require('jimp');
+const Serverdb = require('../Models/Server');
+const Langs = require("../Models/Langs");
+const Server = require('../Models/User');
+const StatusBar = require('../Models/StatusBar');
+const BlackList = require("../Models/BlackList");
+
+// Custom emojis
+const EMOJIS = {
+    BEDROCK: '<:Bedrock:1410147921676075038>',
+    OFFLINE: '<:Offline:1410178629098278922>',
+    ONLINE: '<:Online:1410178650070061096>',
+    PLAYER: '<:Player:1410147631308603494>',
+    INFORMATION: '<:Information:1410147645883678763>',
+    ACHIEVEMENT: '<:Achievement:1410147661008605224>',
+    CHECK: '<:Check:1410147529630289960>',
+    JAVA: '<:Java:1410147547363934300>',
+    WARNING: '<:Warning:1410147601281581118>',
+    BLOCK: '<:Block:1410147617056362558>'
+};
+
+// Translation file path
+const tsPath = path.join(__dirname, "..", "public", "json", "translations.json");
+let translations = {};
+
+try {
+    translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
+} catch (error) {
+    console.error('Error loading translations:', error);
+}
+
+// Fast-loading wallpapers (optimized for speed)
+const WALLPAPERS = [
+    "https://wallpapercave.com/wp/wp10819450.jpg",
+    "https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/Minecraft-Shader-Pine-Forest.jpg",
+    "https://resourcepack.net/fl/images/2022/11/RedHat-Shaders-for-minecraft-5.jpg",
+    "https://i.ibb.co/KpWg3FHw/687d56199156581-664cf6f062769.png",
+    "https://i.ibb.co/qLWGYkdL/c19988205236151-Y3-Jvc-Cwx-Mz-Ez-LDEw-Mjcs-Nj-I0-LDA.png"
+];
+
+// Helper function for safe HTTP requests
+async function safeAxiosGet(url, options = {}) {
+    try {
+        const response = await axios.get(url, {
+            timeout: 5000,
+            validateStatus: status => status < 500,
+            ...options
+        });
+        return response;
+    } catch (error) {
+        console.log(`Request failed for ${url}:`, error.message);
+        return null;
+    }
+}
+
+// Function to get translated message with proper fallbacks
+async function getTranslatedMessage(guildId, messageKey) {
+    try {
+        // Default to English if no guild ID provided
+        if (!guildId) return translations['en']?.[messageKey] || messageKey;
+        
+        const userLang = await Langs.findOne({ guildId });
+        const language = userLang ? userLang.language : 'en';
+        
+        // Return translation if available, otherwise English, otherwise the key itself
+        return translations[language]?.[messageKey] || 
+               translations['en']?.[messageKey] || 
+               messageKey;
+    } catch (error) {
+        console.error('Error getting translation:', error);
+        return translations['en']?.[messageKey] || messageKey;
+    }
+}
+
+// Improved server status checking with multiple fallbacks
+async function checkServerStatus(ip, port, type) {
+    if (!ip) return { success: false, error: new Error('No IP provided') };
+    
+    const endpoints = [];
+    
+    // Java servers
+    if (type === 'java') {
+        // Try different API endpoints and IP variations
+        endpoints.push(`https://api.mcsrvstat.us/3/${ip}:${port}`);
+        endpoints.push(`https://api.mcsrvstat.us/2/${ip}:${port}`);
+        
+        // Try with play. prefix if not already present
+        if (!ip.startsWith('play.')) {
+            endpoints.push(`https://api.mcsrvstat.us/3/play.${ip}:${port}`);
+            endpoints.push(`https://api.mcsrvstat.us/2/play.${ip}:${port}`);
+        }
+        
+        // Try without play. prefix if present
+        if (ip.startsWith('play.')) {
+            const cleanIp = ip.replace('play.', '');
+            endpoints.push(`https://api.mcsrvstat.us/3/${cleanIp}:${port}`);
+            endpoints.push(`https://api.mcsrvstat.us/2/${cleanIp}:${port}`);
+        }
+    } 
+    // Bedrock servers
+    else if (type === 'bedrock') {
+        endpoints.push(`https://api.mcsrvstat.us/bedrock/3/${ip}:${port}`);
+        endpoints.push(`https://api.mcsrvstat.us/bedrock/2/${ip}:${port}`);
+    }
+
+    let lastError;
+    for (const endpoint of endpoints) {
+        try {
+            const response = await safeAxiosGet(endpoint, { timeout: 10000 });
+            if (response && response.data && (response.data.online || response.data.hostname)) {
+                return {
+                    success: true,
+                    data: response.data,
+                    source: endpoint
+                };
+            }
+        } catch (error) {
+            lastError = error;
+            continue;
+        }
+    }
+    
+    // If all endpoints failed, try direct ping for Java servers
+    if (type === 'java') {
+        try {
+            const response = await safeAxiosGet(`https://api.minetools.eu/ping/${ip}/${port}`, { timeout: 10000 });
+            if (response && response.data && response.data.latency) {
+                return {
+                    success: true,
+                    data: {
+                        online: true,
+                        hostname: ip,
+                        players: {
+                            online: response.data.players.online || 0,
+                            max: response.data.players.max || 0
+                        },
+                        version: response.data.version || 'Unknown',
+                        motd: response.data.description || 'A Minecraft Server'
+                    },
+                    source: 'minetools'
+                };
+            }
+        } catch (error) {
+            // Ignore this error, we'll use the lastError from the previous attempts
+        }
+    }
+    
+    return {
+        success: false,
+        error: lastError || new Error('All endpoints failed'),
+        data: {
+            online: false,
+            hostname: ip,
+            players: {
+                online: 0,
+                max: 0
+            }
+        }
+    };
+}
+
+// Enhanced server status image generator with better error handling
+async function generateServerStatusImage(serverData, wallpaperUrl, interaction, isPreview = false) {
+    try {
+        const imageWidth = 690;
+        const imageHeight = 120;
+        const watermarkHeight = 20;
+        const extraHeight = 10;
+        const totalHeight = imageHeight + watermarkHeight + extraHeight;
+
+        const image = new Jimp(imageWidth, totalHeight, 0x00000000);
+        const fontPath = path.join(__dirname, '../src/fonts/d.fnt');
+        const font = await Jimp.loadFont(fontPath);
+        const fontPath1 = path.join(__dirname, '../src/fonts/f.fnt');
+        const fontBold = await Jimp.loadFont(fontPath1);
+        
+        // Background with better error handling
+        try {
+            const response = await safeAxiosGet(wallpaperUrl, { 
+                responseType: 'arraybuffer'
+            });
+            
+            if (response && response.status === 200 && response.data) {
+                const background = await Jimp.read(Buffer.from(response.data));
+                background.resize(960, 540);
+                image.blit(background, 0, 0);
+            } else {
+                throw new Error('Failed to load wallpaper');
+            }
+        } catch (error) {
+            console.log('Using fallback gradient background due to error:', error.message);
+            // Fallback to gradient background
+            for (let y = 0; y < imageHeight; y++) {
+                const color = Jimp.rgbaToInt(47, 49, 54, 255 - (y * 255 / imageHeight));
+                for (let x = 0; x < imageWidth; x++) {
+                    image.setPixelColor(color, x, y);
+                }
+            }
+        }
+
+        // Server icon with better error handling
+        let serverIconUrl;
+        let serverStatus;
+        
+        if (isPreview) {
+            // Use sample data for preview
+            serverStatus = {
+                success: true,
+                data: {
+                    online: true,
+                    hostname: serverData.javaIP || serverData.bedrockIP || 'play.example.com',
+                    players: {
+                        online: 24,
+                        max: 100
+                    },
+                    version: '1.19.2',
+                    icon: null
+                }
+            };
+            serverIconUrl = 'https://api.mcstatus.io/v2/icon/minecraft.net';
+        } else if (serverData.serverType === 'java' && serverData.javaIP) {
+            serverStatus = await checkServerStatus(serverData.javaIP, serverData.javaPort || 25565, 'java');
+            serverIconUrl = `https://api.mcstatus.io/v2/icon/${serverData.javaIP}:${serverData.javaPort || 25565}`;
+        } else if (serverData.serverType === 'bedrock' && serverData.bedrockIP) {
+            serverStatus = await checkServerStatus(serverData.bedrockIP, serverData.bedrockPort || 19132, 'bedrock');
+            serverIconUrl = `https://api.mcstatus.io/v2/icon/${serverData.bedrockIP}:${serverData.bedrockPort || 19132}`;
+        } else {
+            serverIconUrl = 'https://api.mcstatus.io/v2/icon/minecraft.net';
+        }
+
+        // Server icon with better error handling
+      // Server icon with better error handling
+try {
+    const response = await safeAxiosGet(serverIconUrl, { 
+        responseType: 'arraybuffer'
+    });
+    
+    if (response && response.status === 200 && response.data) {
+        const serverIcon = await Jimp.read(Buffer.from(response.data));
+        serverIcon.resize(64, 64);
+        
+        // إنشاء قناع دائري باستخدام تقنية أكثر فعالية
+        const mask = new Jimp(64, 64, 0x00000000);
+        for (let y = 0; y < 64; y++) {
+            for (let x = 0; x < 64; x++) {
+                const distance = Math.sqrt(Math.pow(x - 32, 2) + Math.pow(y - 32, 2));
+                if (distance <= 30) {
+                    mask.setPixelColor(0xFFFFFFFF, x, y);
+                }
+            }
+        }
+        
+        // تطبيق القناع على الأيقونة
+        serverIcon.mask(mask, 0, 0);
+        image.blit(serverIcon, 40, 50);
+    } else {
+        throw new Error('Failed to load server icon');
+    }
+} catch (error) {
+    console.log('Using fallback server icon due to error:', error.message);
+    // إنشاء أيقونة بديلة بشكل دائري
+    const fallbackIcon = new Jimp(64, 64, 0x00000000);
+    
+    // رسم دائرة يدوياً
+    const centerX = 32;
+    const centerY = 32;
+    const radius = 30;
+    
+    for (let y = 0; y < 64; y++) {
+        for (let x = 0; x < 64; x++) {
+            const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+            if (distance <= radius) {
+                fallbackIcon.setPixelColor(0x7289DAFF, x, y); // لون أزرق
+            }
+        }
+    }
+    
+    image.blit(fallbackIcon, 40, 50);
+}
+        // Server info
+        const serverName = isPreview 
+            ? (serverData.serverName || 'Example Server') 
+            : (serverData.serverName || 'Minecraft Server');
+            
+        const serverIP = isPreview 
+            ? 'play.example.com' 
+            : (serverData.javaIP || serverData.bedrockIP || 'Unknown');
+        
+        // Status indicator
+        const isOnline = isPreview ? true : (serverStatus ? serverStatus.success : false);
+        const statusColor = isOnline ? 0x00FF00FF : 0xFF0000FF;
+        
+        // Status indicator in top right corner
+        const statusX = imageWidth - 30;
+        const statusY = 30;
+        const statusRadius = 10;
+        
+        for (let y = statusY - statusRadius; y <= statusY + statusRadius; y++) {
+            for (let x = statusX - statusRadius; x <= statusX + statusRadius; x++) {
+                const distance = Math.sqrt(Math.pow(x - statusX, 2) + Math.pow(y - statusY, 2));
+                if (distance <= statusRadius) {
+                    image.setPixelColor(statusColor, x, y);
+                }
+            }
+        }
+        
+        // Server name
+        const textWidth = Jimp.measureText(fontBold, serverName);
+        const x = (image.bitmap.width - textWidth) / 3.8;
+        image.print(fontBold, x, 50, serverName);
+        
+        // Server IP
+      /*  const ipTextWidth = Jimp.measureText(font, serverIP);
+        const ipX = (image.bitmap.width - ipTextWidth) / 2;
+        image.print(font, ipX, 40, serverIP);*/
+
+        // Player count (if server is online)
+        if (isOnline) {
+            const playerCount = isPreview 
+                ? { online: 24, max: 100 } 
+                : (serverStatus && serverStatus.data.players ? serverStatus.data.players : { online: 0, max: 0 });
+                
+            const playerText = await getTranslatedMessage(interaction.guild?.id, "PLAYERS");
+            const playerCountText = `${playerText}: ${playerCount.online}/${playerCount.max}`;
+            
+            const textWidth = Jimp.measureText(font, playerCountText);
+            image.print(font, imageWidth - textWidth - 20, 90, playerCountText);
+        }
+
+        
+        // إضافة MOTD ملون في منتصف الصورة
+//if (serverStatus && serverStatus.data && serverStatus.data.motd) {
+    try {
+        const motd = serverStatus.data.motd;
+        
+        // استخراج نص MOTD (يتعامل مع تنسيقات مختلفة من API)
+        let motdText = '';
+        if (typeof motd === 'string') {
+            motdText = motd;
+        } else if (motd.clean && Array.isArray(motd.clean)) {
+            motdText = motd.clean.join('\n');
+        } else if (motd.raw && Array.isArray(motd.raw)) {
+            motdText = motd.raw.join('\n');
+        } else {
+            motdText = 'A Minecraft Server';
+        }
+        
+        // تقسيم MOTD إلى أسطر
+        const motdLines = motdText.split('\n').filter(line => line.trim().length > 0);
+        
+        // إذا لم يكن هناك أسطر، نستخدم القيمة الافتراضية
+        if (motdLines.length === 0) {
+            motdLines.push("A Minecraft Server");
+        }
+        
+        // حساب موضع MOTD في منتصف الصورة
+        const lineHeight = 20;
+        const totalMotdHeight = motdLines.length * lineHeight;
+        const motdY = (imageHeight - totalMotdHeight) / 2;
+        
+        // دالة لتحويل رموز ماينكرافت إلى ألوان Jimp
+        function getMinecraftColor(code) {
+            const colors = {
+                '0': 0x000000FF, // Black
+                '1': 0x0000AAFF, // Dark Blue
+                '2': 0x00AA00FF, // Dark Green
+                '3': 0x00AAAAFF, // Dark Aqua
+                '4': 0xAA0000FF, // Dark Red
+                '5': 0xAA00AAFF, // Dark Purple
+                '6': 0xFFAA00FF, // Gold
+                '7': 0xAAAAAAFF, // Gray
+                '8': 0x555555FF, // Dark Gray
+                '9': 0x5555FFFF, // Blue
+                'a': 0x55FF55FF, // Green
+                'b': 0x55FFFFFF, // Aqua
+                'c': 0xFF5555FF, // Red
+                'd': 0xFF55FFFF, // Light Purple
+                'e': 0xFFFF55FF, // Yellow
+                'f': 0xFFFFFFFF, // White
+                'r': 0xFFFFFFFF  // Reset (White)
+            };
+            return colors[code] || 0xFFFFFFFF;
+        }
+        
+        // رسم كل سطر من MOTD مع الألوان
+        for (let i = 0; i < motdLines.length; i++) {
+            const line = motdLines[i];
+            if (line && line.length > 0) {
+                let currentX = (imageWidth - Jimp.measureText(font, line.replace(/§./g, ''))) / 2;
+                let currentColor = 0xFFFFFFFF; // لون افتراضي (أبيض)
+                
+                // معالجة كل حرف في السطر مع الألوان
+                for (let j = 0; j < line.length; j++) {
+                    if (line[j] === '§' && j + 1 < line.length) {
+                        // هذا رمز لون، غير اللون الحالي
+                        const colorCode = line[j + 1].toLowerCase();
+                        currentColor = getMinecraftColor(colorCode);
+                        j++; // تخطي رمز اللون
+                    } else {
+                        // طباعة الحرف باللون الحالي
+                        const char = line[j];
+                        image.print(font, currentX, motdY + (i * lineHeight), {
+                            text: char,
+                            alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
+                            alignmentY: Jimp.VERTICAL_ALIGN_TOP
+                        }, currentColor);
+                        currentX += Jimp.measureText(font, char);
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Error processing colored MOTD:', error);
+        }
+        // في حالة الخطأ، اطبع MOTD عادي بدون ألوان
+        // إضافة MOTD ملون في منتصف الصورة
+//if (serverStatus && serverStatus.data && serverStatus.data.motd) {
+    try {
+        const motd = serverStatus.data.motd;
+        
+        // استخراج نص MOTD من البيانات المختلفة
+        let motdText = '';
+        if (typeof motd === 'string') {
+            motdText = motd;
+        } else if (motd.clean && Array.isArray(motd.clean)) {
+            motdText = motd.clean.join('\n');
+        } else if (motd.raw && Array.isArray(motd.raw)) {
+            motdText = motd.raw.join('\n');
+        } else if (serverStatus.data.description) {
+            // معالجة خاصة لبيانات API من minetools
+            motdText = serverStatus.data.description;
+        } else {
+            motdText = 'A Minecraft Server';
+        }
+        
+        // تحويل الرموز Unicode إلى رموز ماينكرافت العادية
+        motdText = motdText.replace(/\\u00a7/g, '§');
+        
+        // تقسيم MOTD إلى أسطر
+        const motdLines = motdText.split('\n').filter(line => line.trim().length > 0);
+        
+        // إذا لم يكن هناك أسطر، نستخدم القيمة الافتراضية
+        if (motdLines.length === 0) {
+            motdLines.push("A Minecraft Server");
+        }
+        
+        // حساب موضع MOTD في منتصف الصورة
+        const lineHeight = 20;
+        const totalMotdHeight = motdLines.length * lineHeight;
+        const motdY = (imageHeight - totalMotdHeight) / 2;
+        
+        // دالة لتحويل رموز ماينكرافت إلى ألوان Jimp
+        function getMinecraftColor(code) {
+            const colors = {
+                '0': 0x000000FF, // Black
+                '1': 0x0000AAFF, // Dark Blue
+                '2': 0x00AA00FF, // Dark Green
+                '3': 0x00AAAAFF, // Dark Aqua
+                '4': 0xAA0000FF, // Dark Red
+                '5': 0xAA00AAFF, // Dark Purple
+                '6': 0xFFAA00FF, // Gold
+                '7': 0xAAAAAAFF, // Gray
+                '8': 0x555555FF, // Dark Gray
+                '9': 0x5555FFFF, // Blue
+                'a': 0x55FF55FF, // Green
+                'b': 0x55FFFFFF, // Aqua
+                'c': 0xFF5555FF, // Red
+                'd': 0xFF55FFFF, // Light Purple
+                'e': 0xFFFF55FF, // Yellow
+                'f': 0xFFFFFFFF, // White
+                'r': 0xFFFFFFFF  // Reset (White)
+            };
+            return colors[code] || 0xFFFFFFFF;
+        }
+        
+        // رسم كل سطر من MOTD مع الألوان
+        for (let i = 0; i < motdLines.length; i++) {
+            const line = motdLines[i];
+            if (line && line.length > 0) {
+                // حساب العرض الإجمالي للنص بدون رموز التنسيق
+                const cleanLine = line.replace(/§./g, '');
+                const totalWidth = Jimp.measureText(font, cleanLine);
+                let currentX = (imageWidth - totalWidth) / 2;
+                let currentColor = 0xFFFFFFFF; // لون افتراضي (أبيض)
+                
+                // معالجة كل حرف في السطر مع الألوان
+                let j = 0;
+                while (j < line.length) {
+                    if (line[j] === '§' && j + 1 < line.length) {
+                        // هذا رمز لون، غير اللون الحالي
+                        const colorCode = line[j + 1].toLowerCase();
+                        currentColor = getMinecraftColor(colorCode);
+                        j += 2; // تخطي رمز اللون
+                    } else {
+                        // طباعة الحرف باللون الحالي
+                        const char = line[j];
+                        
+                        // استخدم هذه الطريقة للطباعة الملونة
+                        const charWidth = Jimp.measureText(font, char);
+                        
+                        // إنشاء صورة صغيرة للحرف بلونه المناسب
+                        const charImage = new Jimp(charWidth, 20, 0x00000000);
+                        charImage.print(font, 0, 0, char, currentColor);
+                        
+                        // دمج الحرف مع الصورة الرئيسية
+                        image.composite(charImage, currentX, motdY + (i * lineHeight));
+                        
+                        currentX += charWidth;
+                        j++;
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Error processing colored MOTD:', error);
+        }
+        // نسخة احتياطية: عرض MOTD بدون ألوان
+        try {
+            const motd = serverStatus.data.motd;
+            let motdText = '';
+            
+            if (typeof motd === 'string') {
+                motdText = motd;
+            } else if (motd.clean && Array.isArray(motd.clean)) {
+                motdText = motd.clean.join('\n');
+            } else if (serverStatus.data.description) {
+                motdText = serverStatus.data.description;
+            } else {
+                motdText = 'A Minecraft Server';
+            }
+            
+            // تنظيف النص من رموز التنسيق
+            const cleanMotd = motdText.replace(/§./g, '').replace(/\\u00a7./g, '');
+            const motdLines = cleanMotd.split('\n').filter(line => line.trim().length > 0);
+            
+            if (motdLines.length === 0) {
+                motdLines.push("A Minecraft Server");
+            }
+            
+            const lineHeight = 20;
+            const totalMotdHeight = motdLines.length * lineHeight;
+            const motdY = (imageHeight - totalMotdHeight) / 2;
+            
+            for (let i = 0; i < motdLines.length; i++) {
+                const line = motdLines[i];
+                if (line && line.length > 0) {
+                    const lineWidth = Jimp.measureText(font, line);
+                    const x = (imageWidth - lineWidth) / 2;
+                    image.print(font, x, motdY + (i * lineHeight), line);
+                }
+            }
+        } catch (fallbackError) {
+            console.log('Fallback MOTD also failed:', fallbackError);
+        }
+    //}
+//}
+//}
+        // Add watermark
+      /*  const watermarkText = "ProMcBot Api";
+// ثم إضافة العلامة المائية
+const watermarkWidth = Jimp.measureText(font, watermarkText);
+        image.print(font, imageWidth - watermarkWidth - 10, imageHeight - 20, watermarkText);*/
+        const watermarkText = "ProMcBot Api";
+
+// إنشاء صورة منفصلة للعلامة المائية
+const watermarkImage = new Jimp(
+  Jimp.measureText(font, watermarkText) + 40, // العرض مع هامش
+  Jimp.measureTextHeight(font, watermarkText) + 20, // الارتفاع مع هامش
+  0x00000000 // خلفية شفافة (RGBA: 0,0,0,0)
+);
+
+// كتابة النص على صورة العلامة المائية
+watermarkImage.print(font, 20, 30, watermarkText);
+
+// تصغير حجم العلامة المائية (مثال: 50% من الحجم الأصلي)
+watermarkImage.scale(0.8);
+
+// حساب الموضع النهائي للعلامة المائية (أسفل اليمين)
+const watermarkX = imageWidth - watermarkImage.getWidth() - 25;
+const watermarkY = imageHeight - watermarkImage.getHeight() + 30;
+
+// دمج العلامة المائية المصغرة مع الصورة الأصلية
+image.composite(watermarkImage, watermarkX, watermarkY, {
+  mode: Jimp.BLEND_SOURCE_OVER,
+  opacitySource: 0.7 // ضبط الشفافية حسب الحاجة
+});
+        // Add "PREVIEW" text if it's a preview
+        if (isPreview) {
+            const previewText = "PREVIEW";
+            const previewWidth = Jimp.measureText(fontBold, previewText);
+            image.print(fontBold, (imageWidth - previewWidth) / 2, 10, previewText);
+        }
+
+        return await image.getBufferAsync(Jimp.MIME_PNG);
+    } catch (error) {
+        console.error('Error generating server status image:', error);
+        
+        // Create a simple error image as fallback
+        const errorImage = new Jimp(800, 200, 0x2F3136FF);
+        errorImage.print(Jimp.FONT_SANS_16_WHITE, 50, 90, "Error generating server status image");
+        return await errorImage.getBufferAsync(Jimp.MIME_PNG);
+    }
+}
+
+// Modern wallpaper selection with improved design
+async function generateWallpaperSelectionCard(wallpapers, interaction) {
+    try {
+        const cardWidth = 600;
+        const cardHeight = 400;
+        
+        const card = new Jimp(cardWidth, cardHeight, 0x2F3136FF);
+        
+        // Add title with gradient background
+        const titleBackground = new Jimp(cardWidth, 60, 0x7289DAFF);
+        card.blit(titleBackground, 0, 0);
+        
+        // Add title - use default font to avoid errors
+        const title = await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || "Select a Wallpaper";
+        const titleWidth = Jimp.measureText(Jimp.FONT_SANS_32_WHITE, title);
+        card.print(Jimp.FONT_SANS_32_WHITE, (cardWidth - titleWidth) / 2, 15, title);
+        
+        // Create thumbnails for each wallpaper in a grid
+        const thumbnailSize = 100;
+        const thumbnailsPerRow = 3;
+        const spacing = 20;
+        const startY = 80;
+        
+        for (let i = 0; i < Math.min(wallpapers.length, 9); i++) {
+            const row = Math.floor(i / thumbnailsPerRow);
+            const col = i % thumbnailsPerRow;
+            
+            const x = 50 + col * (thumbnailSize + spacing);
+            const y = startY + row * (thumbnailSize + spacing);
+            
+            try {
+                const response = await safeAxiosGet(wallpapers[i], { 
+                    responseType: 'arraybuffer'
+                });
+                
+                if (response && response.status === 200 && response.data) {
+                    const thumbnail = await Jimp.read(Buffer.from(response.data));
+                    thumbnail.resize(thumbnailSize, thumbnailSize);
+                    
+                    // Add border manually
+                    const borderColor = 0x7289DAFF;
+                    for (let bx = 0; bx < thumbnail.bitmap.width; bx++) {
+                        for (let by = 0; by < 3; by++) {
+                            thumbnail.setPixelColor(borderColor, bx, by);
+                            thumbnail.setPixelColor(borderColor, bx, thumbnail.bitmap.height - 1 - by);
+                        }
+                    }
+                    for (let by = 0; by < thumbnail.bitmap.height; by++) {
+                        for (let bx = 0; bx < 3; bx++) {
+                            thumbnail.setPixelColor(borderColor, bx, by);
+                            thumbnail.setPixelColor(borderColor, thumbnail.bitmap.width - 1 - bx, by);
+                        }
+                    }
+                    
+                    card.blit(thumbnail, x, y);
+                    
+                    // Add number with circle background
+                    const numberBg = new Jimp(30, 30, 0x7289DAFF);
+                    // Draw circle manually for number background
+                    const numCenterX = 15;
+                    const numCenterY = 15;
+                    const numRadius = 12;
+                    for (let ny = 0; ny < 30; ny++) {
+                        for (let nx = 0; nx < 30; nx++) {
+                            const distance = Math.sqrt(Math.pow(nx - numCenterX, 2) + Math.pow(ny - numCenterY, 2));
+                            if (distance <= numRadius) {
+                                numberBg.setPixelColor(0xFFFFFFFF, nx, ny);
+                            }
+                        }
+                    }
+                    card.blit(numberBg, x + thumbnailSize - 25, y + thumbnailSize - 25);
+                    card.print(Jimp.FONT_SANS_16_BLACK, x + thumbnailSize - 20, y + thumbnailSize - 20, `${i+1}`);
+                } else {
+                    throw new Error('Failed to load wallpaper');
+                }
+            } catch (error) {
+                console.log('Using placeholder for wallpaper', i+1, 'due to error:', error.message);
+                // Create a placeholder if the wallpaper fails to load
+                const placeholder = new Jimp(thumbnailSize, thumbnailSize, 0x7289DAFF);
+                card.blit(placeholder, x, y);
+                card.print(Jimp.FONT_SANS_16_WHITE, x + thumbnailSize/2 - 5, y + thumbnailSize/2 - 8, `${i+1}`);
+            }
+        }
+        
+        // Add instructions
+        const instructionText = await getTranslatedMessage(interaction.guild?.id, "WALLPAPER_INSTRUCTIONS") || "Select a wallpaper from the menu below";
+        const instructionWidth = Jimp.measureText(Jimp.FONT_SANS_16_WHITE, instructionText);
+        card.print(Jimp.FONT_SANS_16_WHITE, (cardWidth - instructionWidth) / 2, cardHeight - 40, instructionText);
+        
+        return await card.getBufferAsync(Jimp.MIME_PNG);
+    } catch (error) {
+        console.error('Error generating wallpaper selection card:', error);
+        return null;
+    }
+}
+
+// Handle interactions with improved error handling
+client.on('interactionCreate', async (interaction) => {
+    try {
+        // Handle slash commands first
+        if (interaction.isChatInputCommand()) {
+            const command = client.scommands.get(interaction.commandName);
+            
+            if (!command) {
+                console.error(`No command matching ${interaction.commandName} was found.`);
+                return await interaction.reply({ 
+                    content: `${EMOJIS.WARNING} ${await getTranslatedMessage(interaction.guild?.id, "COMMAND_NOT_AVAILABLE") || "This command is not available."}`, 
+                    ephemeral: true 
+                });
+            }
+
+            try {
+                // Defer reply for commands that might take time
+                if (command.deferReply) {
+                    await interaction.deferReply({ ephemeral: command.ephemeral || false });
+                }
+                
+                console.log(`Executing command: ${interaction.commandName}`);
+                await command.run(client, interaction);
+            } catch (error) {
+                console.error(`Error executing ${interaction.commandName}:`, error);
+                
+                const errorEmbed = new EmbedBuilder()
+                    .setColor(0xFF0000)
+                    .setTitle(await getTranslatedMessage(interaction.guild?.id, "COMMAND_ERROR") || "Command Error")
+                    .setDescription(await getTranslatedMessage(interaction.guild?.id, "COMMAND_EXECUTION_ERROR") || "There was an error while executing this command!")
+                    .setTimestamp();
+                
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({ 
+                        embeds: [errorEmbed], 
+                        ephemeral: true 
+                    });
+                } else {
+                    await interaction.reply({ 
+                        embeds: [errorEmbed], 
+                        ephemeral: true 
+                    });
+                }
+            }
+            return;
+        }
+        
+        // Handle other interactions
+        if (interaction.isStringSelectMenu()) {
+            if (interaction.customId === 'serverType') {
+                const serverType = interaction.values[0];
+                
+                // Store the server type for later use
+                client.tempData = client.tempData || {};
+                client.tempData[interaction.user.id] = {
+                    serverType: serverType,
+                    step: 'serverTypeSelected'
+                };
+                
+                const modal = new ModalBuilder()
+                    .setCustomId('serverModal')
+                    .setTitle(await getTranslatedMessage(interaction.guild?.id, "SERVER_INFORMATION") || "Server Information");
+
+                if (serverType === 'java') {
+                    modal.addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('serverName')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "SERVER_NAME") || "Server Name")
+                                .setStyle(TextInputStyle.Short)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('javaIP')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "JAVA_SERVER_IP") || "Java Server IP")
+                                .setStyle(TextInputStyle.Short)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('javaPort')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "JAVA_SERVER_PORT") || "Java Server Port")
+                                .setStyle(TextInputStyle.Short)
+                                .setPlaceholder('25565')
+                                .setRequired(false)
+                        )
+                    );
+                } else if (serverType === 'bedrock') {
+                    modal.addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('serverName')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "SERVER_NAME") || "Server Name")
+                                .setStyle(TextInputStyle.Short)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('bedrockIP')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "BEDROCK_SERVER_IP") || "Bedrock Server IP")
+                                .setStyle(TextInputStyle.Short)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('bedrockPort')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "BEDROCK_SERVER_PORT") || "Bedrock Server Port")
+                                .setStyle(TextInputStyle.Short)
+                                .setPlaceholder('19132')
+                                .setRequired(false)
+                        )
+                    );
+                } else if (serverType === 'custom') {
+                    modal.addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('serverName')
+                                .setLabel(await getTranslatedMessage(interaction.guild?.id, "SERVER_NAME") || "Server Name")
+                                .setStyle(TextInputStyle.Short)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('javaIP')
+                                .setLabel(`${await getTranslatedMessage(interaction.guild?.id, "JAVA_SERVER_IP")} (Optional)` || "Java Server IP (Optional)")
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(false)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('javaPort')
+                                .setLabel(`${await getTranslatedMessage(interaction.guild?.id, "JAVA_SERVER_PORT")} (Optional)` || "Java Server Port (Optional)")
+                                .setStyle(TextInputStyle.Short)
+                                .setPlaceholder('25565')
+                                .setRequired(false)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('bedrockIP')
+                                .setLabel(`${await getTranslatedMessage(interaction.guild?.id, "BEDROCK_SERVER_IP")} (Optional)` || "Bedrock Server IP (Optional)")
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(false)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('bedrockPort')
+                                .setLabel(`${await getTranslatedMessage(interaction.guild?.id, "BEDROCK_SERVER_PORT")} (Optional)` || "Bedrock Server Port (Optional)")
+                                .setStyle(TextInputStyle.Short)
+                                .setPlaceholder('19132')
+                                .setRequired(false)
+                        )
+                    );
+                }
+
+                await interaction.showModal(modal);
+            } else if (interaction.customId === 'wallpaperSelect') {
+                await interaction.deferReply({ ephemeral: true });
+                
+                const selectedIndex = parseInt(interaction.values[0].replace('wallpaper_', ''));
+                const selectedWallpaper = WALLPAPERS[selectedIndex];
+                
+                if (!selectedWallpaper) {
+                    const errorMessage = await getTranslatedMessage(interaction.guild?.id, "INVALID_WALLPAPER") || "Invalid wallpaper selection.";
+                    return interaction.editReply({
+                        content: `${EMOJIS.WARNING} ${errorMessage}`,
+                        ephemeral: true
+                    });
+                }
+                
+                // Store the selected wallpaper
+                client.tempData[interaction.user.id].wallpaper = selectedWallpaper;
+                
+                // Generate preview with the selected wallpaper
+                const previewBuffer = await generateServerStatusImage(
+                    client.tempData[interaction.user.id].serverData, 
+                    selectedWallpaper, 
+                    interaction,
+                    true // isPreview
+                );
+                
+                const attachment = new AttachmentBuilder(previewBuffer, { name: `wallpaper_preview_${selectedIndex}.png` });
+                
+                const confirmButton = new ButtonBuilder()
+                    .setCustomId('confirmWallpaper')
+                    .setLabel(await getTranslatedMessage(interaction.guild?.id, "CONFIRM_WALLPAPER") || "Use This Wallpaper")
+                    .setStyle(ButtonStyle.Primary);
+                    
+                const chooseAnotherButton = new ButtonBuilder()
+                    .setCustomId('chooseAnotherWallpaper')
+                    .setLabel(await getTranslatedMessage(interaction.guild?.id, "CHOOSE_ANOTHER") || "Choose Another")
+                    .setStyle(ButtonStyle.Secondary);
+                    
+                const buttonRow = new ActionRowBuilder().addComponents(confirmButton, chooseAnotherButton);
+
+                const previewMessage = await getTranslatedMessage(interaction.guild?.id, "WALLPAPER_PREVIEW") || "Preview of your selected wallpaper:";
+                await interaction.editReply({
+                    content: `${EMOJIS.INFORMATION} ${previewMessage}`,
+                    files: [attachment],
+                    components: [buttonRow],
+                    ephemeral: true
+                });
+            }
+        } else if (interaction.isModalSubmit() && interaction.customId === 'serverModal') {
+            await interaction.deferReply({ ephemeral: true });
+            
+            const serverType = client.tempData[interaction.user.id].serverType;
+            const serverId = interaction.guild.id;
+            const serverName = interaction.fields.getTextInputValue('serverName') || 'Unknown';
+            
+            let javaIP = null;
+            let javaPort = 25565;
+            let bedrockIP = null;
+            let bedrockPort = 19132;
+            
+            // Safely get field values based on server type
+            try {
+                if (serverType === 'java' || serverType === 'custom') {
+                    javaIP = interaction.fields.getTextInputValue('javaIP') || null;
+                    const javaPortValue = interaction.fields.getTextInputValue('javaPort');
+                    if (javaPortValue) javaPort = javaPortValue;
+                }
+                
+                if (serverType === 'bedrock' || serverType === 'custom') {
+                    bedrockIP = interaction.fields.getTextInputValue('bedrockIP') || null;
+                    const bedrockPortValue = interaction.fields.getTextInputValue('bedrockPort');
+                    if (bedrockPortValue) bedrockPort = bedrockPortValue;
+                }
+            } catch (error) {
+                console.error('Error getting field values:', error);
+                // Handle missing fields gracefully
+                if (error.code === 'ModalSubmitInteractionFieldNotFound') {
+                    // If a field is missing, it's likely because it wasn't included in the modal
+                    // We can continue with default values
+                    console.log('Field not found, using default values');
+                } else {
+                    throw error;
+                }
+            }
+            
+            // Determine server type based on provided inputs
+            let finalServerType = serverType;
+            if (serverType === 'custom') {
+                if (javaIP && !bedrockIP) finalServerType = 'java';
+                if (!javaIP && bedrockIP) finalServerType = 'bedrock';
+            }
+            
+            const serverData = {
+                serverId,
+                serverName,
+                javaIP,
+                javaPort,
+                bedrockIP,
+                bedrockPort,
+                serverType: finalServerType
+            };
+            
+            // Store server data
+            client.tempData[interaction.user.id] = {
+                ...client.tempData[interaction.user.id],
+                serverData: serverData,
+                step: 'serverDataEntered'
+            };
+            
+            // Generate wallpaper selection card
+            const selectionCard = await generateWallpaperSelectionCard(WALLPAPERS, interaction);
+            
+            if (selectionCard) {
+                const cardAttachment = new AttachmentBuilder(selectionCard, { name: 'wallpaper_selection.png' });
+                
+                const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                    label: `Wallpaper ${index + 1}`,
+                    description: `Select wallpaper #${index + 1}`,
+                    value: `wallpaper_${index}`
+                }));
+                
+                const wallpaperSelect = new ActionRowBuilder()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId('wallpaperSelect')
+                            .setPlaceholder(await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || 'Choose a wallpaper...')
+                            .addOptions(wallpaperOptions.slice(0, 25)) // Discord limit
+                    );
+                
+                await interaction.editReply({
+                    content: `${EMOJIS.INFORMATION} ${await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER_DESCRIPTION") || "Please select a wallpaper for your server status image:"}`,
+                    files: [cardAttachment],
+                    components: [wallpaperSelect],
+                    ephemeral: true
+                });
+            } else {
+                // Fallback to text-based selection if card generation fails
+                const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                    label: `Wallpaper ${index + 1}`,
+                    description: `Select wallpaper #${index + 1}`,
+                    value: `wallpaper_${index}`
+                }));
+                
+                const wallpaperSelect = new ActionRowBuilder()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId('wallpaperSelect')
+                            .setPlaceholder(await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || 'Choose a wallpaper...')
+                            .addOptions(wallpaperOptions.slice(0, 25)) // Discord limit
+                    );
+                
+                await interaction.editReply({
+                    content: `${EMOJIS.INFORMATION} ${await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER_DESCRIPTION") || "Please select a wallpaper for your server status image:"}`,
+                    components: [wallpaperSelect],
+                    ephemeral: true
+                });
+            }
+        } else if (interaction.isButton()) {
+            if (interaction.customId === 'confirmWallpaper') {
+                await interaction.deferReply({ ephemeral: true });
+                
+                const serverData = client.tempData[interaction.user.id].serverData;
+                const wallpaper = client.tempData[interaction.user.id].wallpaper;
+                
+                // Generate final server status image
+                const imageBuffer = await generateServerStatusImage(serverData, wallpaper, interaction, false);
+                const attachment = new AttachmentBuilder(imageBuffer, { 
+                    name: `${serverData.serverName.replace(/[^a-zA-Z0-9]/g, '_')}_status.png` 
+                });
+                
+                const confirmButton = new ButtonBuilder()
+                    .setCustomId('confirmServer')
+                    .setLabel(await getTranslatedMessage(interaction.guild?.id, "CONFIRM") || "Confirm")
+                    .setStyle(ButtonStyle.Primary);
+                    
+                const cancelButton = new ButtonBuilder()
+                    .setCustomId('cancelServer')
+                    .setLabel(await getTranslatedMessage(interaction.guild?.id, "CANCEL") || "Cancel")
+                    .setStyle(ButtonStyle.Danger);
+                    
+                const buttonRow = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+                await interaction.editReply({
+                    content: `${EMOJIS.INFORMATION} ${await getTranslatedMessage(interaction.guild?.id, "SERVER_STATUS_READY") || "Server status image ready!"}`,
+                    files: [attachment],
+                    components: [buttonRow],
+                    ephemeral: true
+                });
+            } else if (interaction.customId === 'chooseAnotherWallpaper') {
+                await interaction.deferReply({ ephemeral: true });
+                
+                // Regenerate wallpaper selection card
+                const selectionCard = await generateWallpaperSelectionCard(WALLPAPERS, interaction);
+                
+                if (selectionCard) {
+                    const cardAttachment = new AttachmentBuilder(selectionCard, { name: 'wallpaper_selection.png' });
+                    
+                    const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                        label: `Wallpaper ${index + 1}`,
+                        description: `Select wallpaper #${index + 1}`,
+                        value: `wallpaper_${index}`
+                    }));
+                    
+                    const wallpaperSelect = new ActionRowBuilder()
+                        .addComponents(
+                            new StringSelectMenuBuilder()
+                                .setCustomId('wallpaperSelect')
+                                .setPlaceholder(await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || 'Choose a wallpaper...')
+                                .addOptions(wallpaperOptions.slice(0, 25))
+                        );
+                    
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} ${await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER_DESCRIPTION") || "Please select a wallpaper for your server status image:"}`,
+                        files: [cardAttachment],
+                        components: [wallpaperSelect],
+                        ephemeral: true
+                    });
+                } else {
+                    // Fallback to text-based selection
+                    const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                        label: `Wallpaper ${index + 1}`,
+                        description: `Select wallpaper #${index + 1}`,
+                        value: `wallpaper_${index}`
+                    }));
+                    
+                    const wallpaperSelect = new ActionRowBuilder()
+                        .addComponents(
+                            new StringSelectMenuBuilder()
+                                .setCustomId('wallpaperSelect')
+                                .setPlaceholder(await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || 'Choose a wallpaper...')
+                                .addOptions(wallpaperOptions.slice(0, 25))
+                        );
+                    
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} ${await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER_DESCRIPTION") || "Please select a wallpaper for your server status image:"}`,
+                        components: [wallpaperSelect],
+                        ephemeral: true
+                    });
+                }
+            } else if (interaction.customId === 'confirmServer') {
+                const serverData = client.tempData[interaction.user.id].serverData;
+                
+                if (!serverData) {
+                    return interaction.reply({
+                        content: `${EMOJIS.WARNING} ${await getTranslatedMessage(interaction.guild?.id, "NO_SERVER_DATA") || "No server data found. Please start over."}`,
+                        ephemeral: true
+                    });
+                }
+                
+                try {
+                    const existingServer = await Serverdb.findOne({ serverId: serverData.serverId });
+                    
+                    if (existingServer) {
+                        await Serverdb.updateOne({ serverId: serverData.serverId }, serverData);
+                    } else {
+                        await Serverdb.create(serverData);
+                    }
+                    
+                    delete client.tempData[interaction.user.id];
+                    
+                    await interaction.update({
+                        components: [],
+                        content: `${EMOJIS.CHECK} ${await getTranslatedMessage(interaction.guild?.id, "SERVER_SAVED_SUCCESS") || "Server information saved successfully!"}`
+                    });
+                } catch (error) {
+                    console.error('Error saving server:', error);
+                    await interaction.reply({
+                        content: `${EMOJIS.WARNING} ${await getTranslatedMessage(interaction.guild?.id, "SAVE_ERROR") || "Error saving server information."}`,
+                        ephemeral: true
+                    });
+                }
+            } else if (interaction.customId === 'cancelServer') {
+                delete client.tempData[interaction.user.id];
+                await interaction.update({
+                    components: [],
+                    content: `${EMOJIS.WARNING} ${await getTranslatedMessage(interaction.guild?.id, "SETUP_CANCELLED") || "Setup cancelled."}`
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error handling interaction:', error);
+        
+        // Handle specific error types
+        let errorMessage = await getTranslatedMessage(interaction.guild?.id, "PROCESSING_ERROR") || "An error occurred while processing your request.";
+        
+        if (error.code === 'ModalSubmitInteractionFieldNotFound') {
+            errorMessage = await getTranslatedMessage(interaction.guild?.id, "FIELD_NOT_FOUND_ERROR") || "A required field was not found. Please try the setup again.";
+        }
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({
+                content: `${EMOJIS.WARNING} ${errorMessage}`,
+                ephemeral: true
+            });
+        } else {
+            await interaction.reply({
+                content: `${EMOJIS.WARNING} ${errorMessage}`,
+                ephemeral: true
+            });
+        }
+    }
+});
+
+// Setup command
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+    
+    if (interaction.commandName === 'setup') {
+        try {
+            // Defer the reply to avoid "application did not respond" errors
+            await interaction.deferReply({ ephemeral: true });
+            
+            const introMessage = await getTranslatedMessage(interaction.guild?.id, "SELECT_SERVER_TYPE") || "Select your server type:";
+            
+            const serverTypeSelect = new ActionRowBuilder()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId('serverType')
+                        .setPlaceholder(introMessage)
+                        .addOptions([
+                            {
+                                label: 'Java Edition',
+                                description: 'Minecraft Java Edition server',
+                                value: 'java',
+                                emoji: '1410147547363934300'
+                            },
+                            {
+                                label: 'Bedrock Edition',
+                                description: 'Minecraft Bedrock Edition server',
+                                value: 'bedrock',
+                                emoji: '1410147921676075038'
+                            },
+                            {
+                                label: 'Custom Setup',
+                                description: 'Both Java and Bedrock servers',
+                                value: 'custom',
+                                emoji: '1410147645883678763'
+                            }
+                        ])
+                );
+            
+            await interaction.editReply({
+                content: `${EMOJIS.INFORMATION} ${introMessage}`,
+                components: [serverTypeSelect],
+                ephemeral: true
+            });
+        } catch (error) {
+            console.error('Error in setup command:', error);
+            await interaction.editReply({
+                content: `${EMOJIS.WARNING} ${await getTranslatedMessage(interaction.guild?.id, "SETUP_ERROR") || "An error occurred while setting up the server."}`,
+                ephemeral: true
+            });
+        }
+    }
+});
+
+// Prefix command for testing image generator
+client.on('messageCreate', async (message) => {
+    if (message.author.bot) return;
+    
+    // Check for prefix command
+    if (message.content.startsWith('!testwallpaper')) {
+        try {
+            await message.channel.sendTyping();
+            
+            // Parse the wallpaper index from command
+            const args = message.content.split(' ');
+            const wallpaperIndex = args[1] ? parseInt(args[1]) : 0;
+            
+            if (isNaN(wallpaperIndex) || wallpaperIndex < 0 || wallpaperIndex >= WALLPAPERS.length) {
+                return message.reply(`Please specify a valid wallpaper index (0-${WALLPAPERS.length-1})`);
+            }
+            
+            const selectedWallpaper = WALLPAPERS[wallpaperIndex];
+            
+            // Create sample server data for testing
+            const sampleServerData = {
+                serverName: 'Test Server',
+                javaIP: 'mc.hypixel.net',
+                javaPort: 25565,
+                bedrockIP: null,
+                bedrockPort: 19132,
+                serverType: 'java'
+            };
+            
+            // Generate test image
+            const imageBuffer = await generateServerStatusImage(
+                sampleServerData, 
+                selectedWallpaper, 
+                { guild: message.guild },
+                true // isPreview
+            );
+            
+            const attachment = new AttachmentBuilder(imageBuffer, { 
+                name: `wallpaper_test_${wallpaperIndex}.png` 
+            });
+            
+            await message.reply({
+                content: `Testing wallpaper #${wallpaperIndex}: ${selectedWallpaper}`,
+                files: [attachment]
+            });
+            
+        } catch (error) {
+            console.error('Error in testwallpaper command:', error);
+            await message.reply('An error occurred while testing the wallpaper.');
+        }
+    }
+    
+    // Command to list available wallpapers
+    if (message.content.startsWith('!listwallpapers')) {
+        let response = "Available wallpapers:\n";
+        WALLPAPERS.forEach((url, index) => {
+            response += `${index}: ${url}\n`;
+        });
+        response += "\nUse `!testwallpaper <number>` to test a wallpaper.";
+        
+        await message.reply(response);
+    }
+});
+
+module.exports = client;

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>ProMcBot</title>
+
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- TrustBox script -->
+
+<script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>
+
+<!-- End TrustBox script -->
+  <style>
+
+    /* ==== Global & Glassmorphism ==== */
+
+    body {
+
+      margin:0;
+
+      font-family: 'Inter', sans-serif;
+
+      background: #f0f2f5;
+
+      color: #333;
+
+    }
+
+    .glass {
+
+      background: rgba(255,255,255,0.4);
+
+      backdrop-filter: blur(16px);
+
+      border-radius: 12px;
+
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+
+    }
+
+    a { text-decoration:none; color: inherit; }
+
+    /* ==== Header ==== */
+
+    header {
+
+      position: sticky; top:0; z-index:100;
+
+      display: flex; align-items:center; justify-content:space-between;
+
+      padding: 1rem 2rem;
+
+    }
+
+    nav a { margin: 0 1rem; font-weight:500; }
+
+    #lang-select {
+
+      background: rgba(255,255,255,0.6);
+
+      border: none; padding: 0.4rem; border-radius: 6px;
+
+      font-size: 0.9rem;
+
+    }
+
+    /* ==== Hero ==== */
+
+    .hero {
+
+      text-align: center; padding: 4rem 1rem;
+
+    }
+
+    .badge {
+
+      display: inline-flex;
+
+      align-items:center;
+
+      padding: .25rem .75rem;
+
+      border-radius: 999px;
+
+      font-size: .85rem;
+
+      box-shadow: 0 4px 16px rgba(0,0,0,.08);
+
+      backdrop-filter: blur(12px);
+
+      margin-bottom: 1rem;
+
+    }
+
+    .badge .dot { 
+
+      width: .6rem; height: .6rem; border-radius:50%;
+
+      background: #22c55e; margin-right:.5rem;
+
+    }
+
+    h1 { font-size: 2.5rem; line-height:1.2; margin: .5rem 0; }
+
+    .highlight { color: #635bff; }
+
+    .hero p { color: #555; font-size:1.1rem; max-width:600px; margin: .5rem auto 2rem; }
+
+    .btn {
+
+      display:inline-block;
+
+      padding: .9rem 2rem;
+
+      border:none;
+
+      border-radius:8px;
+
+      font-size:1rem;
+
+      font-weight:600;
+
+      cursor:pointer;
+
+      transition:transform .2s;
+
+    }
+      
+       .btn1 {
+     /* display:inline-block;*/
+    padding: .2rem 0.25rem;
+      border:none;
+      border-radius:5px;
+    /*  font-size:1rem;*/
+   /*   font-weight:600;*/
+      cursor:pointer;
+      transition:transform .2s;
+
+    }
+
+    .btn-primary {
+
+      background: rgba(99,91,255,0.85);
+
+      color:#fff;
+
+      backdrop-filter: blur(12px);
+
+    }
+
+    .btn-primary:hover { transform:scale(1.03) }
+
+    /* ==== Best Server of the Month Card ==== */
+
+    .monthly-card {
+
+      margin: 2rem auto 0;
+
+      padding: 1.75rem;
+
+      max-width: 340px;
+
+      text-align: center;
+
+    }
+
+    .monthly-card h3 {
+
+      margin-bottom: 0.75rem;
+
+      font-size: 1.3rem;
+
+    }
+
+    .monthly-card p {
+
+      font-size: 1rem;
+
+      color: #555;
+
+    }
+
+    /* ==== FAQ ==== */
+
+    #faq { max-width: 700px; margin:3rem auto; padding:0 1rem; }
+
+    .faq-item { margin-bottom:1rem; }
+
+    .faq-q {
+
+      cursor:pointer;
+
+      padding:1rem;
+
+      border:1px solid rgba(0,0,0,0.1);
+
+      border-radius:8px;
+
+    }
+
+    .faq-q:hover { background: rgba(0,0,0,0.03) }
+
+    .faq-a {
+
+      max-height:0; overflow:hidden;
+
+      transition: max-height .3s ease;
+
+      padding:0 1rem;
+
+      border-left:2px solid #635bff;
+
+      margin-top:.5rem;
+
+    }
+
+    .faq-a.open { 
+
+      max-height:200px; 
+
+      padding:1rem;
+
+    }
+
+    /* ==== Footer ==== */
+
+    footer {
+
+      text-align:center;
+
+      padding:1.5rem 1rem;
+
+      font-size:.9rem;
+
+      color:#666;
+
+    }
+
+    /* ==== Cookie Banner ==== */
+
+    #cookie-banner {
+
+      position: fixed; bottom:1rem; left:50%; transform:translateX(-50%);
+
+      background:#fff; padding:1rem 1.5rem; border-radius:8px;
+
+      box-shadow:0 4px 16px rgba(0,0,0,0.1);
+
+      display:flex; align-items:center; gap:1rem;
+
+      max-width:90%; font-size:.95rem;
+
+    }
+
+    #cookie-banner button {
+
+      padding:.5rem 1rem;
+
+      border:none; border-radius:6px;
+
+      background:#f5c32c; font-weight:600;
+
+      cursor:pointer;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- HEADER -->
+
+  <header class="glass">
+
+    <div class="logo"><strong>ProMcBot</strong></div>
+
+    <nav>
+
+      <a href="#hero" data-key="nav_home">Home</a>
+
+      <a href="#faq" data-key="nav_faq">FAQ</a>
+        
+<a id="authButton" href="/loading-auth" class="btn1 btn-primary">Login</a>
+    
+</nav>
+    <!--<select id="lang-select">
+
+      <option value="en">EN</option>
+
+      <option value="es">ES</option>
+
+      <option value="fr">FR</option>
+
+      <option value="ar">AR</option>
+
+    </select>-->
+
+  </header>
+
+  <!-- HERO -->
+
+  <section id="hero" class="hero">
+
+    <div class="badge glass">
+
+      <span class="dot"></span>
+
+      <span data-key="badge_new">New</span>
+
+      &nbsp;<span data-key="badge_tool">Minecraft ProMcTurbo Plugin</span>
+
+    </div>
+
+    <h1>
+
+      <span data-key="hero_line1">Link your</span><br>
+
+      <span class="highlight" data-key="hero_highlight">Discord & Minecraft</span><br>
+
+      <span data-key="hero_line2">servers seamlessly</span>
+
+    </h1>
+
+    <p data-key="hero_sub">
+
+      Manage your Minecraft servers directly from Discord with ease and control.
+
+    </p>
+
+    <a id="authButton1" href="/loading-auth" class="btn btn-primary" data-key="hero_cta">Get Started</a>
+
+    <!-- Best Server of the Month Card -->
+<!-- TrustBox widget - Review Collector -->
+      <br>
+       <br>
+<div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="68a9766de9dab32fe8f245be" data-style-height="52px" data-style-width="100%" data-token="f925be93-0e56-4d0c-9d63-c8499996e899">
+     <br>
+  <a href="https://www.trustpilot.com/review/promcbot.qzz.io" target="_blank" rel="noopener">Trustpilot</a>
+</div>
+<!-- End TrustBox widget -->
+      
+    <div class="glass monthly-card">
+
+      <h3 data-key="monthly_title">Best Server of the Month</h3>
+
+      <p data-key="monthly_name"><strong>MinecraftHub</strong> — <a href="/votes" class="highlight">Do you want one like it?</a></p>
+
+    </div>
+
+  </section>
+
+  <!-- FAQ -->
+
+  <section id="faq">
+
+    <h2 data-key="faq_title">Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q1">What is ProMcBot?</div>
+
+      <div class="faq-a" data-key="faq_a1">
+
+        ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control.
+
+      </div>
+
+    </div>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q2">How do I connect my server?</div>
+
+      <div class="faq-a" data-key="faq_a2">
+
+        Invite ProMcBot to Discord, run the /setup_server command, and follow the prompts to authorize your Minecraft server.
+
+      </div>
+        
+
+    </div>
+
+    <div class="faq-item">
+
+      <div class="faq-q" data-key="faq_q3">Is it free?</div>
+
+      <div class="faq-a" data-key="faq_a3">
+
+        Yes—ProMcBot’s core linking functionality is completely free, with optional premium addons coming soon.
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    © ProMcBot 2024–<span id="year"></span>
+
+  </footer>
+
+  <!-- COOKIE BANNER -->
+
+  <div id="cookie-banner" hidden>
+
+    <span data-key="cookie_text">We use cookies to enhance your experience.</span>
+
+    <button id="cookie-ok" data-key="cookie_btn">Okay</button>
+
+  </div>
+
+  <script>
+ /* document.addEventListener('DOMContentLoaded', () => {
+    // --- Cache elements ---
+    
+    const yearEl     = document.getElementById('year');
+    const langSelect = document.getElementById('lang-select');
+    const banner     = document.getElementById('cookie-banner');
+    const cookieOk   = document.getElementById('cookie-ok');
+
+    // --- Cookie helpers ---
+   /* function setCookie(name, value, days = 365) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    }
+    function getCookie(name) {
+      return document.cookie.split('; ').reduce((r, v) => {
+        const [key, val] = v.split('=');
+        return key === name ? decodeURIComponent(val) : r;
+      }, '');
+    }
+
+    // --- Auto-update year ---
+    if (yearEl) {
+      yearEl.textContent = new Date().getFullYear();
+    }
+
+    // --- Translations map (fill with your data) ---
+    const translations = {
+      /* ... your existing translations object ... 
+    };
+
+    function applyTranslations(lang) {
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key');
+        if (translations[lang] && translations[lang][key]) {
+          el.innerHTML = translations[lang][key];
+        }
+      });
+    }
+
+    // --- Internationalization via cookies ---
+  /*  if (langSelect) {
+      const savedLang = getCookie('pmc_lang') || 'en';
+      langSelect.value = savedLang;
+      applyTranslations(savedLang);
+
+      langSelect.addEventListener('change', () => {
+        setCookie('pmc_lang', langSelect.value, 365);
+        applyTranslations(langSelect.value);
+      });
+    }
+
+    // --- FAQ Accordion ---
+    document.querySelectorAll('.faq-q').forEach(q => {
+      q.addEventListener('click', () => {
+        q.nextElementSibling.classList.toggle('open');
+      });
+    });
+
+    // --- Cookie consent banner ---
+   /* if (banner && !getCookie('pmc_cookies_accepted')) {
+      banner.hidden = false;
+    }
+    if (cookieOk) {
+      cookieOk.addEventListener('click', () => {
+        setCookie('pmc_cookies_accepted', 'yes', 365);
+        banner.hidden = true;
+      });
+    }
+
+    // --- Smooth scroll for nav links ---
+    document.querySelectorAll('nav a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+  });*/
+</script>
+
+  <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    // --- Cookie helpers (unchanged) ---
+    function setCookie(name, value, days = 365) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+    }
+    function getCookie(name) {
+      return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1]
+        ? decodeURIComponent(document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='))
+            .split('=')[1])
+        : '';
+    }
+
+    // --- Auto-update year (unchanged) ---
+    const yearEl = document.getElementById('year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+    // --- Translations & language select (unchanged) ---
+    const translations = {  };
+    function applyTranslations(lang) {
+      document.querySelectorAll('[data-key]').forEach(el => {
+        const key = el.getAttribute('data-key');
+        if (translations[lang]?.[key]) el.innerHTML = translations[lang][key];
+      });
+    }
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect) {
+      const saved = getCookie('pmc_lang') || 'en';
+      langSelect.value = saved;
+      applyTranslations(saved);
+      langSelect.addEventListener('change', () => {
+        setCookie('pmc_lang', langSelect.value, 365);
+        applyTranslations(langSelect.value);
+      });
+    }
+
+    // --- FAQ Accordion with debug logs ---
+    const faqQs = document.querySelectorAll('.faq-q');
+    console.log('Found FAQ items:', faqQs.length);
+    faqQs.forEach((q, i) => {
+      q.style.cursor = 'pointer';               // ensure it's clickable
+      q.addEventListener('click', () => {
+        console.log(`Toggling FAQ #${i}`);
+        const a = q.nextElementSibling;
+        if (a) a.classList.toggle('open');
+      });
+    });
+
+    // --- Cookie-consent banner (unchanged) ---
+    const banner = document.getElementById('cookie-banner');
+    const cookieOk = document.getElementById('cookie-ok');
+    if (banner && !getCookie('pmc_cookies_accepted')) banner.style.display = 'block';
+    if (cookieOk) {
+      cookieOk.addEventListener('click', () => {
+        setCookie('pmc_cookies_accepted', 'yes', 365);
+        banner.style.display = 'none';
+      });
+    }
+
+  /*  // --- Smooth scroll (unchanged) ---
+    document.querySelectorAll('nav a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const tgt = document.querySelector(a.getAttribute('href'));
+        if (tgt) tgt.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+*/
+    // --- Auth-check and button update with debug logs ---
+    try {
+      const resp = await fetch('/callback/check/userData');
+      if (!resp.ok) throw new Error(`Status ${resp.status}`);
+      const data = await resp.json();
+      console.log('Auth data:', data);
+      if (data.authenticated) {
+        // try both IDs just in case
+        let btn = document.getElementById('authButton');
+             let btn1 = document.getElementById('authButton1');
+        console.log('Auth button element:', btn);
+          
+          btn1.href = '/dashboard';
+
+          btn1.textContent = "Dashboard";
+          
+        
+          btn.href = '/dashboard';
+          btn.textContent = data.user.username;
+       
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err);
+    }
+  });
+</script>
+
+     
+</body>
+
+</html>
+
