@@ -28,5 +28,9 @@ module.exports = model(
     serverType: {
       type: String,
     },
+    watcherEnabled: {
+      type: Boolean,
+      default: false,
+    },
   })
 );
