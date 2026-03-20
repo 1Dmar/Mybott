@@ -11,7 +11,7 @@ module.exports = {
     const serverData = await Server.findOne({ serverId: message.guild.id });
     if (!serverData || !serverData.watcherEnabled) return;
 
-    // 2. Regex to detect Minecraft IP addresses
+    // 2. Regex to detect Minecraft IP addresses (e.g., play.hypixel.net)
     const ipRegex = /\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?::\d{1,5})?\b/gi;
     const matches = message.content.match(ipRegex);
 
@@ -19,7 +19,7 @@ module.exports = {
 
     for (const ip of matches) {
       // Basic validation to avoid common false positives
-      const commonDomains = ["google.com", "discord.gg", "youtube.com", "github.com", "facebook.com", "twitter.com", "instagram.com", "tiktok.com"];
+      const commonDomains = ["google.com", "discord.gg", "youtube.com", "github.com", "facebook.com", "twitter.com", "instagram.com", "tiktok.com", "manus.im"];
       if (commonDomains.some(domain => ip.toLowerCase().includes(domain))) continue;
 
       try {
@@ -29,22 +29,22 @@ module.exports = {
         if (data.online) {
           const client = message.client;
           const embed = new EmbedBuilder()
-            .setAuthor({ name: 'ProMcBot | Minecraft Royal Watcher', iconURL: client.user.displayAvatarURL() })
-            .setTitle(`🏰 **تم رصد خادم ملكي نشط!**`)
+            .setAuthor({ name: 'ProMcBot | Minecraft Royal Passport', iconURL: client.user.displayAvatarURL() })
+            .setTitle(`📜 **جواز سفر الخادم الملكي: ${ip}**`)
             .setThumbnail(`https://api.mcsrvstat.us/icon/${ip}`)
             .setColor("#D4AF37") // Royal Gold
-            .setDescription(`✨ **أهلاً بك أيها الملك! لقد قمنا بتحليل العنوان المذكور في المحادثة:**\n\n` +
-                            `🔱 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
+            .setDescription(`🔱 **لقد رصدنا خادم ماين كرافت جديد في المحادثة!**\n\n` +
+                            `🏰 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
                             `💎 **الإصدار:** \`${data.version || "غير معروف"}\`\n` +
                             `👥 **اللاعبين:** \`${data.players.online}/${data.players.max}\`\n` +
                             `📶 **الحالة:** \`متصل ✅\``)
             .addFields(
-              { name: '📜 وصف الخادم', value: `\`\`\`${data.motd?.clean?.join('\n') || 'لا يوجد وصف متاح'}\`\`\`` },
-              { name: '📍 العنوان', value: `\`${ip}\``, inline: true },
+              { name: '📜 وصف الخادم (MOTD)', value: `\`\`\`${data.motd?.clean?.join('\n') || 'لا يوجد وصف متاح'}\`\`\`` },
+              { name: '📍 العنوان المباشر', value: `\`${ip}\``, inline: true },
               { name: '🛠️ النوع', value: `\`${data.software || 'Vanilla'}\``, inline: true }
             )
             .setImage(`https://api.mcsrvstat.us/debug/ping/${ip}`)
-            .setFooter({ text: "نظام المراقبة الملكي | ProMcBot", iconURL: client.user.displayAvatarURL() })
+            .setFooter({ text: "نظام الجوازات الملكي | ProMcBot", iconURL: client.user.displayAvatarURL() })
             .setTimestamp();
 
           const row = new ActionRowBuilder()
