@@ -1,16 +1,23 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  PermissionFlagsBits,
+} = require("discord.js");
 const axios = require("axios");
 const Server = require("../../../Models/Server");
 
 module.exports = {
   name: "info",
-  description: "عرض حالة خادم ماين كرافت بطريقة افضل",
+  description: "Show Minecraft server status in a better way",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
   cooldown: 5,
   type1: "message",
   membership: false,
+
   /**
    * @param {Client} client
    * @param {Message} message
@@ -18,64 +25,109 @@ module.exports = {
    * @param {String} prefix
    */
   run: async (client, message, args, prefix) => {
-    let ip = args[0];
-    
-    // If no IP provided, try to get the server's default IP from MongoDB
+    let ip = args.join(" ").trim();
+
+    // If no IP is provided, use the default server IP from MongoDB
     if (!ip) {
       const serverData = await Server.findOne({ serverId: message.guild.id });
-      if (serverData && serverData.javaIP) {
+
+      if (serverData?.javaIP) {
         ip = serverData.javaIP;
       } else {
-        return message.reply({ content: `❌ **عذراً!، لم يتم تحديد عنوان خادم، ولا يوجد عنوان افتراضي مسجل لهذا السيرفر.**\n> استخدم: \`${prefix}mc <IP>\`` });
+        return message.reply({
+          content:
+            `❌ **Sorry! No server address was provided, and no default address is saved for this server.**\n` +
+            `> Use: \`${prefix}mc <IP>\``,
+        });
       }
     }
 
-    const loadingMsg = await message.reply({ content: "جاري جلب بيانات الخادم...**" });
+    const loadingMsg = await message.reply({
+      content: "⏳ Fetching server data...",
+    });
 
     try {
-      const response = await axios.get(`https://api.mcsrvstat.us/3/${ip}`);
+      const response = await axios.get(
+        `https://api.mcsrvstat.us/3/${encodeURIComponent(ip)}`
+      );
+
       const data = response.data;
 
       if (!data.online) {
-        return loadingMsg.edit({ content: `❌ **عذراً! الخادم \`${ip}\` غير متصل حالياً.**` });
+        return loadingMsg.edit({
+          content: `❌ **Sorry! The server \`${ip}\` is currently offline.**`,
+          embeds: [],
+          components: [],
+        });
       }
 
+      const motd =
+        data.motd?.clean?.length > 0
+          ? data.motd.clean.join("\n")
+          : "No description available.";
+
       const embed = new EmbedBuilder()
-        .setAuthor({ name: 'ProMcBot | Minecraft Royal Passport', iconURL: client.user.displayAvatarURL() })
-        .setTitle(`🏰 **إحصائيات الخادم**`)
-        .setThumbnail(`https://api.mcsrvstat.us/icon/${ip}`)
-        .setColor("#D4AF37") // Royal Gold
-        .setDescription(`✨ **أهلاً بك! إليك المعلومات الكاملة عن الخادم المختار:**\n\n` +
-                 //       `🔱 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
-                        `💎 **الإصدار:** \`${data.version || "غير معروف"}\`\n` +
-                        `👥 **اللاعبين:** \`${data.players.online}/${data.players.max}\`\n` +
-                        `📶 **الحالة:** \`متصل ✅\``)
-        .addFields(
-          { name: '📜 وصف الخادم', value: `\`\`\`${data.motd?.clean?.join('\n') || 'لا يوجد وصف متاح'}\`\`\`` },
-          { name: '📍 العنوان الكامل', value: `\`${data.hostname || ip}\``, inline: true },
-          { name: '🛠️ النوع', value: `\`${data.software || 'Vanilla'}\``, inline: true }
+        .setAuthor({
+          name: "ProMcBot | Minecraft Server Info",
+          iconURL: client.user.displayAvatarURL(),
+        })
+        .setTitle("🏰 Minecraft Server Status")
+        .setThumbnail(`https://api.mcsrvstat.us/icon/${encodeURIComponent(ip)}`)
+        .setColor("#D4AF37")
+        .setDescription(
+          `✨ **Here is the full information for the selected server:**\n\n` +
+            `💎 **Version:** \`${data.version || "Unknown"}\`\n` +
+            `👥 **Players:** \`${data.players?.online ?? 0}/${data.players?.max ?? 0}\`\n` +
+            `📶 **Status:** \`Online ✅\``
         )
-        .setImage(`https://api.mcsrvstat.us/debug/ping/${ip}`)
-        .setFooter({ text: "نظام المراقبة | ProMcBot", iconURL: client.user.displayAvatarURL() })
+        .addFields(
+          {
+            name: "📜 Server Description",
+            value: `\`\`\`${motd}\`\`\``,
+          },
+          {
+            name: "📍 Full Address",
+            value: `\`${data.hostname || data.ip || ip}\``,
+            inline: true,
+          },
+          {
+            name: "🛠️ Software",
+            value: `\`${data.software || "Vanilla"}\``,
+            inline: true,
+          }
+        )
+        .setImage(`https://api.mcsrvstat.us/debug/ping/${encodeURIComponent(ip)}`)
+        .setFooter({
+          text: "Monitoring System | ProMcBot",
+          iconURL: client.user.displayAvatarURL(),
+        })
         .setTimestamp();
 
-      const row = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setLabel('دعم البوت')
-            .setStyle(ButtonStyle.Link)
-            .setURL('https://discord.gg/1Dmar'),
-          new ButtonBuilder()
-            .setLabel('الموقع الرسمي')
-            .setStyle(ButtonStyle.Link)
-            .setURL('https://promcbot.qzz.io/')
-          . setDisabled(true)
-        );
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("Bot Support")
+          .setStyle(ButtonStyle.Link)
+          .setURL("https://discord.gg/1Dmar"),
+        new ButtonBuilder()
+          .setLabel("Official Website")
+          .setStyle(ButtonStyle.Link)
+          .setURL("https://promcbot.qzz.io/")
+        .setDisabled(true)
+      );
 
-      await loadingMsg.edit({ content: null, embeds: [embed], components: [row] });
-
+      await loadingMsg.edit({
+        content: null,
+        embeds: [embed],
+        components: [row],
+      });
     } catch (error) {
-      await loadingMsg.edit({ content: `❌ **حدث خطأ أثناء محاولة جلب بيانات الخادم. تأكد من صحة العنوان.**` });
+      console.error("Minecraft server info error:", error);
+      await loadingMsg.edit({
+        content:
+          "❌ **An error occurred while fetching the server data. Please make sure the address is correct.**",
+        embeds: [],
+        components: [],
+      });
     }
   },
 };
