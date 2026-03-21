@@ -13,9 +13,16 @@ module.exports = async (client) => {
         delete require.cache[require.resolve(`../events/${eventFile}`)];
         const event = require(`../events/${eventFile}`);
         
-        // FIX: Skip files that don't export a proper event object (they use client.on directly)
+        // Handle files that use client.on directly by checking if they export a function
+        if (typeof event === 'function') {
+          event(client);
+          console.log(`✅ Loaded functional event file: ${eventFile}`);
+          continue;
+        }
+
+        // FIX: Skip files that don't export a proper event object
         if (!event || typeof event !== 'object') {
-          console.log(`⚠️ Skipping ${eventFile} - uses direct client.on() registration`);
+          console.log(`⚠️ Skipping ${eventFile} - unknown export type`);
           continue;
         }
         

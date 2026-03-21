@@ -36,6 +36,9 @@ mainApp.listen(PORT, () => {
 });
 
 // تسجيل دخول البوتات
-if (bot1.client) bot1.client.login(process.env.BOT1_TOKEN);
-if (bot1.client1) bot1.client1.login(process.env.BOT1_1_TOKEN);
-if (bot2Client.login) bot2Client.login(process.env.BOT1_TOKEN);
+// Bot 1 (Dashboard Bots)
+if (bot1.client) bot1.client.login(process.env.BOT1_TOKEN).catch(err => console.error("Bot 1 Client Login Error:", err.message));
+if (bot1.client1) bot1.client1.login(process.env.BOT1_1_TOKEN).catch(err => console.error("Bot 1 Client1 Login Error:", err.message));
+
+// Bot 2 (Main Bot) - Using BOT1_1_TOKEN as per bot/settings/config.js
+if (bot2Client.login) bot2Client.login(process.env.BOT1_1_TOKEN).catch(err => console.error("Bot 2 Login Error:", err.message));

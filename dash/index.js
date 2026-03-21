@@ -96,7 +96,7 @@ useNewUrlParser: true,
   });
   
 let cpuUsagePercent = 0;
-client.on("ready", async () => {
+client.once("ready", async () => {
     console.log(`${client.user.username} is Ready`);
      cpuUsagePercent = 0;
 

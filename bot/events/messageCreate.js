@@ -29,7 +29,7 @@ const AutoResponder = require("../Models/AutoResponder");
 const { DateTime } = require('luxon');
 const Log = require('../Models/Log');
 const url = "http://promcbot.qzz.io";
-client.on("messageCreate", async (message) => {
+const handleMainMessage = async (message) => {
     if (message.author.bot || !message.guild) return;
 
     let prefix = PREFIX;
@@ -144,7 +144,7 @@ function cooldown(message, cmd) {
     }
 }
 
-client.on("messageCreate", async (message) => {
+const handleMcMessage = async (message) => {
     if (/^mc\b/i.test(message.content)) {
         const serverId = message.guild.id;
         let icon;
@@ -1557,4 +1557,12 @@ client.on('messageCreate', async message => {
       await message.reply(`Failed to fetch skin for ${args[0]}. Please check the player name and try again.`);
     }
   }
-});
+};
+
+module.exports = {
+    name: "messageCreate",
+    async execute(message) {
+        await handleMainMessage(message);
+        await handleMcMessage(message);
+    }
+};

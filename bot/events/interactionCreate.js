@@ -601,8 +601,7 @@ async function generateWallpaperSelectionCard(wallpapers, interaction) {
     }
 }
 
-// Handle interactions with improved error handling
-client.on('interactionCreate', async (interaction) => {
+const handleInteraction = async (interaction) => {
     try {
         // Handle slash commands first
         if (interaction.isChatInputCommand()) {
@@ -1105,10 +1104,9 @@ client.on('interactionCreate', async (interaction) => {
             });
         }
     }
-});
+};
 
-// Prefix command for testing image generator
-client.on('messageCreate', async (message) => {
+const handleTestMessage = async (message) => {
     if (message.author.bot) return;
     
     // Check for prefix command
@@ -1169,6 +1167,15 @@ client.on('messageCreate', async (message) => {
         
         await message.reply(response);
     }
-});
+};
 
-module.exports = client;
+module.exports = {
+    name: "interactionCreate",
+    async execute(interaction) {
+        if (interaction.isChatInputCommand || interaction.isButton || interaction.isStringSelectMenu || interaction.type === 5) {
+            await handleInteraction(interaction);
+        } else if (interaction.content && typeof handleTestMessage === 'function') {
+            await handleTestMessage(interaction);
+        }
+    }
+};

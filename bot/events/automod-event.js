@@ -4,10 +4,10 @@ let autoMod;
 module.exports = {
     name: 'messageCreate',
     async execute(message) {
-        // client is available via message.client
-        if (!autoMod) {
+        if (!autoMod && message.client) {
             autoMod = new AutoModeration(message.client);
         }
+        if (!autoMod) return;
 
         if (message.author.bot || !message.guild) return;
         
