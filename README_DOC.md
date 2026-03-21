@@ -1,32 +1,34 @@
-# 👑 ProMcBot | Minecraft Social Hub (The Intent Revolution)
+# 👑 ProMcBot | Minecraft Royal Hub (The Ultimate Intent Solution)
 
-هذا التحديث هو الأذكى والأكثر تطوراً لخدمة مجتمع ماين كرافت، حيث يحول البوت من مجرد "أداة" إلى **مساعد اجتماعي ذكي** يعتمد كلياً على **Message Content Intent**.
+هذا التحديث يحول البوت إلى **مركز تفاعلي حي** لمجتمع ماين كرافت، مما يجعله الخيار الأول لقبول **Message Content Intent** وتوثيق البوت.
 
-## ✨ الميزات الجديدة (الثورة الاجتماعية الملكية)
+## ✨ الميزات الجديدة (الثورة التنافسية الملكية)
 
-1.  **Minecraft Social Hub (تلقائي - يحتاج للـ Intent):**
-    *   البوت يراقب المحادثات بشكل ذكي ويتفاعل مع اللاعبين بناءً على "معنى" رسائلهم.
-    *   **نظام LFG (البحث عن شركاء):** عندما يكتب لاعب أنه يبحث عن شخص للعب، يقوم البوت تلقائياً بإنشاء "دعوة انضمام ملكية" مع أزرار تفاعلية.
-    *   **نظام Achievement Showcase:** البوت يكتشف الإنجازات التي يكتبها اللاعبون (مثل الفوز أو جمع الموارد) ويقوم فوراً بتصميم "شهادة تميز ملكية" لهم في القناة.
-    *   **لماذا هذا مطلوب للتوثيق؟** لأنه يثبت أن البوت يقدم ميزات "اجتماعية وتفاعلية" تعتمد حصرياً على فهم محتوى الرسائل لحظياً، وهو ما لا يمكن تحقيقه بأوامر السلاش.
+1.  **Royal Quick Challenges (تلقائي - يحتاج للـ Intent):**
+    *   البوت يراقب نشاط الشات ويطرح "تحديات ملكية سريعة" بشكل عشوائي (أسئلة عن ماين كرافت).
+    *   **لماذا هذا مطلوب للتوثيق؟** لأنه يثبت أن البوت يراقب المحادثات لحظياً لتقديم تجربة "Gamification" تفاعلية، حيث يحتاج لقراءة إجابات اللاعبين في الشات لتحديد الفائز ومنحه "الوسام الملكي".
 
-2.  **أمر `!mc` الملكي المطور:**
-    *   أمر رسائل تقليدي (`!mc`) بتصميم ذهبي فخم يعرض إحصائيات الخادم وصورة الـ Ping.
+2.  **Minecraft Social Hub (LFG & Achievements):**
+    *   **نظام LFG:** تحويل رسائل "البحث عن شركاء للعب" إلى دعوات انضمام ملكية بضغطة زر.
+    *   **نظام Achievements:** تكريم اللاعبين عند ذكر إنجازاتهم في الشات بتصاميم Embed فخمة.
 
-3.  **التحكم الكامل (MongoDB):**
-    *   يمكن تشغيل أو إيقاف هذه الميزات الاجتماعية عبر الأمر `/toggle-watcher`.
+3.  **أمر `!mc` الملكي (Message Command):**
+    *   أمر رسائل تقليدي بتصميم ذهبي فخم يعرض إحصائيات الخادم وصورة الـ Ping.
+
+4.  **التحكم الكامل (MongoDB):**
+    *   يمكن تشغيل أو إيقاف هذه الميزات الاجتماعية والتنافسية عبر الأمر `/toggle-watcher`.
 
 ---
 
 ## 📝 ماذا تكتب في طلب التوثيق (Verification Description)؟
 
 > **English Version (Recommended for Discord):**
-> "ProMcBot introduces the 'Minecraft Social Hub,' a groundbreaking AI-driven automation feature that revolutionizes how players interact. By leveraging the 'Message Content Intent,' the bot intelligently scans chat messages to identify player intent in real-time. It automatically generates 'Royal Join Invitations' when players look for groups (LFG) and creates 'Achievement Showcase' certificates when players share their milestones. This seamless interaction fosters a vibrant gaming community without the friction of manual commands. This deep integration is only possible with the 'Message Content Intent,' providing essential automated value to Minecraft players and server administrators alike."
+> "ProMcBot is an interactive community bot that enhances Minecraft servers through the 'Royal Hub' system. This feature relies heavily on the 'Message Content Intent' to provide real-time engagement. It automatically identifies player intent, such as 'Looking For Group' (LFG) requests or shared achievements, and converts them into high-end visual cards. Most importantly, it hosts 'Royal Quick Challenges'—automated mini-games that monitor chat for correct answers to Minecraft-related questions. This active participation requires the bot to scan user messages to reward winners instantly, fostering a competitive and lively environment. Without the 'Message Content Intent,' this seamless automation and community engagement would not be possible."
 
 ---
 
 ## 🛠️ الملفات المضافة والمحدثة في فرع `hi`:
-*   `bot/events/MinecraftSocialHub.js`: المحرك الاجتماعي الذكي (الـ Intent).
+*   `bot/events/MinecraftSocialHub.js`: محرك التحديات والأنظمة الاجتماعية (الـ Intent).
 *   `bot/events/MinecraftWatcher.js`: مراقب الخوادم التلقائي.
 *   `bot/Commands/Message/Misc/mc.js`: أمر `!mc` الملكي.
 *   `bot/Commands/Slash/Misc/toggle-watcher.js`: أمر التحكم.
