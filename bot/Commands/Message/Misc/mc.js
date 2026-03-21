@@ -3,8 +3,8 @@ const axios = require("axios");
 const Server = require("../../../Models/Server");
 
 module.exports = {
-  name: "mc",
-  description: "👑 عرض حالة خادم ماين كرافت بتصميم ملكي فخم",
+  name: "info",
+  description: "عرض حالة خادم ماين كرافت بطريقة افضل",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
@@ -26,26 +26,26 @@ module.exports = {
       if (serverData && serverData.javaIP) {
         ip = serverData.javaIP;
       } else {
-        return message.reply({ content: `❌ **عذراً أيها الملك! لم يتم تحديد عنوان خادم، ولا يوجد عنوان افتراضي مسجل لهذا السيرفر.**\n> استخدم: \`${prefix}mc <IP>\`` });
+        return message.reply({ content: `❌ **عذراً!، لم يتم تحديد عنوان خادم، ولا يوجد عنوان افتراضي مسجل لهذا السيرفر.**\n> استخدم: \`${prefix}mc <IP>\`` });
       }
     }
 
-    const loadingMsg = await message.reply({ content: "⏳ **جاري جلب بيانات الخادم الملكي...**" });
+    const loadingMsg = await message.reply({ content: "جاري جلب بيانات الخادم...**" });
 
     try {
       const response = await axios.get(`https://api.mcsrvstat.us/3/${ip}`);
       const data = response.data;
 
       if (!data.online) {
-        return loadingMsg.edit({ content: `❌ **عذراً أيها الملك! الخادم \`${ip}\` غير متصل حالياً.**` });
+        return loadingMsg.edit({ content: `❌ **عذراً! الخادم \`${ip}\` غير متصل حالياً.**` });
       }
 
       const embed = new EmbedBuilder()
         .setAuthor({ name: 'ProMcBot | Minecraft Royal Passport', iconURL: client.user.displayAvatarURL() })
-        .setTitle(`🏰 **إحصائيات الخادم الملكي**`)
+        .setTitle(`🏰 **إحصائيات الخادم**`)
         .setThumbnail(`https://api.mcsrvstat.us/icon/${ip}`)
         .setColor("#D4AF37") // Royal Gold
-        .setDescription(`✨ **أهلاً بك أيها الملك! إليك المعلومات الكاملة عن الخادم المختار:**\n\n` +
+        .setDescription(`✨ **أهلاً بك! إليك المعلومات الكاملة عن الخادم المختار:**\n\n` +
                         `🔱 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
                         `💎 **الإصدار:** \`${data.version || "غير معروف"}\`\n` +
                         `👥 **اللاعبين:** \`${data.players.online}/${data.players.max}\`\n` +
@@ -56,7 +56,7 @@ module.exports = {
           { name: '🛠️ النوع', value: `\`${data.software || 'Vanilla'}\``, inline: true }
         )
         .setImage(`https://api.mcsrvstat.us/debug/ping/${ip}`)
-        .setFooter({ text: "نظام المراقبة الملكي | ProMcBot", iconURL: client.user.displayAvatarURL() })
+        .setFooter({ text: "نظام المراقبة | ProMcBot", iconURL: client.user.displayAvatarURL() })
         .setTimestamp();
 
       const row = new ActionRowBuilder()
@@ -68,7 +68,7 @@ module.exports = {
           new ButtonBuilder()
             .setLabel('الموقع الرسمي')
             .setStyle(ButtonStyle.Link)
-            .setURL('https://promcbot.com')
+            .setURL('https://promcbot.qzz.io/')
         );
 
       await loadingMsg.edit({ content: null, embeds: [embed], components: [row] });
