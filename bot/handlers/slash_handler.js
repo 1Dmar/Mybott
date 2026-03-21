@@ -7,8 +7,9 @@ require('dotenv-flow').config();
 module.exports = async (client) => {
   try {
     // 1. Verify token exists
-    if (!process.env.BOT1_1_TOKEN) {
-      throw new Error("Bot token is not defined in environment variables");
+    const { TOKEN } = require("../settings/config");
+    if (!TOKEN) {
+      throw new Error("Bot token is not defined in settings/config");
     }
 
     client.scommands = new Collection();
@@ -57,7 +58,8 @@ module.exports = async (client) => {
           throw new Error("Client user not available");
         }
 
-        const rest = new REST({ version: "10" }).setToken(process.env.BOT1_1_TOKEN);
+        const { TOKEN } = require("../settings/config");
+        const rest = new REST({ version: "10" }).setToken(TOKEN);
         const clientId = client.user.id;
 
         console.log(`🔄 Starting command registration for client ${clientId}...`);
