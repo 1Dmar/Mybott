@@ -46,13 +46,13 @@ module.exports = {
         .setThumbnail(`https://api.mcsrvstat.us/icon/${ip}`)
         .setColor("#D4AF37") // Royal Gold
         .setDescription(`✨ **أهلاً بك! إليك المعلومات الكاملة عن الخادم المختار:**\n\n` +
-                        `🔱 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
+                 //       `🔱 **اسم الخادم:** \`${data.hostname || ip}\`\n` +
                         `💎 **الإصدار:** \`${data.version || "غير معروف"}\`\n` +
                         `👥 **اللاعبين:** \`${data.players.online}/${data.players.max}\`\n` +
                         `📶 **الحالة:** \`متصل ✅\``)
         .addFields(
           { name: '📜 وصف الخادم', value: `\`\`\`${data.motd?.clean?.join('\n') || 'لا يوجد وصف متاح'}\`\`\`` },
-          { name: '📍 العنوان الكامل', value: `\`${ip}\``, inline: true },
+          { name: '📍 العنوان الكامل', value: `\`${data.hostname || ip}\``, inline: true },
           { name: '🛠️ النوع', value: `\`${data.software || 'Vanilla'}\``, inline: true }
         )
         .setImage(`https://api.mcsrvstat.us/debug/ping/${ip}`)
@@ -69,6 +69,7 @@ module.exports = {
             .setLabel('الموقع الرسمي')
             .setStyle(ButtonStyle.Link)
             .setURL('https://promcbot.qzz.io/')
+          . setDisabled(true)
         );
 
       await loadingMsg.edit({ content: null, embeds: [embed], components: [row] });
