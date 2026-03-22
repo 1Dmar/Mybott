@@ -1,23 +1,16 @@
+// Bot configuration - Fixed for Railway deployment
+// Only load dotenv in development environment
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
 module.exports = {
-  EMBED_COLORS: {
-    ONLINE: '#00FF00',
-    OFFLINE: '#FF0000'
+  TOKEN: process.env.BOT1_1_TOKEN,
+  PREFIX: process.env.PREFIX || "!",
+  MONGO_URL: process.env.MONGO_URL,
+  apikey: process.env.API_KEY || "promc.default-key-change-in-production",
+  Slash: {
+    Global: process.env.SLASH_GLOBAL === 'true' || true,
+    GuildID: process.env.TEST_GUILD_ID || process.env.GuildID || "",
   },
-  EMOJIS: {
-    SERVER: '🖥️',
-    ONLINE: '🟢',
-    OFFLINE: '🔴',
-    PLAYERS: '👥',
-    VERSION: '🌐'
-  },
-  DEFAULT_UPDATE_INTERVAL: 5,
-  MIN_UPDATE_INTERVAL: 1,
-  MAX_UPDATE_INTERVAL: 60,
-  MESSAGES: {
-    PERMISSION_DENIED: '❌ You need MANAGE_GUILD permission!',
-    SERVER_NOT_FOUND: '❌ Server not found in database!',
-    SETUP_SUCCESS: (channel) => `✅ Status bar setup in ${channel} complete!`,
-    UPDATE_SUCCESS: '✅ Status bar updated successfully!',
-    INTERVAL_UPDATED: (minutes) => `⏱️ Update interval set to ${minutes} minutes!`
-  }
 };
