@@ -116,7 +116,7 @@ const handleMainMessage = async (message) => {
         console.error("Error handling command:", error);
         message.reply("<:Warning:1410147601281581118> An error occurred while processing the command, You can contact technical support");
     }
-});
+};
 
 function cooldown(message, cmd) {
     if (!message || !cmd) return;
@@ -304,7 +304,7 @@ let emoji;
             return { error: "Error fetching server information" };
         }
     }
-});
+};
 
 
 client.on("messageCreate", async (message) => {
@@ -1557,7 +1557,7 @@ client.on('messageCreate', async message => {
       await message.reply(`Failed to fetch skin for ${args[0]}. Please check the player name and try again.`);
     }
   }
-};
+});
 
 module.exports = {
     name: "messageCreate",
