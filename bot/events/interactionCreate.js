@@ -1051,7 +1051,7 @@ const handleInteraction = async (interaction) => {
             });
         }
     }
-});
+};
 
 // Setup command
 client.on('interactionCreate', async (interaction) => {
@@ -1104,7 +1104,7 @@ client.on('interactionCreate', async (interaction) => {
             });
         }
     }
-};
+});
 
 const handleTestMessage = async (message) => {
     if (message.author.bot) return;
