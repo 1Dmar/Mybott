@@ -1,60 +1,57 @@
 {
   "MessageDelete": {
-    "title": "Message Deleted",
-    "description": "A message sent by {author} was deleted in {channel}.",
+    "title": "🗑️ تم حذف رسالة",
+    "description": "تم رصد حذف رسالة من قبل {author} في قناة {channel}.",
+    "color": "#2B2D31",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام المراقبة الذكي",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "fields": [
       {
-        "name": "Message Content",
-        "value": "{content}",
-        "inline": true
+        "name": "📝 محتوى الرسالة المحذوفة:",
+        "value": "```\n{content}\n```",
+        "inline": false
       },
       {
-        "name": "Author",
-        "value": "<@{authorId}>",
+        "name": "👤 صاحب الرسالة:",
+        "value": "<@{authorId}> (`{authorId}`)",
         "inline": true
       }
     ]
   },
   "MessageUpdate": {
-    "title": "Message Edited",
-    "description": "A message sent by {author} was edited in {channel}.",
+    "title": "📝 تم تعديل رسالة",
+    "description": "قام {author} بتعديل رسالته في قناة {channel}.",
+    "color": "#2B2D31",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام المراقبة الذكي",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "fields": [
       {
-        "name": "Old Message",
-        "value": "{oldContent}",
-        "inline": true
+        "name": "⬅️ الرسالة القديمة:",
+        "value": "```\n{oldContent}\n```",
+        "inline": false
       },
       {
-        "name": "New Message",
-        "value": "{newContent}",
-        "inline": true
+        "name": "➡️ الرسالة الجديدة:",
+        "value": "```\n{newContent}\n```",
+        "inline": false
       },
       {
-        "name": "Author",
+        "name": "👤 صاحب الرسالة:",
         "value": "<@{authorId}>",
         "inline": true
       }
     ]
   },
   "GuildMemberAdd": {
-    "title": "Member Joined",
-    "description": "{member} has joined the server.",
+    "title": "✨ عضو جديد انضم إلينا",
+    "description": "أهلاً بك {member} في سيرفرنا! يسعدنا انضمامك.",
+    "color": "#57F287",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الترحيب",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -62,17 +59,23 @@
     },
     "fields": [
       {
-        "name": "Member",
+        "name": "👤 العضو:",
         "value": "{member}",
+        "inline": true
+      },
+      {
+        "name": "🆔 المعرف:",
+        "value": "`{memberId}`",
         "inline": true
       }
     ]
   },
   "GuildMemberRemove": {
-    "title": "Member Left",
-    "description": "{member} has left the server.",
+    "title": "👋 غادرنا أحد الأعضاء",
+    "description": "وداعاً {member}، نتمنى رؤيتك مجدداً.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام المغادرة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -80,53 +83,50 @@
     },
     "fields": [
       {
-        "name": "Member",
+        "name": "👤 العضو:",
         "value": "{member}",
         "inline": true
       }
     ]
   },
   "RoleCreate": {
-    "title": "Role Created",
-    "description": "A new role named {role} has been created.",
+    "title": "🎭 تم إنشاء رتبة جديدة",
+    "description": "تمت إضافة رتبة جديدة للسيرفر باسم {role}.",
+    "color": "#5865F2",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "{iconURL}"
     },
     "fields": [
       {
-        "name": "Role",
+        "name": "🏷️ اسم الرتبة:",
         "value": "{role}",
         "inline": true
       }
     ]
   },
   "RoleDelete": {
-    "title": "Role Deleted",
-    "description": "A role named {role} has been deleted.",
+    "title": "🚫 تم حذف رتبة",
+    "description": "تمت إزالة رتبة {role} من السيرفر.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "{iconURL}"
     },
     "fields": [
       {
-        "name": "Role",
+        "name": "🏷️ اسم الرتبة:",
         "value": "{role}",
         "inline": true
       }
     ]
   },
   "GuildBanAdd": {
-    "title": "Member Banned",
-    "description": "{member} has been banned from the server.",
+    "title": "🔨 تم حظر عضو",
+    "description": "تم طرد {member} نهائياً من السيرفر.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الحماية",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -134,17 +134,18 @@
     },
     "fields": [
       {
-        "name": "Member",
+        "name": "👤 المحظور:",
         "value": "{member}",
         "inline": true
       }
     ]
   },
   "GuildBanRemove": {
-    "title": "Member Unbanned",
-    "description": "{member} has been unbanned from the server.",
+    "title": "🔓 تم فك حظر عضو",
+    "description": "تمت إزالة الحظر عن {member}.",
+    "color": "#57F287",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الحماية",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -152,53 +153,50 @@
     },
     "fields": [
       {
-        "name": "Member",
+        "name": "👤 العضو:",
         "value": "{member}",
         "inline": true
       }
     ]
   },
   "ChannelCreate": {
-    "title": "Channel Created",
-    "description": "A new channel named {channel} has been created.",
+    "title": "📂 تم إنشاء قناة جديدة",
+    "description": "تمت إضافة قناة جديدة باسم {channel}.",
+    "color": "#5865F2",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "{iconURL}"
     },
     "fields": [
       {
-        "name": "Channel",
+        "name": "📍 القناة:",
         "value": "{channel}",
         "inline": true
       }
     ]
   },
   "ChannelDelete": {
-    "title": "Channel Deleted",
-    "description": "A channel named {channel} has been deleted.",
+    "title": "🗑️ تم حذف قناة",
+    "description": "تمت إزالة قناة {channel} من السيرفر.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "{iconURL}"
     },
     "fields": [
       {
-        "name": "Channel",
+        "name": "📍 القناة:",
         "value": "{channel}",
         "inline": true
       }
     ]
   },
   "EmojiCreate": {
-    "title": "Emoji Created",
-    "description": "A new emoji named {emoji} has been created.",
+    "title": "😀 تم إضافة إيموجي جديد",
+    "description": "تمت إضافة إيموجي جديد باسم {emoji}.",
+    "color": "#FEE75C",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -206,35 +204,34 @@
     },
     "fields": [
       {
-        "name": "Emoji",
+        "name": "🏷️ الاسم:",
         "value": "{emoji}",
         "inline": true
       }
     ]
   },
   "EmojiDelete": {
-    "title": "Emoji Deleted",
-    "description": "An emoji named {emoji} has been deleted.",
+    "title": "🗑️ تم حذف إيموجي",
+    "description": "تمت إزالة إيموجي {emoji} من السيرفر.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الإدارة",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
-    },
-    "thumbnail": {
-      "url": "{emojiURL}"
     },
     "fields": [
       {
-        "name": "Emoji",
+        "name": "🏷️ الاسم:",
         "value": "{emoji}",
         "inline": true
       }
     ]
   },
   "VoiceStateUpdateJoin": {
-    "title": "Voice Channel Join",
-    "description": "<@{memberId}> joined voice channel {channel}.",
+    "title": "🎙️ دخول قناة صوتية",
+    "description": "انضم <@{memberId}> إلى القناة الصوتية {channel}.",
+    "color": "#57F287",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الصوتيات",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -242,17 +239,18 @@
     },
     "fields": [
       {
-        "name": "Channel",
+        "name": "📍 القناة:",
         "value": "{channel}",
         "inline": true
       }
     ]
   },
   "VoiceStateUpdateLeave": {
-    "title": "Voice Channel Leave",
-    "description": "<@{memberId}> left voice channel {channel}.",
+    "title": "🎙️ مغادرة قناة صوتية",
+    "description": "غادر <@{memberId}> القناة الصوتية {channel}.",
+    "color": "#ED4245",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الصوتيات",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -260,17 +258,18 @@
     },
     "fields": [
       {
-        "name": "Channel",
+        "name": "📍 القناة:",
         "value": "{channel}",
         "inline": true
       }
     ]
   },
   "VoiceStateUpdateMove": {
-    "title": "Voice Channel Move",
-    "description": "<@{memberId}> moved from voice channel {oldChannel} to {newChannel}.",
+    "title": "🎙️ انتقال بين القنوات الصوتية",
+    "description": "انتقل <@{memberId}> من {oldChannel} إلى {newChannel}.",
+    "color": "#5865F2",
     "footer": {
-      "text": "ProMcBot",
+      "text": "نظام الصوتيات",
       "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
     },
     "thumbnail": {
@@ -278,12 +277,12 @@
     },
     "fields": [
       {
-        "name": "From Channel",
+        "name": "⬅️ من قناة:",
         "value": "{oldChannel}",
         "inline": true
       },
       {
-        "name": "To Channel",
+        "name": "➡️ إلى قناة:",
         "value": "{newChannel}",
         "inline": true
       }

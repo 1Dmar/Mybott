@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const GuildSettings = require('../Models/GuildSettings');
 const { containsBadWords } = require('../utils/badwords');
 
@@ -17,7 +17,7 @@ class AutoModeration {
         if (!member || !settings) return false;
         
         // Admins are always whitelisted
-        if (member.permissions.has('Administrator')) return true;
+        if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
 
         const { whitelist } = settings;
         
@@ -48,7 +48,7 @@ class AutoModeration {
 
         // 1. Bad Words Filter
         if (filters.badwords && containsBadWords(content)) {
-            violations.push({ type: 'badwords', reason: 'Profanity/Inappropriate Language' });
+            violations.push({ type: 'badwords', reason: 'استخدام كلمات غير لائقة' });
         }
 
         // 2. Caps Filter
@@ -56,7 +56,7 @@ class AutoModeration {
             const capsCount = content.replace(/[^A-Z]/g, "").length;
             const capsPercentage = (capsCount / content.length) * 100;
             if (capsPercentage >= limits.capsPercentage) {
-                violations.push({ type: 'caps', reason: 'Excessive Caps' });
+                violations.push({ type: 'caps', reason: 'استخدام مفرط للأحرف الكبيرة' });
             }
         }
 
@@ -64,15 +64,15 @@ class AutoModeration {
         if (filters.invites) {
             const inviteRegex = /(discord\.(gg|io|me|li)|discordapp\.com\/invite|discord\.com\/invite)/i;
             if (inviteRegex.test(content)) {
-                violations.push({ type: 'invites', reason: 'Discord Invite Link' });
+                violations.push({ type: 'invites', reason: 'نشر روابط دعوة ديسكورد' });
             }
         }
 
         // 4. External Links Filter
         if (filters.links) {
             const linkRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/i;
-            if (linkRegex.test(content) && !content.includes('discord.gg')) { // Invites handled separately
-                violations.push({ type: 'links', reason: 'External Link' });
+            if (linkRegex.test(content) && !content.includes('discord.gg')) {
+                violations.push({ type: 'links', reason: 'نشر روابط خارجية' });
             }
         }
 
@@ -80,7 +80,7 @@ class AutoModeration {
         if (filters.mentions) {
             const mentionCount = message.mentions.users.size + message.mentions.roles.size;
             if (mentionCount > limits.maxMentions) {
-                violations.push({ type: 'mentions', reason: 'Mention Spam' });
+                violations.push({ type: 'mentions', reason: 'منشن عشوائي مكثف' });
             }
         }
 
@@ -88,7 +88,7 @@ class AutoModeration {
         if (filters.spam) {
             const isSpamming = this.checkSpam(message.author.id, limits.spamCount, limits.spamInterval);
             if (isSpamming) {
-                violations.push({ type: 'spam', reason: 'Message Spamming' });
+                violations.push({ type: 'spam', reason: 'إرسال رسائل عشوائية (سبام)' });
             }
         }
 
@@ -105,13 +105,14 @@ class AutoModeration {
         
         spamCache.set(userId, recentMessages);
 
-        return recentMessages.length > limit;
+        // Trigger if count is >= limit to be more responsive
+        return recentMessages.length >= limit;
     }
 
     cleanCache() {
         const now = Date.now();
         for (const [userId, timestamps] of spamCache.entries()) {
-            const recent = timestamps.filter(ts => now - ts < 60000); // Keep last 1 min
+            const recent = timestamps.filter(ts => now - ts < 60000);
             if (recent.length === 0) {
                 spamCache.delete(userId);
             } else {
@@ -128,31 +129,31 @@ class AutoModeration {
             // Always delete the message for any violation
             if (message.deletable) {
                 await message.delete().catch(() => {});
-                actionsTaken.push('Message Deleted');
+                actionsTaken.push('حذف الرسالة');
             }
 
             // Perform additional actions
             switch (action) {
                 case 'warn':
                     await this.sendWarning(message, violations);
-                    actionsTaken.push('User Warned');
+                    actionsTaken.push('تحذير المستخدم');
                     break;
                 case 'timeout':
                     if (message.member.moderatable) {
                         await message.member.timeout(3600000, 'Auto-Moderation: Violation').catch(() => {});
-                        actionsTaken.push('Timed out (1h)');
+                        actionsTaken.push('إسكات (ساعة واحدة)');
                     }
                     break;
                 case 'kick':
                     if (message.member.kickable) {
                         await message.member.kick('Auto-Moderation: Violation').catch(() => {});
-                        actionsTaken.push('Kicked');
+                        actionsTaken.push('طرد');
                     }
                     break;
                 case 'ban':
                     if (message.member.bannable) {
                         await message.member.ban({ reason: 'Auto-Moderation: Violation' }).catch(() => {});
-                        actionsTaken.push('Banned');
+                        actionsTaken.push('حظر نهائي');
                     }
                     break;
             }
@@ -169,17 +170,18 @@ class AutoModeration {
 
     async sendWarning(message, violations) {
         const embed = new EmbedBuilder()
-            .setColor(0xFF0000)
-            .setTitle('⚠️ Auto-Moderation Warning')
-            .setDescription(`Your message in **${message.guild.name}** was removed due to policy violations.`)
+            .setColor(0x2B2D31) // Dark elegant color
+            .setAuthor({ name: 'نظام الحماية التلقائي', iconURL: message.guild.iconURL() })
+            .setTitle('⚠️ تحذير إداري')
+            .setDescription(`عذراً ${message.author}، تم اتخاذ إجراء بحق رسالتك في **${message.guild.name}** لمخالفتك القوانين.`)
             .addFields(
-                { name: 'Reason(s)', value: violations.map(v => `• ${v.reason}`).join('\n') }
+                { name: '📌 الأسباب:', value: violations.map(v => `> • ${v.reason}`).join('\n') }
             )
+            .setFooter({ text: 'يرجى الالتزام بقوانين السيرفر لتجنب العقوبات الإضافية', iconURL: this.client.user.displayAvatarURL() })
             .setTimestamp();
 
         await message.author.send({ embeds: [embed] }).catch(() => {
-            // If DMs are closed, send a temporary message in the channel
-            message.channel.send(`${message.author}, please follow the server rules. (DMs Closed)` )
+            message.channel.send({ content: `${message.author}، يرجى اتباع قوانين السيرفر. (الخاص مغلق)` })
                 .then(msg => setTimeout(() => msg.delete(), 5000));
         });
     }
@@ -189,15 +191,17 @@ class AutoModeration {
         if (!logChannel) return;
 
         const embed = new EmbedBuilder()
-            .setColor(0xFFA500)
-            .setAuthor({ name: 'Auto-Moderation Log', iconURL: message.author.displayAvatarURL() })
+            .setColor(0xED4245) // Red for logs
+            .setAuthor({ name: 'سجل الحماية التلقائية', iconURL: message.author.displayAvatarURL() })
+            .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
             .addFields(
-                { name: 'User', value: `${message.author.tag} (${message.author.id})`, inline: true },
-                { name: 'Channel', value: `${message.channel}`, inline: true },
-                { name: 'Violations', value: violations.map(v => `• ${v.reason}`).join('\n'), inline: false },
-                { name: 'Actions Taken', value: actions.join(', ') || 'None', inline: true },
-                { name: 'Message Content', value: message.content.substring(0, 1000) || 'N/A' }
+                { name: '👤 المستخدم', value: `> ${message.author.tag} (\`${message.author.id}\`)`, inline: true },
+                { name: '📍 القناة', value: `> ${message.channel}`, inline: true },
+                { name: '🚫 المخالفات', value: violations.map(v => `> • ${v.reason}`).join('\n'), inline: false },
+                { name: '🛠️ الإجراءات المتخذة', value: actions.map(a => `\`${a}\``).join(', ') || 'لا يوجد', inline: true },
+                { name: '📝 محتوى الرسالة', value: `\`\`\`${message.content.substring(0, 1000) || 'لا يوجد محتوى'}\`\`\`` }
             )
+            .setFooter({ text: `ID: ${message.id}` })
             .setTimestamp();
 
         await logChannel.send({ embeds: [embed] }).catch(() => {});

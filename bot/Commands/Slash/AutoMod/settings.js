@@ -7,7 +7,7 @@ const GuildSettings = require("../../../Models/GuildSettings");
 
 module.exports = {
     name: "automod-settings",
-    description: "View current auto-moderation settings",
+    description: "عرض إعدادات الحماية التلقائية الحالية",
     userPermissions: PermissionFlagsBits.Administrator,
     botPermissions: PermissionFlagsBits.SendMessages,
     category: "AutoMod",
@@ -18,43 +18,46 @@ module.exports = {
         try {
             const settings = await GuildSettings.getSettings(interaction.guild.id);
             const { automod } = settings;
-            const emojis = (bool) => bool ? "🟢" : "🔴";
+            const emojis = (bool) => bool ? "✅" : "❌";
 
             const embed = new EmbedBuilder()
-                .setColor(automod.enabled ? 0x00FF00 : 0xFF0000)
-                .setTitle("🛡️ Auto-Moderation Settings")
-                .setDescription(`System Status: **${automod.enabled ? "ACTIVE" : "INACTIVE"}**`)
+                .setColor(0x2B2D31)
+                .setAuthor({ name: `إعدادات الحماية - ${interaction.guild.name}`, iconURL: interaction.guild.iconURL() })
+                .setTitle("🛡️ لوحة تحكم الحماية التلقائية")
+                .setDescription(`حالة النظام الحالية: ${automod.enabled ? "🟢 **مفعل**" : "🔴 **معطل**"}`)
                 .addFields(
                     {
-                        name: "📋 Filters",
-                        value: `
-${emojis(automod.filters.badwords)} Bad Words
-${emojis(automod.filters.caps)} Caps Lock
-${emojis(automod.filters.spam)} Spam Detection
-${emojis(automod.filters.invites)} Invite Links
-${emojis(automod.filters.links)} All Links
-${emojis(automod.filters.mentions)} Mention Spam
-                        `,
+                        name: "🔍 الفلاتر النشطة",
+                        value: [
+                            `> ${emojis(automod.filters.badwords)} الكلمات النابية`,
+                            `> ${emojis(automod.filters.caps)} الأحرف الكبيرة`,
+                            `> ${emojis(automod.filters.spam)} السبام (العشوائية)`,
+                            `> ${emojis(automod.filters.invites)} روابط الدعوة`,
+                            `> ${emojis(automod.filters.links)} الروابط الخارجية`,
+                            `> ${emojis(automod.filters.mentions)} المنشن المفرط`
+                        ].join("\n"),
                         inline: true
                     },
                     {
-                        name: "⚙️ Limits",
-                        value: `
-Caps: ${automod.limits.capsPercentage}%
-Spam: ${automod.limits.spamCount} msgs/${automod.limits.spamInterval/1000}s
-Mentions: ${automod.limits.maxMentions} max
-                        `,
+                        name: "⚙️ الحدود والقيود",
+                        value: [
+                            `> 🔠 نسبة الكابس: \`${automod.limits.capsPercentage}%\``,
+                            `> ✉️ حد السبام: \`${automod.limits.spamCount}\` رسائل`,
+                            `> ⏱️ مدة الفحص: \`${automod.limits.spamInterval / 1000}s\``,
+                            `> 👤 حد المنشن: \`${automod.limits.maxMentions}\``
+                        ].join("\n"),
                         inline: true
                     },
                     {
-                        name: "🔧 Configuration",
-                        value: `
-Action: \`${automod.action}\`
-Log Channel: ${automod.logChannel ? `<#${automod.logChannel}>` : "Not set"}
-                        `,
+                        name: "🔧 التكوين الحالي",
+                        value: [
+                            `> 🛠️ الإجراء المتخذ: \`${automod.action.toUpperCase()}\``,
+                            `> 📜 قناة السجلات: ${automod.logChannel ? `<#${automod.logChannel}>` : "`غير محددة`"}`
+                        ].join("\n"),
                         inline: false
                     }
                 )
+                .setFooter({ text: "يمكنك تعديل هذه الإعدادات باستخدام أوامر /automod", iconURL: client.user.displayAvatarURL() })
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed] });
@@ -62,7 +65,7 @@ Log Channel: ${automod.logChannel ? `<#${automod.logChannel}>` : "Not set"}
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "❌ An error occurred while fetching settings.",
+                content: "❌ حدث خطأ أثناء جلب الإعدادات.",
                 ephemeral: true
             });
         }

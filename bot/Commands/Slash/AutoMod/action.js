@@ -7,7 +7,7 @@ const GuildSettings = require("../../../Models/GuildSettings");
 
 module.exports = {
     name: "automod-action",
-    description: "Set the punishment action for violations",
+    description: "تحديد نوع العقوبة عند حدوث مخالفة",
     userPermissions: PermissionFlagsBits.Administrator,
     botPermissions: PermissionFlagsBits.SendMessages,
     category: "AutoMod",
@@ -16,15 +16,15 @@ module.exports = {
     options: [
         {
             name: "type",
-            description: "Select punishment type",
+            description: "اختر نوع العقوبة",
             type: 3, // STRING
             required: true,
             choices: [
-                { name: "🗑️ Delete Only", value: "delete" },
-                { name: "⚠️ Delete + Warn", value: "warn" },
-                { name: "🔇 Timeout (1 hour)", value: "timeout" },
-                { name: "👢 Kick", value: "kick" },
-                { name: "🔨 Ban", value: "ban" }
+                { name: "🗑️ حذف فقط", value: "delete" },
+                { name: "⚠️ حذف + تحذير", value: "warn" },
+                { name: "🔇 إسكات (ساعة واحدة)", value: "timeout" },
+                { name: "👢 طرد", value: "kick" },
+                { name: "🔨 حظر نهائي", value: "ban" }
             ]
         }
     ],
@@ -38,20 +38,22 @@ module.exports = {
             await settings.save();
 
             const actionDescriptions = {
-                delete: "Message will be deleted, no additional punishment",
-                warn: "Message deleted + Warning DM sent",
-                timeout: "Message deleted + 1 hour timeout",
-                kick: "Message deleted + User kicked",
-                ban: "Message deleted + User banned"
+                delete: "سيتم حذف الرسالة فقط دون اتخاذ إجراء إضافي.",
+                warn: "سيتم حذف الرسالة وإرسال تحذير للمستخدم في الخاص.",
+                timeout: "سيتم حذف الرسالة وإسكات المستخدم لمدة ساعة واحدة.",
+                kick: "سيتم حذف الرسالة وطرد المستخدم من السيرفر.",
+                ban: "سيتم حذف الرسالة وحظر المستخدم نهائياً من السيرفر."
             };
 
             const embed = new EmbedBuilder()
-                .setColor(0x0099FF)
-                .setTitle("⚡ Punishment Action Set")
-                .setDescription(`Action: **${action.toUpperCase()}**`)
+                .setColor(0x2B2D31)
+                .setAuthor({ name: "إعدادات العقوبات", iconURL: interaction.guild.iconURL() })
+                .setTitle("⚡ تم تحديث نوع العقوبة")
+                .setDescription(`تم ضبط العقوبة التلقائية لتكون: **${action.toUpperCase()}**`)
                 .addFields(
-                    { name: "Description", value: actionDescriptions[action] }
+                    { name: "📝 وصف الإجراء:", value: `> ${actionDescriptions[action]}` }
                 )
+                .setFooter({ text: "نظام الحماية التلقائي", iconURL: client.user.displayAvatarURL() })
                 .setTimestamp();
 
             await interaction.reply({ embeds: [embed] });
@@ -59,7 +61,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "❌ An error occurred while updating the action.",
+                content: "❌ حدث خطأ أثناء تحديث نوع العقوبة.",
                 ephemeral: true
             });
         }
