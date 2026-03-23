@@ -1,6 +1,6 @@
 const { EmbedBuilder } = require('discord.js');
 const axios = require('axios');
-const CONFIG = require('../config');
+const CONFIG = require('../settings/config');
 
 module.exports.updateServerStatus = async (client, server, settings) => {
   const host = server.serverType === 'java' ? server.javaIP : server.bedrockIP;
