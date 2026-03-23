@@ -13,4 +13,16 @@ module.exports = {
     Global: process.env.SLASH_GLOBAL === 'true' || true,
     GuildID: process.env.TEST_GUILD_ID || process.env.GuildID || "",
   },
+  EMBED_COLORS: {
+    ONLINE: "#43b581",
+    OFFLINE: "#f04747",
+    DEFAULT: "#7289da"
+  },
+  EMOJIS: {
+    SERVER: "🖥️",
+    ONLINE: "🟢",
+    OFFLINE: "🔴",
+    PLAYERS: "👥",
+    VERSION: "📝"
+  }
 };

@@ -33,9 +33,11 @@ const handleMainMessage = async (client, message) => {
 
     let args = message.content.slice(prefix.length).trim().split(/ +/);
     let cmd = args.shift()?.toLowerCase();
+    if (!client.mcommands) return;
     const command = client.mcommands.get(cmd);
     if (!command) return;
 
+    if (!client.userSettings) client.userSettings = new Collection();
     let serverdb = client.userSettings.get(message.guild.id);
     let serverdbbl = client.userSettings.get(message.guild.id + "_bl");
 

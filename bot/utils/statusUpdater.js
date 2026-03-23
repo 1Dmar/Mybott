@@ -6,6 +6,10 @@ module.exports.updateServerStatus = async (client, server, settings) => {
   const host = server.serverType === 'java' ? server.javaIP : server.bedrockIP;
   const port = server.serverType === 'java' ? server.javaPort : server.bedrockPort;
   
+  // Defensive checks for CONFIG properties
+  const EMBED_COLORS = CONFIG.EMBED_COLORS || { ONLINE: "#43b581", OFFLINE: "#f04747" };
+  const EMOJIS = CONFIG.EMOJIS || { SERVER: "🖥️", ONLINE: "🟢", OFFLINE: "🔴", PLAYERS: "👥", VERSION: "📝" };
+
   // Fixed API endpoints with User-Agent header
   const apiUrl = server.serverType === 'java' 
     ? `https://api.mcsrvstat.us/3/${encodeURIComponent(host)}${port ? `:${port}` : ''}`
@@ -32,19 +36,21 @@ module.exports.updateServerStatus = async (client, server, settings) => {
     : 'N/A';
 
   const embed = new EmbedBuilder()
-    .setColor(data.online ? CONFIG.EMBED_COLORS.ONLINE : CONFIG.EMBED_COLORS.OFFLINE)
-    .setTitle(`${CONFIG.EMOJIS.SERVER} ${server.serverName} - ${server.serverType.toUpperCase()}`)
-    .setDescription(data.online ? `${CONFIG.EMOJIS.ONLINE} **ONLINE**` : `${CONFIG.EMOJIS.OFFLINE} **OFFLINE**`)
+    .setColor(data.online ? EMBED_COLORS.ONLINE : EMBED_COLORS.OFFLINE)
+    .setTitle(`${EMOJIS.SERVER} ${server.serverName} - ${server.serverType.toUpperCase()}`)
+    .setDescription(data.online ? `${EMOJIS.ONLINE} **ONLINE**` : `${EMOJIS.OFFLINE} **OFFLINE**`)
     .addFields(
       { name: '🔌 IP', value: `\`${host}\``, inline: true },
-      { name: `${CONFIG.EMOJIS.PLAYERS} Players`, value: `${playersOnline}/${playersMax}`, inline: true },
-      { name: `${CONFIG.EMOJIS.VERSION} Version`, value: version, inline: true }
+      { name: `${EMOJIS.PLAYERS} Players`, value: `${playersOnline}/${playersMax}`, inline: true },
+      { name: `${EMOJIS.VERSION} Version`, value: version, inline: true }
     )
     .setFooter({ text: `Last update • Updates every ${settings.updateInterval} min` })
     .setTimestamp();
 
   try {
     const channel = await client.channels.fetch(settings.statusChannelId);
+    if (!channel) return;
+
     if (settings.statusMessageId) {
       try {
         const message = await channel.messages.fetch(settings.statusMessageId);

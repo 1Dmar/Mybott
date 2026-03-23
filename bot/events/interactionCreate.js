@@ -392,6 +392,13 @@ module.exports = {
         try {
             // Handle slash commands
             if (interaction.isChatInputCommand()) {
+                if (!client.scommands) {
+                    console.error('client.scommands is not defined');
+                    return await interaction.reply({ 
+                        content: `${EMOJIS.WARNING} Command system not initialized.`, 
+                        ephemeral: true 
+                    });
+                }
                 const command = client.scommands.get(interaction.commandName);
                 
                 if (!command) {

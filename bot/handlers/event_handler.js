@@ -45,7 +45,9 @@ module.exports = async (client) => {
         }
         
         console.log(`✅ Loaded event: ${event.name}`);
-        client.events++;
+        if (typeof client.events === 'number') {
+          client.events++;
+        }
       } catch (eventError) {
         console.error(`❌ Error loading event ${eventFile}:`, eventError.message);
       }

@@ -98,27 +98,32 @@ useNewUrlParser: true,
 let cpuUsagePercent = 0;
 client.once("ready", async () => {
     console.log(`${client.user.username} is Ready`);
-     cpuUsagePercent = 0;
+    cpuUsagePercent = 0;
 
     try {
-      const stats = await pidusage(process.pid);
-      cpuUsagePercent = stats.cpu;
+        const stats = await pidusage(process.pid);
+        cpuUsagePercent = stats.cpu;
     } catch (error) {
-      console.error('خطأ في جلب استهلاك المعالج:', error);
+        console.error('خطأ في جلب استهلاك المعالج:', error);
     }
-    
+});
+
+client1.once("ready", () => {
+    console.log(`${client1.user.username} (Client 1) is Ready`);
     client1.user.setStatus("online");
 
-  const activities = [
-    { name: "Moddy | New update! 🚀", type: ActivityType.Playing },
-    { name: "Moddy | Powered by ProMcBot! 🔥", type: ActivityType.Playing }
-  ];
-  
-  let i = 0;
-  setInterval(() => {
-     client1.user.setActivity(activities[i]);
-    i = (i + 1) % activities.length;
-  }, 10000);
+    const activities = [
+        { name: "Moddy | New update! 🚀", type: ActivityType.Playing },
+        { name: "Moddy | Powered by ProMcBot! 🔥", type: ActivityType.Playing }
+    ];
+
+    let i = 0;
+    setInterval(() => {
+        if (client1.user) {
+            client1.user.setActivity(activities[i]);
+            i = (i + 1) % activities.length;
+        }
+    }, 10000);
 });
 
 app.use(session({
