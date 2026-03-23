@@ -33,10 +33,10 @@ module.exports = {
     }
     
     const activities = [
-      { name: "ProMcBot | New update! ${client.emojis.ROCKET}", type: ActivityType.Playing },
-      { name: "ProMcBot | Try new features! ${client.emojis.FIRE}", type: ActivityType.Watching },
+      { name: `ProMcBot | New update! ${client.emojis.ROCKET}`, type: ActivityType.Playing },
+      { name: `ProMcBot | Try new features! ${client.emojis.FIRE}`, type: ActivityType.Watching },
       { name: "ProMcBot | Compete now! ⚡", type: ActivityType.Competing },
-      { name: "ProMcBot | Listening to your commands! ${client.emojis.HEADPHONES}", type: ActivityType.Listening }
+      { name: `ProMcBot | Listening to your commands! ${client.emojis.HEADPHONES}`, type: ActivityType.Listening }
     ];
     
     let activityIndex = 0;
