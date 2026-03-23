@@ -16,9 +16,8 @@ const { MONGO_URL, TOKEN } = require("./settings/config");
 
 // Validate required environment variables
 if (!TOKEN) {
-  console.error("❌ ERROR: BOT1_1_TOKEN environment variable is not set!");
-  console.error("ℹ️ Please set the BOT1_1_TOKEN in your Railway environment variables.");
-  process.exit(1);
+  console.warn("⚠️ WARNING: BOT1_1_TOKEN environment variable is not set!");
+  console.warn("ℹ️ The bot will not start until a token is provided via server.js.");
 }
 
 if (!MONGO_URL) {

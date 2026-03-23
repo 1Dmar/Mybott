@@ -46,7 +46,14 @@ mainApp.listen(PORT, () => {
 
 // Centralized Bot Login Management
 const loginBot = async (client, token, name) => {
-  if (!client || !token || client.user) return;
+  if (!client || !token) {
+    console.log(`⚠️ Skipping ${name} login: Missing client or token.`);
+    return;
+  }
+  if (client.user) {
+    console.log(`ℹ️ ${name} is already logged in.`);
+    return;
+  }
   try {
     await client.login(token);
     console.log(`✅ ${name} logged in successfully!`);
@@ -55,14 +62,19 @@ const loginBot = async (client, token, name) => {
   }
 };
 
+// Bot Tokens from Environment Variables
+const MAIN_BOT_TOKEN = process.env.BOT1_1_TOKEN || process.env.TOKEN;
+const MODDY_BOT_TOKEN = process.env.BOT1_TOKEN;
+
 // Login ProMcBot (Main Bot)
-if (bot1 && bot1.client) {
-  loginBot(bot1.client, process.env.BOT1_1_TOKEN, "ProMcBot (Main)");
-} else if (bot2Client) {
-  loginBot(bot2Client, process.env.BOT1_1_TOKEN, "ProMcBot (Fallback)");
+// Prefer client from bot2 (main bot logic) if available, otherwise fallback to bot1
+if (bot2Client) {
+  loginBot(bot2Client, MAIN_BOT_TOKEN, "ProMcBot (Main)");
+} else if (bot1 && bot1.client) {
+  loginBot(bot1.client, MAIN_BOT_TOKEN, "ProMcBot (Dashboard Client)");
 }
 
 // Login Moddy Bot
 if (bot1 && bot1.client1) {
-  loginBot(bot1.client1, process.env.BOT1_TOKEN, "Moddy Bot");
+  loginBot(bot1.client1, MODDY_BOT_TOKEN, "Moddy Bot");
 }

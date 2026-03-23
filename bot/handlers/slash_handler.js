@@ -12,8 +12,8 @@ module.exports = async (client) => {
   try {
     // 1. Verify token exists
     if (!process.env.BOT1_1_TOKEN) {
-      console.error("${client.emojis.ERROR} ERROR: BOT1_1_TOKEN is not defined in environment variables!");
-      console.error("${client.emojis.INFO} Solution: Add BOT1_1_TOKEN to your Railway environment variables.");
+      console.error("❌ ERROR: BOT1_1_TOKEN is not defined in environment variables!");
+      console.error("ℹ️ Solution: Add BOT1_1_TOKEN to your Railway environment variables.");
       return;
     }
 
@@ -27,7 +27,7 @@ module.exports = async (client) => {
         
         // Check if directory exists
         if (!require('fs').existsSync(slashPath)) {
-          console.warn("${client.emojis.WARNING}️ Slash commands directory not found:", slashPath);
+          console.warn("⚠️ Slash commands directory not found:", slashPath);
           return;
         }
 
@@ -64,7 +64,7 @@ module.exports = async (client) => {
         });
         console.log(`${client.emojis.SUCCESS} Total loaded: ${client.scommands.size} slash commands`);
       } catch (error) {
-        console.error("${client.emojis.ERROR} Error loading commands:", error.message);
+        console.error("❌ Error loading commands:", error.message);
       }
     };
 
@@ -96,7 +96,7 @@ module.exports = async (client) => {
             console.log(`🏰 Successfully registered ${allCommands.length} GUILD slash commands for ${GUILD_ID}`);
             return; // Success - no need to try global
           } catch (guildError) {
-            console.warn("${client.emojis.WARNING}️ Guild registration failed:", guildError.message);
+            console.warn("⚠️ Guild registration failed:", guildError.message);
             
             // Check if it's an authorization error
             if (guildError.code === 50001 || 
@@ -138,7 +138,7 @@ module.exports = async (client) => {
         }
         
         // Try global registration as fallback or primary
-        console.log("${client.emojis.LOADING} Trying global registration...");
+        console.log("⏳ Trying global registration...");
         
         try {
           await rest.put(
@@ -148,7 +148,7 @@ module.exports = async (client) => {
           console.log(`${client.emojis.EARTH} Successfully registered ${allCommands.length} GLOBAL slash commands`);
           console.log("⏳ Note: Global commands may take up to 1 hour to appear in all servers.");
         } catch (globalError) {
-          console.error("${client.emojis.ERROR} Global registration failed:", globalError.message);
+          console.error("❌ Global registration failed:", globalError.message);
           
           // Check for specific error codes
           if (globalError.code === 50001 || 

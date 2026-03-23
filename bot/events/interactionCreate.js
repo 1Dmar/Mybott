@@ -42,7 +42,7 @@ try {
   if (fs.existsSync(tsPath)) {
     translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
   } else {
-    console.log('${client.emojis.WARNING}️ Translations file not found, using empty object');
+    console.log('⚠️ Translations file not found, using empty object');
     translations = { en: {} };
   }
 } catch (error) {
@@ -137,35 +137,48 @@ async function checkServerStatus(ip, port, type) {
 }
 
 // Canvas and font setup
-const { createCanvas, loadImage, registerFont } = require('canvas');
+let createCanvas, loadImage, registerFont;
+try {
+  const canvas = require('canvas');
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+  registerFont = canvas.registerFont;
+} catch (e) {
+  console.log('⚠️ Canvas module not found, image generation features will be disabled.');
+}
 
 // Register fonts with proper error handling
 const fontsDir = path.join(__dirname, '../src/fonts');
 let fontsLoaded = false;
 
-try {
-  // Check if fonts directory exists
-  if (!fs.existsSync(fontsDir)) {
-    console.log('${client.emojis.WARNING}️ Fonts directory not found, creating it...');
-    fs.mkdirSync(fontsDir, { recursive: true });
+if (registerFont) {
+  try {
+    // Check if fonts directory exists
+    if (!fs.existsSync(fontsDir)) {
+      console.log('⚠️ Fonts directory not found, creating it...');
+      fs.mkdirSync(fontsDir, { recursive: true });
+    }
+    
+    // Try to register fonts if they exist
+    const font1 = path.join(fontsDir, 'd.ttf');
+    const font2 = path.join(fontsDir, 'f.ttf');
+    
+    if (fs.existsSync(font1)) {
+      registerFont(font1, { family: 'Minecraft' });
+      fontsLoaded = true;
+    }
+    if (fs.existsSync(font2)) {
+      registerFont(font2, { family: 'MinecraftBold' });
+      fontsLoaded = true;
+    }
+  } catch (err) {
+    console.log('⚠️ Error registering fonts:', err.message);
   }
-  
-  // Try to register fonts if they exist
-  const font1 = path.join(fontsDir, 'd.ttf');
-  const font2 = path.join(fontsDir, 'f.ttf');
-  
-  if (fs.existsSync(font1)) {
-    registerFont(font1, { family: 'Minecraft' });
-    fontsLoaded = true;
-  }
-  if (fs.existsSync(font2)) {
-    registerFont(font2, { family: 'MinecraftBold' });
-    fontsLoaded = true;
-  }
+}
   
   if (!fontsLoaded) {
-    console.log('${client.emojis.WARNING}️ No custom fonts found in', fontsDir);
-    console.log('${client.emojis.INFO} The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts.');
+    console.log('⚠️ No custom fonts found in', fontsDir);
+    console.log('ℹ️ The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts. ');
   }
 } catch (fontError) {
   console.warn('${client.emojis.WARNING}️ Could not load custom Minecraft fonts:', fontError.message);
