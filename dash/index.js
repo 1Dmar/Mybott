@@ -114,7 +114,7 @@ client1.once("ready", () => {
 
     const activities = [
         { name: "Moddy | New update! 🚀", type: ActivityType.Playing },
-        { name: "Moddy | Powered by ProMcBot! 🔥", type: ActivityType.Playing }
+        { name: "Moddy | Powered by ProMcBot! 🔥", type: ActivityType.Watching }
     ];
 
     let i = 0;

@@ -40,27 +40,32 @@ mainApp.listen(PORT, () => {
   console.log(`🤖 Bot API: http://localhost:${PORT}/bot`);
 });
 
-// تسجيل دخول البوتات (فقط إذا لم يتم تسجيل الدخول بالفعل في bot/index.js)
-// Bot 1 (Dashboard Bots) - only login if not already logged in
+// تسجيل دخول البوتات
+// BOT1_1_TOKEN = Main Bot (ProMcBot)
+// BOT1_TOKEN = Moddy Bot
+
+// Dashboard Bots
 if (bot1 && bot1.client && !bot1.client.user) {
-  bot1.client.login(process.env.BOT1_TOKEN).catch(err => 
-    console.error("❌ Bot 1 Client Login Error:", err.message)
+  // client in dash/index is the primary bot for dashboard stats/actions
+  bot1.client.login(process.env.BOT1_1_TOKEN).catch(err => 
+    console.error("❌ ProMcBot (Dashboard Client) Login Error:", err.message)
   );
 }
 if (bot1 && bot1.client1 && !bot1.client1.user) {
-  bot1.client1.login(process.env.BOT1_1_TOKEN).catch(err => 
-    console.error("❌ Bot 1 Client1 Login Error:", err.message)
+  // client1 in dash/index is Moddy
+  bot1.client1.login(process.env.BOT1_TOKEN).catch(err => 
+    console.error("❌ Moddy Bot (Dashboard Client1) Login Error:", err.message)
   );
 }
 
-// Bot 2 (Main Bot) - Login is handled in bot/index.js, but we check here as fallback
-// The bot should already be logged in from bot/index.js, this is just a safety check
+// Main Bot Logic (bot/index.js)
 if (bot2Client && bot2Client.login && !bot2Client.user) {
-  // Wait a bit to see if the bot logs in from the handler
+  // The bot should already be logged in from bot/index.js using BOT1_1_TOKEN
+  // This is a safety fallback
   setTimeout(() => {
     if (!bot2Client.user) {
       bot2Client.login(process.env.BOT1_1_TOKEN).catch(err => 
-        console.error("❌ Bot 2 Login Error:", err.message)
+        console.error("❌ ProMcBot (Main Logic) Login Error:", err.message)
       );
     }
   }, 5000);
