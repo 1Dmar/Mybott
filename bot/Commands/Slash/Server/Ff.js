@@ -87,13 +87,13 @@ module.exports = {
       // Add custom option if user has membership
       if (hasMembership) {
         serverOptions.push({
-          label: "Custom - ⭐ Membership",
+          label: "Custom - ${client.emojis.STAR} Membership",
           value: "custom",
           emoji: EMOJIS.ACHIEVEMENT
         });
       } else {
         serverOptions.push({
-          label: "Custom - ⭐ Membership Required",
+          label: "Custom - ${client.emojis.STAR} Membership Required",
           value: "custom",
           emoji: EMOJIS.WARNING,
           disabled: true

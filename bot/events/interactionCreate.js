@@ -42,7 +42,7 @@ try {
   if (fs.existsSync(tsPath)) {
     translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
   } else {
-    console.log('⚠️ Translations file not found, using empty object');
+    console.log('${client.emojis.WARNING}️ Translations file not found, using empty object');
     translations = { en: {} };
   }
 } catch (error) {
@@ -146,7 +146,7 @@ let fontsLoaded = false;
 try {
   // Check if fonts directory exists
   if (!fs.existsSync(fontsDir)) {
-    console.log('⚠️ Fonts directory not found, creating it...');
+    console.log('${client.emojis.WARNING}️ Fonts directory not found, creating it...');
     fs.mkdirSync(fontsDir, { recursive: true });
   }
   
@@ -164,11 +164,11 @@ try {
   }
   
   if (!fontsLoaded) {
-    console.log('⚠️ No custom fonts found in', fontsDir);
-    console.log('💡 The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts.');
+    console.log('${client.emojis.WARNING}️ No custom fonts found in', fontsDir);
+    console.log('${client.emojis.INFO} The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts.');
   }
 } catch (fontError) {
-  console.warn('⚠️ Could not load custom Minecraft fonts:', fontError.message);
+  console.warn('${client.emojis.WARNING}️ Could not load custom Minecraft fonts:', fontError.message);
 }
 
 // Server status image generator

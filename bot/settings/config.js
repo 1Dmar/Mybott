@@ -19,10 +19,10 @@ module.exports = {
     DEFAULT: "#7289da"
   },
   EMOJIS: {
-    SERVER: "🖥️",
-    ONLINE: "🟢",
-    OFFLINE: "🔴",
-    PLAYERS: "👥",
-    VERSION: "📝"
+    SERVER: "${client.emojis.SERVER}",
+    ONLINE: "${client.emojis.ONLINE}",
+    OFFLINE: "${client.emojis.OFFLINE}",
+    PLAYERS: "${client.emojis.MEMBERS}",
+    VERSION: "${client.emojis.EDIT}"
   }
 };

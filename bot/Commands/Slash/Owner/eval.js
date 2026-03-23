@@ -36,7 +36,7 @@ module.exports = {
     // Only allow bot owner
     if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
-        content: "❌ This command is restricted to the bot owner!",
+        content: "${client.emojis.ERROR} This command is restricted to the bot owner!",
         ephemeral: true
       });
     }
@@ -70,7 +70,7 @@ module.exports = {
         
         if (current === undefined) {
           return interaction.reply({
-            content: `❌ Base object \`${objectPath[0]}\` is undefined`,
+            content: `${client.emojis.ERROR} Base object \`${objectPath[0]}\` is undefined`,
             ephemeral: true
           });
         }
@@ -88,7 +88,7 @@ module.exports = {
         });
 
         return interaction.reply({
-          content: `📊 **Object Exploration**\n\`\`\`js\n${result || "undefined"}\n\`\`\``,
+          content: `${client.emojis.STATS} **Object Exploration**\n\`\`\`js\n${result || "undefined"}\n\`\`\``,
           ephemeral
         });
       }
@@ -125,7 +125,7 @@ module.exports = {
       const footer = `⏱️ ${evalTime}ms${truncated ? " | ✂️ Truncated" : ""}`;
       
       interaction.reply({
-        content: `✅ **Evaluation Successful** ${footer}\n\`\`\`js\n${evaled || "undefined"}\n\`\`\``,
+        content: `${client.emojis.SUCCESS} **Evaluation Successful** ${footer}\n\`\`\`js\n${evaled || "undefined"}\n\`\`\``,
         ephemeral
       });
     } catch (err) {
@@ -139,7 +139,7 @@ module.exports = {
       errorMessage = errorMessage.replace(client.token, "[REDACTED]");
       
       interaction.reply({
-        content: `❌ **Evaluation Error**\n\`\`\`js\n${errorMessage}\n\`\`\``,
+        content: `${client.emojis.ERROR} **Evaluation Error**\n\`\`\`js\n${errorMessage}\n\`\`\``,
         ephemeral: true
       });
     }

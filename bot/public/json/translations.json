@@ -72,7 +72,11 @@
     "SETUP_CANCELLED": "Setup cancelled.",
     "INFORMATION": "Information",
     "WARNING": "Warning",
-    "CHECK": "Check"
+    "CHECK": "Check",
+    "HELP_TITLE": "Help Menu - ProMcBot",
+    "HELP_SUBTITLE": "${client.emojis.SHIELD} Minecraft & Discord Server Assistant",
+    "HELP_DESC": "ProMcBot provides an easy way to link your Minecraft server to Discord. You can view server info and control it with one click.\n\n### 🛠️ Basic Commands:\n> **/setup_server**\n> To setup Minecraft server by choosing type from menu.\n\n> **/remove_server**\n> To disable link and remove server data from bot.\n\n> **/automod-settings**\n> To view current automod settings.\n\n### ${client.emojis.LINK} Useful Links:\n• [Support](https://discord.gg/6FjFYStz5a)\n• [Invite Bot](https://discord.com/oauth2/authorize?client_id=1220005260857311294&permissions=537250992&integration_type=0&scope=bot+applications.commands)",
+    "HELP_FOOTER": "Developed by 1Dmar"
   },
   "zh": {
     "Mentiondone": "已设置提醒类型为:",
@@ -147,7 +151,11 @@
     "SETUP_CANCELLED": "设置已取消。",
     "INFORMATION": "信息",
     "WARNING": "警告",
-    "CHECK": "检查"
+    "CHECK": "检查",
+    "HELP_TITLE": "帮助菜单 - ProMcBot",
+    "HELP_SUBTITLE": "${client.emojis.SHIELD} 我的世界和 Discord 服务器助手",
+    "HELP_DESC": "ProMcBot 提供了一种将您的我的世界服务器链接到 Discord 的简便方法。您可以一键查看服务器信息并进行控制。\n\n### 🛠️ 基础命令：\n> **/setup_server**\n> 通过从菜单中选择类型来设置我的世界服务器。\n\n> **/remove_server**\n> 禁用链接并从机器人中删除服务器数据。\n\n> **/automod-settings**\n> 查看当前的自动管理设置。\n\n### ${client.emojis.LINK} 有用链接：\n• [技术支持](https://discord.gg/6FjFYStz5a)\n• [邀请机器人](https://discord.com/oauth2/authorize?client_id=1220005260857311294&permissions=537250992&integration_type=0&scope=bot+applications.commands)",
+    "HELP_FOOTER": "由 1Dmar 开发"
   },
   "ar": {
     "Mentiondone": "تم تعيين نوع المنشن إلى:",
@@ -222,6 +230,10 @@
     "SETUP_CANCELLED": "تم إلغاء الإعداد.",
     "INFORMATION": "معلومات",
     "WARNING": "تحذير",
-    "CHECK": "تحقق"
+    "CHECK": "تحقق",
+    "HELP_TITLE": "قائمة المساعدة - ProMcBot",
+    "HELP_SUBTITLE": "${client.emojis.SHIELD} مساعد سيرفرات ماينكرافت والديسكورد",
+    "HELP_DESC": "يوفر **ProMcBot** طريقة سهلة لربط سيرفر ماينكرافت الخاص بك بالديسكورد. يمكنك عرض معلومات السيرفر والتحكم بها بضغطة زر واحدة.\n\n### 🛠️ الأوامر الأساسية:\n> **/setup_server**\n> لإعداد سيرفر ماينكرافت عن طريق اختيار نوع السيرفر من القائمة.\n\n> **/remove_server**\n> لتعطيل الربط وإزالة بيانات السيرفر من البوت.\n\n> **/automod-settings**\n> لعرض إعدادات الحماية التلقائية الحالية.\n\n### ${client.emojis.LINK} روابط مفيدة:\n• [الدعم الفني](https://discord.gg/6FjFYStz5a)\n• [دعوة البوت](https://discord.com/oauth2/authorize?client_id=1220005260857311294&permissions=537250992&integration_type=0&scope=bot+applications.commands)",
+    "HELP_FOOTER": "تم التطوير بواسطة 1Dmar"
   }
 }

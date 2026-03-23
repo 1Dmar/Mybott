@@ -36,7 +36,7 @@ module.exports = {
       } else {
         return message.reply({
           content:
-            `❌ **Sorry! No server address was provided, and no default address is saved for this server.**\n` +
+            `${client.emojis.ERROR} **Sorry! No server address was provided, and no default address is saved for this server.**\n` +
             `> Use: \`${prefix}mc <IP>\``,
         });
       }
@@ -55,7 +55,7 @@ module.exports = {
 
       if (!data.online) {
         return loadingMsg.edit({
-          content: `❌ **Sorry! The server \`${ip}\` is currently offline.**`,
+          content: `${client.emojis.ERROR} **Sorry! The server \`${ip}\` is currently offline.**`,
           embeds: [],
           components: [],
         });
@@ -75,10 +75,10 @@ module.exports = {
         .setThumbnail(`https://api.mcsrvstat.us/icon/${encodeURIComponent(ip)}`)
         .setColor("#D4AF37")
         .setDescription(
-          `✨ **Here is the full information for the selected server:**\n\n` +
-            `💎 **Version:** \`${data.version || "Unknown"}\`\n` +
-            `👥 **Players:** \`${data.players?.online ?? 0}/${data.players?.max ?? 0}\`\n` +
-            `📶 **Status:** \`Online ✅\``
+          `${client.emojis.SPARKLES} **Here is the full information for the selected server:**\n\n` +
+            `${client.emojis.DIAMOND} **Version:** \`${data.version || "Unknown"}\`\n` +
+            `${client.emojis.MEMBERS} **Players:** \`${data.players?.online ?? 0}/${data.players?.max ?? 0}\`\n` +
+            `📶 **Status:** \`Online ${client.emojis.SUCCESS}\``
         )
         .addFields(
           {
@@ -86,7 +86,7 @@ module.exports = {
             value: `\`\`\`${motd}\`\`\``,
           },
           {
-            name: "📍 Full Address",
+            name: "${client.emojis.PIN} Full Address",
             value: `\`${data.hostname || data.ip || ip}\``,
             inline: true,
           },
@@ -124,7 +124,7 @@ module.exports = {
       console.error("Minecraft server info error:", error);
       await loadingMsg.edit({
         content:
-          "❌ **An error occurred while fetching the server data. Please make sure the address is correct.**",
+          "${client.emojis.ERROR} **An error occurred while fetching the server data. Please make sure the address is correct.**",
         embeds: [],
         components: [],
       });

@@ -33,10 +33,10 @@ module.exports = {
     }
     
     const activities = [
-      { name: "ProMcBot | New update! 🚀", type: ActivityType.Playing },
-      { name: "ProMcBot | Try new features! 🔥", type: ActivityType.Watching },
+      { name: "ProMcBot | New update! ${client.emojis.ROCKET}", type: ActivityType.Playing },
+      { name: "ProMcBot | Try new features! ${client.emojis.FIRE}", type: ActivityType.Watching },
       { name: "ProMcBot | Compete now! ⚡", type: ActivityType.Competing },
-      { name: "ProMcBot | Listening to your commands! 🎧", type: ActivityType.Listening }
+      { name: "ProMcBot | Listening to your commands! ${client.emojis.HEADPHONES}", type: ActivityType.Listening }
     ];
     
     let activityIndex = 0;
@@ -56,15 +56,18 @@ module.exports = {
 
     // تحميل البيانات الأولية
     try {
-      const [servers, servers1, blacklists] = await Promise.all([
+      const Langs = require("../Models/Langs");
+      const [servers, servers1, blacklists, serverLangs] = await Promise.all([
         Server.find().lean(),
         Serverdb.find().lean(),
-        BlackList.find().lean()
+        BlackList.find().lean(),
+        Langs.find().lean()
       ]);
       
       servers.forEach((server) => client.userSettings.set(server.Id, server));
       servers1.forEach((server1) => client.userSettings.set(server1.Id, server1));
       blacklists.forEach((server2) => client.userSettings.set(server2.Id, server2));
+      serverLangs.forEach((lang) => client.languages.set(lang.guildIds, lang.language));
       
       await Server.updateMany(
         { serverType: { $exists: false } },

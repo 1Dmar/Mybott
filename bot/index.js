@@ -16,14 +16,14 @@ const { MONGO_URL, TOKEN } = require("./settings/config");
 
 // Validate required environment variables
 if (!TOKEN) {
-  console.error("❌ ERROR: BOT1_1_TOKEN environment variable is not set!");
-  console.error("💡 Please set the BOT1_1_TOKEN in your Railway environment variables.");
+  console.error("${client.emojis.ERROR} ERROR: BOT1_1_TOKEN environment variable is not set!");
+  console.error("${client.emojis.INFO} Please set the BOT1_1_TOKEN in your Railway environment variables.");
   process.exit(1);
 }
 
 if (!MONGO_URL) {
-  console.error("❌ ERROR: MONGO_URL environment variable is not set!");
-  console.error("💡 Please set the MONGO_URL in your Railway environment variables.");
+  console.error("${client.emojis.ERROR} ERROR: MONGO_URL environment variable is not set!");
+  console.error("${client.emojis.INFO} Please set the MONGO_URL in your Railway environment variables.");
 }
 
 async function removeDuplicateGuildIds() {
@@ -76,18 +76,29 @@ if (MONGO_URL) {
       useUnifiedTopology: true,
     })
     .then(async () => {
-      console.log(`✅ MongoDB Connected !!`);
+      console.log(`${client.emojis.SUCCESS} MongoDB Connected !!`);
       await removeDuplicateGuildIds();
-      console.log('✅ Duplicate entries removed.');
+      console.log('${client.emojis.SUCCESS} Duplicate entries removed.');
     })
     .catch(error => {
-      console.error('❌ Error connecting to MongoDB:', error.message);
+      console.error('${client.emojis.ERROR} Error connecting to MongoDB:', error.message);
     });
 } else {
-  console.warn("⚠️ MongoDB URL not provided, database features will be disabled.");
+  console.warn("${client.emojis.WARNING}️ MongoDB URL not provided, database features will be disabled.");
 }
 
 // Global variables
+const fs = require('fs');
+client.emojis = require("./settings/emojis");
+client.translations = JSON.parse(fs.readFileSync('./bot/public/json/translations.json', 'utf8'));
+client.languages = new Collection(); // Cache for server languages
+
+// Translation function
+client.t = (guildId, key) => {
+  const lang = client.languages.get(guildId) || 'en';
+  return client.translations[lang] ? (client.translations[lang][key] || key) : (client.translations['en'][key] || key);
+};
+
 client.scommands = new Collection();
 client.mcommands = new Collection();
 client.cooldowns = new Collection();
@@ -96,7 +107,7 @@ client.events = 0;
 
 // Bot ready event
 client.once('ready', async () => {
-  console.log(`✅ Logged in as ${client.user.tag}!`);
+  console.log(`${client.emojis.SUCCESS} Logged in as ${client.user.tag}!`);
   
   // Schedule cron jobs
   try {
@@ -112,7 +123,7 @@ client.once('ready', async () => {
       const { WebhookClient } = require('discord.js');
       const webhookClient = new WebhookClient({ url: webhookUrl });
       webhookClient.send({
-        content: `🤖 **Bot Started Successfully!**\n**Bot Name:** ${client.user.tag}\n**Bot ID:** ${client.user.id}\n**Time:** ${new Date().toISOString()}`
+        content: `${client.emojis.ROBOT} **Bot Started Successfully!**\n**Bot Name:** ${client.user.tag}\n**Bot ID:** ${client.user.id}\n**Time:** ${new Date().toISOString()}`
       }).catch(() => {});
     }
   } catch (error) {
@@ -133,7 +144,7 @@ try {
   if (configg.webhookUrl) {
     errorHandling(client, configg);
   } else {
-    console.log('⚠️ Error webhook not configured, anticrash will log to console only.');
+    console.log('${client.emojis.WARNING}️ Error webhook not configured, anticrash will log to console only.');
   }
 } catch (error) {
   console.log('discord.js-anticrash not available:', error.message);
@@ -141,21 +152,21 @@ try {
 
 // WebSocket error handling
 client.ws.on('error', (error) => {
-  console.error('⚠️ WebSocket error:', error);
+  console.error('${client.emojis.WARNING}️ WebSocket error:', error);
 });
 
 client.ws.on('close', (code, reason) => {
-  console.error(`⚠️ WebSocket closed with code ${code}:`, reason);
+  console.error(`${client.emojis.WARNING}️ WebSocket closed with code ${code}:`, reason);
   // Don't auto-reconnect here - let the built-in reconnection handle it
 });
 
 // Process error handling
 process.on('uncaughtException', (error) => {
-  console.error('❌ Unhandled Exception:', error);
+  console.error('${client.emojis.ERROR} Unhandled Exception:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('${client.emojis.ERROR} Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 // Load handlers
@@ -172,16 +183,16 @@ handlesFiles.forEach((file) => {
   try {
     require(`./handlers/${file}`)(client);
   } catch (error) {
-    console.error(`❌ Error loading handler ${file}:`, error.message);
+    console.error(`${client.emojis.ERROR} Error loading handler ${file}:`, error.message);
   }
 });
 
 // Login the bot
-console.log('🔄 Attempting to login bot...');
+console.log('${client.emojis.LOADING} Attempting to login bot...');
 client.login(TOKEN).catch(err => {
-  console.error('❌ Bot login failed:', err.message);
+  console.error('${client.emojis.ERROR} Bot login failed:', err.message);
   if (err.message.includes('token')) {
-    console.error('💡 Please check that BOT1_1_TOKEN is set correctly in Railway environment variables.');
+    console.error('${client.emojis.INFO} Please check that BOT1_1_TOKEN is set correctly in Railway environment variables.');
   }
 });
 

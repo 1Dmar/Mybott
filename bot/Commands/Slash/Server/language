@@ -54,6 +54,7 @@ module.exports = {
       { $set: { language: language } },
       { upsert: true, new: true }
     );
+    client.languages.set(guildId, language);
 
     const membershipServer = await Server.findOne({ Id: guildId });
     let langname;
@@ -65,10 +66,10 @@ module.exports = {
       langname = 'Chinese';
     }
     
-    const Languageset = await getTranslatedMessage(guildId, 'Languageset');
+    const Languageset = client.t(guildId, 'Languageset');
 
     interaction.reply({
-      content: `${Languageset} ${language}`,
+      content: `${Languageset} ${langname}`,
       ephemeral: true,
     });
 

@@ -32,7 +32,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(0x0099FF)
-                .setTitle("📋 Log Channel Set")
+                .setTitle("${client.emojis.CLIPBOARD} Log Channel Set")
                 .setDescription(`Auto-moderation logs will now be sent to <#${channel.id}>`)
                 .setTimestamp();
 
@@ -41,7 +41,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "❌ An error occurred while updating the log channel.",
+                content: "${client.emojis.ERROR} An error occurred while updating the log channel.",
                 ephemeral: true
             });
         }

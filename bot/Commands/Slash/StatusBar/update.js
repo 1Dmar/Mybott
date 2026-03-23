@@ -27,7 +27,7 @@ module.exports = {
 
       if (!server || !settings) {
         return interaction.reply({ 
-          content: '❌ Server not configured!', 
+          content: '${client.emojis.ERROR} Server not configured!', 
           ephemeral: true 
         });
       }
@@ -39,7 +39,7 @@ module.exports = {
       });
     } catch (error) {
       interaction.reply({ 
-        content: '❌ Update failed!', 
+        content: '${client.emojis.ERROR} Update failed!', 
         ephemeral: true 
       });
     }

@@ -8,7 +8,7 @@ module.exports.updateServerStatus = async (client, server, settings) => {
   
   // Defensive checks for CONFIG properties
   const EMBED_COLORS = CONFIG.EMBED_COLORS || { ONLINE: "#43b581", OFFLINE: "#f04747" };
-  const EMOJIS = CONFIG.EMOJIS || { SERVER: "🖥️", ONLINE: "🟢", OFFLINE: "🔴", PLAYERS: "👥", VERSION: "📝" };
+  const EMOJIS = CONFIG.EMOJIS || { SERVER: "${client.emojis.SERVER}", ONLINE: "${client.emojis.ONLINE}", OFFLINE: "${client.emojis.OFFLINE}", PLAYERS: "${client.emojis.MEMBERS}", VERSION: "${client.emojis.EDIT}" };
 
   // Fixed API endpoints with User-Agent header
   const apiUrl = server.serverType === 'java' 
@@ -40,7 +40,7 @@ module.exports.updateServerStatus = async (client, server, settings) => {
     .setTitle(`${EMOJIS.SERVER} ${server.serverName} - ${server.serverType.toUpperCase()}`)
     .setDescription(data.online ? `${EMOJIS.ONLINE} **ONLINE**` : `${EMOJIS.OFFLINE} **OFFLINE**`)
     .addFields(
-      { name: '🔌 IP', value: `\`${host}\``, inline: true },
+      { name: '${client.emojis.PLUG} IP', value: `\`${host}\``, inline: true },
       { name: `${EMOJIS.PLAYERS} Players`, value: `${playersOnline}/${playersMax}`, inline: true },
       { name: `${EMOJIS.VERSION} Version`, value: version, inline: true }
     )

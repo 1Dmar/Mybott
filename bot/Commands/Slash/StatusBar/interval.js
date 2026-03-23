@@ -42,7 +42,7 @@ module.exports = {
       });
     } catch (error) {
       interaction.reply({ 
-        content: '❌ Interval update failed!', 
+        content: '${client.emojis.ERROR} Interval update failed!', 
         ephemeral: true 
       });
     }

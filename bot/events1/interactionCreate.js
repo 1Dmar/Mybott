@@ -203,8 +203,8 @@ try {
     registerFont(path.join(__dirname, '../src/fonts/d.ttf'), { family: 'Minecraft' });
     registerFont(path.join(__dirname, '../src/fonts/f.ttf'), { family: 'MinecraftBold' });
 } catch (fontError) {
-    console.warn('⚠️ Could not load custom Minecraft fonts:', fontError.message);
-    console.log('💡 The bot will use default system fonts instead.');
+    console.warn('${client.emojis.WARNING}️ Could not load custom Minecraft fonts:', fontError.message);
+    console.log('${client.emojis.INFO} The bot will use default system fonts instead.');
 }
 
 // Enhanced server status image generator with Canvas

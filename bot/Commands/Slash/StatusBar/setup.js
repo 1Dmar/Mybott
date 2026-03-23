@@ -52,7 +52,7 @@ module.exports = {
       });
     } catch (error) {
       interaction.reply({ 
-        content: '❌ Setup failed!', 
+        content: '${client.emojis.ERROR} Setup failed!', 
         ephemeral: true 
       });
     }
