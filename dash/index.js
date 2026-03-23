@@ -76,10 +76,13 @@ const DISCORD_GUILD_ID=BigInt(1226151054178127872).toString();
 const MODMAIL_CATEGORY_ID="1273517241622593558";
 const newCategoryId = "1273517236610404452";
 
+// Disabled discord-anticrash to prevent logging normal WebSocket reconnection attempts as errors
+/*
 const antiCrash = require('discord-anticrash')
 const noCrash = new antiCrash(client, {
   enableAntiCrash: 'true'
 });
+*/
 
 app.use(bodyParser.urlencoded({ extended: true }));
 mongoose.set("strictQuery", true);

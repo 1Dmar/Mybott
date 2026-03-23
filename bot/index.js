@@ -131,7 +131,8 @@ client.once('ready', async () => {
   }
 });
 
-// Error handling with discord.js-anticrash
+// Disabled discord.js-anticrash to prevent logging normal WebSocket reconnection attempts as errors
+/*
 try {
   const { errorHandling } = require("discord.js-anticrash");
   const configg = {
@@ -149,6 +150,7 @@ try {
 } catch (error) {
   console.log('discord.js-anticrash not available:', error.message);
 }
+*/
 
 // WebSocket error handling
 client.ws.on('error', (error) => {
@@ -186,16 +188,7 @@ handlesFiles.forEach((file) => {
   }
 });
 
-// Login the bot
-console.log('⏳ Attempting to login bot...');
-// Note: client.login is handled in server.js or conditionally here
-if (!client.user) {
-  client.login(TOKEN).catch(err => {
-    console.error('❌ Bot login failed:', err.message);
-    if (err.message.includes('token')) {
-      console.error('ℹ️ Please check that BOT1_1_TOKEN is set correctly in Railway environment variables.');
-    }
-  });
-}
+// Login the bot is now handled centrally in server.js to prevent duplicate login attempts
+// console.log('⏳ Bot module initialized, waiting for login from server.js...');
 
 module.exports = client;

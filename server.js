@@ -44,25 +44,25 @@ mainApp.listen(PORT, () => {
 // BOT1_1_TOKEN = Main Bot (ProMcBot)
 // BOT1_TOKEN = Moddy Bot
 
-// Dashboard Bots - Login only if not already logged in
-if (bot1) {
-  if (bot1.client && !bot1.client.user && process.env.BOT1_1_TOKEN) {
-    bot1.client.login(process.env.BOT1_1_TOKEN).catch(err => 
-      console.error("❌ ProMcBot (Dashboard Client) Login Error:", err.message)
-    );
+// Centralized Bot Login Management
+const loginBot = async (client, token, name) => {
+  if (!client || !token || client.user) return;
+  try {
+    await client.login(token);
+    console.log(`✅ ${name} logged in successfully!`);
+  } catch (err) {
+    console.error(`❌ ${name} Login Error:`, err.message);
   }
-  if (bot1.client1 && !bot1.client1.user && process.env.BOT1_TOKEN) {
-    bot1.client1.login(process.env.BOT1_TOKEN).catch(err => 
-      console.error("❌ Moddy Bot (Dashboard Client1) Login Error:", err.message)
-    );
-  }
+};
+
+// Login ProMcBot (Main Bot)
+if (bot1 && bot1.client) {
+  loginBot(bot1.client, process.env.BOT1_1_TOKEN, "ProMcBot (Main)");
+} else if (bot2Client) {
+  loginBot(bot2Client, process.env.BOT1_1_TOKEN, "ProMcBot (Fallback)");
 }
 
-// Main Bot Logic (bot/index.js)
-// The bot is already handled via bot1.client if it's the same client, 
-// but we ensure at least one login happens for the main bot.
-if (bot2Client && !bot2Client.user && !bot1?.client?.user && process.env.BOT1_1_TOKEN) {
-  bot2Client.login(process.env.BOT1_1_TOKEN).catch(err => 
-    console.error("❌ ProMcBot (Main Logic) Login Error:", err.message)
-  );
+// Login Moddy Bot
+if (bot1 && bot1.client1) {
+  loginBot(bot1.client1, process.env.BOT1_TOKEN, "Moddy Bot");
 }
