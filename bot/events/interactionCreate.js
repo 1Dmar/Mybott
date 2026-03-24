@@ -405,10 +405,10 @@ module.exports = {
         try {
             // Handle slash commands
             if (interaction.isChatInputCommand()) {
-                if (!client.scommands) {
-                    console.error('client.scommands is not defined');
+                if (!client.scommands || client.scommands.size === 0) {
+                    console.error('client.scommands is not defined or empty');
                     return await interaction.reply({ 
-                        content: `${EMOJIS.WARNING} Command system not initialized.`, 
+                        content: `⚠️ Command system not initialized or no commands loaded. Please wait a moment and try again.`, 
                         ephemeral: true 
                     });
                 }
@@ -417,7 +417,7 @@ module.exports = {
                 if (!command) {
                     console.error(`No command matching ${interaction.commandName} was found.`);
                     return await interaction.reply({ 
-                        content: `${EMOJIS.WARNING} Command not available.`, 
+                        content: `⚠️ Command \`${interaction.commandName}\` is not available or not yet registered.`, 
                         ephemeral: true 
                     });
                 }

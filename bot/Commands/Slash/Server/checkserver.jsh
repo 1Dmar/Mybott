@@ -14,7 +14,7 @@ const Mentions = require("../../../Models/Mentions");
 const fs = require('fs');
 const path = require('path');
 const Langs = require("../../../Models/Langs");
-const tsPath = path.join(__dirname, "..", "..", "..", "public", "json", "translations.json"); 
+const tsPath = path.join(__dirname, "..", "..", "..", "bot", "public", "json", "translations.json"); 
 const translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
 
 async function getTranslatedMessage(guildId, messageKey) {

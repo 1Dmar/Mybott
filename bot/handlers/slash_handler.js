@@ -37,12 +37,15 @@ module.exports = async (client) => {
           // Check if it's a directory
           if (!require('fs').statSync(dirPath).isDirectory()) return;
           
-          const commands = readdirSync(dirPath).filter(f => f.endsWith(".js"));
+          const commands = readdirSync(dirPath);
           
           for (const cmd of commands) {
             try {
-              delete require.cache[require.resolve(path.join(dirPath, cmd))];
-              const command = require(path.join(dirPath, cmd));
+              const fullPath = path.join(dirPath, cmd);
+              if (require('fs').statSync(fullPath).isDirectory()) continue;
+              
+              delete require.cache[require.resolve(fullPath)];
+              const command = require(fullPath);
               
               if (command?.name && command?.description && command?.run) {
                 client.scommands.set(command.name, command);
@@ -80,21 +83,32 @@ module.exports = async (client) => {
         const rest = new REST({ version: "10" }).setToken(process.env.BOT1_1_TOKEN);
         const clientId = client.user.id;
 
-        console.log(`${client.emojis.LOADING} Starting command registration for client ${clientId}...`);
+        console.log(`⏳ Starting command registration for client ${clientId}...`);
 
         // Get guild ID from environment
         const GUILD_ID = process.env.TEST_GUILD_ID || process.env.GuildID || "";
         
-        // If we have a guild ID, try guild registration first
+        // Always try global registration
+        try {
+          console.log("🌍 Attempting global command registration...");
+          await rest.put(
+            Routes.applicationCommands(clientId),
+            { body: allCommands }
+          );
+          console.log(`✅ Successfully registered ${allCommands.length} GLOBAL slash commands`);
+        } catch (globalError) {
+          console.error("❌ Global registration failed:", globalError.message);
+        }
+
+        // If we have a guild ID, also try guild registration for instant updates
         if (GUILD_ID) {
           try {
-            console.log(`${client.emojis.LOADING} Attempting guild command registration for guild ${GUILD_ID}...`);
+            console.log(`🏰 Attempting guild command registration for guild ${GUILD_ID}...`);
             await rest.put(
               Routes.applicationGuildCommands(clientId, GUILD_ID),
               { body: allCommands }
             );
             console.log(`🏰 Successfully registered ${allCommands.length} GUILD slash commands for ${GUILD_ID}`);
-            return; // Success - no need to try global
           } catch (guildError) {
             console.warn("⚠️ Guild registration failed:", guildError.message);
             

@@ -7,7 +7,7 @@ const {
 const fs = require('fs');
 const Langs = require("../../../Models/Langs");
 const Server = require("../../../Models/User");
-const translations = JSON.parse(fs.readFileSync('./public/json/translations.json', 'utf8'));
+const translations = JSON.parse(fs.readFileSync('./bot/public/json/translations.json', 'utf8'));
 
 async function getTranslatedMessage(guildId, messageKey) {
   const userLang = await Langs.findOne({ guildId });
