@@ -172,7 +172,7 @@ class AutoModeration {
         const embed = new EmbedBuilder()
             .setColor(0x2B2D31) // Dark elegant color
             .setAuthor({ name: 'نظام الحماية التلقائي', iconURL: message.guild.iconURL() })
-            .setTitle('${client.emojis.WARNING}️ تحذير إداري')
+            .setTitle('⚠️ تحذير إداري')
             .setDescription(`عذراً ${message.author}، تم اتخاذ إجراء بحق رسالتك في **${message.guild.name}** لمخالفتك القوانين.`)
             .addFields(
                 { name: '📌 الأسباب:', value: violations.map(v => `> • ${v.reason}`).join('\n') }
@@ -195,11 +195,11 @@ class AutoModeration {
             .setAuthor({ name: 'سجل الحماية التلقائية', iconURL: message.author.displayAvatarURL() })
             .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
             .addFields(
-                { name: '${client.emojis.USER} المستخدم', value: `> ${message.author.tag} (\`${message.author.id}\`)`, inline: true },
-                { name: '${client.emojis.PIN} القناة', value: `> ${message.channel}`, inline: true },
+                { name: '👤 المستخدم', value: `> ${message.author.tag} (\`${message.author.id}\`)`, inline: true },
+                { name: '📍 القناة', value: `> ${message.channel}`, inline: true },
                 { name: '🚫 المخالفات', value: violations.map(v => `> • ${v.reason}`).join('\n'), inline: false },
                 { name: '🛠️ الإجراءات المتخذة', value: actions.map(a => `\`${a}\``).join(', ') || 'لا يوجد', inline: true },
-                { name: '${client.emojis.EDIT} محتوى الرسالة', value: `\`\`\`${message.content.substring(0, 1000) || 'لا يوجد محتوى'}\`\`\`` }
+                { name: '📝 محتوى الرسالة', value: `\`\`\`${message.content.substring(0, 1000) || 'لا يوجد محتوى'}\`\`\`` }
             )
             .setFooter({ text: `ID: ${message.id}` })
             .setTimestamp();

@@ -20,11 +20,11 @@ module.exports = {
             type: 3, // STRING
             required: true,
             choices: [
-                { name: "${client.emojis.DELETE} حذف فقط", value: "delete" },
-                { name: "${client.emojis.WARNING}️ حذف + تحذير", value: "warn" },
+                { name: "🗑️ حذف فقط", value: "delete" },
+                { name: "⚠️ حذف + تحذير", value: "warn" },
                 { name: "🔇 إسكات (ساعة واحدة)", value: "timeout" },
                 { name: "👢 طرد", value: "kick" },
-                { name: "${client.emojis.HAMMER} حظر نهائي", value: "ban" }
+                { name: "🔨 حظر نهائي", value: "ban" }
             ]
         }
     ],
@@ -51,7 +51,7 @@ module.exports = {
                 .setTitle("⚡ تم تحديث نوع العقوبة")
                 .setDescription(`تم ضبط العقوبة التلقائية لتكون: **${action.toUpperCase()}**`)
                 .addFields(
-                    { name: "${client.emojis.EDIT} وصف الإجراء:", value: `> ${actionDescriptions[action]}` }
+                    { name: "📝 وصف الإجراء:", value: `> ${actionDescriptions[action]}` }
                 )
                 .setFooter({ text: "نظام الحماية التلقائي", iconURL: client.user.displayAvatarURL() })
                 .setTimestamp();
@@ -61,7 +61,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "${client.emojis.ERROR} حدث خطأ أثناء تحديث نوع العقوبة.",
+                content: "❌ حدث خطأ أثناء تحديث نوع العقوبة.",
                 ephemeral: true
             });
         }

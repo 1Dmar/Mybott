@@ -22,10 +22,10 @@ module.exports = {
             choices: [
                 { name: "🔤 Bad Words", value: "badwords" },
                 { name: "🔠 Caps Lock", value: "caps" },
-                { name: "${client.emojis.ANNOUNCEMENT} Spam Detection", value: "spam" },
-                { name: "${client.emojis.LINK} Invite Links", value: "invites" },
-                { name: "${client.emojis.GLOBAL} All Links", value: "links" },
-                { name: "${client.emojis.MEMBERS} Mention Spam", value: "mentions" }
+                { name: "📢 Spam Detection", value: "spam" },
+                { name: "🔗 Invite Links", value: "invites" },
+                { name: "🌐 All Links", value: "links" },
+                { name: "👥 Mention Spam", value: "mentions" }
             ]
         },
         {
@@ -45,7 +45,7 @@ module.exports = {
             
             if (!settings.automod.filters.hasOwnProperty(filterType)) {
                 return interaction.reply({
-                    content: "${client.emojis.ERROR} Invalid filter type.",
+                    content: "❌ Invalid filter type.",
                     ephemeral: true
                 });
             }
@@ -64,7 +64,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(enabled ? 0x00FF00 : 0xFF0000)
-                .setTitle("${client.emojis.SHIELD} Filter Updated")
+                .setTitle("🛡️ Filter Updated")
                 .setDescription(`${filterNames[filterType]} is now **${enabled ? "ENABLED" : "DISABLED"}**`)
                 .setTimestamp();
 
@@ -73,7 +73,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "${client.emojis.ERROR} An error occurred while updating the filter.",
+                content: "❌ An error occurred while updating the filter.",
                 ephemeral: true
             });
         }

@@ -32,10 +32,10 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setColor(enabled ? 0x00FF00 : 0xFF0000)
-                .setTitle("${client.emojis.SHIELD} Auto-Moderation System")
+                .setTitle("🛡️ Auto-Moderation System")
                 .setDescription(`Auto-moderation has been **${enabled ? "ENABLED" : "DISABLED"}**`)
                 .addFields(
-                    { name: "Status", value: enabled ? "${client.emojis.ONLINE} Active" : "${client.emojis.OFFLINE} Inactive", inline: true },
+                    { name: "Status", value: enabled ? "🟢 Active" : "🔴 Inactive", inline: true },
                     { name: "Changed By", value: `<@${interaction.user.id}>`, inline: true }
                 )
                 .setTimestamp();
@@ -45,7 +45,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "${client.emojis.ERROR} An error occurred while updating settings.",
+                content: "❌ An error occurred while updating settings.",
                 ephemeral: true
             });
         }
