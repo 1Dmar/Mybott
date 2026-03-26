@@ -20,9 +20,9 @@ module.exports = {
             type: 3, // STRING
             required: true,
             choices: [
-                { name: "${client.emojis.USER} User", value: "user" },
-                { name: "${client.emojis.TAG} Role", value: "role" },
-                { name: "${client.emojis.TV} Channel", value: "channel" }
+                { name: `${client.emojis.USER} User`, value: "user" },
+                { name: `${client.emojis.TAG} Role`, value: "role" },
+                { name: `${client.emojis.TV} Channel`, value: "channel" }
             ]
         },
         {
@@ -50,7 +50,7 @@ module.exports = {
             let targetId, targetName;
 
             if (type === "channel") {
-                if (!channel) return interaction.reply({ content: "${client.emojis.ERROR} Please specify a channel.", ephemeral: true });
+                if (!channel) return interaction.reply({ content: `${client.emojis.ERROR} Please specify a channel.`, ephemeral: true });
                 targetId = channel.id;
                 targetName = channel.name;
                 
@@ -65,7 +65,7 @@ module.exports = {
                     return interaction.reply(`${client.emojis.SUCCESS} Added channel **${targetName}** to whitelist.`);
                 }
             } else {
-                if (!target) return interaction.reply({ content: "${client.emojis.ERROR} Please specify a target.", ephemeral: true });
+                if (!target) return interaction.reply({ content: `${client.emojis.ERROR} Please specify a target.`, ephemeral: true });
                 targetId = target.id;
                 targetName = target.name || target.user?.tag;
 
@@ -86,7 +86,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "${client.emojis.ERROR} An error occurred while updating whitelist.",
+                content: `${client.emojis.ERROR} An error occurred while updating whitelist.`,
                 ephemeral: true
             });
         }

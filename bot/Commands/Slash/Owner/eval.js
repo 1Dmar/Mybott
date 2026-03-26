@@ -36,7 +36,7 @@ module.exports = {
     // Only allow bot owner
     if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
-        content: "${client.emojis.ERROR} This command is restricted to the bot owner!",
+        content: `${client.emojis.ERROR} This command is restricted to the bot owner!`,
         ephemeral: true
       });
     }

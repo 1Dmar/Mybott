@@ -76,11 +76,18 @@ module.exports = {
         if (!text) return false;
         const lowerText = text.toLowerCase();
         
-        // Check exact matches
+        // Check exact matches and inclusions
         const hasBadWord = badWords.some(word => {
-            const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
-            return regex.test(lowerText) || lowerText.includes(word.toLowerCase());
+            // For Arabic characters, we use a different approach as \b might not work as expected
+            const isArabic = /[\u0600-\u06FF]/.test(word);
+            if (isArabic) {
+                return lowerText.includes(word.toLowerCase());
+            } else {
+                const regex = new RegExp(`\\b${word.toLowerCase()}\\b`, 'i');
+                return regex.test(lowerText);
+            }
         });
+        
         if (hasBadWord) return true;
         
         // Check patterns

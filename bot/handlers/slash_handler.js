@@ -187,11 +187,11 @@ module.exports = async (client) => {
             console.error("╚════════════════════════════════════════════════════════════════╝");
             console.error("");
           } else if (globalError.code === 50035 || globalError.message?.includes('Invalid Form Body')) {
-            console.error("${client.emojis.EDIT} Invalid command format detected");
-            console.error("${client.emojis.INFO} Solution: Check that all command names are lowercase and descriptions are valid");
+            console.error(`${client.emojis.EDIT} Invalid command format detected`);
+            console.error(`${client.emojis.INFO} Solution: Check that all command names are lowercase and descriptions are valid`);
           }
           
-          console.log("${client.emojis.EDIT} Note: Commands are still loaded in memory and will work if previously registered.");
+          console.log(`${client.emojis.EDIT} Note: Commands are still loaded in memory and will work if previously registered.`);
         }
 
       } catch (error) {

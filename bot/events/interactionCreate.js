@@ -181,7 +181,7 @@ if (registerFont) {
     console.log('ℹ️ The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts. ');
   }
 } catch (fontError) {
-  console.warn('${client.emojis.WARNING}️ Could not load custom Minecraft fonts:', fontError.message);
+  console.warn(`${client.emojis.WARNING}️ Could not load custom Minecraft fonts:`, fontError.message);
 }
 
 // Server status image generator

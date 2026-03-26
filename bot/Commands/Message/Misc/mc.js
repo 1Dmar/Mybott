@@ -86,7 +86,7 @@ module.exports = {
             value: `\`\`\`${motd}\`\`\``,
           },
           {
-            name: "${client.emojis.PIN} Full Address",
+            name: `${client.emojis.PIN} Full Address`,
             value: `\`${data.hostname || data.ip || ip}\``,
             inline: true,
           },
@@ -124,7 +124,7 @@ module.exports = {
       console.error("Minecraft server info error:", error);
       await loadingMsg.edit({
         content:
-          "${client.emojis.ERROR} **An error occurred while fetching the server data. Please make sure the address is correct.**",
+          `${client.emojis.ERROR} **An error occurred while fetching the server data. Please make sure the address is correct.**`,
         embeds: [],
         components: [],
       });

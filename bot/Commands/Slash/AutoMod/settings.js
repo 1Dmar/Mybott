@@ -18,16 +18,16 @@ module.exports = {
         try {
             const settings = await GuildSettings.getSettings(interaction.guild.id);
             const { automod } = settings;
-            const emojis = (bool) => bool ? "${client.emojis.SUCCESS}" : "${client.emojis.ERROR}";
+            const emojis = (bool) => bool ? client.emojis.SUCCESS : client.emojis.ERROR;
 
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
                 .setAuthor({ name: `إعدادات الحماية - ${interaction.guild.name}`, iconURL: interaction.guild.iconURL() })
-                .setTitle("${client.emojis.SHIELD} لوحة تحكم الحماية التلقائية")
-                .setDescription(`حالة النظام الحالية: ${automod.enabled ? "${client.emojis.ONLINE} **مفعل**" : "${client.emojis.OFFLINE} **معطل**"}`)
+                .setTitle(`${client.emojis.SHIELD} لوحة تحكم الحماية التلقائية`)
+                .setDescription(`حالة النظام الحالية: ${automod.enabled ? `${client.emojis.ONLINE} **مفعل**` : `${client.emojis.OFFLINE} **معطل**`}`)
                 .addFields(
                     {
-                        name: "${client.emojis.SEARCH} الفلاتر النشطة",
+                        name: `${client.emojis.SEARCH} الفلاتر النشطة`,
                         value: [
                             `> ${emojis(automod.filters.badwords)} الكلمات النابية`,
                             `> ${emojis(automod.filters.caps)} الأحرف الكبيرة`,
@@ -39,7 +39,7 @@ module.exports = {
                         inline: true
                     },
                     {
-                        name: "${client.emojis.GEAR} الحدود والقيود",
+                        name: `${client.emojis.GEAR} الحدود والقيود`,
                         value: [
                             `> 🔠 نسبة الكابس: \`${automod.limits.capsPercentage}%\``,
                             `> ✉️ حد السبام: \`${automod.limits.spamCount}\` رسائل`,
@@ -49,7 +49,7 @@ module.exports = {
                         inline: true
                     },
                     {
-                        name: "${client.emojis.WRENCH} التكوين الحالي",
+                        name: `${client.emojis.WRENCH} التكوين الحالي`,
                         value: [
                             `> 🛠️ الإجراء المتخذ: \`${automod.action.toUpperCase()}\``,
                             `> 📜 قناة السجلات: ${automod.logChannel ? `<#${automod.logChannel}>` : "`غير محددة`"}`
@@ -65,7 +65,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "${client.emojis.ERROR} حدث خطأ أثناء جلب الإعدادات.",
+                content: `${client.emojis.ERROR} حدث خطأ أثناء جلب الإعدادات.`,
                 ephemeral: true
             });
         }
