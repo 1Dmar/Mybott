@@ -48,10 +48,10 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(0x2B2D31)
                 .setAuthor({ name: "إعدادات العقوبات", iconURL: interaction.guild.iconURL() })
-                .setTitle("⚡ تم تحديث نوع العقوبة")
+                .setTitle(`${client.emojis.SPARKLES} تم تحديث نوع العقوبة`)
                 .setDescription(`تم ضبط العقوبة التلقائية لتكون: **${action.toUpperCase()}**`)
                 .addFields(
-                    { name: "📝 وصف الإجراء:", value: `> ${actionDescriptions[action]}` }
+                    { name: `${client.emojis.EDIT} وصف الإجراء:`, value: `> ${actionDescriptions[action]}` }
                 )
                 .setFooter({ text: "نظام الحماية التلقائي", iconURL: client.user.displayAvatarURL() })
                 .setTimestamp();
@@ -61,7 +61,7 @@ module.exports = {
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: "❌ حدث خطأ أثناء تحديث نوع العقوبة.",
+                content: `${client.emojis.ERROR} حدث خطأ أثناء تحديث نوع العقوبة.`,
                 ephemeral: true
             });
         }
