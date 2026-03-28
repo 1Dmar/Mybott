@@ -17,7 +17,7 @@ class AutoModeration {
         if (!member || !settings) return false;
         
         // Admins are always whitelisted
-        if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+        // if (member.permissions.has(PermissionFlagsBits.Administrator)) return true; // Disabled for testing
 
         const { whitelist } = settings;
         

@@ -119,7 +119,7 @@ module.exports = async (client) => {
                 guildError.message?.includes('not authorized')) {
               console.error("");
               console.error("╔════════════════════════════════════════════════════════════════╗");
-              console.error("║  ${client.emojis.LOCK} MISSING ACCESS ERROR - ACTION REQUIRED!                    ║");
+              console.error(`║  ${client.emojis.LOCK} MISSING ACCESS ERROR - ACTION REQUIRED!                    ║`);
               console.error("╠════════════════════════════════════════════════════════════════╣");
               console.error("║  The bot needs to be re-invited with the correct permissions!  ║");
               console.error("║                                                                ║");
@@ -170,7 +170,7 @@ module.exports = async (client) => {
               globalError.message?.includes('not authorized')) {
             console.error("");
             console.error("╔════════════════════════════════════════════════════════════════╗");
-            console.error("║  ${client.emojis.LOCK} BOT TOKEN ERROR - ACTION REQUIRED!                         ║");
+            console.error(`║  ${client.emojis.LOCK} BOT TOKEN ERROR - ACTION REQUIRED!                         ║`);
             console.error("╠════════════════════════════════════════════════════════════════╣");
             console.error("║  Your bot token may be invalid or expired!                     ║");
             console.error("║                                                                ║");
