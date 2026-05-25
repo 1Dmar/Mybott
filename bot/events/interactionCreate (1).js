@@ -1,0 +1,868 @@
+const {
+    InteractionType,
+    ModalBuilder,
+    TextInputBuilder,
+    AttachmentBuilder,
+    TextInputStyle,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    EmbedBuilder,
+    StringSelectMenuBuilder
+} = require('discord.js');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const Jimp = require('jimp');
+const Serverdb = require('../Models/Server');
+const Langs = require("../Models/Langs");
+const Server = require('../Models/User');
+const StatusBar = require('../Models/StatusBar');
+const BlackList = require("../Models/BlackList");
+// Helper to format emoji for Discord
+const formatEmoji = (emoji) => {
+    if (!emoji) return "";
+    if (typeof emoji === 'string') return emoji;
+    if (emoji.id) {
+        return `<${emoji.animated ? "a" : ""}:emoji:${emoji.id}>`;
+    }
+    return "";
+};
+
+const EMOJIS_CONFIG = require("../settings/emojis");
+
+// Custom emojis helper
+const getEmoji = (name) => {
+    const emoji = EMOJIS_CONFIG[name];
+    return formatEmoji(emoji);
+};
+
+// Custom emojis mapped from central config
+const EMOJIS = {
+    BEDROCK: getEmoji('BEDROCK'),
+    OFFLINE: getEmoji('OFFLINE'),
+    ONLINE: getEmoji('ONLINE'),
+    PLAYER: getEmoji('PLAYER'),
+    INFORMATION: getEmoji('INFORMATION'),
+    ACHIEVEMENT: getEmoji('ACHIEVEMENT'),
+    CHECK: getEmoji('CHECK'),
+    JAVA: getEmoji('JAVA'),
+    WARNING: getEmoji('WARNING'),
+    BLOCK: getEmoji('BLOCK'),
+    SUCCESS: getEmoji('SUCCESS'),
+    ERROR: getEmoji('ERROR'),
+    SHIELD: getEmoji('SHIELD'),
+    GEAR: getEmoji('GEAR'),
+    SEARCH: getEmoji('SEARCH'),
+    CLIPBOARD: getEmoji('CLIPBOARD'),
+    EDIT: getEmoji('EDIT'),
+    LINK: getEmoji('LINK'),
+    SPARKLES: getEmoji('SPARKLES'),
+    STAR: getEmoji('STAR'),
+    PIN: getEmoji('PIN'),
+    FIRE: getEmoji('FIRE'),
+    ROCKET: getEmoji('ROCKET'),
+    UP: getEmoji('UP'),
+    DOWN: getEmoji('DOWN')
+};
+
+// Translation file path
+const tsPath = path.join(__dirname, "..", "public", "json", "translations.json");
+let translations = {};
+
+try {
+  if (fs.existsSync(tsPath)) {
+    translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
+  } else {
+    console.log('⚠️ Translations file not found, using empty object');
+    translations = { en: {} };
+  }
+} catch (error) {
+  console.error('Error loading translations:', error.message);
+  translations = { en: {} };
+}
+
+// Fast-loading wallpapers (optimized for speed)
+const WALLPAPERS = [
+    "https://wallpapercave.com/wp/wp10819450.jpg",
+    "https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/Minecraft-Shader-Pine-Forest.jpg",
+    "https://resourcepack.net/fl/images/2022/11/RedHat-Shaders-for-minecraft-5.jpg",
+    "https://i.ibb.co/KpWg3FHw/687d56199156581-664cf6f062769.png",
+    "https://i.ibb.co/qLWGYkdL/c19988205236151-Y3-Jvc-Cwx-Mz-Ez-LDEw-Mjcs-Nj-I0-LDA.png"
+];
+
+// Helper function for safe HTTP requests
+async function safeAxiosGet(url, options = {}) {
+    try {
+        const response = await axios.get(url, {
+            timeout: 5000,
+            validateStatus: status => status < 500,
+            ...options
+        });
+        return response;
+    } catch (error) {
+        console.log(`Request failed for ${url}:`, error.message);
+        return null;
+    }
+}
+
+// Function to get translated message with proper fallbacks
+async function getTranslatedMessage(guildId, messageKey) {
+    try {
+        if (!guildId) return translations['en']?.[messageKey] || messageKey;
+        
+        const userLang = await Langs.findOne({ guildId });
+        const language = userLang ? userLang.language : 'en';
+        
+        return translations[language]?.[messageKey] || 
+               translations['en']?.[messageKey] || 
+               messageKey;
+    } catch (error) {
+        return translations['en']?.[messageKey] || messageKey;
+    }
+}
+
+// Clean IP from prefixes
+function cleanIP(ip) {
+    if (!ip) return ip;
+    // Removing these prefixes might cause issues with some servers that require them
+    // Returning the original IP is safer for status checks
+    return ip;
+}
+
+// Server status checking with multiple fallbacks
+async function checkServerStatus(ip, port, type) {
+    if (!ip) return { success: false, error: new Error('No IP provided') };
+    
+    const cleanIp = cleanIP(ip);
+    const endpoints = [];
+    
+    if (type === 'java') {
+        endpoints.push(`https://api.mcsrvstat.us/3/${cleanIp}:${port}`);
+        endpoints.push(`https://api.mcsrvstat.us/2/${cleanIp}:${port}`);
+    } else if (type === 'bedrock') {
+        endpoints.push(`https://api.mcsrvstat.us/bedrock/3/${cleanIp}:${port}`);
+    }
+
+    let lastError;
+    for (const endpoint of endpoints) {
+        try {
+            const response = await safeAxiosGet(endpoint, { timeout: 10000 });
+            if (response && response.data) {
+                if (response.data.online || response.data.hostname) {
+                    return {
+                        success: true,
+                        data: response.data,
+                        source: endpoint
+                    };
+                }
+            }
+        } catch (error) {
+            lastError = error;
+            continue;
+        }
+    }
+    
+    return {
+        success: false,
+        error: lastError || new Error('All endpoints failed'),
+        data: { online: false, hostname: cleanIp, players: { online: 0, max: 0 } }
+    };
+}
+
+// Canvas and font setup
+let createCanvas, loadImage, registerFont;
+try {
+  const canvas = require('canvas');
+  createCanvas = canvas.createCanvas;
+  loadImage = canvas.loadImage;
+  registerFont = canvas.registerFont;
+} catch (e) {
+  console.log('⚠️ Canvas module not found, image generation features will be disabled.');
+}
+
+// Register fonts with proper error handling
+const fontsDir = path.join(__dirname, '../src/fonts');
+let fontsLoaded = false;
+
+if (registerFont) {
+  try {
+    // Check if fonts directory exists
+    if (!fs.existsSync(fontsDir)) {
+      console.log('⚠️ Fonts directory not found, creating it...');
+      fs.mkdirSync(fontsDir, { recursive: true });
+    }
+    
+    // Try to register fonts if they exist
+    const font1 = path.join(fontsDir, 'd.ttf');
+    const font2 = path.join(fontsDir, 'f.ttf');
+    
+    if (fs.existsSync(font1)) {
+      registerFont(font1, { family: 'Minecraft' });
+      fontsLoaded = true;
+    }
+    if (fs.existsSync(font2)) {
+      registerFont(font2, { family: 'MinecraftBold' });
+      fontsLoaded = true;
+    }
+    
+    if (!fontsLoaded) {
+      console.log('⚠️ No custom fonts found in', fontsDir);
+      console.log('ℹ️ The bot will use default system fonts. Add d.ttf and f.ttf to bot/src/fonts/ for custom fonts. ');
+    }
+  } catch (fontError) {
+    console.warn(`⚠️ Could not load custom Minecraft fonts: ${fontError.message}`);
+  }
+}
+
+// Server status image generator - Redesigned with Aesthetics & Creativity
+async function generateServerStatusImage(serverData, wallpaperUrl, interaction, isPreview = false) {
+    try {
+        const canvasWidth = 800;
+        const canvasHeight = 250;
+        const canvas = createCanvas(canvasWidth, canvasHeight);
+        const ctx = canvas.getContext('2d');
+
+        // 1. Draw Background with Overlay
+        try {
+            const background = await loadImage(wallpaperUrl);
+            // Draw background with slight blur effect simulation (cover)
+            ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
+            
+            // Dark Overlay for readability
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Subtle Gradient Overlay
+            const overlayGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            overlayGrad.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
+            overlayGrad.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+            ctx.fillStyle = overlayGrad;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        } catch (error) {
+            const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+            gradient.addColorStop(0, '#1a1a1d');
+            gradient.addColorStop(1, '#000000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        // 2. Fetch Server Data
+        let serverStatus;
+        if (isPreview) {
+            serverStatus = {
+                success: true,
+                data: {
+                    online: true,
+                    hostname: serverData.javaIP || serverData.bedrockIP || 'play.example.com',
+                    players: { online: 36481, max: 10000 },
+                    version: '1.20.1',
+					iconn: "https://api.mcstatus.io/v2/icon/play.cubecraft.net",
+                    motd: { clean: ["§bCreative §fMinecraft Server", "§eJoin now for a unique experience!"] }
+                }
+            };
+        } else if (serverData.serverType === 'java' && serverData.javaIP) {
+            serverStatus = await checkServerStatus(serverData.javaIP, serverData.javaPort || 25565, 'java');
+        } else if (serverData.serverType === 'bedrock' && serverData.bedrockIP) {
+            serverStatus = await checkServerStatus(serverData.bedrockIP, serverData.bedrockPort || 19132, 'bedrock');
+        }
+
+        const isOnline = isPreview ? true : (serverStatus?.success && serverStatus?.data?.online);
+        const serverName = (serverData.serverName || 'Minecraft Server').toUpperCase();
+        const players = isPreview ? { online: 36478, max: 10000 } : (serverStatus?.data?.players || { online: 0, max: 0 });
+        const version = isPreview ? '1.20.1' : (serverStatus?.data?.version || 'N/A');
+        const displayIP = serverData.javaIP || serverData.bedrockIP || 'N/A';
+        const displayPort = serverData.serverType === 'java' ? (serverData.javaPort || 25565) : (serverData.bedrockPort || 19132);
+
+        // 3. Draw Modern Glassmorphism Card Effect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.beginPath();
+        ctx.roundRect(20, 20, canvasWidth - 40, canvasHeight - 40, 25);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 4. Server Icon with Glow
+        const iconX = 50, iconY = 50, iconSize = 120;
+        try {
+            const serverIconUrl = isPreview 
+                ? 'https://api.mcstatus.io/v2/icon/minecraft.net'
+                : `https://api.mcstatus.io/v2/icon/${cleanIP(serverData.javaIP || serverData.bedrockIP)}:${serverData.javaPort || serverData.bedrockPort || 25565}`;
+            
+            const serverIcon = await loadImage(serverIconUrl);
+            
+            // Icon Glow
+            ctx.save();
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = isOnline ? 'rgba(0, 255, 127, 0.6)' : 'rgba(255, 69, 58, 0.6)';
+            
+            // Rounded Rectangle for Icon
+            const radius = 30;
+            ctx.beginPath();
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, radius);
+            ctx.clip();
+            ctx.drawImage(serverIcon, iconX, iconY, iconSize, iconSize);
+            ctx.restore();
+        } catch (error) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            ctx.fill();
+        }
+
+        // 5. Server Name & Status
+        ctx.font = fontsLoaded ? 'bold 36px MinecraftBold' : 'bold 36px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.fillText(serverName, iconX + iconSize + 40, iconY + 35);
+        ctx.shadowBlur = 0;
+
+        // Status Indicator Dot
+        const dotX = iconX + iconSize + 45, dotY = iconY + 55, dotR = 8;
+        ctx.fillStyle = isOnline ? '#00FF7F' : '#FF453A';
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+        ctx.fill();
+        // Glow for dot
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = isOnline ? '#00FF7F' : '#FF453A';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        const statusText = isOnline ? "ONLINE" : "OFFLINE";
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = isOnline ? '#00FF7F' : '#FF453A';
+        ctx.fillText(statusText, dotX + 20, dotY + 6);
+
+        // 6. Player Count & Version (Modern Layout)
+        const infoX = iconX + iconSize + 40;
+        const infoY = iconY + 85; // Adjusted Y for better spacing
+        
+        ctx.font = fontsLoaded ? '22px Minecraft' : '22px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        
+        const playerLabel = 'Players';//await getTranslatedMessage(interaction.guild?.id, "PLAYERS") || "Players";
+        const onlinePlayers = parseInt(players.online) || 0;
+        const maxPlayers = parseInt(players.max) || 0;
+        ctx.fillText(`${playerLabel}: ${onlinePlayers} / ${maxPlayers}`, infoX, infoY);
+        
+        ctx.font = fontsLoaded ? '18px Minecraft' : '18px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText(`Version: ${version}`, infoX, infoY + 28);
+        
+        // IP Display in Image - Moved and formatted to avoid overlap
+        ctx.font = fontsLoaded ? '16px Minecraft' : '16px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillText(`IP: ${displayIP}${displayPort != 25565 && displayPort != 19132 ? ':' + displayPort : ''}`, infoX, infoY + 52);
+
+        // 7. MOTD Section (Center-Right) - Improved spacing to prevent overlap
+      /*  if (isOnline && serverStatus?.data) {
+            const motdData = serverStatus.data.motd || serverStatus.data.description;
+            let motdLines = [];
+            if (typeof motdData === 'string') motdLines = [motdData];
+            else if (motdData?.clean) motdLines = Array.isArray(motdData.clean) ? motdData.clean : [motdData.clean];
+            
+            const cleanLines = motdLines.map(l => l.replace(/§./g, '').trim()).filter(l => l.length > 0).slice(0, 2);
+            
+            ctx.font = fontsLoaded ? 'italic 15px Minecraft' : 'italic 15px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < cleanLines.length; i++) {
+                // Draw MOTD further down to avoid IP overlap
+                ctx.fillText(cleanLines[i], infoX, infoY + 78 + (i * 20));
+            }
+        }
+*/
+        // 8. Progress Bar for Players
+        if (isOnline && players.max > 0) {
+            const barX = infoX, barY = infoY + 65, barW = 350, barH = 8;
+            // Bar Background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 4);
+            ctx.fill();
+            
+            // Bar Progress
+            const progress = Math.min(onlinePlayers / maxPlayers, 1);
+            const gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            gradient.addColorStop(0, '#00FF7F');
+            gradient.addColorStop(1, '#00CC66');
+            
+            ctx.fillStyle = isOnline ? gradient : '#FF453A';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW * progress, barH, 4);
+            ctx.fill();
+        }
+
+        // 9. Footer & Watermark
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.textAlign = 'right';
+        ctx.fillText("PROMCBOT API • 2026", canvasWidth - 40, canvasHeight - 35);
+        
+        if (isPreview) {
+            ctx.font = 'bold 40px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.textAlign = 'center';
+            ctx.fillText("PREVIEW MODE", canvasWidth / 2, canvasHeight / 2 + 15);
+        }
+
+        return canvas.toBuffer();
+    } catch (error) {
+        console.error('Error generating server status image:', error);
+        const canvas = createCanvas(800, 250);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#1a1a1d';
+        ctx.fillRect(0, 0, 800, 250);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#FF453A';
+        ctx.textAlign = 'center';
+        ctx.fillText("Failed to generate status image", 400, 125);
+        return canvas.toBuffer();
+    }
+}
+
+// Wallpaper selection card
+async function generateWallpaperSelectionCard(wallpapers, interaction) {
+    try {
+        const cardWidth = 600;
+        const cardHeight = 400;
+        
+        const card = new Jimp(cardWidth, cardHeight, 0x2F3136FF);
+        
+        // Title background
+        const titleBackground = new Jimp(cardWidth, 60, 0x7289DAFF);
+        card.blit(titleBackground, 0, 0);
+        
+        const title = await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || "Select a Wallpaper";
+        const titleWidth = Jimp.measureText(Jimp.FONT_SANS_32_WHITE, title);
+        card.print(Jimp.FONT_SANS_32_WHITE, (cardWidth - titleWidth) / 2, 15, title);
+        
+        // Thumbnails
+        const thumbnailSize = 100;
+        const thumbnailsPerRow = 3;
+        const spacing = 20;
+        const startY = 80;
+        
+        for (let i = 0; i < Math.min(wallpapers.length, 9); i++) {
+            const row = Math.floor(i / thumbnailsPerRow);
+            const col = i % thumbnailsPerRow;
+            const x = 50 + col * (thumbnailSize + spacing);
+            const y = startY + row * (thumbnailSize + spacing);
+            
+            try {
+                const response = await safeAxiosGet(wallpapers[i], { responseType: 'arraybuffer' });
+                
+                if (response?.status === 200 && response.data) {
+                    const thumbnail = await Jimp.read(Buffer.from(response.data));
+                    thumbnail.resize(thumbnailSize, thumbnailSize);
+                    card.blit(thumbnail, x, y);
+                    card.print(Jimp.FONT_SANS_16_BLACK, x + thumbnailSize - 20, y + thumbnailSize - 20, `${i+1}`);
+                }
+            } catch (error) {
+                // Placeholder
+                const placeholder = new Jimp(thumbnailSize, thumbnailSize, 0x7289DAFF);
+                card.blit(placeholder, x, y);
+                card.print(Jimp.FONT_SANS_16_WHITE, x + thumbnailSize/2 - 5, y + thumbnailSize/2 - 8, `${i+1}`);
+            }
+        }
+        
+        return await card.getBufferAsync(Jimp.MIME_PNG);
+    } catch (error) {
+        console.error('Error generating wallpaper card:', error);
+        return null;
+    }
+}
+
+const interactionCreateEvent = {
+    name: 'interactionCreate',
+    async execute(interaction, client) {
+        try {
+            // Handle slash commands
+            if (interaction.isChatInputCommand()) {
+                if (!client.scommands || client.scommands.size === 0) {
+                    console.error('client.scommands is not defined or empty');
+                    return await interaction.reply({ 
+                        content: `⚠️ Command system not initialized or no commands loaded. Please wait a moment and try again.`, 
+                        ephemeral: true 
+                    });
+                }
+                const command = client.scommands.get(interaction.commandName);
+                
+                if (!command) {
+                    console.error(`No command matching ${interaction.commandName} was found.`);
+                    return await interaction.reply({ 
+                        content: `⚠️ Command \`${interaction.commandName}\` is not available or not yet registered.`, 
+                        ephemeral: true 
+                    });
+                }
+
+                try {
+                    if (command.deferReply) {
+                        await interaction.deferReply({ ephemeral: command.ephemeral || false });
+                    }
+                    
+                    console.log(`Executing command: ${interaction.commandName}`);
+                    await command.run(client, interaction);
+                } catch (error) {
+                    console.error(`Error executing ${interaction.commandName}:`, error);
+                    
+                    const errorEmbed = new EmbedBuilder()
+                        .setColor(0xFF0000)
+                        .setTitle("Command Error")
+                        .setDescription("There was an error while executing this command!")
+                        .setTimestamp();
+                    
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+                    } else {
+                        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+                    }
+                }
+                return;
+            }
+            
+            // Handle select menus
+            if (interaction.isStringSelectMenu()) {
+                if (interaction.customId === 'serverType') {
+                    const serverType = interaction.values[0];
+                    
+                    client.tempData = client.tempData || {};
+                    client.tempData[interaction.user.id] = {
+                        serverType: serverType,
+                        step: 'serverTypeSelected'
+                    };
+                    
+                    const modal = new ModalBuilder()
+                        .setCustomId('serverModal')
+                        .setTitle("Server Information");
+
+                    if (serverType === 'java') {
+                        modal.addComponents(
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('serverName')
+                                    .setLabel("Server Name")
+                                    .setStyle(TextInputStyle.Short)
+                            ),
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('javaIP')
+                                    .setLabel("Java Server IP")
+                                    .setStyle(TextInputStyle.Short)
+                            ),
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('javaPort')
+                                    .setLabel("Java Server Port")
+                                    .setStyle(TextInputStyle.Short)
+                                    .setPlaceholder('25565')
+                                    .setRequired(false)
+                            )
+                        );
+                    } else if (serverType === 'bedrock') {
+                        modal.addComponents(
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('serverName')
+                                    .setLabel("Server Name")
+                                    .setStyle(TextInputStyle.Short)
+                            ),
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('bedrockIP')
+                                    .setLabel("Bedrock Server IP")
+                                    .setStyle(TextInputStyle.Short)
+                            ),
+                            new ActionRowBuilder().addComponents(
+                                new TextInputBuilder()
+                                    .setCustomId('bedrockPort')
+                                    .setLabel("Bedrock Server Port")
+                                    .setStyle(TextInputStyle.Short)
+                                    .setPlaceholder('19132')
+                                    .setRequired(false)
+                            )
+                        );
+                    }
+
+                    await interaction.showModal(modal);
+                } else if (interaction.customId === 'wallpaperSelect') {
+                    await interaction.deferReply({ ephemeral: true });
+                    
+                    const selectedIndex = parseInt(interaction.values[0].replace('wallpaper_', ''));
+                    const selectedWallpaper = WALLPAPERS[selectedIndex];
+                    
+                    if (!selectedWallpaper) {
+                        return interaction.editReply({
+                            content: `${EMOJIS.WARNING} Invalid wallpaper selection.`,
+                            ephemeral: true
+                        });
+                    }
+                    
+                    client.tempData[interaction.user.id].wallpaper = selectedWallpaper;
+                    
+                    const previewBuffer = await generateServerStatusImage(
+                        client.tempData[interaction.user.id].serverData, 
+                        selectedWallpaper, 
+                        interaction,
+                        true
+                    );
+                    
+                    const attachment = new AttachmentBuilder(previewBuffer, { name: `wallpaper_preview_${selectedIndex}.png` });
+                    
+                    const confirmButton = new ButtonBuilder()
+                        .setCustomId('confirmWallpaper')
+                        .setLabel("Use This Wallpaper")
+                        .setStyle(ButtonStyle.Primary);
+                        
+                    const chooseAnotherButton = new ButtonBuilder()
+                        .setCustomId('chooseAnotherWallpaper')
+                        .setLabel("Choose Another")
+                        .setStyle(ButtonStyle.Secondary);
+                        
+                    const buttonRow = new ActionRowBuilder().addComponents(confirmButton, chooseAnotherButton);
+
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} Preview of your selected wallpaper:`,
+                        files: [attachment],
+                        components: [buttonRow],
+                        ephemeral: true
+                    });
+                }
+            } else if (interaction.isModalSubmit() && interaction.customId === 'serverModal') {
+                await interaction.deferReply({ ephemeral: true });
+                
+                const serverType = client.tempData[interaction.user.id]?.serverType;
+                const serverId = interaction.guild?.id;
+                const serverName = interaction.fields.getTextInputValue('serverName') || 'Unknown';
+                
+                let javaIP = null, javaPort = 25565;
+                let bedrockIP = null, bedrockPort = 19132;
+                
+                try {
+                    if (serverType === 'java' || serverType === 'custom') {
+                        javaIP = interaction.fields.getTextInputValue('javaIP') || null;
+                        const javaPortValue = interaction.fields.getTextInputValue('javaPort');
+                        if (javaPortValue) javaPort = parseInt(javaPortValue) || 25565;
+                    }
+                    
+                    if (serverType === 'bedrock' || serverType === 'custom') {
+                        bedrockIP = interaction.fields.getTextInputValue('bedrockIP') || null;
+                        const bedrockPortValue = interaction.fields.getTextInputValue('bedrockPort');
+                        if (bedrockPortValue) bedrockPort = parseInt(bedrockPortValue) || 19132;
+                    }
+                } catch (error) {
+                    console.log('Field not found, using defaults');
+                }
+                
+                let finalServerType = serverType;
+                if (serverType === 'custom') {
+                    if (javaIP && !bedrockIP) finalServerType = 'java';
+                    if (!javaIP && bedrockIP) finalServerType = 'bedrock';
+                }
+                
+                const serverData = {
+                    serverId,
+                    serverName,
+                    javaIP,
+                    javaPort,
+                    bedrockIP,
+                    bedrockPort,
+                    serverType: finalServerType
+                };
+                
+                client.tempData[interaction.user.id] = {
+                    ...client.tempData[interaction.user.id],
+                    serverData: serverData,
+                    step: 'serverDataEntered'
+                };
+                
+                const selectionCard = await generateWallpaperSelectionCard(WALLPAPERS, interaction);
+                
+                const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                    label: `Wallpaper ${index + 1}`,
+                    description: `Select wallpaper #${index + 1}`,
+                    value: `wallpaper_${index}`
+                }));
+                
+                const wallpaperSelect = new ActionRowBuilder()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId('wallpaperSelect')
+                            .setPlaceholder('Choose a wallpaper...')
+                            .addOptions(wallpaperOptions.slice(0, 25))
+                    );
+                
+                if (selectionCard) {
+                    const cardAttachment = new AttachmentBuilder(selectionCard, { name: 'wallpaper_selection.png' });
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} Please select a wallpaper:`,
+                        files: [cardAttachment],
+                        components: [wallpaperSelect],
+                        ephemeral: true
+                    });
+                } else {
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} Please select a wallpaper:`,
+                        components: [wallpaperSelect],
+                        ephemeral: true
+                    });
+                }
+            } else if (interaction.isButton()) {
+                if (interaction.customId === 'confirmWallpaper') {
+                    await interaction.deferReply({ ephemeral: true });
+                    
+                    const serverData = client.tempData[interaction.user.id]?.serverData;
+                    const wallpaper = client.tempData[interaction.user.id]?.wallpaper;
+                    
+                    if (!serverData || !wallpaper) {
+                        return interaction.editReply({
+                            content: `${EMOJIS.WARNING} Missing server data. Please start over.`,
+                            ephemeral: true
+                        });
+                    }
+                    
+                    const imageBuffer = await generateServerStatusImage(serverData, wallpaper, interaction, false);
+                    const attachment = new AttachmentBuilder(imageBuffer, { 
+                        name: `${serverData.serverName.replace(/[^a-zA-Z0-9]/g, '_')}_status.png` 
+                    });
+                    
+                    const confirmButton = new ButtonBuilder()
+                        .setCustomId('confirmServer')
+                        .setLabel("Confirm")
+                        .setStyle(ButtonStyle.Primary);
+                        
+                    const cancelButton = new ButtonBuilder()
+                        .setCustomId('cancelServer')
+                        .setLabel("Cancel")
+                        .setStyle(ButtonStyle.Danger);
+                        
+                    const buttonRow = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+	
+                    // Fix: Re-calculate isOnline or use a default if it's not in scope
+                    // The best way is to fetch it from serverData or just rely on the image generation result
+                    // Since we want to show it in the content, we can do a quick check
+                    const serverIP = serverData.javaIP || serverData.bedrockIP;
+                    const serverPort = serverData.serverType === 'java' ? (serverData.javaPort || 25565) : (serverData.bedrockPort || 19132);
+                    const statusCheck = await checkServerStatus(serverIP, serverPort, serverData.serverType);
+                    const isOnlineActual = statusCheck.success && statusCheck.data?.online;
+
+                    const statusEmoji = isOnlineActual ? EMOJIS.ONLINE : EMOJIS.OFFLINE;
+                    const statusText = isOnlineActual ? "Online" : "Offline";
+
+                    await interaction.editReply({
+                        content: `${EMOJIS.INFORMATION} Server status image ready!\n${statusEmoji} **Status:** ${statusText}\n${EMOJIS.LINK} **IP:** \`${serverIP}\``,
+                        files: [attachment],
+                        components: [buttonRow],
+                        ephemeral: true
+                    });
+                } else if (interaction.customId === 'chooseAnotherWallpaper') {
+                    await interaction.deferReply({ ephemeral: true });
+                    
+                    const selectionCard = await generateWallpaperSelectionCard(WALLPAPERS, interaction);
+                    
+                    const wallpaperOptions = WALLPAPERS.map((url, index) => ({
+                        label: `Wallpaper ${index + 1}`,
+                        description: `Select wallpaper #${index + 1}`,
+                        value: `wallpaper_${index}`
+                    }));
+                    
+                    const wallpaperSelect = new ActionRowBuilder()
+                        .addComponents(
+                            new StringSelectMenuBuilder()
+                                .setCustomId('wallpaperSelect')
+                                .setPlaceholder('Choose a wallpaper...')
+                                .addOptions(wallpaperOptions.slice(0, 25))
+                        );
+                    
+                    if (selectionCard) {
+                        const cardAttachment = new AttachmentBuilder(selectionCard, { name: 'wallpaper_selection.png' });
+                        await interaction.editReply({
+                            content: `${EMOJIS.INFORMATION} Please select a wallpaper:`,
+                            files: [cardAttachment],
+                            components: [wallpaperSelect],
+                            ephemeral: true
+                        });
+                    } else {
+                        await interaction.editReply({
+                            content: `${EMOJIS.INFORMATION} Please select a wallpaper:`,
+                            components: [wallpaperSelect],
+                            ephemeral: true
+                        });
+                    }
+                } else if (interaction.customId === 'confirmServer') {
+                    const serverData = client.tempData[interaction.user.id]?.serverData;
+                    const wallpaper = client.tempData[interaction.user.id]?.wallpaper;
+                    
+                    if (!serverData) {
+                        return interaction.reply({
+                            content: `${EMOJIS.WARNING} No server data found. Please start over.`,
+                            ephemeral: true
+                        });
+                    }
+                    
+                    try {
+                        const existingServer = await Serverdb.findOne({ serverId: serverData.serverId });
+                        
+                        const finalData = {
+                            ...serverData,
+                            wallpaper: wallpaper || WALLPAPERS[0]
+                        };
+
+                        if (existingServer) {
+                            await Serverdb.updateOne({ serverId: serverData.serverId }, finalData);
+                        } else {
+                            await Serverdb.create(finalData);
+                        }
+                        
+                        delete client.tempData[interaction.user.id];
+                        
+                        await interaction.update({
+                            components: [],
+                            content: `${EMOJIS.CHECK} Server information saved successfully!`,
+                            files: []
+                        });
+                    } catch (error) {
+                        console.error('Error saving server:', error);
+                        await interaction.reply({
+                            content: `${EMOJIS.WARNING} Error saving server information.`,
+                            ephemeral: true
+                        });
+                    }
+                } else if (interaction.customId === 'cancelServer') {
+                    delete client.tempData[interaction.user.id];
+                    await interaction.update({
+                        components: [],
+                        content: `${EMOJIS.WARNING} Setup cancelled.`
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error handling interaction:', error);
+            
+            const errorMessage = "An error occurred while processing your request.";
+            
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: `${EMOJIS.WARNING} ${errorMessage}`,
+                    ephemeral: true
+                });
+            } else {
+                await interaction.reply({
+                    content: `${EMOJIS.WARNING} ${errorMessage}`,
+                    ephemeral: true
+                });
+            }
+        }
+    }
+};
+
+module.exports = {
+    ...interactionCreateEvent,
+    generateServerStatusImage,
+    checkServerStatus,
+    cleanIP,
+    WALLPAPERS
+};
