@@ -6,18 +6,30 @@ if (process.env.NODE_ENV !== 'production') {
 
 const express = require('express');
 const mainApp = express();
+const path = require('path');
 
 // Trust proxy for Railway
 mainApp.set('trust proxy', 1);
+
+// Middleware for parsing
+mainApp.use(express.json());
+mainApp.use(express.urlencoded({ extended: true }));
+
+// Serve static files from dash/dashboard if they exist
+mainApp.use(express.static(path.join(__dirname, 'dash', 'dashboard')));
+mainApp.use(express.static(path.join(__dirname, 'dash', 'public')));
 
 // جسر التوافق للمشروع الأول (Dashboard)
 let bot1 = null;
 try {
   bot1 = require('./dash/index');
-  if (typeof bot1 === 'function') {
-    mainApp.use('/', bot1);
-  } else if (bot1 && bot1.app && typeof bot1.app === 'function') {
+  // Use the router exported from dash/index
+  if (bot1 && bot1.app) {
     mainApp.use('/', bot1.app);
+    console.log('✅ Dashboard router mounted successfully');
+  } else if (typeof bot1 === 'function') {
+    mainApp.use('/', bot1);
+    console.log('✅ Dashboard function mounted successfully');
   }
 } catch (err) {
   console.log('⚠️ Dashboard module not loaded:', err.message);

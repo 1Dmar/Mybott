@@ -42,7 +42,7 @@ const Jimp = require('jimp');
 const getColors = require('get-image-colors');
 const WebSocket = require('ws');
 const secretKey = "12344";
-const server = http.createServer(app);
+// const server = http.createServer(app); // Disabled to let server.js handle it
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const Command = require('../bot/Models/Command');
@@ -160,9 +160,9 @@ app.use(passport.session());
 passport.use(
     new DiscordStrategy(
         {
-            clientID: "1220005260857311294",
-            clientSecret: "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G",
-            callbackURL: "https://promcbot.qzz.io/auth/discord/callback",
+            clientID: process.env.DISCORD_CLIENT_ID || "1220005260857311294",
+            clientSecret: process.env.DISCORD_CLIENT_SECRET || "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G",
+            callbackURL: process.env.CALLBACK_URL || "https://promcbot.qzz.io/auth/discord/callback", // تأكد من مطابقة هذا للنطاق في Railway
             scope: ["identify", "guilds", "email"],
         },
         async function (accessToken, refreshToken, profile, done) {
