@@ -21,8 +21,9 @@ async function initDB() {
     const secondaryURI = process.env.MONGO_URL_SECONDARY || mainURI;
 
     try {
-        // Create Main Connection
-        connections.main = await mongoose.createConnection(mainURI, options).asPromise();
+        // Connect default mongoose instance so models created with mongoose.model work correctly
+        await mongoose.connect(mainURI, options);
+        connections.main = mongoose.connection;
         console.log("✅ Main MongoDB Connected (Primary Storage)");
 
         // Create Secondary Connection (if different)
