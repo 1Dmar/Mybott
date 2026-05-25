@@ -84,11 +84,11 @@ try {
 
 // Fast-loading wallpapers (optimized for speed)
 const WALLPAPERS = [
-    "https://wallpapercave.com/wp/wp10819450.jpg",
+    "https://i.ibb.co/TBVZycXV/2.png",
     "https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/Minecraft-Shader-Pine-Forest.jpg",
     "https://resourcepack.net/fl/images/2022/11/RedHat-Shaders-for-minecraft-5.jpg",
     "https://i.ibb.co/KpWg3FHw/687d56199156581-664cf6f062769.png",
-    "https://i.ibb.co/qLWGYkdL/c19988205236151-Y3-Jvc-Cwx-Mz-Ez-LDEw-Mjcs-Nj-I0-LDA.png"
+    "https://i.ibb.co/qFrSvppV/1.png"
 ];
 
 // Helper function for safe HTTP requests
