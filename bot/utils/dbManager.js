@@ -7,7 +7,7 @@ const { startMigration, optimizeServerData } = require("./migrationManager");
  */
 
 const connections = {
-    main: null,
+    main: mongoose.connection,
     secondary: null
 };
 
@@ -22,8 +22,8 @@ async function initDB() {
 
     try {
         // Connect default mongoose instance so models created with mongoose.model work correctly
-        connections.main = mongoose.connection;
         await mongoose.connect(mainURI, options);
+        connections.main = mongoose.connection;
         console.log("✅ Main MongoDB Connected (Primary Storage)");
 
         // Create Secondary Connection (if different)
