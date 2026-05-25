@@ -88,9 +88,28 @@ module.exports = async (client) => {
         // Get guild ID from environment
         const GUILD_ID = process.env.TEST_GUILD_ID || process.env.GuildID || "";
         
-        // Always try global registration
+
+
+        // Optimized Registration Strategy:
+        // 1. Guild Registration (Instant) - Always try this for all guilds the bot is in
+        const guilds = await client.guilds.fetch();
+        console.log(`🏰 Attempting guild command registration for ${guilds.size} guilds...`);
+        
+        for (const [guildId, guild] of guilds) {
+          try {
+            await rest.put(
+              Routes.applicationGuildCommands(clientId, guildId),
+              { body: allCommands }
+            );
+            console.log(`✅ Registered ${allCommands.length} commands for guild: ${guild.name} (${guildId})`);
+          } catch (guildError) {
+            console.warn(`⚠️ Failed to register commands for guild ${guildId}:`, guildError.message);
+          }
+        }
+
+        // 2. Global Registration (Background) - Do this once for all other servers
+        console.log("🌍 Starting global command registration (may take up to 1 hour to propagate)...");
         try {
-          console.log("🌍 Attempting global command registration...");
           await rest.put(
             Routes.applicationCommands(clientId),
             { body: allCommands }
@@ -98,100 +117,6 @@ module.exports = async (client) => {
           console.log(`✅ Successfully registered ${allCommands.length} GLOBAL slash commands`);
         } catch (globalError) {
           console.error("❌ Global registration failed:", globalError.message);
-        }
-
-        // If we have a guild ID, also try guild registration for instant updates
-        if (GUILD_ID) {
-          try {
-            console.log(`🏰 Attempting guild command registration for guild ${GUILD_ID}...`);
-            await rest.put(
-              Routes.applicationGuildCommands(clientId, GUILD_ID),
-              { body: allCommands }
-            );
-            console.log(`🏰 Successfully registered ${allCommands.length} GUILD slash commands for ${GUILD_ID}`);
-          } catch (guildError) {
-            console.warn("⚠️ Guild registration failed:", guildError.message);
-            
-            // Check if it's an authorization error
-            if (guildError.code === 50001 || 
-                guildError.message?.includes('Unauthorized') || 
-                guildError.message?.includes('Missing Access') ||
-                guildError.message?.includes('not authorized')) {
-              console.error("");
-              console.error("╔════════════════════════════════════════════════════════════════╗");
-              console.error(`║  ${client.emojis.LOCK} MISSING ACCESS ERROR - ACTION REQUIRED!                    ║`);
-              console.error("╠════════════════════════════════════════════════════════════════╣");
-              console.error("║  The bot needs to be re-invited with the correct permissions!  ║");
-              console.error("║                                                                ║");
-              console.error("║  1. Go to Discord Developer Portal:                            ║");
-              console.error("║     https://discord.com/developers/applications                ║");
-              console.error("║                                                                ║");
-              console.error("║  2. Select your bot application                                ║");
-              console.error("║                                                                ║");
-              console.error("║  3. Go to OAuth2 → URL Generator                               ║");
-              console.error("║                                                                ║");
-              console.error("║  4. Select these SCOPES:                                       ║");
-              console.error("║     ☑️ bot                                                     ║");
-              console.error("║     ☑️ applications.commands                                   ║");
-              console.error("║                                                                ║");
-              console.error("║  5. Select these BOT PERMISSIONS:                              ║");
-              console.error("║     ☑️ Administrator (or at least):                            ║");
-              console.error("║        - Send Messages                                         ║");
-              console.error("║        - Embed Links                                           ║");
-              console.error("║        - Use Slash Commands                                    ║");
-              console.error("║                                                                ║");
-              console.error("║  6. Copy the generated URL and open it in your browser         ║");
-              console.error("║                                                                ║");
-              console.error("║  7. Select your server and authorize the bot                   ║");
-              console.error("╚════════════════════════════════════════════════════════════════╝");
-              console.error("");
-              console.error(`${client.emojis.INFO} Quick invite link: https://discord.com/oauth2/authorize?client_id=${clientId}&scope=bot+applications.commands&permissions=8`);
-              console.error("");
-            }
-          }
-        }
-        
-        // Try global registration as fallback or primary
-        console.log("⏳ Trying global registration...");
-        
-        try {
-          await rest.put(
-            Routes.applicationCommands(clientId),
-            { body: allCommands }
-          );
-          console.log(`${client.emojis.EARTH} Successfully registered ${allCommands.length} GLOBAL slash commands`);
-          console.log("⏳ Note: Global commands may take up to 1 hour to appear in all servers.");
-        } catch (globalError) {
-          console.error("❌ Global registration failed:", globalError.message);
-          
-          // Check for specific error codes
-          if (globalError.code === 50001 || 
-              globalError.message?.includes('Unauthorized') || 
-              globalError.message?.includes('not authorized')) {
-            console.error("");
-            console.error("╔════════════════════════════════════════════════════════════════╗");
-            console.error(`║  ${client.emojis.LOCK} BOT TOKEN ERROR - ACTION REQUIRED!                         ║`);
-            console.error("╠════════════════════════════════════════════════════════════════╣");
-            console.error("║  Your bot token may be invalid or expired!                     ║");
-            console.error("║                                                                ║");
-            console.error("║  1. Go to Discord Developer Portal:                            ║");
-            console.error("║     https://discord.com/developers/applications                ║");
-            console.error("║                                                                ║");
-            console.error("║  2. Select your bot application                                ║");
-            console.error("║                                                                ║");
-            console.error("║  3. Go to Bot → Reset Token                                    ║");
-            console.error("║                                                                ║");
-            console.error("║  4. Copy the new token                                         ║");
-            console.error("║                                                                ║");
-            console.error("║  5. Update BOT1_1_TOKEN in Railway environment variables       ║");
-            console.error("╚════════════════════════════════════════════════════════════════╝");
-            console.error("");
-          } else if (globalError.code === 50035 || globalError.message?.includes('Invalid Form Body')) {
-            console.error(`${client.emojis.EDIT} Invalid command format detected`);
-            console.error(`${client.emojis.INFO} Solution: Check that all command names are lowercase and descriptions are valid`);
-          }
-          
-          console.log(`${client.emojis.EDIT} Note: Commands are still loaded in memory and will work if previously registered.`);
         }
 
       } catch (error) {

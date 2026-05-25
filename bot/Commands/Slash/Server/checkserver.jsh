@@ -14,8 +14,13 @@ const Mentions = require("../../../Models/Mentions");
 const fs = require('fs');
 const path = require('path');
 const Langs = require("../../../Models/Langs");
-const tsPath = path.join(__dirname, "..", "..", "..", "bot", "public", "json", "translations.json"); 
-const translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
+const tsPath = path.join(__dirname, "..", "..", "..", "public", "json", "translations.json"); 
+let translations = {};
+try {
+  translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
+} catch (err) {
+  console.error("Error loading translations in checkserver.jsh:", err.message);
+}
 
 async function getTranslatedMessage(guildId, messageKey) {
   const userLang = await Langs.findOne({ guildId });
