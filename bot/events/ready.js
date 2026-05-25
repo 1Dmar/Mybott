@@ -1,0 +1,189 @@
+const { ActivityType, Collection } = require("discord.js");
+const axios = require('axios');
+const Server = require("../Models/User");
+const BlackList = require("../Models/BlackList");
+const UpdateStatus = require("../Models/UpdateStatus");
+const Serverdb = require("../Models/Server");
+
+let toggle = true;
+
+async function fetchServerStatus(apiUrl) {
+  try {
+    const response = await axios.get(apiUrl, { 
+      timeout: 10000,
+      headers: { 'User-Agent': 'MinecraftStatusBot/1.0' }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching server status:', error.message);
+    return null;
+  }
+}
+
+/**
+ * وظيفة لتحويل كائن الإيموجي أو السلسلة النصية إلى نص قابل للاستخدام في الحالة
+ */
+function getEmojiString(emoji) {
+  if (!emoji) return "";
+  if (typeof emoji === 'string') return emoji;
+  if (emoji && emoji.id && emoji.id.length > 0) {
+    // في حالة الـ Activity، يفضل استخدام الإيموجي النصي أو الـ Unicode
+    // إذا وجد ID، نرجعه ككائن لـ setActivity
+    return emoji; 
+  }
+  return "";
+}
+
+module.exports = {
+  name: 'ready',
+  once: true,
+  async execute(client) {
+    console.log(`Logged in as ${client.user.tag}!`);
+    
+    try {
+      client.user.setStatus("online");
+    } catch (err) {
+      console.error("Failed to set status:", err.message);
+    }
+    
+    // تعريف الحالات مع استخدام نظام الإيموجي المركزي
+    const activities = [
+      { 
+        name: `ProMcBot | New update! ${getEmojiString(client.emojis.ROCKET)}`, 
+        type: ActivityType.Playing 
+      },
+      { 
+        name: `ProMcBot | Try new features! ${getEmojiString(client.emojis.FIRE)}`, 
+        type: ActivityType.Watching 
+      },
+      { 
+        name: `ProMcBot | Compete now! ${getEmojiString(client.emojis.LIGHTNING)}`, 
+        type: ActivityType.Competing 
+      },
+      { 
+        name: `ProMcBot | Listening to your commands! ${getEmojiString(client.emojis.HEADPHONES)}`, 
+        type: ActivityType.Listening 
+      }
+    ];
+    
+    let activityIndex = 0;
+    setInterval(() => {
+      try {
+        if (client.user && activities.length > 0) {
+          const activity = activities[activityIndex];
+          
+          // التعامل مع الإيموجي إذا كان كائناً (Custom Emoji)
+          const activityOptions = {
+            name: activity.name,
+            type: activity.type
+          };
+
+          // إذا كان الإيموجي في السلسلة النصية عبارة عن كائن، نقوم بتنظيف النص وإضافة الإيموجي كخاصية منفصلة إذا لزم الأمر
+          // ملاحظة: setActivity في discord.js v14 لا تدعم خاصية emoji مباشرة بنفس الطريقة، 
+          // لذا نعتمد على النصوص أو الـ Unicode emojis في الحالة لضمان الظهور.
+          
+          client.user.setActivity(activityOptions);
+          activityIndex = (activityIndex + 1) % activities.length;
+        }
+      } catch (err) {
+        console.error("Error setting activity:", err.message);
+      }
+    }, 10000);
+
+    // Initialize userSettings collection if not exists
+    if (!client.userSettings) client.userSettings = new Collection();
+
+    // تحميل البيانات الأولية
+    try {
+      const Langs = require("../Models/Langs");
+      const [servers, servers1, blacklists, serverLangs] = await Promise.all([
+        Server.find().lean(),
+        Serverdb.find().lean(),
+        BlackList.find().lean(),
+        Langs.find().lean()
+      ]);
+      
+      servers.forEach((server) => client.userSettings.set(server.Id, server));
+      servers1.forEach((server1) => client.userSettings.set(server1.Id, server1));
+      blacklists.forEach((server2) => client.userSettings.set(server2.Id, server2));
+      serverLangs.forEach((lang) => client.languages.set(lang.guildIds, lang.language));
+      
+      await Server.updateMany(
+        { serverType: { $exists: false } },
+        { $set: { serverType: 'java' } }
+      );
+    } catch (err) {
+      console.error("Error loading initial data:", err.message);
+    }
+
+    // تحديث حالة السيرفرات بشكل دوري
+    setInterval(async () => {
+      try {
+        const updatingGuilds = await UpdateStatus.find({ isUpdating: true });
+
+        for (const updateStatus of updatingGuilds) {
+          try {
+            const guild = client.guilds.cache.get(updateStatus.guildId);
+            if (!guild) continue;
+
+            const category = guild.channels.cache.get(updateStatus.categoryId);
+            const statusChannel = guild.channels.cache.get(updateStatus.statusChannelId);
+            const playerCountChannel = updateStatus.playerCountChannelId ? guild.channels.cache.get(updateStatus.playerCountChannelId) : null;
+
+            if (category && statusChannel && (playerCountChannel || updateStatus.updateType === 'text')) {
+              const serverInfo = await Server.findOne({ serverId: updateStatus.guildId });
+
+              if (serverInfo && serverInfo.serverType) {
+                let categoryName, apiUrl;
+
+                if (serverInfo.serverType === 'custom') {
+                  if (toggle) {
+                    apiUrl = `https://api.mcsrvstat.us/3/${serverInfo.javaIP}:${serverInfo.javaPort}`;
+                    categoryName = `${serverInfo.javaIP}`;
+                  } else {
+                    apiUrl = `https://api.mcsrvstat.us/bedrock/3/${serverInfo.bedrockIP}:${serverInfo.bedrockPort}`;
+                    categoryName = `${serverInfo.bedrockIP}`;
+                  }
+                  toggle = !toggle;
+                } else if (serverInfo.serverType === 'java') {
+                  apiUrl = `https://api.mcsrvstat.us/3/${serverInfo.javaIP}:${serverInfo.javaPort}`;
+                  categoryName = `${serverInfo.javaIP}`;
+                } else if (serverInfo.serverType === 'bedrock') {
+                  apiUrl = `https://api.mcsrvstat.us/bedrock/3/${serverInfo.bedrockIP}:${serverInfo.bedrockPort}`;
+                  categoryName = `${serverInfo.bedrockIP}`;
+                } else {
+                  continue;
+                }
+
+                const data = await fetchServerStatus(apiUrl);
+                if (!data) continue;
+
+                const isOnline = data.online;
+                const playerCount = data.players ? data.players.online : '--';
+                const playerCountMax = data.players ? data.players.max : '--';
+
+                const statusName = `Status: ${isOnline ? 'Online' : 'Offline'}`;
+                const playerCountName = `Players: ${isOnline ? playerCount : '--'} / ${isOnline ? playerCountMax : '--'}`;
+
+                if (category && category.name !== categoryName) await category.edit({ name: categoryName }).catch(() => {});
+                if (statusChannel) await statusChannel.edit({ name: statusName }).catch(() => {});
+                if (playerCountChannel) await playerCountChannel.edit({ name: playerCountName }).catch(() => {});
+                
+                if (updateStatus.updateType === 'text' && updateStatus.messageId) {
+                  const statusChannelMessage = await statusChannel.messages.fetch(updateStatus.messageId).catch(() => null);
+                  if (statusChannelMessage) {
+                    await statusChannelMessage.edit(`**${statusName}**\n**${playerCountName}**`).catch(() => {});
+                  }
+                }
+              }
+            }
+          } catch (innerErr) {
+            console.error(`Error updating guild ${updateStatus.guildId}:`, innerErr.message);
+          }
+        }
+      } catch (err) {
+        console.error("Error in status update interval:", err.message);
+      }
+    }, 60 * 1000);
+  }
+};
