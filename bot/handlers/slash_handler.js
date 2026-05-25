@@ -37,17 +37,22 @@ module.exports = async (client) => {
           // Check if it's a directory
           if (!require('fs').statSync(dirPath).isDirectory()) return;
           
-          const commands = readdirSync(dirPath);
+          const commands = readdirSync(dirPath).filter((f) => f.endsWith(".js"));
           
           for (const cmd of commands) {
             try {
               const fullPath = path.join(dirPath, cmd);
-              if (require('fs').statSync(fullPath).isDirectory()) continue;
               
               delete require.cache[require.resolve(fullPath)];
               const command = require(fullPath);
               
               if (command?.name && command?.description && command?.run) {
+                // Check for duplicate names before adding
+                if (client.scommands.has(command.name)) {
+                  console.warn(`${client.emojis.WARNING} Duplicate command name detected and skipped: ${command.name} in ${cmd}`);
+                  continue;
+                }
+
                 client.scommands.set(command.name, command);
                 allCommands.push({
                   name: command.name,
