@@ -22,8 +22,8 @@ async function initDB() {
 
     try {
         // Connect default mongoose instance so models created with mongoose.model work correctly
-        await mongoose.connect(mainURI, options);
         connections.main = mongoose.connection;
+        await mongoose.connect(mainURI, options);
         console.log("✅ Main MongoDB Connected (Primary Storage)");
 
         // Create Secondary Connection (if different)
