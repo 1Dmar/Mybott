@@ -30,7 +30,7 @@ module.exports = model(
     },
     wallpaper: {
       type: String,
-      default: "https://wallpapercave.com/wp/wp10819450.jpg"
+      default: "https://i.ibb.co/TBVZycXV/2.png"
     },
   })
 );
