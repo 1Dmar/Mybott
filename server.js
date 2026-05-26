@@ -8,6 +8,18 @@ const express = require('express');
 const mainApp = express();
 const path = require('path');
 
+const resolveEnv = (...names) => names.map((name) => process.env[name]).find((value) => value);
+
+const MAIN_BOT_TOKEN = resolveEnv('BOT1_1_TOKEN', 'TOKEN', 'BOT_TOKEN', 'DISCORD_TOKEN', 'MAIN_BOT_TOKEN');
+if (MAIN_BOT_TOKEN && !process.env.BOT1_1_TOKEN) {
+  process.env.BOT1_1_TOKEN = MAIN_BOT_TOKEN;
+}
+
+const MODDY_BOT_TOKEN = resolveEnv('BOT1_TOKEN', 'MODDY_BOT_TOKEN', 'MODDY_TOKEN');
+if (MODDY_BOT_TOKEN && !process.env.BOT1_TOKEN) {
+  process.env.BOT1_TOKEN = MODDY_BOT_TOKEN;
+}
+
 // Trust proxy for Railway
 mainApp.set('trust proxy', 1);
 
@@ -73,10 +85,6 @@ const loginBot = async (client, token, name) => {
     console.error(`❌ ${name} Login Error:`, err.message);
   }
 };
-
-// Bot Tokens from Environment Variables
-const MAIN_BOT_TOKEN = process.env.BOT1_1_TOKEN || process.env.TOKEN;
-const MODDY_BOT_TOKEN = process.env.BOT1_TOKEN;
 
 // Login ProMcBot (Main Bot)
 // Prefer client from bot2 (main bot logic) if available, otherwise fallback to bot1

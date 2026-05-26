@@ -2,6 +2,7 @@ const { Collection } = require("discord.js");
 const { readdirSync } = require("fs");
 const path = require('path');
 const { REST, Routes } = require("discord.js");
+const { TOKEN } = require("../settings/config");
 
 // Only load dotenv in development
 if (process.env.NODE_ENV !== 'production') {
@@ -11,9 +12,9 @@ if (process.env.NODE_ENV !== 'production') {
 module.exports = async (client) => {
   try {
     // 1. Verify token exists
-    if (!process.env.BOT1_1_TOKEN) {
-      console.error("❌ ERROR: BOT1_1_TOKEN is not defined in environment variables!");
-      console.error("ℹ️ Solution: Add BOT1_1_TOKEN to your Railway environment variables.");
+    if (!TOKEN) {
+      console.error("❌ ERROR: Main bot token is not defined in environment variables!");
+      console.error("ℹ️ Solution: Set BOT1_1_TOKEN (or TOKEN/BOT_TOKEN/DISCORD_TOKEN).");
       return;
     }
 
@@ -85,7 +86,7 @@ module.exports = async (client) => {
           throw new Error("Client user not available");
         }
 
-        const rest = new REST({ version: "10" }).setToken(process.env.BOT1_1_TOKEN);
+        const rest = new REST({ version: "10" }).setToken(TOKEN);
         const clientId = client.user.id;
 
         console.log(`⏳ Starting command registration for client ${clientId}...`);
@@ -188,7 +189,7 @@ module.exports = async (client) => {
             console.error("║                                                                ║");
             console.error("║  4. Copy the new token                                         ║");
             console.error("║                                                                ║");
-            console.error("║  5. Update BOT1_1_TOKEN in Railway environment variables       ║");
+            console.error("║  5. Update your main bot token environment variable            ║");
             console.error("╚════════════════════════════════════════════════════════════════╝");
             console.error("");
           } else if (globalError.code === 50035 || globalError.message?.includes('Invalid Form Body')) {

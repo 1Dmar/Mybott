@@ -4,8 +4,15 @@ if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
 
+const resolveEnv = (...names) => names.map((name) => process.env[name]).find((value) => value);
+const MAIN_BOT_TOKEN = resolveEnv('BOT1_1_TOKEN', 'TOKEN', 'BOT_TOKEN', 'DISCORD_TOKEN', 'MAIN_BOT_TOKEN');
+
+if (MAIN_BOT_TOKEN && !process.env.BOT1_1_TOKEN) {
+  process.env.BOT1_1_TOKEN = MAIN_BOT_TOKEN;
+}
+
 module.exports = {
-  TOKEN: process.env.BOT1_1_TOKEN,
+  TOKEN: MAIN_BOT_TOKEN,
   PREFIX: process.env.PREFIX || "!",
   MONGO_URL: process.env.MONGO_URL,
   apikey: process.env.API_KEY || "promc.default-key-change-in-production",

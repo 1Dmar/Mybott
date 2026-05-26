@@ -16,8 +16,8 @@ const { MONGO_URL, TOKEN } = require("./settings/config");
 
 // Validate required environment variables
 if (!TOKEN) {
-  console.warn("⚠️ WARNING: BOT1_1_TOKEN environment variable is not set!");
-  console.warn("ℹ️ The bot will not start until a token is provided via server.js.");
+  console.warn("⚠️ WARNING: Main bot token is not set!");
+  console.warn("ℹ️ Set BOT1_1_TOKEN (or TOKEN/BOT_TOKEN/DISCORD_TOKEN) in your environment.");
 }
 
 if (!MONGO_URL) {
