@@ -116,6 +116,15 @@ module.exports = {
       console.error("Error loading initial data:", err.message);
     }
 
+    // Schedule Status Updates (New System)
+    try {
+      const { scheduleCronJobs } = require('../utils/cronManager');
+      const jobsCount = await scheduleCronJobs(client);
+      console.log(`⏰ Scheduled ${jobsCount} status update jobs.`);
+    } catch (err) {
+      console.error("Error scheduling cron jobs:", err.message);
+    }
+
     // تحديث حالة السيرفرات بشكل دوري
     setInterval(async () => {
       try {

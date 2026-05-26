@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-const CONFIG = require('../config');
-const dailyCountSchema = new Schema({
- serverId: { type: String, required: true, unique: true },
+
+const statusBarSchema = new Schema({
+  serverId: { type: String, required: true, unique: true },
   statusChannelId: String,
   statusMessageId: String,
-  updateInterval: { type: Number, default: CONFIG.DEFAULT_UPDATE_INTERVAL }
+  updateInterval: { type: Number, default: 5 },
+  lastUpdated: { type: Date, default: Date.now }
 });
-dailyCountSchema.index({ guildId: 1, date: 1 }, { unique: true });
 
-module.exports = mongoose.model('DailyCount', dailyCountSchema);
+module.exports = mongoose.model('StatusBar', statusBarSchema);
