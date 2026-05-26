@@ -15,7 +15,6 @@ const fs = require('fs');
 const axios = require('axios');
 const Jimp = require('jimp');
 const Serverdb = require('../Models/Server');
-const Langs = require("../Models/Langs");
 const Server = require('../Models/User');
 const StatusBar = require('../Models/StatusBar');
 const BlackList = require("../Models/BlackList");
@@ -66,22 +65,6 @@ const EMOJIS = {
     DOWN: getEmoji('DOWN')
 };
 
-// Translation file path
-const tsPath = path.join(__dirname, "..", "public", "json", "translations.json");
-let translations = {};
-
-try {
-  if (fs.existsSync(tsPath)) {
-    translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
-  } else {
-    console.log('⚠️ Translations file not found, using empty object');
-    translations = { en: {} };
-  }
-} catch (error) {
-  console.error('Error loading translations:', error.message);
-  translations = { en: {} };
-}
-
 // Fast-loading wallpapers (optimized for speed)
 const WALLPAPERS = [
     "https://i.ibb.co/TBVZycXV/2.png",
@@ -107,19 +90,9 @@ async function safeAxiosGet(url, options = {}) {
 }
 
 // Function to get translated message with proper fallbacks
-async function getTranslatedMessage(guildId, messageKey) {
-    try {
-        if (!guildId) return translations['en']?.[messageKey] || messageKey;
-        
-        const userLang = await Langs.findOne({ guildId });
-        const language = userLang ? userLang.language : 'en';
-        
-        return translations[language]?.[messageKey] || 
-               translations['en']?.[messageKey] || 
-               messageKey;
-    } catch (error) {
-        return translations['en']?.[messageKey] || messageKey;
-    }
+function getTranslatedMessage(client, guildId, messageKey) {
+    if (!client?.t) return messageKey;
+    return client.t(guildId, messageKey);
 }
 
 // Clean IP from prefixes
@@ -223,26 +196,27 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
-        // 1. Draw Background with Overlay
+        // 1. Draw Background with Luxury Overlay
         try {
             const background = await loadImage(wallpaperUrl);
-            // Draw background with slight blur effect simulation (cover)
             ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
-            
-            // Dark Overlay for readability
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+
+            const overlay = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+            overlay.addColorStop(0, 'rgba(7, 10, 24, 0.82)');
+            overlay.addColorStop(0.6, 'rgba(12, 14, 28, 0.68)');
+            overlay.addColorStop(1, 'rgba(8, 10, 20, 0.94)');
+            ctx.fillStyle = overlay;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-            
-            // Subtle Gradient Overlay
-            const overlayGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
-            overlayGrad.addColorStop(0, 'rgba(0, 0, 0, 0.2)');
-            overlayGrad.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
-            ctx.fillStyle = overlayGrad;
+
+            const vignette = ctx.createRadialGradient(canvasWidth * 0.25, canvasHeight * 0.2, 30, canvasWidth * 0.6, canvasHeight * 0.6, canvasWidth);
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+            ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         } catch (error) {
             const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-            gradient.addColorStop(0, '#1a1a1d');
-            gradient.addColorStop(1, '#000000');
+            gradient.addColorStop(0, '#0f111b');
+            gradient.addColorStop(1, '#080a14');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
@@ -274,17 +248,29 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         const displayIP = serverData.javaIP || serverData.bedrockIP || 'N/A';
         const displayPort = serverData.serverType === 'java' ? (serverData.javaPort || 25565) : (serverData.bedrockPort || 19132);
 
-        // 3. Draw Modern Glassmorphism Card Effect
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        // 3. Glass Panel + Accent Line
+        const panelX = 24;
+        const panelY = 24;
+        const panelW = canvasWidth - 48;
+        const panelH = canvasHeight - 48;
+
+        ctx.fillStyle = 'rgba(16, 18, 32, 0.68)';
         ctx.beginPath();
-        ctx.roundRect(20, 20, canvasWidth - 40, canvasHeight - 40, 25);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 26);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1.4;
         ctx.stroke();
 
+        const accent = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
+        accent.addColorStop(0, 'rgba(212, 175, 55, 0.9)');
+        accent.addColorStop(0.45, 'rgba(212, 175, 55, 0.2)');
+        accent.addColorStop(1, 'rgba(212, 175, 55, 0)');
+        ctx.fillStyle = accent;
+        ctx.fillRect(panelX + 18, panelY + 10, panelW - 36, 2);
+
         // 4. Server Icon with Glow
-        const iconX = 50, iconY = 50, iconSize = 120;
+        const iconX = 52, iconY = 54, iconSize = 116;
         try {
             const serverIconUrl = isPreview 
                 ? 'https://api.mcstatus.io/v2/icon/minecraft.net'
@@ -292,59 +278,66 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
             
             const serverIcon = await loadImage(serverIconUrl);
             
-            // Icon Glow
             ctx.save();
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = isOnline ? 'rgba(0, 255, 127, 0.6)' : 'rgba(255, 69, 58, 0.6)';
-            
-            // Rounded Rectangle for Icon
-            const radius = 30;
+            ctx.shadowBlur = 24;
+            ctx.shadowColor = isOnline ? 'rgba(34, 224, 138, 0.55)' : 'rgba(255, 94, 94, 0.5)';
             ctx.beginPath();
-            ctx.roundRect(iconX, iconY, iconSize, iconSize, radius);
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 26);
             ctx.clip();
             ctx.drawImage(serverIcon, iconX, iconY, iconSize, iconSize);
             ctx.restore();
         } catch (error) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
             ctx.beginPath();
-            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 26);
             ctx.fill();
         }
 
+        const infoX = iconX + iconSize + 38;
+        const statusText = isOnline ? "ONLINE" : "OFFLINE";
+        const statusColor = isOnline ? '#22E08A' : '#FF5E5E';
+
+        // Status Badge
+        ctx.font = 'bold 14px Arial';
+        const badgePadding = 12;
+        const badgeWidth = ctx.measureText(statusText).width + badgePadding * 2;
+        const badgeX = canvasWidth - badgeWidth - 70;
+        const badgeY = 58;
+        ctx.fillStyle = 'rgba(10, 12, 22, 0.6)';
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeWidth, 26, 13);
+        ctx.fill();
+        ctx.strokeStyle = statusColor;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.fillStyle = statusColor;
+        ctx.fillText(statusText, badgeX + badgePadding, badgeY + 18);
+
         // 5. Server Name & Status
-        ctx.font = fontsLoaded ? 'bold 36px MinecraftBold' : 'bold 36px Arial';
+        ctx.font = fontsLoaded ? 'bold 32px MinecraftBold' : 'bold 32px Arial';
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'left';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.fillText(serverName, iconX + iconSize + 40, iconY + 35);
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.fillText(serverName, infoX, 88);
         ctx.shadowBlur = 0;
 
         // Status Indicator Dot
-        const dotX = iconX + iconSize + 45, dotY = iconY + 55, dotR = 8;
-        ctx.fillStyle = isOnline ? '#00FF7F' : '#FF453A';
+        ctx.fillStyle = statusColor;
         ctx.beginPath();
-        ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+        ctx.arc(infoX + 4, 116, 6, 0, Math.PI * 2);
         ctx.fill();
-        // Glow for dot
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = isOnline ? '#00FF7F' : '#FF453A';
-        ctx.stroke();
-        ctx.shadowBlur = 0;
 
-        const statusText = isOnline ? "ONLINE" : "OFFLINE";
         ctx.font = 'bold 16px Arial';
-        ctx.fillStyle = isOnline ? '#00FF7F' : '#FF453A';
-        ctx.fillText(statusText, dotX + 20, dotY + 6);
+        ctx.fillText(statusText, infoX + 18, 121);
 
         // 6. Player Count & Version (Modern Layout)
-        const infoX = iconX + iconSize + 40;
-        const infoY = iconY + 85; // Adjusted Y for better spacing
+        const infoY = 155;
         
         ctx.font = fontsLoaded ? '22px Minecraft' : '22px Arial';
         ctx.fillStyle = '#FFFFFF';
         
-        const playerLabel = 'Players';//await getTranslatedMessage(interaction.guild?.id, "PLAYERS") || "Players";
+        const playerLabel = getTranslatedMessage(interaction?.client, interaction?.guild?.id, "PLAYERS") || "Players";
         const onlinePlayers = parseInt(players.online) || 0;
         const maxPlayers = parseInt(players.max) || 0;
         ctx.fillText(`${playerLabel}: ${onlinePlayers} / ${maxPlayers}`, infoX, infoY);
@@ -353,7 +346,7 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.fillText(`Version: ${version}`, infoX, infoY + 28);
         
-        // IP Display in Image - Moved and formatted to avoid overlap
+        // IP Display in Image
         ctx.font = fontsLoaded ? '16px Minecraft' : '16px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.fillText(`IP: ${displayIP}${displayPort != 25565 && displayPort != 19132 ? ':' + displayPort : ''}`, infoX, infoY + 52);
@@ -377,20 +370,18 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
 */
         // 8. Progress Bar for Players
         if (isOnline && players.max > 0) {
-            const barX = infoX, barY = infoY + 65, barW = 350, barH = 8;
-            // Bar Background
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            const barX = infoX, barY = infoY + 42, barW = 320, barH = 7;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
             ctx.beginPath();
             ctx.roundRect(barX, barY, barW, barH, 4);
             ctx.fill();
             
-            // Bar Progress
             const progress = Math.min(onlinePlayers / maxPlayers, 1);
             const gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-            gradient.addColorStop(0, '#00FF7F');
-            gradient.addColorStop(1, '#00CC66');
+            gradient.addColorStop(0, '#22E08A');
+            gradient.addColorStop(1, '#0bbf6b');
             
-            ctx.fillStyle = isOnline ? gradient : '#FF453A';
+            ctx.fillStyle = isOnline ? gradient : '#FF5E5E';
             ctx.beginPath();
             ctx.roundRect(barX, barY, barW * progress, barH, 4);
             ctx.fill();
@@ -398,9 +389,9 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
 
         // 9. Footer & Watermark
         ctx.font = 'bold 12px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
         ctx.textAlign = 'right';
-        ctx.fillText("PROMCBOT API • 2026", canvasWidth - 40, canvasHeight - 35);
+        ctx.fillText(`PROMCBOT API • ${new Date().getFullYear()}`, canvasWidth - 40, canvasHeight - 35);
         
         if (isPreview) {
             ctx.font = 'bold 40px Arial';
@@ -436,7 +427,7 @@ async function generateWallpaperSelectionCard(wallpapers, interaction) {
         const titleBackground = new Jimp(cardWidth, 60, 0x7289DAFF);
         card.blit(titleBackground, 0, 0);
         
-        const title = await getTranslatedMessage(interaction.guild?.id, "SELECT_WALLPAPER") || "Select a Wallpaper";
+        const title = getTranslatedMessage(interaction?.client, interaction?.guild?.id, "SELECT_WALLPAPER") || "Select a Wallpaper";
         const titleWidth = Jimp.measureText(Jimp.FONT_SANS_32_WHITE, title);
         card.print(Jimp.FONT_SANS_32_WHITE, (cardWidth - titleWidth) / 2, 15, title);
         

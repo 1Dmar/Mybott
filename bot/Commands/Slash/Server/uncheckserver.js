@@ -6,23 +6,6 @@ const {
   ButtonStyle,
 } = require("discord.js");
 const Server = require("../../../Models/Server");
-const fs = require('fs');
-const path = require('path');
-const tsPath = path.join(__dirname, "..", "..", "..", "public", "json", "translations.json"); 
-const Langs = require("../../../Models/Langs");
-let translations = {};
-try {
-  translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
-} catch (err) {
-  console.error("Error loading translations in uncheckserver.js:", err.message);
-}
-
-async function getTranslatedMessage(guildId, messageKey) {
-  const userLang = await Langs.findOne({ guildId });
-  const language = userLang ? userLang.language : 'en';
-
-  return translations[language][messageKey];
-}
 
 module.exports = {
   name: "remove_server",
@@ -36,7 +19,7 @@ module.exports = {
   run: async (client, interaction) => {
     const guild = interaction.guild;
 
-    const NOT_FOUND = await getTranslatedMessage(guild.id, 'NOT_FOUND');
+    const NOT_FOUND = client.t(guild.id, 'NOT_FOUND');
     const serverId = guild.id;
 
     const serverRecord = await Server.findOne({ serverId });
@@ -45,8 +28,8 @@ module.exports = {
       return interaction.reply({ content: `${NOT_FOUND}`, ephemeral: true });
     }
 
-    const CANCEL_LABEL = await getTranslatedMessage(guild.id, 'CANCEL');
-    const CONTINUE_LABEL = await getTranslatedMessage(guild.id, 'CONTINUE');
+    const CANCEL_LABEL = client.t(guild.id, 'CANCEL');
+    const CONTINUE_LABEL = client.t(guild.id, 'CONTINUE');
 
     const row = new ActionRowBuilder()
         .addComponents(
@@ -60,7 +43,7 @@ module.exports = {
                 .setStyle(ButtonStyle.Success)
         );
 
-    const SURE_MESSAGE = await getTranslatedMessage(guild.id, 'SURE_MESSAGE');
+    const SURE_MESSAGE = client.t(guild.id, 'SURE_MESSAGE');
     const confirmMessage = await interaction.reply({
         content: `${SURE_MESSAGE}`,
         components: [row],
@@ -71,8 +54,8 @@ module.exports = {
 
     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 15000 });
 
-    const CANCEL_MESSAGE = await getTranslatedMessage(guild.id, 'CANCEL_MESSAGE');
-    const CONTINUE_MESSAGE = await getTranslatedMessage(guild.id, 'CONTINUE_MESSAGE');
+    const CANCEL_MESSAGE = client.t(guild.id, 'CANCEL_MESSAGE');
+    const CONTINUE_MESSAGE = client.t(guild.id, 'CONTINUE_MESSAGE');
 
     collector.on('collect', async i => {
         if (i.customId === 'cancel') {
@@ -83,7 +66,7 @@ module.exports = {
         }
     });
 
-    const TIME_END_MESSAGE = await getTranslatedMessage(guild.id, 'TIME_END_MESSAGE');
+    const TIME_END_MESSAGE = client.t(guild.id, 'TIME_END_MESSAGE');
     collector.on('end', collected => {
         if (collected.size === 0) {
             interaction.editReply({ content: `${TIME_END_MESSAGE}`, components: [], ephemeral: true });

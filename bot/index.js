@@ -99,12 +99,22 @@ const fs = require('fs');
 client.emojis = require("./settings/emojis");
 client.translations = JSON.parse(fs.readFileSync('./bot/public/json/translations.json', 'utf8'));
 client.languages = new Collection(); // Cache for server languages
+client.defaultLanguage = 'en';
 
-// Translation function
-client.t = (guildId, key) => {
-  const lang = client.languages.get(guildId) || 'en';
-  let text = client.translations[lang] ? (client.translations[lang][key] || key) : (client.translations['en'][key] || key);
-  
+client.getLanguage = (guildId) => {
+  if (!guildId) return client.defaultLanguage;
+  const cached = client.languages.get(guildId);
+  if (cached && client.translations?.[cached]) return cached;
+  return client.defaultLanguage;
+};
+
+// Translation function with fallbacks and replacements
+client.t = (guildId, key, variables = {}) => {
+  const lang = client.getLanguage(guildId);
+  const source = client.translations?.[lang] || {};
+  const fallback = client.translations?.[client.defaultLanguage] || {};
+  let text = source[key] ?? fallback[key] ?? key;
+
   if (typeof text === 'string') {
     const replaceEmojis = (str) => {
       if (typeof str !== 'string') return str;
@@ -118,9 +128,14 @@ client.t = (guildId, key) => {
         return "";
       });
     };
+
     text = replaceEmojis(text);
     text = text.replace(/\${client\.(\w+)}/g, (match, p1) => client[p1] || match);
+    text = text.replace(/\{(\w+)\}/g, (match, p1) =>
+      Object.prototype.hasOwnProperty.call(variables, p1) ? String(variables[p1]) : match
+    );
   }
+
   return text;
 };
 

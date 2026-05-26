@@ -3,25 +3,11 @@ const {
   ApplicationCommandType,
   PermissionFlagsBits,
   Client,
-  SlashCommandBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder
 } = require("discord.js");
 const membership = require("../../../Models/User");
 const Mentions = require("../../../Models/Mentions");
-const fs = require('fs');
-const path = require('path');
-const Langs = require("../../../Models/Langs");
-
-// Translation file path
-const tsPath = path.join(__dirname, "..", "..", "..", "public", "json", "translations.json"); 
-let translations = {};
-
-try {
-  translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
-} catch (error) {
-  console.error('Error loading translations:', error);
-}
 
 // Custom emojis (same as in interactionCreate.js)
 const EMOJIS = {
@@ -37,16 +23,6 @@ const EMOJIS = {
   BLOCK: '<:Block:1410147617056362558>'
 };
 
-async function getTranslatedMessage(guildId, messageKey) {
-  try {
-    const userLang = await Langs.findOne({ guildId });
-    const language = userLang ? userLang.language : 'en';
-    return translations[language]?.[messageKey] || messageKey;
-  } catch (error) {
-    console.error('Error getting translation:', error);
-    return messageKey;
-  }
-}
 
 module.exports = {
   name: "setup_server",
@@ -68,7 +44,7 @@ module.exports = {
       const membershipdb = await membership.findOne({ Id: interaction.user.id });
       const hasMembership = membershipdb && membershipdb.plan && membershipdb.plan !== 'free';
       
-      const Serverplanchoose = await getTranslatedMessage(guild.id, 'Serverplanchoose') || "Please select your server type:";
+      const Serverplanchoose = client.t(guild.id, 'Serverplanchoose') || "Please select your server type:";
       
       // Create server type options
       const serverOptions = [
@@ -116,7 +92,7 @@ module.exports = {
     } catch (error) {
       console.error('Error in setup_server command:', error);
       
-      const errorMessage = await getTranslatedMessage(interaction.guild.id, "COMMAND_ERROR") || "There was an error executing this command.";
+      const errorMessage = client.t(interaction.guild.id, "COMMAND_ERROR") || "There was an error executing this command.";
       
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({

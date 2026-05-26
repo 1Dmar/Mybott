@@ -3,22 +3,9 @@ const {
   ApplicationCommandType,
   PermissionFlagsBits,
   Client,
-  EmbedBuilder,
 } = require("discord.js");
 const Server = require("../../../Models/Server");
 const Mentions = require("../../../Models/Mentions");
-const fs = require('fs');
-const Langs = require("../../../Models/Langs");
-const path = require('path');
-const tsPath = path.join(__dirname, "..", "..", "..", "public", "json", "translations.json");
-const translations = JSON.parse(fs.readFileSync(tsPath, 'utf8'));
-
-async function getTranslatedMessage(guildId, messageKey) {
-  const userLang = await Langs.findOne({ guildId });
-  const language = userLang ? userLang.language : 'en';
-
-  return translations[language][messageKey];
-}
 
 module.exports = {
   name: "keyall",
@@ -50,7 +37,7 @@ module.exports = {
     const Serverdb = await Server.findOne({ serverId: guild.id });
 
     if (!Serverdb) {
-      const NOT_FOUND = await getTranslatedMessage(guild.id, 'NOT_FOUND');
+      const NOT_FOUND = client.t(guild.id, 'NOT_FOUND');
       return interaction.reply({
         content: `${NOT_FOUND}`,
         ephemeral: true,
@@ -60,8 +47,8 @@ module.exports = {
     const mentionData = await Mentions.findOne({ guildId: guild.id });
     const mentionText = mentionData && mentionData.mention && mentionData.mention !== "nothing" ? `@${mentionData.mention}` : "";
 
-    const java = await getTranslatedMessage(guild.id, "java");
-    const bedrock = await getTranslatedMessage(guild.id, "bedrock");
+    const java = client.t(guild.id, "java");
+    const bedrock = client.t(guild.id, "bedrock");
 
     let serverMessage = "";
     if (Serverdb.serverType === "java" && Serverdb.javaIP && Serverdb.javaPort) {
@@ -78,15 +65,15 @@ module.exports = {
     }
 
     if (!serverMessage) {
-      const NOT_FOUND = await getTranslatedMessage(guild.id, 'NOT_FOUND');
+      const NOT_FOUND = client.t(guild.id, 'NOT_FOUND');
       return interaction.reply({
         content: `${NOT_FOUND}`,
         ephemeral: true,
       });
     }
 
-    const KEY_ALL = await getTranslatedMessage(guild.id, 'KEY_ALL');
-    const player = await getTranslatedMessage(guild.id, 'player');
+    const KEY_ALL = client.t(guild.id, 'KEY_ALL');
+    const player = client.t(guild.id, 'player');
 
      let allowedMentions = { parse: ['users', 'roles'] };
     if (mentionData && mentionData.mention === 'everyone') {
@@ -98,7 +85,7 @@ module.exports = {
       allowedMentions: allowedMentions
     });
 
-    const THANKS_MESSAGE = await getTranslatedMessage(guild.id, 'Thanks1');
+    const THANKS_MESSAGE = client.t(guild.id, 'Thanks1');
     interaction.reply({
       content: `${THANKS_MESSAGE}`,
       ephemeral: true,
