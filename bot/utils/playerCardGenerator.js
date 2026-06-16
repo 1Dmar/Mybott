@@ -141,15 +141,15 @@ async function generatePlayerCard(ign, template = 'darkmode', stats = null) {
     //     Pass C – re-stroke frame border on top for depth
     //
     const frameX = 40;
-    const frameY = 90;
+    const frameY = 45;
     const frameW = 175;
-    const frameH = 195;
+    const frameH = 230;
     const frameRadius = 18;
 
     // Bust image placement — bigger than the frame so parts overflow
     const padding = 10;
 const bustW = frameW - padding * 2;  // = 155px
-const bustH = frameH - padding * 2;  // = 175px
+const bustH = frameH - padding * 1.15;  // = 175px
 const bustX = frameX + padding;
 const bustY = frameY + padding;
     const skinImg = await loadSkinBust(playerData.uuid, playerData.ign);
