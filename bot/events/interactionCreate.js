@@ -191,8 +191,8 @@ if (registerFont) {
 // Server status image generator - Redesigned with Aesthetics & Creativity
 async function generateServerStatusImage(serverData, wallpaperUrl, interaction, isPreview = false, template = 'glass') {
     try {
-        const canvasWidth = 1000;
-        const canvasHeight = 400;
+        const canvasWidth = 800;
+        const canvasHeight = 250;
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
@@ -312,14 +312,7 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         ctx.fillText(serverName, infoX, 88);
         ctx.shadowBlur = 0;
 
-        // Status Indicator Dot
-        ctx.fillStyle = statusColor;
-        ctx.beginPath();
-        ctx.arc(infoX + 4, 116, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText(statusText, infoX + 18, 121);
+        // Removed Status Indicator Dot and Center Online Text
 
         // 6. Player Count & Version (Modern Layout)
         const infoY = 155;
@@ -358,23 +351,13 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
             }
         }
 */
-        // 8. Progress Bar for Players
+        // 8. Progress Text instead of Bar
         if (isOnline && players.max > 0) {
-            const barX = infoX, barY = infoY + 42, barW = 320, barH = 7;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-            ctx.beginPath();
-            ctx.roundRect(barX, barY, barW, barH, 4);
-            ctx.fill();
-            
             const progress = Math.min(onlinePlayers / maxPlayers, 1);
-            const gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-            gradient.addColorStop(0, '#22E08A');
-            gradient.addColorStop(1, '#0bbf6b');
-            
-            ctx.fillStyle = isOnline ? gradient : '#FF5E5E';
-            ctx.beginPath();
-            ctx.roundRect(barX, barY, barW * progress, barH, 4);
-            ctx.fill();
+            const percentage = Math.round(progress * 100);
+            ctx.font = fontsLoaded ? '16px Minecraft' : '16px Arial';
+            ctx.fillStyle = '#22E08A';
+            ctx.fillText(`Usage: ${percentage}%`, infoX, infoY + 75);
         }
 
         // 9. Footer & Watermark

@@ -37,8 +37,8 @@ async function checkServerStatus(ip, port, type) {
 
 async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
     // Large Card Design (Enhanced)
-    const width = 1200;
-    const height = 600;
+    const width = 800;
+    const height = 250;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
@@ -95,9 +95,9 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${server.javaPort || server.bedrockPort || 25565}`;
 
     // 3. Server Icon (Large)
-    const iconX = 100;
-    const iconY = 120;
-    const iconSize = 300;
+    const iconX = 50;
+    const iconY = 50;
+    const iconSize = 150;
 
     try {
         const icon = await loadImage(iconUrl);
@@ -117,58 +117,39 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     }
 
     // 4. Server Information
-    const infoX = iconX + iconSize + 80;
+    const infoX = iconX + iconSize + 40;
     const title = (server.serverName || 'Minecraft Server').toUpperCase();
     const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
     const statusColor = isOnline ? '#22E08A' : '#FF5E5E';
 
     // Title
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 70px "Minecraft", Arial';
+    ctx.font = 'bold 32px "Minecraft", Arial';
     ctx.textAlign = 'left';
-    ctx.fillText(title, infoX, 200);
+    ctx.fillText(title, infoX, 90);
 
-    // Status Badge
-    ctx.fillStyle = statusColor;
-    ctx.beginPath();
-    ctx.arc(infoX + 15, 265, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.font = 'bold 35px Arial';
-    ctx.fillText(statusText, infoX + 45, 278);
+    // Status (Removed Dot and Online Text)
 
     // Players
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '40px Arial';
-    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 350);
+    ctx.font = '22px Arial';
+    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 130);
 
-    // Progress Bar
+    // Usage Text instead of Bar
     if (isOnline && players.max > 0) {
-        const barX = infoX;
-        const barY = 370;
-        const barW = 550;
-        const barH = 15;
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW, barH, 8);
-        ctx.fill();
-
         const progress = Math.min(players.online / players.max, 1);
-        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-        grad.addColorStop(0, '#22E08A');
-        grad.addColorStop(1, '#0bbf6b');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW * progress, barH, 8);
-        ctx.fill();
+        const percentage = Math.round(progress * 100);
+        ctx.fillStyle = '#22E08A';
+        ctx.font = '18px Arial';
+        ctx.fillText(`Usage: ${percentage}%`, infoX, 210);
     }
 
     // Additional Info
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = '28px Arial';
+    ctx.font = '18px Arial';
     const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
-    ctx.fillText(`Version: ${versionLabel}`, infoX, 440);
-    ctx.fillText(`IP Address: ${cleanIpAddr}`, infoX, 480);
+    ctx.fillText(`Version: ${versionLabel}`, infoX, 160);
+    ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 185);
 
     // Footer
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
