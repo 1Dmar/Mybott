@@ -315,7 +315,7 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         // Removed Status Indicator Dot and Center Online Text
 
         // 6. Player Count & Version (Modern Layout)
-        const infoY = 155;
+        const infoY = 135; // Moved up from 155
         
         ctx.font = fontsLoaded ? '22px Minecraft' : '22px Arial';
         ctx.fillStyle = '#FFFFFF';
@@ -327,37 +327,36 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
         
         ctx.font = fontsLoaded ? '18px Minecraft' : '18px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillText(`Version: ${version}`, infoX, infoY + 28);
+        ctx.fillText(`Version: ${version}`, infoX, infoY + 25);
         
         // IP Display in Image
         ctx.font = fontsLoaded ? '16px Minecraft' : '16px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.fillText(`IP: ${displayIP}${displayPort != 25565 && displayPort != 19132 ? ':' + displayPort : ''}`, infoX, infoY + 52);
+        ctx.fillText(`IP: ${displayIP}${displayPort != 25565 && displayPort != 19132 ? ':' + displayPort : ''}`, infoX, infoY + 48);
 
-        // 7. MOTD Section (Center-Right) - Improved spacing to prevent overlap
-      /*  if (isOnline && serverStatus?.data) {
-            const motdData = serverStatus.data.motd || serverStatus.data.description;
-            let motdLines = [];
-            if (typeof motdData === 'string') motdLines = [motdData];
-            else if (motdData?.clean) motdLines = Array.isArray(motdData.clean) ? motdData.clean : [motdData.clean];
-            
-            const cleanLines = motdLines.map(l => l.replace(/§./g, '').trim()).filter(l => l.length > 0).slice(0, 2);
-            
-            ctx.font = fontsLoaded ? 'italic 15px Minecraft' : 'italic 15px Arial';
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            for (let i = 0; i < cleanLines.length; i++) {
-                // Draw MOTD further down to avoid IP overlap
-                ctx.fillText(cleanLines[i], infoX, infoY + 78 + (i * 20));
-            }
-        }
-*/
-        // 8. Progress Text instead of Bar
+        // 8. Progress Bar for Players
         if (isOnline && players.max > 0) {
+            const barX = infoX, barY = infoY + 65, barW = 320, barH = 8;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 4);
+            ctx.fill();
+            
             const progress = Math.min(onlinePlayers / maxPlayers, 1);
+            const gradient = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            gradient.addColorStop(0, '#22E08A');
+            gradient.addColorStop(1, '#0bbf6b');
+            
+            ctx.fillStyle = isOnline ? gradient : '#FF5E5E';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW * progress, barH, 4);
+            ctx.fill();
+
+            // Progress Text
             const percentage = Math.round(progress * 100);
-            ctx.font = fontsLoaded ? '16px Minecraft' : '16px Arial';
+            ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#22E08A';
-            ctx.fillText(`Usage: ${percentage}%`, infoX, infoY + 75);
+            ctx.fillText(`${percentage}%`, barX + barW + 10, barY + 8);
         }
 
         // 9. Footer & Watermark

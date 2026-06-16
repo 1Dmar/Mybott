@@ -133,23 +133,38 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     // Players
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '22px Arial';
-    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 130);
-
-    // Usage Text instead of Bar
-    if (isOnline && players.max > 0) {
-        const progress = Math.min(players.online / players.max, 1);
-        const percentage = Math.round(progress * 100);
-        ctx.fillStyle = '#22E08A';
-        ctx.font = '18px Arial';
-        ctx.fillText(`Usage: ${percentage}%`, infoX, 210);
-    }
+    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 120);
 
     // Additional Info
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.font = '18px Arial';
     const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
-    ctx.fillText(`Version: ${versionLabel}`, infoX, 160);
-    ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 185);
+    ctx.fillText(`Version: ${versionLabel}`, infoX, 145);
+    ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 170);
+
+    // Progress Bar
+    if (isOnline && players.max > 0) {
+        const barX = infoX, barY = 190, barW = 300, barH = 10;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 5);
+        ctx.fill();
+
+        const progress = Math.min(players.online / players.max, 1);
+        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+        grad.addColorStop(0, '#22E08A');
+        grad.addColorStop(1, '#0bbf6b');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * progress, barH, 5);
+        ctx.fill();
+
+        // Percentage Text
+        const percentage = Math.round(progress * 100);
+        ctx.fillStyle = '#22E08A';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText(`${percentage}%`, barX + barW + 10, barY + 10);
+    }
 
     // Footer
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
