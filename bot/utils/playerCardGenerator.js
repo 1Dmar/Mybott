@@ -147,12 +147,11 @@ async function generatePlayerCard(ign, template = 'darkmode', stats = null) {
     const frameRadius = 18;
 
     // Bust image placement — bigger than the frame so parts overflow
-    const bustW = 260;
-    const bustH = 260;
-    // Centre the bust over the frame, shifted up so head protrudes more
-    const bustX = frameX + (frameW - bustW) / 2;
-    const bustY = frameY - 55; // head protrudes ~55px above frame top
-
+    const padding = 10;
+const bustW = frameW - padding * 2;  // = 155px
+const bustH = frameH - padding * 2;  // = 175px
+const bustX = frameX + padding;
+const bustY = frameY + padding;
     const skinImg = await loadSkinBust(playerData.uuid, playerData.ign);
 
     if (skinImg) {
