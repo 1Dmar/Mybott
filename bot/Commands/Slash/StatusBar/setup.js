@@ -11,23 +11,27 @@ module.exports = {
   category: "StatusBar",
   type: ApplicationCommandType.ChatInput,
   options: [
-   /* {
-      name: "server",
-      description: "Server ID",
-      type: 3,
-      required: true
-    },*/
     {
       name: "channel",
       description: "Target channel",
       type: 7,
       required: true
+    },
+    {
+      name: "template",
+      description: "Choose card design template",
+      type: 3,
+      required: false,
+      choices: [
+        { name: "Dark Mode", value: "darkmode" },
+        { name: "Glass", value: "glass" }
+      ]
     }
   ],
   run: async (client, interaction) => {
-  //  const serverId = interaction.options.getString("server");
-      const serverId = interaction.member.guild.id;
+    const serverId = interaction.member.guild.id;
     const channel = interaction.options.getChannel("channel");
+    const template = interaction.options.getString("template") || "darkmode";
 
     try {
       const server = await Server.findOne({ serverId });
@@ -40,19 +44,21 @@ module.exports = {
 
       let settings = await StatusBar.findOne({ serverId });
       if (!settings) settings = new StatusBar({ serverId });
-      
+
       settings.statusChannelId = channel.id;
+      settings.cardTemplate = template;
       await settings.save();
 
       await updateServerStatus(client, server, settings);
-      
+
       interaction.reply({ 
-        content: CONFIG.MESSAGES.SETUP_SUCCESS(channel.toString()),
+        content: CONFIG.MESSAGES.SETUP_SUCCESS(channel.toString()) + `\nTemplate set to: **${template}**`,
         ephemeral: true 
       });
     } catch (error) {
+      console.error(error);
       interaction.reply({ 
-        content: `${client.emojis.ERROR} Setup failed!`, 
+        content: `❌ Setup failed!`, 
         ephemeral: true 
       });
     }

@@ -6,6 +6,7 @@ const statusBarSchema = new Schema({
   statusChannelId: String,
   statusMessageId: String,
   updateInterval: { type: Number, default: 5 },
+  cardTemplate: { type: String, enum: ['darkmode', 'glass'], default: 'darkmode' },
   lastUpdated: { type: Date, default: Date.now }
 });
 

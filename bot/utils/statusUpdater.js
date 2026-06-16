@@ -26,57 +26,74 @@ async function checkServerStatus(ip, port, type) {
     }
 }
 
-async function generateStatusImage(server, statusData) {
+async function generateStatusImage(server, statusData, template = 'darkmode') {
     const width = 800;
     const height = 250;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // 1. Background (Luxury Theme)
+    // 1. Background
     try {
         const bg = await loadImage(server.wallpaper || "https://i.ibb.co/TBVZycXV/2.png");
-        ctx.drawImage(bg, 0, 0, width, height);
+        // Fix background aspect ratio and fill
+        const hRatio = canvas.width / bg.width;
+        const vRatio = canvas.height / bg.height;
+        const ratio = Math.max(hRatio, vRatio);
+        const centerShift_x = (canvas.width - bg.width * ratio) / 2;
+        const centerShift_y = (canvas.height - bg.height * ratio) / 2;
+        ctx.drawImage(bg, 0, 0, bg.width, bg.height, centerShift_x, centerShift_y, bg.width * ratio, bg.height * ratio);
 
-        const overlay = ctx.createLinearGradient(0, 0, width, height);
-        overlay.addColorStop(0, 'rgba(7, 10, 24, 0.82)');
-        overlay.addColorStop(0.55, 'rgba(12, 14, 28, 0.7)');
-        overlay.addColorStop(1, 'rgba(8, 10, 20, 0.92)');
-        ctx.fillStyle = overlay;
-        ctx.fillRect(0, 0, width, height);
-
-        const vignette = ctx.createRadialGradient(width * 0.25, height * 0.2, 30, width * 0.6, height * 0.6, width);
-        vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        vignette.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
-        ctx.fillStyle = vignette;
+        // Dark Overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.fillRect(0, 0, width, height);
     } catch (e) {
-        const fallback = ctx.createLinearGradient(0, 0, width, height);
-        fallback.addColorStop(0, '#0f111b');
-        fallback.addColorStop(1, '#080a14');
-        ctx.fillStyle = fallback;
+        ctx.fillStyle = '#0f111b';
         ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. Glass Panel + Accent
+    // 2. Panel Design based on Template
     const panelX = 24;
     const panelY = 24;
     const panelW = width - 48;
     const panelH = height - 48;
 
-    ctx.fillStyle = 'rgba(16, 18, 32, 0.68)';
-    ctx.beginPath();
-    ctx.roundRect(panelX, panelY, panelW, panelH, 26);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.lineWidth = 1.3;
-    ctx.stroke();
+    if (template === 'glass') {
+        // Glass Template
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 26);
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-    const accent = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
-    accent.addColorStop(0, 'rgba(212, 175, 55, 0.9)');
-    accent.addColorStop(0.45, 'rgba(212, 175, 55, 0.2)');
-    accent.addColorStop(1, 'rgba(212, 175, 55, 0)');
-    ctx.fillStyle = accent;
-    ctx.fillRect(panelX + 18, panelY + 10, panelW - 36, 2);
+        // Glass Accent
+        const accent = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
+        accent.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+        accent.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        accent.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = accent;
+        ctx.fillRect(panelX + 20, panelY + 10, panelW - 40, 1);
+    } else {
+        // Darkmode Template (Default)
+        ctx.fillStyle = 'rgba(16, 18, 32, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 26);
+        ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Gold Accent
+        const accent = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
+        accent.addColorStop(0, 'rgba(212, 175, 55, 0.9)');
+        accent.addColorStop(0.45, 'rgba(212, 175, 55, 0.2)');
+        accent.addColorStop(1, 'rgba(212, 175, 55, 0)');
+        ctx.fillStyle = accent;
+        ctx.fillRect(panelX + 18, panelY + 10, panelW - 36, 2);
+    }
 
     const isOnline = statusData?.online;
     const players = statusData?.players || { online: 0, max: 0 };
@@ -123,6 +140,7 @@ async function generateStatusImage(server, statusData) {
     ctx.lineWidth = 1.4;
     ctx.stroke();
     ctx.fillStyle = statusColor;
+    ctx.textAlign = 'left';
     ctx.fillText(statusText, badgeX + badgePadding, badgeY + 18);
 
     // Server Name
@@ -194,13 +212,11 @@ module.exports.updateServerStatus = async (client, server, settings) => {
             server.serverType
         );
 
-        const imageBuffer = await generateStatusImage(server, status.data);
+        const imageBuffer = await generateStatusImage(server, status.data, settings.cardTemplate);
         const attachment = new AttachmentBuilder(imageBuffer, { name: 'status.png' });
 
         const channel = await client.channels.fetch(settings.statusChannelId);
         if (!channel) return;
-
-        const content = ``; // Empty content, just the image
 
         if (settings.statusMessageId) {
             try {
