@@ -90,11 +90,41 @@ async function generatePlayerCard(ign, template = 'darkmode') {
         ctx.stroke();
     }
 
-    // 3. Player Render (Body)
+    // 3. Player Render (3D Bust with Pop-out Effect)
+    const skinX = 20;
+    const skinY = 40;
+    const skinSize = 220;
+    
     try {
-        const body = await loadImage(playerData.skinUrl);
-        ctx.drawImage(body, 20, 40, 200, 400);
-    } catch (e) {}
+        const bustUrl = `https://render.crafty.gg/3d/bust/${playerData.ign}`;
+        const skinImage = await loadImage(bustUrl);
+        
+        // Frame for the skin
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.beginPath();
+        ctx.roundRect(skinX + 20, skinY + 60, 160, 180, 20);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.stroke();
+
+        // 3D Pop-out effect
+        // 1. Clip the bottom part (body inside frame)
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(skinX, skinY + 60, 220, 180); // Frame area
+        ctx.clip();
+        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+        ctx.restore();
+
+        // 2. Draw the top part (head and hands) without clipping to "pop out"
+        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+    } catch (e) {
+        // Fallback to original body render if bust fails
+        try {
+            const body = await loadImage(playerData.skinUrl);
+            ctx.drawImage(body, 20, 40, 200, 400);
+        } catch (err) {}
+    }
 
     // 4. Header Section
     const contentX = 230;
