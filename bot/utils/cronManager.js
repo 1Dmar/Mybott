@@ -7,7 +7,6 @@ module.exports.scheduleCronJobs = async (client) => {
   cronJobs.forEach(job => job.stop());
   cronJobs.clear();
 
-  // Check if client.db and required models exist
   if (!client.db || !client.db.StatusBar || !client.db.Server) {
     console.error('Database models not initialized. Cron jobs not scheduled.');
     return 0;
@@ -17,7 +16,8 @@ module.exports.scheduleCronJobs = async (client) => {
     const allSettings = await client.db.StatusBar.find();
     
     for (const settings of allSettings) {
-      const job = cron.schedule(`*/${settings.updateInterval} * * * *`, async () => {
+      const interval = settings.updateInterval || 1;
+      const job = cron.schedule(`*/${interval} * * * *`, async () => {
         try {
           const server = await client.db.Server.findOne({ serverId: settings.serverId });
           if (server) {

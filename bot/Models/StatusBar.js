@@ -5,8 +5,9 @@ const statusBarSchema = new Schema({
   serverId: { type: String, required: true, unique: true },
   statusChannelId: String,
   statusMessageId: String,
-  updateInterval: { type: Number, default: 5 },
-  cardTemplate: { type: String, enum: ['darkmode', 'glass'], default: 'darkmode' },
+  updateInterval: { type: Number, default: 1 }, 
+  cardTemplate: { type: String, enum: ['darkmode', 'glass'], default: 'glass' },
+  autoWallpaper: { type: Boolean, default: true },
   lastUpdated: { type: Date, default: Date.now }
 });
 

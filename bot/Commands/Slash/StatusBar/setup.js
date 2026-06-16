@@ -24,14 +24,21 @@ module.exports = {
       required: false,
       choices: [
         { name: "Dark Mode", value: "darkmode" },
-        { name: "Glass", value: "glass" }
+        { name: "Glass (Recommended)", value: "glass" }
       ]
+    },
+    {
+      name: "auto_wallpaper",
+      description: "Automatically change wallpaper every minute",
+      type: 5,
+      required: false
     }
   ],
   run: async (client, interaction) => {
     const serverId = interaction.member.guild.id;
     const channel = interaction.options.getChannel("channel");
-    const template = interaction.options.getString("template") || "darkmode";
+    const template = interaction.options.getString("template") || "glass";
+    const autoWallpaper = interaction.options.getBoolean("auto_wallpaper") ?? true;
 
     try {
       const server = await Server.findOne({ serverId });
@@ -47,13 +54,20 @@ module.exports = {
 
       settings.statusChannelId = channel.id;
       settings.cardTemplate = template;
+      settings.autoWallpaper = autoWallpaper;
+      settings.updateInterval = 1; // Force 1 minute for live updates
       await settings.save();
+
+      await interaction.reply({ 
+        content: `⏳ Initializing live status bar in ${channel}...`,
+        ephemeral: true 
+      });
 
       await updateServerStatus(client, server, settings);
 
-      interaction.reply({ 
-        content: CONFIG.MESSAGES.SETUP_SUCCESS(channel.toString()) + `\nTemplate set to: **${template}**`,
-        ephemeral: true 
+      await interaction.editReply({ 
+        content: CONFIG.MESSAGES.SETUP_SUCCESS(channel.toString()) + 
+                 `\nTemplate: **${template}**\nAuto Wallpaper: **${autoWallpaper ? 'Enabled' : 'Disabled'}**\nUpdate Frequency: **Every 1 Minute**`,
       });
     } catch (error) {
       console.error(error);
