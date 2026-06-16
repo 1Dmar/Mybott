@@ -149,7 +149,7 @@ async function generatePlayerCard(ign, template = 'darkmode', stats = null) {
     // نسبة 1:1.1 للـ bust — أطول من المربع بشوي
     const padding = 8;
     const bustW = frameW - padding * 2;
-    const bustH = Math.round(bustW * 2);
+    const bustH = Math.round(bustW * 1.1);
     const bustX = frameX + padding;
     const bustY = frameY + Math.round((frameH - bustH) / 2);
 
