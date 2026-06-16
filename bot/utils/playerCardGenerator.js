@@ -99,25 +99,60 @@ async function generatePlayerCard(ign, template = 'darkmode') {
         const bustUrl = `https://render.crafty.gg/3d/bust/${playerData.ign}`;
         const skinImage = await loadImage(bustUrl);
         
-        // Frame for the skin
+        // Frame dimensions for the skin
+        const frameX = skinX + 20;
+        const frameY = skinY + 60;
+        const frameW = 160;
+        const frameH = 180;
+        const frameRadius = 20;
+
+        // Draw Frame Background
         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.beginPath();
-        ctx.roundRect(skinX + 20, skinY + 60, 160, 180, 20);
+        ctx.roundRect(frameX, frameY, frameW, frameH, frameRadius);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.stroke();
 
-        // 3D Pop-out effect
-        // 1. Clip the bottom part (body inside frame)
+        // 3D Pop-out effect implementation:
+        // The goal is to have the body inside the frame and hands/head popping out.
+        // We use a specific clipping region for the body.
+        
         ctx.save();
+        // Create a clipping path that covers the frame area
         ctx.beginPath();
-        ctx.rect(skinX, skinY + 60, 220, 180); // Frame area
+        ctx.roundRect(frameX, frameY, frameW, frameH, frameRadius);
+        ctx.clip();
+        
+        // Draw the full skin image inside the clip (this shows the body)
+        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+        ctx.restore();
+
+        // Now draw the parts that should be OUTSIDE the frame (popping out)
+        // We create a clipping path that excludes the frame's vertical middle part 
+        // OR simply draw the head and hands area.
+        // For render.crafty.gg/3d/bust, the hands are on the sides.
+        
+        ctx.save();
+        // 1. Pop out the head (top part)
+        ctx.beginPath();
+        ctx.rect(skinX, skinY, skinSize, frameY - skinY + 5); // Area above frame
+        
+        // 2. Pop out the hands (left and right sides)
+        // We expand the hand area slightly to ensure they are visible
+        // Left hand area
+        ctx.rect(skinX - 10, frameY, frameX - skinX + 10, frameH); 
+        // Right hand area
+        ctx.rect(frameX + frameW, frameY, skinX + skinSize - (frameX + frameW) + 10, frameH);
+        
         ctx.clip();
         ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
         ctx.restore();
 
-        // 2. Draw the top part (head and hands) without clipping to "pop out"
-        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+        // Draw Frame Stroke on top to give depth
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(frameX, frameY, frameW, frameH, frameRadius);
+        ctx.stroke();
     } catch (e) {
         // Fallback to original body render if bust fails
         try {
