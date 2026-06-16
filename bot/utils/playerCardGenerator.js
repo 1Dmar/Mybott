@@ -97,7 +97,15 @@ async function generatePlayerCard(ign, template = 'darkmode') {
     
     try {
         const bustUrl = `https://render.crafty.gg/3d/bust/${playerData.ign}`;
-        const skinImage = await loadImage(bustUrl);
+        
+        // Fetch image as buffer to bypass Cloudflare protection
+        const response = await axios.get(bustUrl, {
+            responseType: 'arraybuffer',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        const skinImage = await loadImage(Buffer.from(response.data));
         
         // Frame dimensions for the skin
         const frameX = skinX + 20;
