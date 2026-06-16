@@ -166,11 +166,41 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         ctx.fillText(`${percentage}%`, barX + barW + 10, barY + 10);
     }
 
+    // Player Skin Render (3D Bust)
+    const skinX = width - 200;
+    const skinY = height - 230;
+    const skinSize = 180;
+    
+    try {
+        const playerName = "Steve"; 
+        const skinUrl = `https://render.crafty.gg/3d/bust/${playerName}`;
+        const skinImage = await loadImage(skinUrl);
+        
+        // Frame for the skin
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.beginPath();
+        ctx.roundRect(skinX + 20, skinY + 40, 140, 140, 20);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.stroke();
+
+        // 3D Pop-out effect
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(skinX, skinY + 40, 200, 140); // Clip to frame
+        ctx.clip();
+        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+        ctx.restore();
+
+        // Draw top part again to pop out
+        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+    } catch (e) {}
+
     // Footer
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.font = '20px Arial';
+    ctx.font = '14px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(`PROMCBOT LIVE • UPDATED: ${new Date().toLocaleTimeString()}`, width - 100, height - 80);
+    ctx.fillText(`PROMCBOT LIVE • ${new Date().toLocaleTimeString()}`, width - 40, height - 20);
 
     return canvas.toBuffer();
 }

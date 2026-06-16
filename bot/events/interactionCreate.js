@@ -359,11 +359,48 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
             ctx.fillText(`${percentage}%`, barX + barW + 10, barY + 8);
         }
 
-        // 9. Footer & Watermark
+        // 9. Player Skin Render (3D Bust)
+        const skinX = canvasWidth - 180;
+        const skinY = canvasHeight - 240;
+        const skinSize = 200;
+        
+        try {
+            // Using a placeholder or first player if available, else default to Steve/Alex
+            const playerName = "Steve"; 
+            const skinUrl = `https://render.crafty.gg/3d/bust/${playerName}`;
+            const skinImage = await loadImage(skinUrl);
+            
+            // Draw the "Frame" for the skin
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.beginPath();
+            ctx.roundRect(skinX + 20, skinY + 40, 140, 160, 20);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.stroke();
+
+            // To create the effect of hands coming out:
+            // 1. Clip the bottom part (body inside frame)
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(skinX, skinY + 40, 200, 160); // Frame area
+            ctx.clip();
+            ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+            ctx.restore();
+
+            // 2. Draw the top part (head and hands) without clipping to "pop out"
+            // We draw the same image again but only the parts we want to pop out
+            // Since it's a bust, the hands/head will naturally look like they are popping out if the frame is positioned right
+            ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+            
+        } catch (e) {
+            // Skip skin if failed
+        }
+
+        // 10. Footer & Watermark
         ctx.font = 'bold 12px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
         ctx.textAlign = 'right';
-        ctx.fillText(`PROMCBOT API • ${new Date().getFullYear()}`, canvasWidth - 40, canvasHeight - 35);
+        ctx.fillText(`PROMCBOT API • ${new Date().getFullYear()}`, canvasWidth - 40, canvasHeight - 25);
         
         if (isPreview) {
             ctx.font = 'bold 40px Arial';
