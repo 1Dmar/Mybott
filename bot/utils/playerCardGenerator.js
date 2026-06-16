@@ -18,10 +18,13 @@ async function getPlayerData(ign) {
         // Get player profile
         const profileResponse = await axios.get(`https://sessionserver.mojang.com/session/minecraft/profile/${uuid}`, { timeout: 5000 });
         
+        // Try to fetch Hypixel stats if possible (Optional, using placeholders for now as requested by design)
+        // In a real scenario, you'd use Hypixel API here.
+        
         return {
             uuid,
             ign: profileResponse.data.name,
-            skinUrl: `https://crafatar.com/avatars/${uuid}?size=256&overlay=true`,
+            skinUrl: `https://crafatar.com/renders/body/${uuid}?size=512&overlay=true`,
             headUrl: `https://crafatar.com/avatars/${uuid}?size=128&overlay=true`
         };
     } catch (error) {
@@ -32,14 +35,13 @@ async function getPlayerData(ign) {
 
 async function generatePlayerCard(ign, template = 'darkmode') {
     const width = 800;
-    const height = 300;
+    const height = 600; // Increased height for better design
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
     // Get player data
     const playerData = await getPlayerData(ign);
     if (!playerData) {
-        // Fallback: Create error card
         ctx.fillStyle = '#0f111b';
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = '#FFFFFF';
@@ -51,141 +53,136 @@ async function generatePlayerCard(ign, template = 'darkmode') {
 
     // 1. Background
     try {
-        // Create gradient background
-        const bgGradient = ctx.createLinearGradient(0, 0, width, height);
-        if (template === 'glass') {
-            bgGradient.addColorStop(0, '#1a1a2e');
-            bgGradient.addColorStop(0.5, '#16213e');
-            bgGradient.addColorStop(1, '#0f3460');
-        } else {
-            bgGradient.addColorStop(0, '#0a0e27');
-            bgGradient.addColorStop(0.5, '#1a1f3a');
-            bgGradient.addColorStop(1, '#0f111b');
-        }
-        ctx.fillStyle = bgGradient;
-        ctx.fillRect(0, 0, width, height);
-
-        // Add texture overlay
-        const texturePattern = ctx.createLinearGradient(0, 0, width, height);
-        texturePattern.addColorStop(0, 'rgba(255, 255, 255, 0.02)');
-        texturePattern.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
-        ctx.fillStyle = texturePattern;
+        // Background Image (Blurred Minecraft landscape)
+        const bgUrl = "https://i.ibb.co/TBVZycXV/2.png";
+        const background = await loadImage(bgUrl);
+        ctx.drawImage(background, 0, 0, width, height);
+        
+        // Dark Overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(0, 0, width, height);
     } catch (e) {
         ctx.fillStyle = '#0f111b';
         ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. Panel Design
-    const panelX = 20;
-    const panelY = 20;
-    const panelW = width - 40;
-    const panelH = height - 40;
+    // 2. Main Panel
+    const panelX = 30;
+    const panelY = 30;
+    const panelW = width - 60;
+    const panelH = height - 60;
 
     if (template === 'glass') {
-        // Glass Template
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 20);
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Glass shine effect
-        const shine = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
-        shine.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
-        shine.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
-        shine.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = shine;
-        ctx.fillRect(panelX + 10, panelY + 8, panelW - 20, 1);
-    } else {
-        // Darkmode Template
-        ctx.fillStyle = 'rgba(20, 24, 45, 0.9)';
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 20);
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(212, 175, 55, 0.3)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-
-        // Gold accent line
-        const accent = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
-        accent.addColorStop(0, 'rgba(212, 175, 55, 0.8)');
-        accent.addColorStop(0.5, 'rgba(212, 175, 55, 0.2)');
-        accent.addColorStop(1, 'rgba(212, 175, 55, 0)');
-        ctx.fillStyle = accent;
-        ctx.fillRect(panelX + 15, panelY + 8, panelW - 30, 2);
-    }
-
-    // 3. Player Avatar
-    const avatarX = 50;
-    const avatarY = 50;
-    const avatarSize = 200;
-
-    try {
-        const avatar = await loadImage(playerData.headUrl);
-        ctx.save();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = 'rgba(212, 175, 55, 0.4)';
-        ctx.beginPath();
-        ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 15);
-        ctx.clip();
-        ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
-        ctx.restore();
-    } catch (e) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 15);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 30);
         ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    } else {
+        ctx.fillStyle = 'rgba(15, 15, 25, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 30);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
     }
 
-    // 4. Player Info
-    const infoX = avatarX + avatarSize + 40;
-    const infoY = 70;
+    // 3. Player Render (Body)
+    try {
+        const body = await loadImage(playerData.skinUrl);
+        ctx.drawImage(body, 20, 40, 200, 400);
+    } catch (e) {}
 
-    // Player Name
+    // 4. Header Section
+    const contentX = 230;
+    ctx.textAlign = 'left';
+    
+    // Name with Checkmark
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 45px "Minecraft", Arial';
+    ctx.fillText(`✔ ${playerData.ign}`, contentX, 90);
+
+    // Level & Progress
+    ctx.fillStyle = '#00FFFF';
+    ctx.font = '22px "Minecraft", Arial';
+    ctx.fillText('Level: [516★]', contentX, 130);
+    
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 40px "Minecraft", Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(playerData.ign, infoX, infoY + 50);
-
-    // UUID
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '14px Arial';
-    ctx.fillText(`UUID: ${playerData.uuid.substring(0, 8)}...${playerData.uuid.substring(24)}`, infoX, infoY + 80);
-
-    // Status Badge
-    ctx.fillStyle = 'rgba(34, 224, 138, 0.2)';
-    ctx.strokeStyle = '#22E08A';
-    ctx.lineWidth = 1.5;
+    ctx.font = '18px Arial';
+    ctx.fillText('EXP Progress: 2,983/5,000', contentX, 160);
+    
+    // Progress Bar
+    const barX = contentX, barY = 175, barW = 300, barH = 15;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.beginPath();
-    ctx.roundRect(infoX, infoY + 100, 120, 35, 8);
+    ctx.roundRect(barX, barY, barW, barH, 5);
     ctx.fill();
-    ctx.stroke();
+    ctx.fillStyle = '#00FFFF';
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barW * 0.6, barH, 5);
+    ctx.fill();
 
-    ctx.fillStyle = '#22E08A';
-    ctx.font = 'bold 14px Arial';
+    // 5. Stats Grid (Right Side)
+    const statsX = 550;
+    const statsY = 80;
+    ctx.font = '18px "Minecraft", Arial';
+    
+    const stats = [
+        { label: 'Coins', value: '637,608', color: '#FFA500' },
+        { label: 'Loot Chests', value: '158', color: '#FFFF00' },
+        { label: 'Iron', value: '1.18M', color: '#C0C0C0' },
+        { label: 'Gold', value: '191,203', color: '#FFD700' },
+        { label: 'Diamonds', value: '26,661', color: '#00FFFF' },
+        { label: 'Emeralds', value: '10,891', color: '#00FF00' }
+    ];
+
+    stats.forEach((stat, i) => {
+        ctx.fillStyle = stat.color;
+        ctx.fillText(`• ${stat.label}: ${stat.value}`, statsX, statsY + (i * 30));
+    });
+
+    // 6. Game Stats (BedWars Style)
     ctx.textAlign = 'center';
-    ctx.fillText('ACTIVE', infoX + 60, infoY + 122);
+    ctx.fillStyle = '#FF5555';
+    ctx.font = 'bold 28px "Minecraft", Arial';
+    ctx.fillText('BedWars Stats (Overall)', width / 2 + 50, 260);
 
-    // Stats
-    const statsX = infoX;
-    const statsY = infoY + 160;
+    const gridX = 250;
+    const gridY = 300;
+    const colW = 170;
+    const rowH = 90;
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Joined: 2024', statsX, statsY);
-    ctx.fillText('Level: 50', statsX + 200, statsY);
+    const gameStats = [
+        [ { l: 'Wins', v: '3,506', c: '#55FF55' }, { l: 'Losses', v: '3,410', c: '#FF5555' }, { l: 'WLR', v: '1.03', c: '#FFAA00' } ],
+        [ { l: 'Final Kills', v: '11,595', c: '#55FF55' }, { l: 'Final Deaths', v: '3,391', c: '#FF5555' }, { l: 'FKDR', v: '3.42', c: '#FFAA00' } ],
+        [ { l: 'Kills', v: '19,330', c: '#55FF55' }, { l: 'Deaths', v: '27,105', c: '#FF5555' }, { l: 'KDR', v: '0.71', c: '#FFAA00' } ]
+    ];
+
+    gameStats.forEach((row, rowIndex) => {
+        row.forEach((stat, colIndex) => {
+            const x = gridX + (colIndex * colW);
+            const y = gridY + (rowIndex * rowH);
+            
+            // Draw Box
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(x - colW/2 + 10, y - 30, colW - 20, rowH - 10);
+            
+            ctx.fillStyle = stat.c;
+            ctx.font = '16px "Minecraft", Arial';
+            ctx.fillText(stat.l, x, y);
+            ctx.font = 'bold 24px "Minecraft", Arial';
+            ctx.fillText(stat.v, x, y + 35);
+        });
+    });
 
     // Footer
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'right';
-    ctx.fillText(`PROMCBOT • ${new Date().getFullYear()}`, width - 40, height - 25);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '14px Arial';
+    ctx.fillText('statsify.net | PROMCBOT', width / 2 + 50, height - 50);
 
     return canvas.toBuffer();
 }

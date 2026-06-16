@@ -189,10 +189,10 @@ if (registerFont) {
 }
 
 // Server status image generator - Redesigned with Aesthetics & Creativity
-async function generateServerStatusImage(serverData, wallpaperUrl, interaction, isPreview = false) {
+async function generateServerStatusImage(serverData, wallpaperUrl, interaction, isPreview = false, template = 'glass') {
     try {
-        const canvasWidth = 800;
-        const canvasHeight = 250;
+        const canvasWidth = 1000;
+        const canvasHeight = 400;
         const canvas = createCanvas(canvasWidth, canvasHeight);
         const ctx = canvas.getContext('2d');
 
@@ -201,23 +201,13 @@ async function generateServerStatusImage(serverData, wallpaperUrl, interaction, 
             const background = await loadImage(wallpaperUrl);
             ctx.drawImage(background, 0, 0, canvasWidth, canvasHeight);
 
-            const overlay = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-            overlay.addColorStop(0, 'rgba(7, 10, 24, 0.82)');
-            overlay.addColorStop(0.6, 'rgba(12, 14, 28, 0.68)');
-            overlay.addColorStop(1, 'rgba(8, 10, 20, 0.94)');
+            const overlay = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            overlay.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
+            overlay.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
             ctx.fillStyle = overlay;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-            const vignette = ctx.createRadialGradient(canvasWidth * 0.25, canvasHeight * 0.2, 30, canvasWidth * 0.6, canvasHeight * 0.6, canvasWidth);
-            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
-            ctx.fillStyle = vignette;
-            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         } catch (error) {
-            const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-            gradient.addColorStop(0, '#0f111b');
-            gradient.addColorStop(1, '#080a14');
-            ctx.fillStyle = gradient;
+            ctx.fillStyle = '#0f111b';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 

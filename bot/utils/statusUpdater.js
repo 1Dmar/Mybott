@@ -15,10 +15,10 @@ const cleanIP = (ip) => ip ? ip.replace(/^https?:\/\//, '').split(':')[0] : '';
 // List of Minecraft backgrounds for auto-rotation
 const MC_WALLPAPERS = [
     "https://i.ibb.co/TBVZycXV/2.png",
-    "https://i.ibb.co/6R8mH699/3.png",
-    "https://i.ibb.co/m58pLp8H/4.png",
-    "https://i.ibb.co/8LpYvL8H/5.png",
-    "https://i.ibb.co/Xf8YvL8H/6.png"
+    "https://static1.srcdn.com/wordpress/wp-content/uploads/2022/05/Minecraft-Shader-Pine-Forest.jpg",
+    "https://resourcepack.net/fl/images/2022/11/RedHat-Shaders-for-minecraft-5.jpg",
+    "https://i.ibb.co/KpWg3FHw/687d56199156581-664cf6f062769.png",
+    "https://i.ibb.co/qFrSvppV/1.png"
 ];
 
 async function checkServerStatus(ip, port, type) {
@@ -36,33 +36,27 @@ async function checkServerStatus(ip, port, type) {
 }
 
 async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
-    // Large Card Design
-    const width = 1000;
-    const height = 450;
+    // Large Card Design (Enhanced)
+    const width = 1200;
+    const height = 600;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // 1. Dynamic Background
+    // 1. Dynamic Background (Rotation every minute)
     try {
         let wallpaperUrl = server.wallpaper;
         if (autoWallpaper || !wallpaperUrl) {
-            // Pick a random wallpaper or based on minute
             const minute = new Date().getMinutes();
             wallpaperUrl = MC_WALLPAPERS[minute % MC_WALLPAPERS.length];
         }
 
         const bg = await loadImage(wallpaperUrl);
-        const hRatio = canvas.width / bg.width;
-        const vRatio = canvas.height / bg.height;
-        const ratio = Math.max(hRatio, vRatio);
-        const centerShift_x = (canvas.width - bg.width * ratio) / 2;
-        const centerShift_y = (canvas.height - bg.height * ratio) / 2;
-        ctx.drawImage(bg, 0, 0, bg.width, bg.height, centerShift_x, centerShift_y, bg.width * ratio, bg.height * ratio);
+        ctx.drawImage(bg, 0, 0, width, height);
 
-        // Professional Dark Overlay with Gradient
+        // Professional Gradient Overlay
         const overlay = ctx.createLinearGradient(0, 0, 0, height);
-        overlay.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
-        overlay.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+        overlay.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
+        overlay.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, width, height);
     } catch (e) {
@@ -71,37 +65,25 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     }
 
     // 2. Main Panel
-    const panelX = 40;
-    const panelY = 40;
-    const panelW = width - 80;
-    const panelH = height - 80;
+    const panelX = 50;
+    const panelY = 50;
+    const panelW = width - 100;
+    const panelH = height - 100;
 
     if (template === 'glass') {
-        // Glassmorphism effect
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 35);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 40);
         ctx.fill();
-        
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 3;
         ctx.stroke();
-
-        // Panel Shine
-        const shine = ctx.createLinearGradient(panelX, panelY, width, height);
-        shine.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-        shine.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-        shine.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
-        ctx.fillStyle = shine;
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 35);
-        ctx.fill();
     } else {
-        ctx.fillStyle = 'rgba(12, 14, 28, 0.92)';
+        ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
         ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 35);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 40);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)';
+        ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
         ctx.lineWidth = 2;
         ctx.stroke();
     }
@@ -109,77 +91,66 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     const isOnline = statusData?.online;
     const players = statusData?.players || { online: 0, max: 0 };
     const version = statusData?.version || 'N/A';
-    const motd = statusData?.motd?.clean?.[0] || 'Minecraft Server';
     const cleanIpAddr = cleanIP(server.javaIP || server.bedrockIP);
     const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${server.javaPort || server.bedrockPort || 25565}`;
 
-    // 3. Server Icon (Bigger)
-    const iconX = 80;
-    const iconY = 85;
-    const iconSize = 220;
+    // 3. Server Icon (Large)
+    const iconX = 100;
+    const iconY = 120;
+    const iconSize = 300;
 
     try {
         const icon = await loadImage(iconUrl);
         ctx.save();
-        ctx.shadowBlur = 40;
-        ctx.shadowColor = isOnline ? 'rgba(34, 224, 138, 0.6)' : 'rgba(255, 94, 94, 0.5)';
+        ctx.shadowBlur = 50;
+        ctx.shadowColor = isOnline ? 'rgba(34, 224, 138, 0.7)' : 'rgba(255, 94, 94, 0.6)';
         ctx.beginPath();
-        ctx.roundRect(iconX, iconY, iconSize, iconSize, 40);
+        ctx.roundRect(iconX, iconY, iconSize, iconSize, 50);
         ctx.clip();
         ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
         ctx.restore();
     } catch (e) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(iconX, iconY, iconSize, iconSize, 40);
+        ctx.roundRect(iconX, iconY, iconSize, iconSize, 50);
         ctx.fill();
     }
 
-    // 4. Server Info (More Details)
-    const infoX = iconX + iconSize + 60;
+    // 4. Server Information
+    const infoX = iconX + iconSize + 80;
     const title = (server.serverName || 'Minecraft Server').toUpperCase();
     const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
     const statusColor = isOnline ? '#22E08A' : '#FF5E5E';
 
-    // Server Name
+    // Title
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 55px "Minecraft", Arial';
+    ctx.font = 'bold 70px "Minecraft", Arial';
     ctx.textAlign = 'left';
-    ctx.fillText(title, infoX, 145);
+    ctx.fillText(title, infoX, 200);
 
-    // Status Dot + Text
+    // Status Badge
     ctx.fillStyle = statusColor;
     ctx.beginPath();
-    ctx.arc(infoX + 10, 195, 10, 0, Math.PI * 2);
+    ctx.arc(infoX + 15, 265, 12, 0, Math.PI * 2);
     ctx.fill();
-    ctx.font = 'bold 28px Arial';
-    ctx.fillText(statusText, infoX + 35, 205);
+    ctx.font = 'bold 35px Arial';
+    ctx.fillText(statusText, infoX + 45, 278);
 
-    // Players Info
+    // Players
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = '32px Arial';
-    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 260);
+    ctx.font = '40px Arial';
+    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 350);
 
-    // Version & MOTD
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.font = '22px Arial';
-    const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
-    ctx.fillText(`Version: ${versionLabel}`, infoX, 305);
-    
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = 'italic 18px Arial';
-    ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 340);
-
-    // 5. Large Progress Bar
+    // Progress Bar
     if (isOnline && players.max > 0) {
         const barX = infoX;
-        const barY = 275;
-        const barW = 450;
-        const barH = 12;
+        const barY = 370;
+        const barW = 550;
+        const barH = 15;
 
         ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(barX, barY, barW, barH, 6);
+        ctx.roundRect(barX, barY, barW, barH, 8);
         ctx.fill();
 
         const progress = Math.min(players.online / players.max, 1);
@@ -188,15 +159,22 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         grad.addColorStop(1, '#0bbf6b');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.roundRect(barX, barY, barW * progress, barH, 6);
+        ctx.roundRect(barX, barY, barW * progress, barH, 8);
         ctx.fill();
     }
 
+    // Additional Info
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.font = '28px Arial';
+    const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
+    ctx.fillText(`Version: ${versionLabel}`, infoX, 440);
+    ctx.fillText(`IP Address: ${cleanIpAddr}`, infoX, 480);
+
     // Footer
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '16px Arial';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.font = '20px Arial';
     ctx.textAlign = 'right';
-    ctx.fillText(`PROMCBOT API • LIVE UPDATE • ${new Date().toLocaleTimeString()}`, width - 70, height - 65);
+    ctx.fillText(`PROMCBOT LIVE • UPDATED: ${new Date().toLocaleTimeString()}`, width - 100, height - 80);
 
     return canvas.toBuffer();
 }
