@@ -233,7 +233,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
         ctx.shadowBlur = 40;
-        ctx.drawImage(skinImg, 50, 60, 420, 420);
+        ctx.drawImage(skinImg, 50, 60, 300, 300);
         ctx.restore();
     } else {
         // لو كل الـ APIs فشلت، نرسم سيلويت بسيطة بدل ما نسيب الفراغ
