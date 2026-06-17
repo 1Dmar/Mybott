@@ -790,8 +790,8 @@ const interactionCreateEvent = {
                         new ActionRowBuilder().addComponents(
                             new TextInputBuilder()
                                 .setCustomId('apiPort')
-                                .setLabel("Additional API Port (Optional)")
-                                .setPlaceholder("Enter additional port if needed")
+.setLabel("Lobby API Port (Default: 8080)")
+	                                .setPlaceholder("Enter the second port for your lobby API")
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(false)
                         )
