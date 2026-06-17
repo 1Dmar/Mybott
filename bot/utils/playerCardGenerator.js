@@ -37,7 +37,7 @@ async function getPlayerData(ign, serverConfig = null) {
                         level: data.level,
                         isBanned: data.isBanned,
                         customApi: true,
-                        skinUrl: data.uuid ? `https://visage.surgeplay.com/bust/512/${data.uuid}` : null
+                        skinUrl: data.uuid ? `https://visage.surgeplay.com/bust/512/${ign}` : null
                     };
                 }
             } catch (apiError) {
