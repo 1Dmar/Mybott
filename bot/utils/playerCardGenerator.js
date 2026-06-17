@@ -9,8 +9,40 @@ if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
     registerFont(path.join(fontsDir, 'd.ttf'), { family: 'Minecraft' });
 }
 
-async function getPlayerData(ign) {
+async function getPlayerData(ign, serverConfig = null) {
     try {
+        // If server has API config, try to fetch from their custom API
+        if (serverConfig && serverConfig.apiToken) {
+            const serverIP = serverConfig.javaIP || serverConfig.bedrockIP;
+            const apiPort = serverConfig.apiPort || (serverConfig.serverType === 'java' ? serverConfig.javaPort : serverConfig.bedrockPort);
+            const protocol = "http"; // Default to http, can be adjusted
+            
+            try {
+                const response = await axios.get(`${protocol}://${serverIP}:${apiPort}/player/${ign}`, {
+                    headers: { 'Authorization': serverConfig.apiToken },
+                    timeout: 5000
+                });
+
+                if (response.data && response.data.success) {
+                    const data = response.data;
+                    return {
+                        uuid: data.uuid || null,
+                        ign: data.username || ign,
+                        isOnline: data.isOnline,
+                        balance: data.balance,
+                        level: data.level,
+                        isBanned: data.isBanned,
+                        customApi: true,
+                        skinUrl: data.uuid ? `https://crafatar.com/renders/body/${data.uuid}?size=512&overlay=true` : null,
+                        headUrl: data.uuid ? `https://crafatar.com/avatars/${data.uuid}?size=128&overlay=true` : null
+                    };
+                }
+            } catch (apiError) {
+                console.warn(`Custom API failed for ${ign}, falling back to Mojang:`, apiError.message);
+            }
+        }
+
+        // Fallback to Mojang API
         const uuidResponse = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`, { timeout: 5000 });
         const uuid = uuidResponse.data.id;
 
@@ -20,7 +52,8 @@ async function getPlayerData(ign) {
             uuid,
             ign: profileResponse.data.name,
             skinUrl: `https://crafatar.com/renders/body/${uuid}?size=512&overlay=true`,
-            headUrl: `https://crafatar.com/avatars/${uuid}?size=128&overlay=true`
+            headUrl: `https://crafatar.com/avatars/${uuid}?size=128&overlay=true`,
+            customApi: false
         };
     } catch (error) {
         console.error('Error fetching player data:', error.message);
@@ -80,14 +113,14 @@ async function loadSkinBust(uuid, ign) {
     return null;
 }
 
-async function generatePlayerCard(ign, template = 'darkmode', stats = null) {
+async function generatePlayerCard(ign, template = 'darkmode', serverConfig = null) {
     const width = 800;
     const height = 600;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
     // Get player data
-    const playerData = await getPlayerData(ign);
+    const playerData = await getPlayerData(ign, serverConfig);
     if (!playerData) {
         ctx.fillStyle = '#0f111b';
         ctx.fillRect(0, 0, width, height);
@@ -206,22 +239,32 @@ async function generatePlayerCard(ign, template = 'darkmode', stats = null) {
 
     ctx.fillStyle = '#00FFFF';
     ctx.font = '22px "Minecraft", Arial';
-    ctx.fillText('Level: [516★]', contentX, 130);
+    const level = (playerData.customApi && playerData.level !== undefined) ? playerData.level : "516";
+    ctx.fillText(`Level: [${level}★]`, contentX, 130);
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '18px Arial';
-    ctx.fillText('EXP Progress: 2,983/5,000', contentX, 160);
+    const status = playerData.customApi ? (playerData.isOnline ? "Online" : "Offline") : "Mojang Verified";
+    ctx.fillText(`Status: ${status}`, contentX, 160);
 
-    // Progress Bar
-    const barX = contentX, barY = 175, barW = 300, barH = 15;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.beginPath();
-    ctx.roundRect(barX, barY, barW, barH, 5);
-    ctx.fill();
-    ctx.fillStyle = '#00FFFF';
-    ctx.beginPath();
-    ctx.roundRect(barX, barY, barW * 0.6, barH, 5);
-    ctx.fill();
+    // Balance if available
+    if (playerData.customApi && playerData.balance !== undefined) {
+        ctx.fillStyle = '#FFA500';
+        ctx.fillText(`Balance: ${playerData.balance.toLocaleString()}`, contentX, 190);
+    }
+
+    // Progress Bar (Static for now or hidden if custom)
+    if (!playerData.customApi) {
+        const barX = contentX, barY = 175, barW = 300, barH = 15;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 5);
+        ctx.fill();
+        ctx.fillStyle = '#00FFFF';
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW * 0.6, barH, 5);
+        ctx.fill();
+    }
 
     // ── 5. Right Stats ───────────────────────────────────────────────────────
     const statsX = 555;

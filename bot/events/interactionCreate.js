@@ -631,6 +631,57 @@ const interactionCreateEvent = {
                         ephemeral: true
                     });
                 }
+            } else if (interaction.isModalSubmit() && interaction.customId === 'apiModal') {
+                await interaction.deferReply({ ephemeral: true });
+                const apiToken = interaction.fields.getTextInputValue('apiToken') || null;
+                const apiPortStr = interaction.fields.getTextInputValue('apiPort');
+                const apiPort = apiPortStr ? parseInt(apiPortStr) : null;
+
+                const serverData = client.tempData[interaction.user.id]?.serverData;
+                const wallpaper = client.tempData[interaction.user.id]?.wallpaper;
+
+                if (!serverData || !wallpaper) {
+                    return interaction.editReply({
+                        content: `${EMOJIS.WARNING} Missing data. Please start over.`,
+                        ephemeral: true
+                    });
+                }
+
+                // Add API info to serverData
+                serverData.apiToken = apiToken;
+                serverData.apiPort = apiPort;
+
+                const imageBuffer = await generateServerStatusImage(serverData, wallpaper, interaction, false);
+                const attachment = new AttachmentBuilder(imageBuffer, { 
+                    name: `${serverData.serverName.replace(/[^a-zA-Z0-9]/g, '_')}_status.png` 
+                });
+                
+                const confirmButton = new ButtonBuilder()
+                    .setCustomId('confirmServer')
+                    .setLabel("Confirm")
+                    .setStyle(ButtonStyle.Primary);
+                    
+                const cancelButton = new ButtonBuilder()
+                    .setCustomId('cancelServer')
+                    .setLabel("Cancel")
+                    .setStyle(ButtonStyle.Danger);
+                    
+                const buttonRow = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+                const serverIP = serverData.javaIP || serverData.bedrockIP;
+                const serverPort = serverData.serverType === 'java' ? (serverData.javaPort || 25565) : (serverData.bedrockPort || 19132);
+                const statusCheck = await checkServerStatus(serverIP, serverPort, serverData.serverType);
+                const isOnlineActual = statusCheck.success && statusCheck.data?.online;
+
+                const statusEmoji = isOnlineActual ? EMOJIS.ONLINE : EMOJIS.OFFLINE;
+                const statusText = isOnlineActual ? "Online" : "Offline";
+
+                await interaction.editReply({
+                    content: `${EMOJIS.INFORMATION} Server status image ready!\n${statusEmoji} **Status:** ${statusText}\n${EMOJIS.LINK} **IP:** \`${serverIP}\`${apiToken ? '\n🔑 **API Token:** Saved' : ''}`,
+                    files: [attachment],
+                    components: [buttonRow],
+                    ephemeral: true
+                });
             } else if (interaction.isModalSubmit() && interaction.customId === 'serverModal') {
                 await interaction.deferReply({ ephemeral: true });
                 
@@ -712,34 +763,43 @@ const interactionCreateEvent = {
                 }
             } else if (interaction.isButton()) {
                 if (interaction.customId === 'confirmWallpaper') {
-                    await interaction.deferReply({ ephemeral: true });
-                    
                     const serverData = client.tempData[interaction.user.id]?.serverData;
                     const wallpaper = client.tempData[interaction.user.id]?.wallpaper;
                     
                     if (!serverData || !wallpaper) {
-                        return interaction.editReply({
+                        return interaction.reply({
                             content: `${EMOJIS.WARNING} Missing server data. Please start over.`,
                             ephemeral: true
                         });
                     }
-                    
-                    const imageBuffer = await generateServerStatusImage(serverData, wallpaper, interaction, false);
-                    const attachment = new AttachmentBuilder(imageBuffer, { 
-                        name: `${serverData.serverName.replace(/[^a-zA-Z0-9]/g, '_')}_status.png` 
-                    });
-                    
-                    const confirmButton = new ButtonBuilder()
-                        .setCustomId('confirmServer')
-                        .setLabel("Confirm")
-                        .setStyle(ButtonStyle.Primary);
-                        
-                    const cancelButton = new ButtonBuilder()
-                        .setCustomId('cancelServer')
-                        .setLabel("Cancel")
-                        .setStyle(ButtonStyle.Danger);
-                        
-                    const buttonRow = new ActionRowBuilder().addComponents(confirmButton, cancelButton);
+
+                    // Ask for API Token and Port
+                    const apiModal = new ModalBuilder()
+                        .setCustomId('apiModal')
+                        .setTitle("API Configuration");
+
+                    apiModal.addComponents(
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('apiToken')
+                                .setLabel("API Token (Optional)")
+                                .setPlaceholder("Enter your API token if you have one")
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(false)
+                        ),
+                        new ActionRowBuilder().addComponents(
+                            new TextInputBuilder()
+                                .setCustomId('apiPort')
+                                .setLabel("Additional API Port (Optional)")
+                                .setPlaceholder("Enter additional port if needed")
+                                .setStyle(TextInputStyle.Short)
+                                .setRequired(false)
+                        )
+                    );
+
+                    await interaction.showModal(apiModal);
+                    return;
+                } else if (interaction.customId === 'chooseAnotherWallpaper') {
 	
                     // Fix: Re-calculate isOnline or use a default if it's not in scope
                     // The best way is to fetch it from serverData or just rely on the image generation result
@@ -808,7 +868,9 @@ const interactionCreateEvent = {
                         
                         const finalData = {
                             ...serverData,
-                            wallpaper: wallpaper || WALLPAPERS[0]
+                            wallpaper: wallpaper || WALLPAPERS[0],
+                            apiToken: serverData.apiToken,
+                            apiPort: serverData.apiPort
                         };
 
                         if (existingServer) {

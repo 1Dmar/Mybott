@@ -32,5 +32,13 @@ module.exports = model(
       type: String,
       default: "https://i.ibb.co/TBVZycXV/2.png"
     },
+    apiToken: {
+      type: String,
+      default: null
+    },
+    apiPort: {
+      type: Number,
+      default: null
+    },
   })
 );

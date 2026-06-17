@@ -1,6 +1,7 @@
 const { ApplicationCommandType, PermissionFlagsBits, AttachmentBuilder } = require("discord.js");
 const { generatePlayerCard } = require('../../../utils/playerCardGenerator');
 const Player = require('../../../Models/Player');
+const Server = require('../../../Models/Server');
 
 module.exports = {
   name: "playercard",
@@ -33,8 +34,10 @@ module.exports = {
     await interaction.deferReply();
 
     try {
+      const serverConfig = await Server.findOne({ serverId: interaction.guild.id });
+      
       // Generate player card
-      const imageBuffer = await generatePlayerCard(ign, template);
+      const imageBuffer = await generatePlayerCard(ign, template, serverConfig);
       
       if (!imageBuffer) {
         return interaction.editReply({
