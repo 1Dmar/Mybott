@@ -256,7 +256,53 @@ function drawCapeImage(ctx, badge, x, y, maxW, maxH) {
 /**
  * كيب مصمم خاص بالبوت لو اللاعب ما عنده كيب حقيقي - شكل علم/كيب بسيط بألوان الثيم الدهبي
  */
-function drawCustomCape(ctx, x, y, w, h, accentColor) {
+function drawLogoMark(ctx, cx, cy, size, colorStart, colorEnd) {
+    ctx.save();
+
+    const W = size * 0.8;
+    const H = size;
+    const ox = cx - W / 2;
+    const oy = cy - H / 2;
+
+    const grad = ctx.createLinearGradient(ox, oy, ox, oy + H);
+    grad.addColorStop(0, colorStart || '#ff6a3d'); // برتقالي
+    grad.addColorStop(1, colorEnd || '#e8124d');   // وردي/أحمر
+    ctx.fillStyle = grad;
+
+    // ---- الجزء العلوي (الحلقة) ----
+    const bowlR = W * 0.46;
+    const bowlCx = ox + W - bowlR;
+    const bowlCy = oy + H * 0.30;
+
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(bowlCx, oy);
+    ctx.arc(bowlCx, bowlCy, bowlR, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(ox + W * 0.30, oy + H * 0.60);
+    ctx.lineTo(ox, oy + H * 0.36);
+    ctx.closePath();
+    ctx.fill();
+
+    // ---- الساق (الذيل المائل بالأسفل) ----
+    ctx.beginPath();
+    ctx.moveTo(ox, oy + H * 0.36);
+    ctx.lineTo(ox + W * 0.30, oy + H * 0.60);
+    ctx.lineTo(ox + W * 0.30, oy + H);
+    ctx.lineTo(ox + W * 0.08, oy + H * 0.85);
+    ctx.lineTo(ox, oy + H * 0.74);
+    ctx.closePath();
+    ctx.fill();
+
+    // ---- تفريغ الدائرة (الفتحة وسط الحلقة) ----
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(bowlCx, bowlCy, bowlR * 0.46, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.restore();
+}
+/*function drawCustomCape(ctx, x, y, w, h, accentColor) {
     ctx.save();
     const notch = h * 0.12;
     ctx.beginPath();
@@ -281,7 +327,7 @@ function drawCustomCape(ctx, x, y, w, h, accentColor) {
     drawStarIcon(ctx, x + w / 2, y + h * 0.4, w * 0.22, accentColor);
     ctx.restore();
 }
-
+*/
 /**
  * يرسم صف البادجات (الكيبات) تحت السكن - العرض بيتقسم تلقائي حسب عدد البادجات
  * كده لو ضفت بادج جديد في buildCapeBadges مش محتاج تلمس الدالة دي
