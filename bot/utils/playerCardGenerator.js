@@ -256,7 +256,7 @@ function drawCapeImage(ctx, badge, x, y, maxW, maxH) {
 /**
  * كيب مصمم خاص بالبوت لو اللاعب ما عنده كيب حقيقي - شكل علم/كيب بسيط بألوان الثيم الدهبي
  */
-function drawLogoMark(ctx, cx, cy, size, colorStart, colorEnd) {
+function drawCustomCape(ctx, cx, cy, size, colorStart, colorEnd) {
     ctx.save();
 
     const W = size * 0.8;
