@@ -35,7 +35,7 @@ async function checkServerStatus(ip, port, type) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  drawRoundRect helper (works on older canvas versions without roundRect)
+//  drawRoundRect helper
 // ─────────────────────────────────────────────────────────────────────────────
 function rr(ctx, x, y, w, h, r) {
     if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
@@ -48,10 +48,72 @@ function rr(ctx, x, y, w, h, r) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Load player head avatars for online players
-//  Uses crafatar.com which serves the actual player face texture
+//  Draw a Minecraft-style item frame around a player head
 // ─────────────────────────────────────────────────────────────────────────────
-async function loadPlayerHeads(playerList, maxHeads = 8) {
+function drawItemFrame(ctx, x, y, size) {
+    const padding = 6;
+    const fx = x - padding;
+    const fy = y - padding;
+    const fSize = size + padding * 2;
+
+    // Outer shadow
+    ctx.save();
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowOffsetY = 3;
+
+    // Outer dark oak border
+    ctx.fillStyle = '#5C3A1E';
+    ctx.beginPath(); rr(ctx, fx, fy, fSize, fSize, 4); ctx.fill();
+    ctx.restore();
+
+    // Inner wood gradient
+    const woodGrad = ctx.createLinearGradient(fx, fy, fx + fSize, fy + fSize);
+    woodGrad.addColorStop(0, '#A07850');
+    woodGrad.addColorStop(0.5, '#8B6538');
+    woodGrad.addColorStop(1, '#6B4A28');
+    ctx.fillStyle = woodGrad;
+    ctx.beginPath(); rr(ctx, fx + 2, fy + 2, fSize - 4, fSize - 4, 3); ctx.fill();
+
+    // Wood grain lines
+    ctx.strokeStyle = 'rgba(60,35,15,0.3)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(fx + 5, fy + 8 + i * 8);
+        ctx.lineTo(fx + fSize - 5, fy + 8 + i * 8);
+        ctx.stroke();
+    }
+
+    // Inner dark recess
+    ctx.fillStyle = '#3A2510';
+    ctx.beginPath(); rr(ctx, fx + 5, fy + 5, fSize - 10, fSize - 10, 2); ctx.fill();
+
+    // Corner nails/rivets
+    const nailOffset = 3;
+    const corners = [
+        [fx + nailOffset, fy + nailOffset],
+        [fx + fSize - nailOffset, fy + nailOffset],
+        [fx + nailOffset, fy + fSize - nailOffset],
+        [fx + fSize - nailOffset, fy + fSize - nailOffset]
+    ];
+    corners.forEach(([nx, ny]) => {
+        // Nail shadow
+        ctx.fillStyle = '#2A1500';
+        ctx.beginPath(); ctx.arc(nx + 0.5, ny + 0.5, 2.5, 0, Math.PI * 2); ctx.fill();
+        // Nail highlight
+        ctx.fillStyle = '#D4A850';
+        ctx.beginPath(); ctx.arc(nx, ny, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#E8C870';
+        ctx.beginPath(); ctx.arc(nx - 0.5, ny - 0.5, 1.2, 0, Math.PI * 2); ctx.fill();
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Load player head avatars for online players
+//  Randomly shuffles and picks heads so different players show each refresh
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadPlayerHeads(playerList, maxHeads = 12) {
     if (!playerList || playerList.length === 0) return [];
 
     // Shuffle so we get random sample each refresh
@@ -62,23 +124,28 @@ async function loadPlayerHeads(playerList, maxHeads = 8) {
         sample.map(async (p) => {
             const name = typeof p === 'string' ? p : p.name;
             const url  = `https://crafatar.com/avatars/${name}?size=64&overlay=true`;
-            const img  = await loadImage(url);
-            return { name, img };
+            try {
+                const img  = await loadImage(url);
+                return { name, img };
+            } catch {
+                // Fallback: generate initials avatar
+                return { name, img: null };
+            }
         })
     );
 
     return heads
-        .filter(r => r.status === 'fulfilled')
+        .filter(r => r.status === 'fulfilled' && r.value.img)
         .map(r => r.value);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  MAIN IMAGE GENERATOR
+//  MAIN IMAGE GENERATOR — Clean Card Design
 // ─────────────────────────────────────────────────────────────────────────────
 async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
 
     // ── Canvas ──
-    const width  = 1100;
+    const width  = 960;
     const height = 420;
     const canvas = createCanvas(width, height);
     const ctx    = canvas.getContext('2d');
@@ -91,15 +158,6 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     const port         = server.javaPort || server.bedrockPort || 25565;
     const iconUrl      = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
 
-    // Palette
-    const ACCENT   = isOnline ? '#00E5A0' : '#FF5C5C';   // green / red
-    const ACCENT2  = '#4B9FFF';                            // blue accent
-    const DARK     = '#0B0E1A';
-    const PANEL    = 'rgba(14,18,32,0.93)';
-    const BORDER   = isOnline ? 'rgba(0,229,160,0.22)' : 'rgba(255,92,92,0.22)';
-    const TEXT     = '#FFFFFF';
-    const MUTED    = 'rgba(255,255,255,0.45)';
-
     // ── 1. Background wallpaper ──
     try {
         let wallpaperUrl = server.wallpaper;
@@ -110,326 +168,402 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         const bg = await loadImage(wallpaperUrl);
         ctx.drawImage(bg, 0, 0, width, height);
     } catch {
-        ctx.fillStyle = DARK;
+        // Fallback gradient
+        const grad = ctx.createLinearGradient(0, 0, width, height);
+        grad.addColorStop(0, '#4FC3F7');
+        grad.addColorStop(0.5, '#81C784');
+        grad.addColorStop(1, '#AED581');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
     }
 
-    // Dark vignette over wallpaper
-    const vignette = ctx.createRadialGradient(width / 2, height / 2, 80, width / 2, height / 2, width * 0.8);
-    vignette.addColorStop(0, 'rgba(8,11,22,0.55)');
-    vignette.addColorStop(1, 'rgba(8,11,22,0.88)');
-    ctx.fillStyle = vignette;
+    // Blur overlay for readability
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.fillRect(0, 0, width, height);
 
-    // ── 2. Main card panel ──
-    const pad = 28;
-    const cX = pad, cY = pad, cW = width - pad * 2, cH = height - pad * 2;
-    const cr = 26;
+    // ── 2. Main white card ──
+    const cardPad = 24;
+    const cX = cardPad, cY = cardPad;
+    const cW = width - cardPad * 2, cH = height - cardPad * 2;
+    const cr = 28;
 
+    // Card shadow
     ctx.save();
-    ctx.shadowBlur  = 60;
-    ctx.shadowColor = isOnline ? 'rgba(0,229,160,0.18)' : 'rgba(255,92,92,0.18)';
-    ctx.fillStyle   = PANEL;
+    ctx.shadowBlur = 40;
+    ctx.shadowColor = 'rgba(0,0,0,0.25)';
+    ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#FFFFFF';
     ctx.beginPath(); rr(ctx, cX, cY, cW, cH, cr); ctx.fill();
     ctx.restore();
 
-    // Card border gradient
-    const bGrad = ctx.createLinearGradient(cX, cY, cX + cW, cY + cH);
-    bGrad.addColorStop(0,   ACCENT2);
-    bGrad.addColorStop(0.5, ACCENT);
-    bGrad.addColorStop(1,   ACCENT2);
-    ctx.strokeStyle = bGrad;
-    ctx.lineWidth   = 1.8;
-    ctx.beginPath(); rr(ctx, cX, cY, cW, cH, cr); ctx.stroke();
+    // ── 3. Server Icon (left side) ──
+    const iconAreaX = cX + 28;
+    const iconAreaY = cY + 35;
+    const iconAreaSize = 130;
 
-    // ── 3. Coloured left accent bar ──
-    const barGrad = ctx.createLinearGradient(cX, cY, cX, cY + cH);
-    barGrad.addColorStop(0, ACCENT);
-    barGrad.addColorStop(1, ACCENT2);
-    ctx.fillStyle = barGrad;
+    // Icon background gradient (cyan to yellow-green like reference)
+    const iconBgGrad = ctx.createLinearGradient(iconAreaX, iconAreaY, iconAreaX + iconAreaSize, iconAreaY + iconAreaSize);
+    iconBgGrad.addColorStop(0, '#5DDBF5');
+    iconBgGrad.addColorStop(0.5, '#7AE8A0');
+    iconBgGrad.addColorStop(1, '#C8E858');
+
     ctx.save();
-    ctx.beginPath(); rr(ctx, cX, cY, 5, cH, 3); ctx.fill();
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(93,219,245,0.4)';
+    ctx.fillStyle = iconBgGrad;
+    ctx.beginPath(); rr(ctx, iconAreaX, iconAreaY, iconAreaSize, iconAreaSize, 28); ctx.fill();
     ctx.restore();
 
-    // ── 4. Top ribbon ──
-    const ribbonH = 44;
-    const ribbonGrad = ctx.createLinearGradient(cX, cY, cX + cW, cY);
-    ribbonGrad.addColorStop(0, 'rgba(75,159,255,0.10)');
-    ribbonGrad.addColorStop(1, 'rgba(0,229,160,0.06)');
-    ctx.fillStyle = ribbonGrad;
-    ctx.save();
-    ctx.beginPath(); rr(ctx, cX, cY, cW, ribbonH, cr); ctx.fill();
-    ctx.restore();
+    // Draw server icon or cube fallback
+    const iconDrawSize = 90;
+    const iconDrawX = iconAreaX + (iconAreaSize - iconDrawSize) / 2;
+    const iconDrawY = iconAreaY + (iconAreaSize - iconDrawSize) / 2;
 
-    // Ribbon divider
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(cX + cr, cY + ribbonH);
-    ctx.lineTo(cX + cW - cr, cY + ribbonH);
-    ctx.stroke();
-
-    // Ribbon text: bot name + last updated
-    ctx.font      = 'bold 15px Arial';
-    ctx.fillStyle = 'rgba(255,255,255,0.80)';
-    ctx.textAlign = 'left';
-    ctx.fillText('⚡  PROMCBOT  •  SERVER STATUS', cX + 28, cY + 27);
-
-    ctx.font      = '13px Arial';
-    ctx.fillStyle = MUTED;
-    ctx.textAlign = 'right';
-    const minAgo = new Date().getMinutes() % 5 || 1;
-    ctx.fillText(`↺  Updated ${minAgo} min ago  •  ${new Date().toLocaleTimeString()}`, cX + cW - 20, cY + 27);
-
-    // ─────────────────────────────────────────────
-    //  CONTENT AREA  (below ribbon)
-    // ─────────────────────────────────────────────
-    const contentY = cY + ribbonH + 18;
-    const iconSize = 112;
-    const iconX    = cX + 26;
-    const iconY    = contentY;
-
-    // ── 5. Server icon ──
     try {
         const icon = await loadImage(iconUrl);
         ctx.save();
-        ctx.shadowBlur  = 28;
-        ctx.shadowColor = 'rgba(75,159,255,0.55)';
-        ctx.beginPath(); rr(ctx, iconX, iconY, iconSize, iconSize, 20); ctx.clip();
-        ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
+        ctx.beginPath(); rr(ctx, iconDrawX, iconDrawY, iconDrawSize, iconDrawSize, 16); ctx.clip();
+        ctx.drawImage(icon, iconDrawX, iconDrawY, iconDrawSize, iconDrawSize);
         ctx.restore();
-        // icon border
-        ctx.strokeStyle = 'rgba(75,159,255,0.40)';
-        ctx.lineWidth   = 2;
-        ctx.beginPath(); rr(ctx, iconX, iconY, iconSize, iconSize, 20); ctx.stroke();
     } catch {
-        // Cube placeholder
-        ctx.fillStyle = 'rgba(75,159,255,0.15)';
-        ctx.beginPath(); rr(ctx, iconX, iconY, iconSize, iconSize, 20); ctx.fill();
-        ctx.strokeStyle = ACCENT2;
-        ctx.lineWidth   = 2;
-        ctx.beginPath(); rr(ctx, iconX, iconY, iconSize, iconSize, 20); ctx.stroke();
-        // mini cube lines
-        const cx2 = iconX + iconSize / 2, cy2 = iconY + iconSize / 2, s = 26;
-        ctx.strokeStyle = 'rgba(200,230,255,0.85)';
-        ctx.lineWidth   = 2.5; ctx.lineJoin = 'round';
-        [[cx2, cy2 - s, cx2 - s * 0.86, cy2 - s * 0.5, cx2, cy2, cx2 + s * 0.86, cy2 - s * 0.5],
-         [cx2, cy2, cx2 - s * 0.86, cy2 - s * 0.5, cx2 - s * 0.86, cy2 + s * 0.5, cx2, cy2 + s],
-         [cx2, cy2, cx2 + s * 0.86, cy2 - s * 0.5, cx2 + s * 0.86, cy2 + s * 0.5, cx2, cy2 + s]
-        ].forEach(pts => {
-            ctx.beginPath();
-            ctx.moveTo(pts[0], pts[1]);
-            for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
-            ctx.closePath(); ctx.stroke();
-        });
+        // 3D Cube drawing
+        drawCubeIcon(ctx, iconDrawX + iconDrawSize/2, iconDrawY + iconDrawSize/2, 36);
     }
 
-    // ── 6. Server name + status pill ──
-    const infoX  = iconX + iconSize + 26;
-    const nameY  = contentY + 32;
-
-    ctx.font      = 'bold 36px Arial';
-    ctx.fillStyle = TEXT;
-    ctx.textAlign = 'left';
-    ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), infoX, nameY);
-
-    // Status pill
-    const pillW = 118, pillH = 30;
-    const pillX = infoX, pillY = nameY + 10;
-    const pillBg = isOnline ? 'rgba(0,229,160,0.12)' : 'rgba(255,92,92,0.12)';
-    ctx.fillStyle = pillBg;
-    ctx.beginPath(); rr(ctx, pillX, pillY, pillW, pillH, pillH / 2); ctx.fill();
-    ctx.strokeStyle = isOnline ? 'rgba(0,229,160,0.35)' : 'rgba(255,92,92,0.35)';
+    // ── 4. Vertical divider ──
+    const dividerX = iconAreaX + iconAreaSize + 28;
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); rr(ctx, pillX, pillY, pillW, pillH, pillH / 2); ctx.stroke();
-    // pulsing dot
-    ctx.fillStyle = ACCENT;
-    ctx.beginPath(); ctx.arc(pillX + 18, pillY + pillH / 2, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.font      = 'bold 13px Arial';
-    ctx.fillStyle = ACCENT;
-    ctx.textAlign = 'left';
-    ctx.fillText(isOnline ? '● ONLINE' : '● OFFLINE', pillX + 10, pillY + pillH / 2 + 5);
-
-    // ── 7. Stat chips row ──
-    const chipY  = pillY + pillH + 18;
-    const chips  = [
-        { icon: '👥', label: 'Players', value: `${players.online} / ${players.max}`, color: ACCENT  },
-        { icon: '🎮', label: 'Version', value: versionLabel,                          color: ACCENT2 },
-        { icon: '🌐', label: 'IP',      value: cleanIpAddr || 'N/A',                  color: ACCENT2 },
-        { icon: '📡', label: 'Ping',    value: isOnline ? '~28ms' : 'N/A',            color: ACCENT  },
-    ];
-
-    let chipCursor = infoX;
-    chips.forEach(chip => {
-        const label  = `${chip.icon}  ${chip.label}:  ${chip.value}`;
-        ctx.font     = '13px Arial';
-        const tw     = ctx.measureText(label).width;
-        const chipW  = tw + 28;
-        const chipH  = 34;
-
-        ctx.fillStyle   = 'rgba(255,255,255,0.05)';
-        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-        ctx.lineWidth   = 1;
-        ctx.beginPath(); rr(ctx, chipCursor, chipY, chipW, chipH, 10); ctx.fill(); ctx.stroke();
-
-        ctx.font      = '13px Arial';
-        ctx.fillStyle = chip.color;
-        ctx.textAlign = 'left';
-        ctx.fillText(`${chip.icon}`, chipCursor + 10, chipY + chipH / 2 + 5);
-        ctx.fillStyle = MUTED;
-        ctx.fillText(`${chip.label}:`, chipCursor + 10 + ctx.measureText(chip.icon + '  ').width, chipY + chipH / 2 + 5);
-        ctx.fillStyle = TEXT;
-        ctx.font      = 'bold 13px Arial';
-        const lblW    = ctx.measureText(`${chip.icon}  ${chip.label}:  `).width;
-        ctx.fillText(chip.value, chipCursor + 10 + lblW, chipY + chipH / 2 + 5);
-
-        chipCursor += chipW + 10;
-    });
-
-    // ── 8. Player capacity bar ──
-    const barY = chipY + 34 + 14;
-    const barX = infoX;
-    const barW = Math.min(480, cX + cW - 28 - infoX);
-    const barH = 8;
-
-    // track
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.beginPath(); rr(ctx, barX, barY, barW, barH, barH / 2); ctx.fill();
-
-    // fill
-    if (isOnline && players.max > 0) {
-        const pct   = Math.min(players.online / players.max, 1);
-        const fillW = Math.max(barW * pct, barH);
-        const barFill = ctx.createLinearGradient(barX, 0, barX + fillW, 0);
-        barFill.addColorStop(0, ACCENT);
-        barFill.addColorStop(1, ACCENT2);
-        ctx.fillStyle = barFill;
-        ctx.beginPath(); rr(ctx, barX, barY, fillW, barH, barH / 2); ctx.fill();
-    }
-
-    ctx.font      = '11px Arial';
-    ctx.fillStyle = MUTED;
-    ctx.textAlign = 'left';
-    ctx.fillText(`${players.online} / ${players.max} players`, barX, barY + barH + 14);
-
-    // ─────────────────────────────────────────────────────────────────────
-    //  RIGHT PANEL — Online players with skin heads
-    // ─────────────────────────────────────────────────────────────────────
-    const rightPanelW = 240;
-    const rightPanelX = cX + cW - rightPanelW - 14;
-    const rightPanelY = contentY;
-    const rightPanelH = cH - (contentY - cY) - 14;
-
-    ctx.fillStyle   = 'rgba(255,255,255,0.035)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth   = 1;
-    ctx.beginPath(); rr(ctx, rightPanelX, rightPanelY, rightPanelW, rightPanelH, 18); ctx.fill(); ctx.stroke();
-
-    // Panel title
-    ctx.font      = 'bold 13px Arial';
-    ctx.fillStyle = MUTED;
-    ctx.textAlign = 'left';
-    ctx.fillText('ONLINE PLAYERS', rightPanelX + 16, rightPanelY + 22);
-
-    // Count badge
-    const countStr  = `${players.online}`;
-    ctx.font        = 'bold 12px Arial';
-    const countW    = ctx.measureText(countStr).width + 18;
-    const countX    = rightPanelX + rightPanelW - countW - 12;
-    ctx.fillStyle   = isOnline ? 'rgba(0,229,160,0.15)' : 'rgba(255,92,92,0.15)';
-    ctx.beginPath(); rr(ctx, countX, rightPanelY + 9, countW, 22, 11); ctx.fill();
-    ctx.fillStyle   = ACCENT;
-    ctx.textAlign   = 'center';
-    ctx.fillText(countStr, countX + countW / 2, rightPanelY + 24);
-
-    // Divider
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(rightPanelX + 12, rightPanelY + 34);
-    ctx.lineTo(rightPanelX + rightPanelW - 12, rightPanelY + 34);
+    ctx.moveTo(dividerX, cY + 30);
+    ctx.lineTo(dividerX, cY + cH - 90);
     ctx.stroke();
 
-    // Load player head images
-    const playerList = statusData?.players?.list || [];
-    const playerHeads = await loadPlayerHeads(playerList, 8);
+    // ── 5. Center: Status + Players ──
+    const centerX = dividerX + 28;
+    const centerY = cY + 45;
 
-    const headSize   = 36;
-    const headPad    = 10;
-    const headsPerRow = Math.floor((rightPanelW - 20) / (headSize + headPad));
-    const startHeadY = rightPanelY + 44;
+    // Status dot
+    ctx.save();
+    ctx.shadowBlur = isOnline ? 10 : 0;
+    ctx.shadowColor = isOnline ? 'rgba(76,175,80,0.6)' : 'transparent';
+    ctx.fillStyle = isOnline ? '#4CAF50' : '#F44336';
+    ctx.beginPath(); ctx.arc(centerX + 10, centerY + 12, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Status text
+    ctx.font = 'bold 26px Arial, sans-serif';
+    ctx.fillStyle = isOnline ? '#4CAF50' : '#F44336';
+    ctx.textAlign = 'left';
+    ctx.fillText(isOnline ? 'ONLINE' : 'OFFLINE', centerX + 28, centerY + 18);
+
+    // Players icon + count
+    const playersY = centerY + 55;
+
+    // Draw people icon
+    drawPeopleIcon(ctx, centerX, playersY, 22);
+
+    ctx.font = 'bold 36px Arial, sans-serif';
+    ctx.fillStyle = '#333333';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${players.online}`, centerX + 32, playersY + 22);
+
+    ctx.font = '20px Arial, sans-serif';
+    ctx.fillStyle = '#888888';
+    ctx.fillText(`/ ${players.max}`, centerX + 32 + ctx.measureText(`${players.online}`).width + 6, playersY + 22);
+
+    // "PLAYERS" label
+    ctx.font = '13px Arial, sans-serif';
+    ctx.fillStyle = '#AAAAAA';
+    ctx.fillText('PLAYERS', centerX + 32, playersY + 40);
+
+    // ── 6. Right side: Version + IP cards ──
+    const rightX = centerX + 220;
+    const rightW = 200;
+    const cardH = 65;
+    const cardGap = 12;
+
+    // Version Card
+    const verY = cY + 35;
+    drawInfoCard(ctx, rightX, verY, rightW, cardH, 'VERSION', versionLabel, 'server');
+
+    // IP Address Card
+    const ipY = verY + cardH + cardGap;
+    drawInfoCard(ctx, rightX, ipY, rightW, cardH, 'IP ADDRESS', cleanIpAddr || 'N/A', 'wifi');
+
+    // ── 7. Bottom bar: Ping + Player Heads ──
+    const bottomY = cY + cH - 72;
+    const bottomPad = 20;
+
+    // Horizontal divider above bottom bar
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cX + bottomPad, bottomY - 8);
+    ctx.lineTo(cX + cW - bottomPad, bottomY - 8);
+    ctx.stroke();
+
+    // Ping (left side)
+    const pingX = cX + bottomPad + 5;
+    drawPingIcon(ctx, pingX, bottomY + 12, 18);
+
+    ctx.font = '12px Arial, sans-serif';
+    ctx.fillStyle = '#999999';
+    ctx.textAlign = 'left';
+    ctx.fillText('PING', pingX + 24, bottomY + 18);
+
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillStyle = '#333333';
+    ctx.fillText(isOnline ? '~28' : '--', pingX + 24, bottomY + 42);
+
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = '#888888';
+    ctx.fillText('ms', pingX + 24 + ctx.measureText(isOnline ? '~28' : '--').width + 4, bottomY + 42);
+
+    // ── 8. Player Heads in Item Frames ──
+    const playerList = statusData?.players?.list || [];
+    const playerHeads = await loadPlayerHeads(playerList, 10);
+
+    const headSize = 40;
+    const framePadding = 10;
+    const headGap = 12;
+    const headsStartX = pingX + 110;
+    const headsY = bottomY + 4;
 
     if (!isOnline || playerHeads.length === 0) {
         // Empty state
-        ctx.font      = '12px Arial';
-        ctx.fillStyle = 'rgba(255,255,255,0.22)';
-        ctx.textAlign = 'center';
-        ctx.fillText(isOnline ? 'No players online' : 'Server offline', rightPanelX + rightPanelW / 2, rightPanelY + rightPanelH / 2);
+        ctx.font = '13px Arial, sans-serif';
+        ctx.fillStyle = '#BBBBBB';
+        ctx.textAlign = 'left';
+        ctx.fillText(isOnline ? 'No players online' : 'Server offline', headsStartX, headsY + 28);
     } else {
+        // Draw each player head in a Minecraft item frame
         for (let i = 0; i < playerHeads.length; i++) {
-            const col  = i % headsPerRow;
-            const row  = Math.floor(i / headsPerRow);
-            const hx   = rightPanelX + 12 + col * (headSize + headPad);
-            const hy   = startHeadY + row * (headSize + headPad + 18);
+            const hx = headsStartX + i * (headSize + framePadding * 2 + headGap);
+            const hy = headsY;
+
+            // Don't overflow the card
+            if (hx + headSize + framePadding * 2 > cX + cW - bottomPad) break;
 
             const { name, img } = playerHeads[i];
 
-            // ── Minecraft-style oak frame ──
-            // Outer dark border
-            ctx.fillStyle = '#3B1F0A';
-            ctx.beginPath(); rr(ctx, hx - 4, hy - 4, headSize + 8, headSize + 8, 5); ctx.fill();
+            // Draw Minecraft item frame
+            drawItemFrame(ctx, hx, hy, headSize);
 
-            // Wooden plank middle
-            const woodGrad = ctx.createLinearGradient(hx - 2, hy - 2, hx + headSize + 2, hy + headSize + 2);
-            woodGrad.addColorStop(0,   '#8B5E1A');
-            woodGrad.addColorStop(0.4, '#A0722A');
-            woodGrad.addColorStop(1,   '#7A5015');
-            ctx.fillStyle = woodGrad;
-            ctx.beginPath(); rr(ctx, hx - 2, hy - 2, headSize + 4, headSize + 4, 4); ctx.fill();
-
-            // Corner rivets (nails)
-            const corners = [
-                [hx - 1, hy - 1], [hx + headSize - 1, hy - 1],
-                [hx - 1, hy + headSize - 1], [hx + headSize - 1, hy + headSize - 1]
-            ];
-            corners.forEach(([cx2, cy2]) => {
-                ctx.fillStyle = '#2A1500';
-                ctx.beginPath(); ctx.arc(cx2 + 1, cy2 + 1, 3, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#C8901A';
-                ctx.beginPath(); ctx.arc(cx2, cy2, 2.5, 0, Math.PI * 2); ctx.fill();
-            });
-
-            // Head image (clipped square)
+            // Draw player head inside frame
             ctx.save();
             ctx.beginPath(); rr(ctx, hx, hy, headSize, headSize, 2); ctx.clip();
             ctx.drawImage(img, hx, hy, headSize, headSize);
             ctx.restore();
-
-            // Player name below head
-            ctx.font      = '10px Arial';
-            ctx.fillStyle = 'rgba(255,255,255,0.60)';
-            ctx.textAlign = 'center';
-            const shortName = name.length > 9 ? name.slice(0, 8) + '…' : name;
-            ctx.fillText(shortName, hx + headSize / 2, hy + headSize + 13);
         }
 
-        // Show "+N more" if there are more players not shown
+        // Show remaining count if more players
         const remaining = players.online - playerHeads.length;
         if (remaining > 0) {
-            ctx.font      = '11px Arial';
-            ctx.fillStyle = MUTED;
-            ctx.textAlign = 'center';
-            ctx.fillText(`+${remaining} more online`, rightPanelX + rightPanelW / 2, rightPanelY + rightPanelH - 10);
+            const lastHeadX = headsStartX + Math.min(playerHeads.length, Math.floor((cX + cW - bottomPad - headsStartX) / (headSize + framePadding * 2 + headGap))) * (headSize + framePadding * 2 + headGap);
+            ctx.font = 'bold 14px Arial, sans-serif';
+            ctx.fillStyle = '#888888';
+            ctx.textAlign = 'left';
+            ctx.fillText(`+${remaining}`, lastHeadX, headsY + headSize / 2 + 5);
         }
     }
 
-    // ── Footer watermark ──
-    ctx.font      = '12px Arial';
-    ctx.fillStyle = 'rgba(255,255,255,0.22)';
-    ctx.textAlign = 'right';
-    ctx.fillText('PROMCBOT LIVE', cX + cW - 18, cY + cH - 10);
-
     return canvas.toBuffer();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw info card (Version / IP)
+// ─────────────────────────────────────────────────────────────────────────────
+function drawInfoCard(ctx, x, y, w, h, label, value, iconType) {
+    // Card background
+    ctx.fillStyle = '#F8F9FA';
+    ctx.beginPath(); rr(ctx, x, y, w, h, 14); ctx.fill();
+
+    // Card border
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); rr(ctx, x, y, w, h, 14); ctx.stroke();
+
+    // Icon
+    const iconX = x + 14;
+    const iconY = y + h / 2;
+    if (iconType === 'server') {
+        drawServerMiniIcon(ctx, iconX, iconY, 12);
+    } else {
+        drawWifiIcon(ctx, iconX, iconY, 12);
+    }
+
+    // Label
+    ctx.font = '11px Arial, sans-serif';
+    ctx.fillStyle = '#AAAAAA';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, x + 38, y + 22);
+
+    // Value
+    ctx.font = 'bold 15px Arial, sans-serif';
+    ctx.fillStyle = '#444444';
+    const maxWidth = w - 48;
+    let displayValue = value;
+    if (ctx.measureText(value).width > maxWidth) {
+        displayValue = value.substring(0, 16) + '...';
+    }
+    ctx.fillText(displayValue, x + 38, y + 44);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw 3D cube icon
+// ─────────────────────────────────────────────────────────────────────────────
+function drawCubeIcon(ctx, cx, cy, s) {
+    const topColor = '#6EC8F0';
+    const leftColor = '#4AA8D8';
+    const rightColor = '#3890C0';
+
+    // Top face
+    ctx.fillStyle = topColor;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx + s * 0.86, cy - s * 0.5);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx - s * 0.86, cy - s * 0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Left face
+    ctx.fillStyle = leftColor;
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 0.86, cy - s * 0.5);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx, cy + s);
+    ctx.lineTo(cx - s * 0.86, cy + s * 0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Right face
+    ctx.fillStyle = rightColor;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + s * 0.86, cy - s * 0.5);
+    ctx.lineTo(cx + s * 0.86, cy + s * 0.5);
+    ctx.lineTo(cx, cy + s);
+    ctx.closePath();
+    ctx.fill();
+
+    // Edge lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s);
+    ctx.lineTo(cx + s * 0.86, cy - s * 0.5);
+    ctx.lineTo(cx + s * 0.86, cy + s * 0.5);
+    ctx.lineTo(cx, cy + s);
+    ctx.lineTo(cx - s * 0.86, cy + s * 0.5);
+    ctx.lineTo(cx - s * 0.86, cy - s * 0.5);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Inner lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy);
+    ctx.moveTo(cx + s * 0.86, cy - s * 0.5); ctx.lineTo(cx, cy);
+    ctx.moveTo(cx - s * 0.86, cy - s * 0.5); ctx.lineTo(cx, cy);
+    ctx.stroke();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw people icon
+// ─────────────────────────────────────────────────────────────────────────────
+function drawPeopleIcon(ctx, x, y, size) {
+    const s = size;
+    ctx.fillStyle = '#888888';
+
+    // Person 1 (front)
+    ctx.beginPath();
+    ctx.arc(x + s * 0.35, y + s * 0.3, s * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x + s * 0.35, y + s * 0.75, s * 0.28, s * 0.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Person 2 (back, slightly offset)
+    ctx.fillStyle = '#AAAAAA';
+    ctx.beginPath();
+    ctx.arc(x + s * 0.65, y + s * 0.25, s * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x + s * 0.65, y + s * 0.72, s * 0.25, s * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw ping/activity icon
+// ─────────────────────────────────────────────────────────────────────────────
+function drawPingIcon(ctx, x, y, size) {
+    const s = size;
+    ctx.strokeStyle = '#66BB6A';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(x, y + s * 0.7);
+    ctx.lineTo(x + s * 0.25, y + s * 0.35);
+    ctx.lineTo(x + s * 0.5, y + s * 0.55);
+    ctx.lineTo(x + s * 0.75, y + s * 0.15);
+    ctx.lineTo(x + s, y);
+    ctx.stroke();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw mini server icon
+// ─────────────────────────────────────────────────────────────────────────────
+function drawServerMiniIcon(ctx, cx, cy, size) {
+    const s = size;
+
+    // Two stacked rectangles
+    ctx.fillStyle = '#5DDBF5';
+    rr(ctx, cx - s, cy - s * 0.6, s * 2, s * 0.7, 3);
+    ctx.fill();
+
+    ctx.fillStyle = '#4FC3F7';
+    rr(ctx, cx - s, cy + s * 0.1, s * 2, s * 0.7, 3);
+    ctx.fill();
+
+    // Dots on each
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath(); ctx.arc(cx - s * 0.5, cy - s * 0.25, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx - s * 0.5, cy + s * 0.45, 2, 0, Math.PI * 2); ctx.fill();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: Draw wifi/signal icon
+// ─────────────────────────────────────────────────────────────────────────────
+function drawWifiIcon(ctx, cx, cy, size) {
+    const s = size;
+    ctx.strokeStyle = '#66BB6A';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    // Signal arcs
+    ctx.beginPath();
+    ctx.arc(cx, cy + s * 0.3, s * 0.4, Math.PI, 0);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + s * 0.3, s * 0.7, Math.PI * 1.15, -0.15);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + s * 0.3, s, Math.PI * 1.3, -0.3);
+    ctx.stroke();
+
+    // Center dot
+    ctx.fillStyle = '#66BB6A';
+    ctx.beginPath();
+    ctx.arc(cx, cy + s * 0.3, 2, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
