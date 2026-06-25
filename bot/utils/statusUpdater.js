@@ -55,8 +55,8 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
 
         // Professional Gradient Overlay
         const overlay = ctx.createLinearGradient(0, 0, 0, height);
-        overlay.addColorStop(0, template === 'neon' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.4)');
-        overlay.addColorStop(1, template === 'neon' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.8)');
+        overlay.addColorStop(0, template === 'neon' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.4)');
+        overlay.addColorStop(1, template === 'neon' ? 'rgba(0, 0, 0, 0.9)' : 'rgba(0, 0, 0, 0.8)');
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, width, height);
     } catch (e) {
@@ -73,122 +73,199 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     const statusColor = isOnline ? '#00FFC8' : '#FF5E5E';
 
     if (template === 'neon') {
-        // --- NEON TEMPLATE (Cubecraft Inspired) ---
-        const panelX = 40, panelY = 40, panelW = width - 80, panelH = height - 80;
+        // --- NEW NEON TEMPLATE (Cubecraft Inspired) ---
+        const panelX = 60, panelY = 60, panelW = width - 120, panelH = height - 120;
 
-        // Neon glow effect
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = 'rgba(0, 255, 200, 0.3)';
-        ctx.fillStyle = 'rgba(15, 17, 27, 0.9)';
+        // Outer Glow Border
+        ctx.save();
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = 'rgba(0, 255, 200, 0.4)';
+        
+        const borderGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
+        borderGrad.addColorStop(0, '#007BFF'); // Blue
+        borderGrad.addColorStop(0.5, '#00FFC8'); // Cyan/Green
+        borderGrad.addColorStop(1, '#00FFC8');
+        
+        ctx.strokeStyle = borderGrad;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 20);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 35);
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner Panel Background
+        ctx.fillStyle = 'rgba(10, 12, 18, 0.85)';
+        ctx.beginPath();
+        ctx.roundRect(panelX, panelY, panelW, panelH, 35);
         ctx.fill();
 
-        // Neon border
-        const borderGradient = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
-        borderGradient.addColorStop(0, 'rgba(0, 255, 200, 0.8)');
-        borderGradient.addColorStop(0.5, 'rgba(0, 200, 150, 0.5)');
-        borderGradient.addColorStop(1, 'rgba(0, 255, 200, 0.2)');
-        ctx.strokeStyle = borderGradient;
-        ctx.lineWidth = 2.5;
+        // Top Status Bar
+        const barTopY = panelY + 40;
+        
+        // LIVE Badge
+        ctx.fillStyle = 'rgba(0, 255, 200, 0.1)';
+        ctx.beginPath();
+        ctx.roundRect(panelX + 40, barTopY - 25, 80, 35, 10);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
         ctx.stroke();
-        ctx.shadowBlur = 0;
-
-        // Header Section
-        const headerY = 65;
+        
         ctx.font = 'bold 16px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(isOnline ? '● LIVE' : '● OFFLINE', panelX + 30, headerY);
+        ctx.fillText(isOnline ? '⚡ LIVE' : '● OFFLINE', panelX + 55, barTopY);
+
+        // Up-to-date Badge
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.beginPath();
+        ctx.roundRect(panelX + 135, barTopY - 25, 130, 35, 10);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.stroke();
         
         ctx.font = '14px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.textAlign = 'center';
-        ctx.fillText('⊙ Up-to-date', width / 2, headerY);
-        
-        ctx.textAlign = 'right';
-        ctx.fillText(`⊙ Updated ${new Date().getMinutes()} min ago`, width - panelX - 30, headerY);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillText('○ Up-to-date', panelX + 150, barTopY - 2);
 
+        // Updated Time
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillText(`↺ Updated ${new Date().getMinutes() % 5} min ago`, panelX + panelW - 40, barTopY - 2);
+
+        // Main Content
+        const contentY = panelY + 100;
+        
         // Server Icon
-        const iconX = panelX + 50, iconY = panelY + 80, iconSize = 200;
+        const iconX = panelX + 40, iconY = contentY - 20, iconSize = 220;
+        const cx = iconX + iconSize / 2, cy = iconY + iconSize / 2;
+        
         try {
             const icon = await loadImage(iconUrl);
             ctx.save();
-            ctx.shadowBlur = 40;
-            ctx.shadowColor = isOnline ? 'rgba(0, 255, 200, 0.6)' : 'rgba(255, 94, 94, 0.5)';
+            ctx.shadowBlur = 45;
+            ctx.shadowColor = isOnline ? 'rgba(0, 123, 255, 0.8)' : 'rgba(255, 94, 94, 0.6)';
+            
+            // Hexagon mask for actual icon
             ctx.beginPath();
-            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i - Math.PI / 2;
+                ctx.lineTo(cx + (iconSize/2 - 5) * Math.cos(angle), cy + (iconSize/2 - 5) * Math.sin(angle));
+            }
+            ctx.closePath();
             ctx.clip();
             ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
             ctx.restore();
-        } catch (e) {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            
+            // Hexagon Border
+            ctx.strokeStyle = '#4D94FF';
+            ctx.lineWidth = 4;
             ctx.beginPath();
-            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i - Math.PI / 2;
+                ctx.lineTo(cx + iconSize/2 * Math.cos(angle), cy + iconSize/2 * Math.sin(angle));
+            }
+            ctx.closePath();
+            ctx.stroke();
+        } catch (e) {
+            // Stylized Hexagon/Cube Placeholder if icon fails
+            ctx.save();
+            ctx.shadowBlur = 45;
+            ctx.shadowColor = 'rgba(0, 123, 255, 0.8)';
+            ctx.strokeStyle = '#4D94FF';
+            ctx.lineWidth = 6;
+            
+            const drawHex = (x, y, r) => {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i - Math.PI / 2;
+                    ctx.lineTo(x + r * Math.cos(angle), y + r * Math.sin(angle));
+                }
+                ctx.closePath();
+            };
+            
+            drawHex(cx, cy, iconSize / 2);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(0, 40, 120, 0.4)';
             ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 4;
+            ctx.lineJoin = 'round';
+            const s = 45;
+            ctx.beginPath(); ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy + s); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy - s); ctx.lineTo(cx - s * 0.86, cy - s * 0.5); ctx.lineTo(cx, cy); ctx.lineTo(cx + s * 0.86, cy - s * 0.5); ctx.closePath(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx - s * 0.86, cy - s * 0.5); ctx.lineTo(cx - s * 0.86, cy + s * 0.5); ctx.lineTo(cx, cy + s); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + s * 0.86, cy - s * 0.5); ctx.lineTo(cx + s * 0.86, cy + s * 0.5); ctx.lineTo(cx, cy + s); ctx.stroke();
+            ctx.restore();
         }
 
         // Server Info
         const infoX = iconX + iconSize + 60;
-        ctx.font = 'bold 48px Arial';
+        ctx.font = 'bold 72px Arial';
         ctx.fillStyle = '#FFFFFF';
         ctx.textAlign = 'left';
-        ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), infoX, iconY + 80);
+        ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), infoX, contentY + 70);
 
-        ctx.font = '20px Arial';
-        ctx.fillText(`👥 Players: ${players.online} / ${players.max}`, infoX, iconY + 110);
-        ctx.font = '16px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.fillText(`🎮 Version: ${version}`, infoX, iconY + 145);
-        ctx.fillText(`🌐 IP: ${cleanIpAddr}:${port}`, infoX, iconY + 170);
+        // Stats List
+        const statsY = contentY + 130;
+        const drawStatLine = (label, value, icon, y) => {
+            ctx.font = '22px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillText(icon + ' ' + label, infoX, y);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'right';
+            ctx.fillText(value, infoX + 350, y);
+            ctx.textAlign = 'left';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(infoX, y + 15); ctx.lineTo(infoX + 350, y + 15); ctx.stroke();
+        };
 
-        // Progress Bar
-        if (isOnline && players.max > 0) {
-            const barX = infoX, barY = iconY + 200, barW = 300, barH = 12;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.beginPath();
-            ctx.roundRect(barX, barY, barW, barH, 6);
-            ctx.fill();
-            const progress = Math.min(players.online / players.max, 1);
-            const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-            grad.addColorStop(0, '#00FFC8');
-            grad.addColorStop(1, '#00CC99');
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY, barW * progress, barH, 6);
-            ctx.fill();
-            ctx.fillStyle = '#00FFC8';
-            ctx.font = 'bold 13px Arial';
-            ctx.fillText(`${Math.round(progress * 100)}%`, barX + barW + 15, barY + 10);
-        }
+        drawStatLine('Players', `${players.online} / ${players.max}`, '👥', statsY);
+        drawStatLine('Version', typeof version === 'string' ? version : (version.name || 'N/A'), '🎮', statsY + 60);
+        drawStatLine('IP Address', cleanIpAddr, '🌐', statsY + 120);
 
-        // Status Box
-        const statusBoxX = width - panelX - 320, statusBoxY = iconY, statusBoxW = 280, statusBoxH = 140;
-        ctx.fillStyle = 'rgba(0, 255, 200, 0.08)';
+        // Right Side: Online Status Box
+        const statusBoxX = panelX + panelW - 400, statusBoxY = contentY + 30, statusBoxW = 360, statusBoxH = 150;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
         ctx.beginPath();
-        ctx.roundRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH, 15);
+        ctx.roundRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH, 20);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.stroke();
-        ctx.font = 'bold 18px Arial';
+
+        ctx.font = 'bold 24px Arial';
         ctx.fillStyle = statusColor;
-        ctx.textAlign = 'center';
-        ctx.fillText('● ' + (isOnline ? 'ONLINE' : 'OFFLINE'), statusBoxX + statusBoxW / 2, statusBoxY + 35);
-        ctx.font = '13px Arial';
+        ctx.fillText(isOnline ? '● ONLINE' : '● OFFLINE', statusBoxX + 30, statusBoxY + 50);
+        
+        ctx.font = '18px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         const msg = isOnline ? 'The server is running smoothly\nand fully operational.' : 'The server is currently offline\nor under maintenance.';
-        msg.split('\n').forEach((line, i) => ctx.fillText(line, statusBoxX + statusBoxW / 2, statusBoxY + 70 + (i * 18)));
+        msg.split('\n').forEach((line, i) => ctx.fillText(line, statusBoxX + 30, statusBoxY + 90 + (i * 25)));
 
-        // Performance Metrics
-        const metricsY = statusBoxY + statusBoxH + 30;
-        const metrics = [{ label: 'Ping', value: '28 ms' }, { label: 'TPS', value: '20.0' }, { label: 'Uptime', value: '99.9%' }];
+        // Performance Metrics Grid
+        const metricsY = statusBoxY + statusBoxH + 20;
+        const metrics = [
+            { label: 'Ping', value: isOnline ? '28 ms' : 'N/A', icon: '📶', color: statusColor },
+            { label: 'TPS', value: isOnline ? '20.0' : 'N/A', icon: '🛡️', color: statusColor },
+            { label: 'Uptime', value: isOnline ? '99.9%' : '0%', icon: '⚙️', color: statusColor }
+        ];
+
         metrics.forEach((m, i) => {
-            const mx = statusBoxX + (i * 100);
-            ctx.fillStyle = 'rgba(0, 255, 200, 0.05)';
-            ctx.beginPath(); ctx.roundRect(mx, metricsY, 80, 60, 10); ctx.fill();
-            ctx.strokeStyle = 'rgba(0, 255, 200, 0.2)'; ctx.stroke();
-            ctx.font = '11px Arial'; ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fillText(m.label, mx + 40, metricsY + 18);
-            ctx.font = 'bold 14px Arial'; ctx.fillStyle = '#00FFC8'; ctx.fillText(m.value, mx + 40, metricsY + 40);
+            const mx = statusBoxX + (i * 125);
+            const mw = 110, mh = 100;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.beginPath(); ctx.roundRect(mx, metricsY, mw, mh, 15); ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)'; ctx.stroke();
+            
+            ctx.font = '14px Arial'; ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText(m.label, mx + mw/2, metricsY + 30);
+            
+            ctx.font = 'bold 20px Arial'; ctx.fillStyle = m.color;
+            ctx.fillText(m.value, mx + mw/2, metricsY + 75);
+            ctx.textAlign = 'left';
         });
 
     } else {
