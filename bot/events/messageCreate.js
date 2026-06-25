@@ -79,6 +79,9 @@ const handleMainMessage = async (client, message) => {
     let args = message.content.slice(prefix.length).trim().split(/ +/);
     let cmd = args.shift()?.toLowerCase();
 
+    if (cmd === 'testing') {
+message.reply(`${client.users.cache.filter(user => !user.bot).size}`);
+    }
     // Command: wallp
     if (cmd === 'wallp') {
         // Permission Check: Manage Guild or Administrator
