@@ -23,8 +23,9 @@ module.exports = {
       type: 3,
       required: false,
       choices: [
+        { name: "Neon (Recommended)", value: "neon" },
         { name: "Dark Mode", value: "darkmode" },
-        { name: "Glass (Recommended)", value: "glass" }
+        { name: "Glass", value: "glass" }
       ]
     },
     {
@@ -37,7 +38,7 @@ module.exports = {
   run: async (client, interaction) => {
     const serverId = interaction.member.guild.id;
     const channel = interaction.options.getChannel("channel");
-    const template = interaction.options.getString("template") || "glass";
+    const template = interaction.options.getString("template") || "neon";
     const autoWallpaper = interaction.options.getBoolean("auto_wallpaper") ?? true;
 
     try {

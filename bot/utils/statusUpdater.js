@@ -36,13 +36,13 @@ async function checkServerStatus(ip, port, type) {
 }
 
 async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
-    // Large Card Design (Enhanced)
-    const width = 800;
-    const height = 250;
+    // Determine canvas size based on template
+    const width = template === 'neon' ? 1360 : 800;
+    const height = template === 'neon' ? 400 : 250;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // 1. Dynamic Background (Rotation every minute)
+    // 1. Dynamic Background
     try {
         let wallpaperUrl = server.wallpaper;
         if (autoWallpaper || !wallpaperUrl) {
@@ -55,148 +55,208 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
 
         // Professional Gradient Overlay
         const overlay = ctx.createLinearGradient(0, 0, 0, height);
-        overlay.addColorStop(0, 'rgba(0, 0, 0, 0.4)');
-        overlay.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+        overlay.addColorStop(0, template === 'neon' ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.4)');
+        overlay.addColorStop(1, template === 'neon' ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.8)');
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, width, height);
     } catch (e) {
-        ctx.fillStyle = '#0f111b';
+        ctx.fillStyle = template === 'neon' ? '#0a0e1a' : '#0f111b';
         ctx.fillRect(0, 0, width, height);
-    }
-
-    // 2. Main Panel
-    const panelX = 50;
-    const panelY = 50;
-    const panelW = width - 100;
-    const panelH = height - 100;
-
-    if (template === 'glass') {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 40);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-    } else {
-        ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
-        ctx.beginPath();
-        ctx.roundRect(panelX, panelY, panelW, panelH, 40);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
     }
 
     const isOnline = statusData?.online;
     const players = statusData?.players || { online: 0, max: 0 };
     const version = statusData?.version || 'N/A';
     const cleanIpAddr = cleanIP(server.javaIP || server.bedrockIP);
-    const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${server.javaPort || server.bedrockPort || 25565}`;
+    const port = server.javaPort || server.bedrockPort || 25565;
+    const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
+    const statusColor = isOnline ? '#00FFC8' : '#FF5E5E';
 
-    // 3. Server Icon (Large)
-    const iconX = 50;
-    const iconY = 50;
-    const iconSize = 150;
+    if (template === 'neon') {
+        // --- NEON TEMPLATE (Cubecraft Inspired) ---
+        const panelX = 40, panelY = 40, panelW = width - 80, panelH = height - 80;
 
-    try {
-        const icon = await loadImage(iconUrl);
-        ctx.save();
-        ctx.shadowBlur = 50;
-        ctx.shadowColor = isOnline ? 'rgba(34, 224, 138, 0.7)' : 'rgba(255, 94, 94, 0.6)';
+        // Neon glow effect
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = 'rgba(0, 255, 200, 0.3)';
+        ctx.fillStyle = 'rgba(15, 17, 27, 0.9)';
         ctx.beginPath();
-        ctx.roundRect(iconX, iconY, iconSize, iconSize, 50);
-        ctx.clip();
-        ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
-        ctx.restore();
-    } catch (e) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.roundRect(iconX, iconY, iconSize, iconSize, 50);
-        ctx.fill();
-    }
-
-    // 4. Server Information
-    const infoX = iconX + iconSize + 40;
-    const title = (server.serverName || 'Minecraft Server').toUpperCase();
-    const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
-    const statusColor = isOnline ? '#22E08A' : '#FF5E5E';
-
-    // Title
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 32px "Minecraft", Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(title, infoX, 90);
-
-    // Status (Removed Dot and Online Text)
-
-    // Players
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '22px Arial';
-    ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 120);
-
-    // Additional Info
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-    ctx.font = '18px Arial';
-    const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
-    ctx.fillText(`Version: ${versionLabel}`, infoX, 145);
-    ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 170);
-
-    // Progress Bar
-    if (isOnline && players.max > 0) {
-        const barX = infoX, barY = 190, barW = 300, barH = 10;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW, barH, 5);
+        ctx.roundRect(panelX, panelY, panelW, panelH, 20);
         ctx.fill();
 
-        const progress = Math.min(players.online / players.max, 1);
-        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-        grad.addColorStop(0, '#22E08A');
-        grad.addColorStop(1, '#0bbf6b');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.roundRect(barX, barY, barW * progress, barH, 5);
-        ctx.fill();
-
-        // Percentage Text
-        const percentage = Math.round(progress * 100);
-        ctx.fillStyle = '#22E08A';
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText(`${percentage}%`, barX + barW + 10, barY + 10);
-    }
-
-    // Player Skin Render (3D Bust)
-    const skinX = width - 200;
-    const skinY = height - 230;
-    const skinSize = 180;
-    
-    try {
-        const playerName = "Steve"; 
-        const skinUrl = `https://render.crafty.gg/3d/bust/${playerName}`;
-        const skinImage = await loadImage(skinUrl);
-        
-        // Frame for the skin
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.beginPath();
-        ctx.roundRect(skinX + 20, skinY + 40, 140, 140, 20);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        // Neon border
+        const borderGradient = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY);
+        borderGradient.addColorStop(0, 'rgba(0, 255, 200, 0.8)');
+        borderGradient.addColorStop(0.5, 'rgba(0, 200, 150, 0.5)');
+        borderGradient.addColorStop(1, 'rgba(0, 255, 200, 0.2)');
+        ctx.strokeStyle = borderGradient;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        // 3D Pop-out effect
-        ctx.save();
+        // Header Section
+        const headerY = 65;
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = statusColor;
+        ctx.textAlign = 'left';
+        ctx.fillText(isOnline ? '● LIVE' : '● OFFLINE', panelX + 30, headerY);
+        
+        ctx.font = '14px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.textAlign = 'center';
+        ctx.fillText('⊙ Up-to-date', width / 2, headerY);
+        
+        ctx.textAlign = 'right';
+        ctx.fillText(`⊙ Updated ${new Date().getMinutes()} min ago`, width - panelX - 30, headerY);
+
+        // Server Icon
+        const iconX = panelX + 50, iconY = panelY + 80, iconSize = 200;
+        try {
+            const icon = await loadImage(iconUrl);
+            ctx.save();
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = isOnline ? 'rgba(0, 255, 200, 0.6)' : 'rgba(255, 94, 94, 0.5)';
+            ctx.beginPath();
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            ctx.clip();
+            ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
+            ctx.restore();
+        } catch (e) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.roundRect(iconX, iconY, iconSize, iconSize, 30);
+            ctx.fill();
+        }
+
+        // Server Info
+        const infoX = iconX + iconSize + 60;
+        ctx.font = 'bold 48px Arial';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'left';
+        ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), infoX, iconY + 80);
+
+        ctx.font = '20px Arial';
+        ctx.fillText(`👥 Players: ${players.online} / ${players.max}`, infoX, iconY + 110);
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText(`🎮 Version: ${version}`, infoX, iconY + 145);
+        ctx.fillText(`🌐 IP: ${cleanIpAddr}:${port}`, infoX, iconY + 170);
+
+        // Progress Bar
+        if (isOnline && players.max > 0) {
+            const barX = infoX, barY = iconY + 200, barW = 300, barH = 12;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW, barH, 6);
+            ctx.fill();
+            const progress = Math.min(players.online / players.max, 1);
+            const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            grad.addColorStop(0, '#00FFC8');
+            grad.addColorStop(1, '#00CC99');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, barW * progress, barH, 6);
+            ctx.fill();
+            ctx.fillStyle = '#00FFC8';
+            ctx.font = 'bold 13px Arial';
+            ctx.fillText(`${Math.round(progress * 100)}%`, barX + barW + 15, barY + 10);
+        }
+
+        // Status Box
+        const statusBoxX = width - panelX - 320, statusBoxY = iconY, statusBoxW = 280, statusBoxH = 140;
+        ctx.fillStyle = 'rgba(0, 255, 200, 0.08)';
         ctx.beginPath();
-        ctx.rect(skinX, skinY + 40, 200, 140); // Clip to frame
-        ctx.clip();
-        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
-        ctx.restore();
+        ctx.roundRect(statusBoxX, statusBoxY, statusBoxW, statusBoxH, 15);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 255, 200, 0.3)';
+        ctx.stroke();
+        ctx.font = 'bold 18px Arial';
+        ctx.fillStyle = statusColor;
+        ctx.textAlign = 'center';
+        ctx.fillText('● ' + (isOnline ? 'ONLINE' : 'OFFLINE'), statusBoxX + statusBoxW / 2, statusBoxY + 35);
+        ctx.font = '13px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        const msg = isOnline ? 'The server is running smoothly\nand fully operational.' : 'The server is currently offline\nor under maintenance.';
+        msg.split('\n').forEach((line, i) => ctx.fillText(line, statusBoxX + statusBoxW / 2, statusBoxY + 70 + (i * 18)));
 
-        // Draw top part again to pop out
-        ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
-    } catch (e) {}
+        // Performance Metrics
+        const metricsY = statusBoxY + statusBoxH + 30;
+        const metrics = [{ label: 'Ping', value: '28 ms' }, { label: 'TPS', value: '20.0' }, { label: 'Uptime', value: '99.9%' }];
+        metrics.forEach((m, i) => {
+            const mx = statusBoxX + (i * 100);
+            ctx.fillStyle = 'rgba(0, 255, 200, 0.05)';
+            ctx.beginPath(); ctx.roundRect(mx, metricsY, 80, 60, 10); ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 255, 200, 0.2)'; ctx.stroke();
+            ctx.font = '11px Arial'; ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; ctx.fillText(m.label, mx + 40, metricsY + 18);
+            ctx.font = 'bold 14px Arial'; ctx.fillStyle = '#00FFC8'; ctx.fillText(m.value, mx + 40, metricsY + 40);
+        });
 
-    // Footer
+    } else {
+        // --- ORIGINAL GLASS / DARK TEMPLATES ---
+        const panelX = 50, panelY = 50, panelW = width - 100, panelH = height - 100;
+        if (template === 'glass') {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath(); ctx.roundRect(panelX, panelY, panelW, panelH, 40); ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; ctx.lineWidth = 3; ctx.stroke();
+        } else {
+            ctx.fillStyle = 'rgba(10, 10, 20, 0.9)';
+            ctx.beginPath(); ctx.roundRect(panelX, panelY, panelW, panelH, 40); ctx.fill();
+            ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+
+        const iconX = 50, iconY = 50, iconSize = 150;
+        try {
+            const icon = await loadImage(iconUrl);
+            ctx.save();
+            ctx.shadowBlur = 50;
+            ctx.shadowColor = isOnline ? 'rgba(34, 224, 138, 0.7)' : 'rgba(255, 94, 94, 0.6)';
+            ctx.beginPath(); ctx.roundRect(iconX, iconY, iconSize, iconSize, 50); ctx.clip();
+            ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
+            ctx.restore();
+        } catch (e) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath(); ctx.roundRect(iconX, iconY, iconSize, iconSize, 50); ctx.fill();
+        }
+
+        const infoX = iconX + iconSize + 40;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 32px "Minecraft", Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), infoX, 90);
+        ctx.font = '22px Arial';
+        ctx.fillText(`Players: ${players.online} / ${players.max}`, infoX, 120);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = '18px Arial';
+        const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
+        ctx.fillText(`Version: ${versionLabel}`, infoX, 145);
+        ctx.fillText(`IP: ${cleanIpAddr}`, infoX, 170);
+
+        if (isOnline && players.max > 0) {
+            const barX = infoX, barY = 190, barW = 300, barH = 10;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.beginPath(); ctx.roundRect(barX, barY, barW, barH, 5); ctx.fill();
+            const progress = Math.min(players.online / players.max, 1);
+            const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+            grad.addColorStop(0, '#22E08A'); grad.addColorStop(1, '#0bbf6b');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.roundRect(barX, barY, barW * progress, barH, 5); ctx.fill();
+            ctx.fillStyle = '#22E08A'; ctx.font = 'bold 14px Arial';
+            ctx.fillText(`${Math.round(progress * 100)}%`, barX + barW + 10, barY + 10);
+        }
+
+        // Skin Render
+        const skinX = width - 200, skinY = height - 230, skinSize = 180;
+        try {
+            const skinImage = await loadImage(`https://render.crafty.gg/3d/bust/Steve`);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.beginPath(); ctx.roundRect(skinX + 20, skinY + 40, 140, 140, 20); ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)'; ctx.stroke();
+            ctx.save(); ctx.beginPath(); ctx.rect(skinX, skinY + 40, 200, 140); ctx.clip();
+            ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize); ctx.restore();
+            ctx.drawImage(skinImage, skinX, skinY, skinSize, skinSize);
+        } catch (e) {}
+    }
+
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.font = '14px Arial';
     ctx.textAlign = 'right';

@@ -6,7 +6,7 @@ const statusBarSchema = new Schema({
   statusChannelId: String,
   statusMessageId: String,
   updateInterval: { type: Number, default: 1 }, 
-  cardTemplate: { type: String, enum: ['darkmode', 'glass'], default: 'glass' },
+  cardTemplate: { type: String, enum: ['darkmode', 'glass', 'neon'], default: 'neon' },
   autoWallpaper: { type: Boolean, default: true },
   lastUpdated: { type: Date, default: Date.now }
 });
