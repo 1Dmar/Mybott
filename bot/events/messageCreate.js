@@ -80,8 +80,12 @@ const handleMainMessage = async (client, message) => {
     let cmd = args.shift()?.toLowerCase();
 
     if (cmd === 'testing') {
-message.reply(`${client.users.cache.filter(user => !user.bot).size}`);
-    }
+  // يقوم بجمع عدد الأعضاء من كل السيرفرات التي يخدمها البوت حالياً
+  const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+  
+  message.reply(`إجمالي عدد مستخدمي البوت في كل السيرفرات هو: ${totalUsers}`);
+}
+
     // Command: wallp
     if (cmd === 'wallp') {
         // Permission Check: Manage Guild or Administrator
