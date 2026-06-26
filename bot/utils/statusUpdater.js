@@ -13,7 +13,7 @@ if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
 const cleanIP = (ip) => ip ? ip.replace(/^https?:\/\//, '').split(':')[0] : '';
 
 // رابط القالب الخاص بك (ثابت ولا يتغير)
-const CARD_TEMPLATE_URL = "https://i.ibb.co/CKFj69Ky/file-00000000d35471f59ed2c16fbc1ccb97.png";
+const CARD_TEMPLATE_URL = "https://i.ibb.co/zWdqPyQh/4.png";
 
 async function checkServerStatus(ip, port, type) {
     const cleanIp = cleanIP(ip);
