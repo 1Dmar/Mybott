@@ -64,8 +64,8 @@ async function loadPlayerHeads(playerNames) {
 async function generateStatusImage(server, statusData) {
     try {
         // المقاسات ثابتة كما طلبت (1400x580)
-        const width = 1400;
-        const height = 580;
+        const width = 1774;
+        const height = 887;
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
