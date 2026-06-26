@@ -12,7 +12,7 @@ if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
 
 const cleanIP = (ip) => ip ? ip.replace(/^https?:\/\//, '').split(':')[0] : '';
 
-// Your provided template background
+// رابط القالب الخاص بك (ثابت ولا يتغير)
 const CARD_TEMPLATE_URL = "https://i.ibb.co/CKFj69Ky/file-00000000d35471f59ed2c16fbc1ccb97.png";
 
 async function checkServerStatus(ip, port, type) {
@@ -29,7 +29,7 @@ async function checkServerStatus(ip, port, type) {
     }
 }
 
-// Helper: draw rounded rectangle (Kept only for the player head frames)
+// دالة رسم المربعات المدورة (خاصة برؤوس اللاعبين فقط)
 function rr(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -59,10 +59,11 @@ async function loadPlayerHeads(playerNames) {
 }
 
 // ==========================================
-// IMPROVED: TEMPLATE-BASED GENERATOR
+// دالة توليد الصورة (بإحداثيات دقيقة للقالب)
 // ==========================================
-async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
+async function generateStatusImage(server, statusData) {
     try {
+        // المقاسات ثابتة كما طلبت (1400x580)
         const width = 1400;
         const height = 580;
         const canvas = createCanvas(width, height);
@@ -76,108 +77,98 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         const port = server.javaPort || server.bedrockPort || 25565;
         const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
 
-        // ===================================================
-        // 1. LOAD & DRAW YOUR PRE-MADE TEMPLATE BACKGROUND
-        // ===================================================
-        try {
-            const templateBg = await loadImage(CARD_TEMPLATE_URL);
-            ctx.drawImage(templateBg, 0, 0, width, height);
-        } catch {
-            // If template fails to load, fallback to a solid color
-            ctx.fillStyle = '#f5f7fa';
-            ctx.fillRect(0, 0, width, height);
-        }
+        // =======================
+        // 1. رسم قالب الخلفية فقط
+        // =======================
+        const templateBg = await loadImage(CARD_TEMPLATE_URL);
+        ctx.drawImage(templateBg, 0, 0, width, height);
 
-        // ===================================================
-        // 2. DRAW THE DYNAMIC CONTENT OVER THE TEMPLATE
-        // ===================================================
+        // =======================
+        // 2. وضع العناصر الجديدة فوق القالب
+        // =======================
 
-        // --- A. SERVER ICON (Top Left area) ---
+        // --- شعار السيرفر (المكعب) ---
         try {
             const icon = await loadImage(iconUrl);
-            const iconSize = 128;
-            // X, Y coordinates depending on where the icon slot is in your template
-            const iconX = 150;
-            const iconY = 110;
-            ctx.drawImage(icon, iconX - iconSize/2, iconY - iconSize/2, iconSize, iconSize);
-        } catch { /* Skip icon if failed */ }
+            const iconSize = 130;
+            // مركز المربع الأيسر (X: 140, Y: 140)
+            ctx.drawImage(icon, 75, 75, iconSize, iconSize);
+        } catch { /* تجاهل الشعار إذا تعذر تحميله */ }
 
-        // --- B. STATUS DOT & TEXT ---
+        // --- النقطة الخضراء/الحمراء والنص ---
         const statusColor = isOnline ? '#00B67A' : '#E74C3C';
         const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
 
-        // Green/Red dot
         ctx.beginPath();
-        ctx.arc(460, 100, 10, 0, Math.PI * 2);
+        ctx.arc(420, 90, 12, 0, Math.PI * 2); // مكان النقطة
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        // Status Text (ONLINE / OFFLINE)
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(statusText, 480, 108);
+        ctx.fillText(statusText, 445, 100); // مكان النص
 
-        // --- C. PLAYERS COUNT ---
+        // --- عدد اللاعبين ---
         ctx.font = '16px Arial';
         ctx.fillStyle = '#8E8E8E';
-        ctx.fillText('PLAYERS', 460, 170);
+        ctx.fillText('PLAYERS', 452, 165);
         
-        ctx.font = 'bold 46px Arial';
+        ctx.font = 'bold 50px Arial';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
-        ctx.fillText(countText, 460, 230);
+        ctx.fillText(countText, 420, 225);
         const numW = ctx.measureText(countText).width;
         
-        ctx.font = '26px Arial';
+        ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(` / ${players.max}`, 460 + numW + 6, 228);
+        ctx.fillText(` / ${players.max}`, 420 + numW + 8, 222);
 
-        // --- D. VERSION ---
+        // --- الإصدار ---
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
-        ctx.fillText('VERSION', 910, 105);
+        ctx.fillText('VERSION', 940, 100);
         
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 910, 135);
+        ctx.fillText(versionLabel, 940, 135);
 
-        // --- E. IP ADDRESS ---
+        // --- الآي بي (IP) ---
         ctx.font = '14px Arial';
         ctx.fillStyle = '#999999';
-        ctx.fillText('IP ADDRESS', 910, 185);
+        ctx.fillText('IP ADDRESS', 940, 180);
         
         ctx.font = 'bold 22px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(cleanIpAddr || 'play.server.net', 910, 215);
+        ctx.fillText(cleanIpAddr || 'play.server.net', 940, 215);
 
-        // --- F. PING (Bottom Left) ---
+        // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
-        ctx.font = 'bold 32px Arial';
+        ctx.font = 'bold 34px Arial';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 280, 485);
+        ctx.fillText(`${pingValue}`, 190, 525);
         const pingNumW = ctx.measureText(`${pingValue}`).width;
         ctx.font = '18px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(' ms', 280 + pingNumW + 5, 483);
+        ctx.fillText(' ms', 190 + pingNumW + 6, 520);
 
-        // --- G. PLAYER HEADS (Bottom Right) ---
+        // --- رؤوس اللاعبين (الإطارات الخشبية) ---
         const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
         const playerHeads = await loadPlayerHeads(realPlayerNames);
 
         const headSize = 48;
         const frameSize = 60;
         const framePad = (frameSize - headSize) / 2;
-        const headSpacing = 14;
-        const headsStartX = 650; // Position according to your template layout
-        const headsY = 435;
+        const headSpacing = 15;
+        const headsStartX = 580; // بداية الرؤوس في القالب
+        const headsY = 450;
 
         for (let i = 0; i < playerHeads.length; i++) {
             const head = playerHeads[i];
             const fx = headsStartX + i * (frameSize + headSpacing);
             const fy = headsY;
 
-            // Draw wooden frame (since this isn't in your template)
+            // رسم إطار خشبي
             ctx.fillStyle = '#5C3310';
             rr(ctx, fx, fy, frameSize, frameSize, 5);
             ctx.fill();
@@ -188,11 +179,11 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
             rr(ctx, fx + 6, fy + 6, frameSize - 12, frameSize - 12, 3);
             ctx.fill();
 
-            // Draw Head
+            // رسم الرأس
             if (head.img) {
                 ctx.drawImage(head.img, fx + framePad, fy + framePad, headSize, headSize);
             } else {
-                // Fallback if head fails
+                // في حال تعذر تحميل الرأس
                 ctx.fillStyle = '#666666';
                 rr(ctx, fx + 12, fy + 12, headSize - 6, headSize - 6, 2);
                 ctx.fill();
@@ -208,6 +199,7 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
 
     } catch (error) {
         console.error('Image generation crashed:', error);
+        // صورة خطأ بسيطة
         const errCanvas = createCanvas(800, 400);
         const errCtx = errCanvas.getContext('2d');
         errCtx.fillStyle = '#FF0000';
@@ -220,6 +212,9 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     }
 }
 
+// ==========================================
+// الدالة الرئيسية لتحديث السيرفر
+// ==========================================
 module.exports.updateServerStatus = async (client, server, settings) => {
     try {
         const status = await checkServerStatus(
@@ -228,7 +223,7 @@ module.exports.updateServerStatus = async (client, server, settings) => {
             server.serverType
         );
 
-        const imageBuffer = await generateStatusImage(server, status.data, settings.cardTemplate, settings.autoWallpaper);
+        const imageBuffer = await generateStatusImage(server, status.data);
         const attachment = new AttachmentBuilder(imageBuffer, { name: 'status.png' });
 
         const channel = await client.channels.fetch(settings.statusChannelId);
