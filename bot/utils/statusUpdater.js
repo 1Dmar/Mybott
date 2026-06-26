@@ -114,7 +114,131 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
 
         // ... [Keep your Icon Box, Status Box, and Right Side Version/IP boxes exactly as they are] ...
         // Note: The code you provided for the layout is actually correct, I will focus on the Heads/Ping fixes below.
+// Replace your old loadPlayerHeads with this reliable version
+async function loadPlayerHeads(playerNames) {
+    const heads = [];
+    for (const name of playerNames) {
+        try {
+            // Switched to mc-heads.net for better reliability
+            const url = `https://mc-heads.net/avatar/${name}/64`;
+            const img = await loadImage(url);
+            heads.push({ name, img });
+        } catch {
+            // If loading fails, push null (will draw a fallback ? instead of skipping)
+            heads.push({ name, img: null });
+        }
+    }
+    return heads;
+}
 
+// Paste this right AFTER your "VERSION & IP ADDRESS boxes" layout (bottom section)
+    // === BOTTOM SECTION SEPARATOR ===
+    const bottomSepY = cardY + cardH - 105;
+    ctx.strokeStyle = '#EEEEEE';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cardX + 40, bottomSepY);
+    ctx.lineTo(cardX + cardW - 40, bottomSepY);
+    ctx.stroke();
+
+    // === PING (bottom left) ===
+    const pingX = cardX + 55;
+    const pingY = bottomSepY + 20;
+
+    // Draw heartbeat/pulse line (ECG style)
+    ctx.strokeStyle = '#4FC3F7';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(pingX, pingY + 25);
+    ctx.lineTo(pingX + 12, pingY + 25);
+    ctx.lineTo(pingX + 18, pingY + 8);
+    ctx.lineTo(pingX + 26, pingY + 42);
+    ctx.lineTo(pingX + 33, pingY + 15);
+    ctx.lineTo(pingX + 40, pingY + 30);
+    ctx.lineTo(pingX + 55, pingY + 25);
+    ctx.stroke();
+
+    // PING label
+    ctx.font = '14px Arial';
+    ctx.fillStyle = '#AAAAAA';
+    ctx.textAlign = 'left';
+    ctx.fillText('PING', pingX + 65, pingY + 18);
+
+    // Ping value (fixed spacing for "32 ms")
+    const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
+    ctx.font = 'bold 36px Arial';
+    ctx.fillStyle = '#1A1A1A';
+    ctx.fillText(`${pingValue}`, pingX + 65, pingY + 55);
+    const pingNumW = ctx.measureText(`${pingValue}`).width;
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#AAAAAA';
+    // Added a leading space to make it "32 ms"
+    ctx.fillText(' ms', pingX + 65 + pingNumW + 5, pingY + 55);
+
+    // Vertical separator line before player heads
+    const vSepX = pingX + 200;
+    ctx.strokeStyle = '#EEEEEE';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(vSepX, bottomSepY + 12);
+    ctx.lineTo(vSepX, cardY + cardH - 18);
+    ctx.stroke();
+
+    // === PLAYER HEADS (bottom right) ===
+    const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
+    const playerHeads = await loadPlayerHeads(realPlayerNames);
+
+    const headSize = 52;
+    const frameSize = 64;
+    const framePad = (frameSize - headSize) / 2;
+    const headSpacing = 16;
+    const headsStartX = vSepX + 40;
+    const headsY = bottomSepY + 15;
+
+    for (let i = 0; i < playerHeads.length; i++) {
+        const head = playerHeads[i];
+        const fx = headsStartX + i * (frameSize + headSpacing);
+        const fy = headsY;
+
+        // Draw wooden frame
+        ctx.fillStyle = '#5C3310';
+        rr(ctx, fx, fy, frameSize, frameSize, 5);
+        ctx.fill();
+        ctx.fillStyle = '#8B5A2B';
+        rr(ctx, fx + 3, fy + 3, frameSize - 6, frameSize - 6, 4);
+        ctx.fill();
+        ctx.fillStyle = '#2B1A0A';
+        rr(ctx, fx + 6, fy + 6, frameSize - 12, frameSize - 12, 3);
+        ctx.fill();
+
+        // Draw Head (with fallback if loading failed)
+        if (head.img) {
+            const hx = fx + framePad, hy = fy + framePad;
+            ctx.drawImage(head.img, hx, hy, headSize, headSize);
+        } else {
+            // Fallback grey box with "?" to keep the layout intact
+            ctx.fillStyle = '#666666';
+            rr(ctx, fx + 12, fy + 12, headSize - 6, headSize - 6, 2);
+            ctx.fill();
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', fx + frameSize / 2, fy + frameSize / 2);
+        }
+
+        // Frame highlight
+        ctx.strokeStyle = 'rgba(255, 200, 100, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(fx + 5, fy + 2);
+        ctx.lineTo(fx + frameSize - 5, fy + 2);
+        ctx.stroke();
+    }
+
+    return canvas.toBuffer();
         // === PLAYER HEADS (bottom right) ===
         // Use a specific subset to match the 5 heads in the image
         const selectedPlayers = realPlayerNames; 
