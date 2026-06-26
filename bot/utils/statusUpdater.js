@@ -100,11 +100,11 @@ async function generateStatusImage(server, statusData) {
         const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
 
         ctx.beginPath();
-        ctx.arc(600, 150, 12, 0, Math.PI * 2); // مكان النقطة
+        ctx.arc(600, 350, 12, 0, Math.PI * 2); // مكان النقطة
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        ctx.font = 'bold 64px Arial';
+        ctx.font = 'bold 50px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
         ctx.fillText(statusText, 665, 260); // مكان النص
@@ -114,12 +114,12 @@ async function generateStatusImage(server, statusData) {
         ctx.font = 'bold 50px Arial';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
-        ctx.fillText(countText, 655, 465);
+        ctx.fillText(countText, 655, 455);
         const numW = ctx.measureText(countText).width;
         
         ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(` / ${players.max}`, 655+ numW + 8, 562);
+        ctx.fillText(` / ${players.max}`, 655+ numW + 8, 452);
 
         // --- الإصدار ---
         ctx.font = '14px Arial';
@@ -143,11 +143,11 @@ async function generateStatusImage(server, statusData) {
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 34px Arial';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 360, 605);
+        ctx.fillText(`${pingValue}`, 360, 635);
         const pingNumW = ctx.measureText(`${pingValue}`).width;
         ctx.font = '18px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(' ms', 360 + pingNumW + 6, 600);
+        ctx.fillText(' ms', 360 + pingNumW + 6, 630);
 
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
         const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
