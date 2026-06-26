@@ -34,7 +34,147 @@ async function checkServerStatus(ip, port, type) {
         return { success: false, data: { online: false } };
     }
 }
+async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
+    const width = 1100;
+    const height = 420;
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
 
+    const isOnline = statusData?.online;
+    const players = statusData?.players || { online: 0, max: 0 };
+    const version = statusData?.version || 'N/A';
+    const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
+    const cleanIpAddr = cleanIP(server.javaIP || server.bedrockIP);
+    const port = server.javaPort || server.bedrockPort || 25565;
+    const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
+
+    // Background wallpaper
+    try {
+        let wallpaperUrl = server.wallpaper;
+        if (autoWallpaper || !wallpaperUrl) {
+            const minute = new Date().getMinutes();
+            wallpaperUrl = MC_WALLPAPERS[minute % MC_WALLPAPERS.length];
+        }
+        const bg = await loadImage(wallpaperUrl);
+        ctx.drawImage(bg, 0, 0, width, height);
+    } catch {
+        ctx.fillStyle = '#0B0E1A';
+        ctx.fillRect(0, 0, width, height);
+    }
+
+    // Dark overlay for readability
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(0, 0, width, height);
+
+    // Main card container with rounded corners
+    const cardX = 50;
+    const cardY = 50;
+    const cardW = width - 100;
+    const cardH = height - 100;
+    const cornerRadius = 20;
+
+    ctx.save();
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.fillStyle = '#fff';
+    if (ctx.roundRect) {
+        ctx.roundRect(cardX, cardY, cardW, cardH, cornerRadius);
+    } else {
+        // fallback for older canvas
+        rr(ctx, cardX, cardY, cardW, cardH, cornerRadius);
+    }
+    ctx.fill();
+    ctx.restore();
+
+    // Inner content area
+    const padding = 40;
+
+    // Server icon
+    try {
+        const icon = await loadImage(iconUrl);
+        const iconSize = 80;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cardX + padding + iconSize / 2, cardY + padding + iconSize / 2, iconSize/2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(icon, cardX + padding, cardY + padding, iconSize, iconSize);
+        ctx.restore();
+    } catch {
+        // fallback
+    }
+
+    // Server name
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), cardX + padding + 100, cardY + padding + 40);
+
+    // Status badge
+    const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = isOnline ? '#00E5A0' : '#FF5C5C';
+    ctx.fillText(`● ${statusText}`, cardX + padding + 100, cardY + padding + 70);
+
+    // Version
+    ctx.font = '13px Arial';
+    ctx.fillStyle = '#555';
+    ctx.fillText(`Version: ${versionLabel}`, cardX + padding + 100, cardY + padding + 100);
+
+    // IP
+    ctx.fillText(`IP: ${cleanIpAddr || 'N/A'}`, cardX + padding + 100, cardY + padding + 130);
+
+    // Player count
+    ctx.fillText(`Players: ${players.online} / ${players.max}`, cardX + padding + 100, cardY + 160);
+
+    // Draw the player heads frame - now a dedicated section
+    const playersSectionX = cardX + 50;
+    const playersSectionY = cardY + 200;
+    const maxPlayersToShow = Math.min(3, players.online);
+    const headSize = 70;
+    const headSpacing = 20;
+
+    // Get random players from list
+    const playerHeads = await loadPlayerHeads(statusData?.players?.list || [], maxPlayersToShow);
+
+    // Show each player head
+    for (let i = 0; i < maxPlayersToShow; i++) {
+        const hx = playersSectionX + i * (headSize + headSpacing);
+        const hy = playersSectionY;
+        // Draw circle clip for round heads
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(hx + headSize / 2, hy + headSize / 2, headSize / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(playerHeads[i]?.img, hx, hy, headSize, headSize);
+        ctx.restore();
+
+        // Optional: add a border around heads
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(hx + headSize / 2, hy + headSize / 2, headSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Player name below
+        if (statusData?.players?.list[i]?.name) {
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'center';
+            ctx.fillText(statusData.players.list[i].name, hx + headSize / 2, hy + headSize + 15);
+        }
+    }
+
+    // Add a label for players
+    ctx.font = 'bold 16px Arial';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'left';
+    ctx.fillText('Online Players', playersSectionX, playersSectionY - 10);
+
+    // Return the canvas buffer
+    return canvas.toBuffer();
+}
+
+/*
 async function generateStatusImage(server, statusData, template = 'glass', autoWallpaper = true) {
     // Determine canvas size based on template
     const width = template === 'neon' ? 1360 : 800;
@@ -341,7 +481,7 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
 
     return canvas.toBuffer();
 }
-
+*/
 module.exports.updateServerStatus = async (client, server, settings) => {
     try {
         const status = await checkServerStatus(
