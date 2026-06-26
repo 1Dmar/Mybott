@@ -150,7 +150,7 @@ async function generateStatusImage(server, statusData) {
         const frameSize = 78;
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 105;
-        const headsStartX = 630; // بداية الرؤوس في القالب
+        const headsStartX = 625; // بداية الرؤوس في القالب
         const headsY = 608;
 
         for (let i = 0; i < playerHeads.length; i++) {
