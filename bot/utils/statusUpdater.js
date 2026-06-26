@@ -104,7 +104,7 @@ async function generateStatusImage(server, statusData) {
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        ctx.font = 'SemiBold 35px Poppins';
+        ctx.font = 'bold 35px Poppins';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
         ctx.fillText(statusText, 660, 285); // مكان النص
@@ -123,13 +123,13 @@ async function generateStatusImage(server, statusData) {
 
         // --- الإصدار ---
         
-        ctx.font = 'bold 24px Poppins';
+        ctx.font = '34px Poppins';
         ctx.fillStyle = '#2D2D2D';
         ctx.fillText(versionLabel, 1245, 315);
 
         // --- الآي بي (IP) ---
         
-        ctx.font = 'bold 28px Poppins';
+        ctx.font = '38px Poppins';
         ctx.fillStyle = '#2D2D2D';
         ctx.fillText(cleanIpAddr || 'play.server.net', 1250, 490);
 
@@ -137,7 +137,7 @@ async function generateStatusImage(server, statusData) {
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 44px Poppins';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 360, 660);
+        ctx.fillText(`${pingValue}`, 360, 657);
        // const pingNumW = ctx.measureText(`${pingValue}`).width;
         
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
@@ -148,8 +148,8 @@ async function generateStatusImage(server, statusData) {
         const frameSize = 78;
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 105;
-        const headsStartX = 650; // بداية الرؤوس في القالب
-        const headsY = 620;
+        const headsStartX = 600; // بداية الرؤوس في القالب
+        const headsY = 600;
 
         for (let i = 0; i < playerHeads.length; i++) {
             const head = playerHeads[i];
