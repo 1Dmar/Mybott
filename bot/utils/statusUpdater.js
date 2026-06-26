@@ -125,13 +125,13 @@ async function generateStatusImage(server, statusData) {
         
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 1100, 295);
+        ctx.fillText(versionLabel, 1250, 295);
 
         // --- الآي بي (IP) ---
         
         ctx.font = 'bold 22px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(cleanIpAddr || 'play.server.net', 1100, 490);
+        ctx.fillText(cleanIpAddr || 'play.server.net', 1250, 490);
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
@@ -147,8 +147,8 @@ async function generateStatusImage(server, statusData) {
         const headSize = 78;
         const frameSize = 60;
         const framePad = (frameSize - headSize) / 2;
-        const headSpacing = 85;
-        const headsStartX = 600; // بداية الرؤوس في القالب
+        const headSpacing = 105;
+        const headsStartX = 650; // بداية الرؤوس في القالب
         const headsY = 620;
 
         for (let i = 0; i < playerHeads.length; i++) {
