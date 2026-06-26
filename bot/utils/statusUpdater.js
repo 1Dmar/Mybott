@@ -100,26 +100,26 @@ async function generateStatusImage(server, statusData) {
         const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
 
         ctx.beginPath();
-        ctx.arc(665, 90, 12, 0, Math.PI * 2); // مكان النقطة
+        ctx.arc(600, 150, 12, 0, Math.PI * 2); // مكان النقطة
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        ctx.font = 'bold 44px Arial';
+        ctx.font = 'bold 64px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(statusText, 665, 280); // مكان النص
+        ctx.fillText(statusText, 665, 260); // مكان النص
 
         // --- عدد اللاعبين ---
         
         ctx.font = 'bold 50px Arial';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
-        ctx.fillText(countText, 640, 525);
+        ctx.fillText(countText, 655, 465);
         const numW = ctx.measureText(countText).width;
         
         ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(` / ${players.max}`, 640+ numW + 8, 522);
+        ctx.fillText(` / ${players.max}`, 655+ numW + 8, 562);
 
         // --- الإصدار ---
         ctx.font = '14px Arial';
