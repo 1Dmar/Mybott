@@ -114,12 +114,12 @@ async function generateStatusImage(server, statusData) {
         ctx.font = 'bold 50px Arial';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
-        ctx.fillText(countText, 300, 325);
+        ctx.fillText(countText, 540, 425);
         const numW = ctx.measureText(countText).width;
         
         ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(` / ${players.max}`, 300+ numW + 8, 322);
+        ctx.fillText(` / ${players.max}`, 540+ numW + 8, 422);
 
         // --- الإصدار ---
         ctx.font = '14px Arial';
@@ -143,11 +143,11 @@ async function generateStatusImage(server, statusData) {
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 34px Arial';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 360, 525);
+        ctx.fillText(`${pingValue}`, 360, 725);
         const pingNumW = ctx.measureText(`${pingValue}`).width;
         ctx.font = '18px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(' ms', 360 + pingNumW + 6, 520);
+        ctx.fillText(' ms', 360 + pingNumW + 6, 720);
 
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
         const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
