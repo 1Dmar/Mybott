@@ -48,7 +48,40 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     const port = server.javaPort || server.bedrockPort || 25565;
     const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
 
-    // Background wallpaper
+    // قائمة بأسماء لاعبين حقيقيين
+    const realPlayerNames = [
+        'Notch',
+        'Jeb_',
+        'Dinnerbone',
+        'Hypixel',
+        'Technoblade',
+        'Dream',
+        'Sapnap',
+        'GeorgeNotFound',
+        'BadBoyHalo',
+        'KarlJacobs'
+        // أضف المزيد حسب الحاجة
+    ];
+
+    // دالة لاختيار عشوائي لعدد معين من الأسماء
+    function getRandomPlayers(names, count) {
+        const shuffled = [...names].sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, count);
+    }
+
+    // تحميل رؤوس اللاعبين المختارين
+    async function loadPlayerHeads(playerNames) {
+        const heads = await Promise.all(
+            playerNames.map(async (name) => {
+                const url = `https://crafatar.com/avatars/${name}?size=64&overlay=true`;
+                const img = await loadImage(url);
+                return { name, img };
+            })
+        );
+        return heads;
+    }
+
+    // خلفية
     try {
         let wallpaperUrl = server.wallpaper;
         if (autoWallpaper || !wallpaperUrl) {
@@ -62,11 +95,11 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         ctx.fillRect(0, 0, width, height);
     }
 
-    // Dark overlay for readability
+    // طبقة داكنة لسهولة القراءة
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.fillRect(0, 0, width, height);
 
-    // Main card container with rounded corners
+    // صندوق رئيسي بزوايا مستديرة
     const cardX = 50;
     const cardY = 50;
     const cardW = width - 100;
@@ -80,67 +113,63 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
     if (ctx.roundRect) {
         ctx.roundRect(cardX, cardY, cardW, cardH, cornerRadius);
     } else {
-        // fallback for older canvas
         rr(ctx, cardX, cardY, cardW, cardH, cornerRadius);
     }
     ctx.fill();
     ctx.restore();
 
-    // Inner content area
-    const padding = 40;
-
-    // Server icon
+    // أيقونة السيرفر
     try {
         const icon = await loadImage(iconUrl);
         const iconSize = 80;
         ctx.save();
         ctx.beginPath();
-        ctx.arc(cardX + padding + iconSize / 2, cardY + padding + iconSize / 2, iconSize/2, 0, Math.PI * 2);
+        ctx.arc(cardX + 40 + iconSize / 2, cardY + 40 + iconSize / 2, iconSize/2, 0, Math.PI * 2);
         ctx.clip();
-        ctx.drawImage(icon, cardX + padding, cardY + padding, iconSize, iconSize);
+        ctx.drawImage(icon, cardX + 40, cardY + 40, iconSize, iconSize);
         ctx.restore();
     } catch {
-        // fallback
+        // لا شيء
     }
 
-    // Server name
+    // اسم السيرفر
     ctx.font = 'bold 28px Arial';
     ctx.fillStyle = '#000';
     ctx.textAlign = 'left';
-    ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), cardX + padding + 100, cardY + padding + 40);
+    ctx.fillText((server.serverName || 'Minecraft Server').toUpperCase(), cardX + 130, cardY + 70);
 
-    // Status badge
+    // الحالة
     const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
     ctx.font = 'bold 14px Arial';
     ctx.fillStyle = isOnline ? '#00E5A0' : '#FF5C5C';
-    ctx.fillText(`● ${statusText}`, cardX + padding + 100, cardY + padding + 70);
+    ctx.fillText(`● ${statusText}`, cardX + 130, cardY + 100);
 
-    // Version
+    // الإصدار
     ctx.font = '13px Arial';
     ctx.fillStyle = '#555';
-    ctx.fillText(`Version: ${versionLabel}`, cardX + padding + 100, cardY + padding + 100);
+    ctx.fillText(`Version: ${versionLabel}`, cardX + 130, cardY + 130);
 
-    // IP
-    ctx.fillText(`IP: ${cleanIpAddr || 'N/A'}`, cardX + padding + 100, cardY + padding + 130);
+    // الـ IP
+    ctx.fillText(`IP: ${cleanIpAddr || 'N/A'}`, cardX + 130, cardY + 160);
 
-    // Player count
-    ctx.fillText(`Players: ${players.online} / ${players.max}`, cardX + padding + 100, cardY + 160);
+    // عدد اللاعبين
+    ctx.fillText(`Players: ${players.online} / ${players.max}`, cardX + 130, cardY + 190);
 
-    // Draw the player heads frame - now a dedicated section
-    const playersSectionX = cardX + 50;
-    const playersSectionY = cardY + 200;
-    const maxPlayersToShow = Math.min(3, players.online);
+    // اختيار 3 لاعبين عشوائيًا من القائمة
+    const selectedPlayers = getRandomPlayers(realPlayerNames, Math.min(3, players.online));
+
+    // تحميل رؤوس اللاعبين المختارين
+    const playerHeads = await loadPlayerHeads(selectedPlayers);
+
+    // عرض رؤوس اللاعبين
     const headSize = 70;
-    const headSpacing = 20;
+    const headsStartX = cardX + 50;
+    const headsY = 250;
+    for (let i = 0; i < playerHeads.length; i++) {
+        const hx = headsStartX + i * (headSize + 20);
+        const hy = headsY;
 
-    // Get random players from list
-    const playerHeads = await loadPlayerHeads(statusData?.players?.list || [], maxPlayersToShow);
-
-    // Show each player head
-    for (let i = 0; i < maxPlayersToShow; i++) {
-        const hx = playersSectionX + i * (headSize + headSpacing);
-        const hy = playersSectionY;
-        // Draw circle clip for round heads
+        // رسم رأس دائري
         ctx.save();
         ctx.beginPath();
         ctx.arc(hx + headSize / 2, hy + headSize / 2, headSize / 2, 0, Math.PI * 2);
@@ -148,29 +177,26 @@ async function generateStatusImage(server, statusData, template = 'glass', autoW
         ctx.drawImage(playerHeads[i]?.img, hx, hy, headSize, headSize);
         ctx.restore();
 
-        // Optional: add a border around heads
+        // إطار حول الرأس
         ctx.strokeStyle = '#ccc';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(hx + headSize / 2, hy + headSize / 2, headSize / 2, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Player name below
-        if (statusData?.players?.list[i]?.name) {
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#000';
-            ctx.textAlign = 'center';
-            ctx.fillText(statusData.players.list[i].name, hx + headSize / 2, hy + headSize + 15);
-        }
+        // اسم اللاعب تحت الرأس
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText(selectedPlayers[i], hx + headSize / 2, hy + headSize + 15);
     }
 
-    // Add a label for players
+    // عنوان قسم اللاعبين
     ctx.font = 'bold 16px Arial';
     ctx.fillStyle = '#000';
     ctx.textAlign = 'left';
-    ctx.fillText('Online Players', playersSectionX, playersSectionY - 10);
+    ctx.fillText('Online Players', headsStartX, headsY - 10);
 
-    // Return the canvas buffer
     return canvas.toBuffer();
 }
 
