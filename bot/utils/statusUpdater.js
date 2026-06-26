@@ -104,10 +104,10 @@ async function generateStatusImage(server, statusData) {
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        ctx.font = 'bold 45px Arial';
+        ctx.font = 'bold 35px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(statusText, 660, 275); // مكان النص
+        ctx.fillText(statusText, 660, 285); // مكان النص
 
         // --- عدد اللاعبين ---
         
@@ -125,24 +125,21 @@ async function generateStatusImage(server, statusData) {
         
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 1000, 295);
+        ctx.fillText(versionLabel, 1100, 295);
 
         // --- الآي بي (IP) ---
         
         ctx.font = 'bold 22px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(cleanIpAddr || 'play.server.net', 1000, 505);
+        ctx.fillText(cleanIpAddr || 'play.server.net', 1100, 490);
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 44px Arial';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 370, 655);
-        const pingNumW = ctx.measureText(`${pingValue}`).width;
-        ctx.font = '28px Arial';
-        ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(' ms', 370 + pingNumW + 6, 650);
-
+        ctx.fillText(`${pingValue}`, 360, 660);
+       // const pingNumW = ctx.measureText(`${pingValue}`).width;
+        
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
         const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
         const playerHeads = await loadPlayerHeads(realPlayerNames);
@@ -150,8 +147,8 @@ async function generateStatusImage(server, statusData) {
         const headSize = 78;
         const frameSize = 60;
         const framePad = (frameSize - headSize) / 2;
-        const headSpacing = 65;
-        const headsStartX = 580; // بداية الرؤوس في القالب
+        const headSpacing = 85;
+        const headsStartX = 600; // بداية الرؤوس في القالب
         const headsY = 620;
 
         for (let i = 0; i < playerHeads.length; i++) {
