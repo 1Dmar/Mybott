@@ -107,19 +107,19 @@ async function generateStatusImage(server, statusData) {
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(statusText, 445, 100); // مكان النص
+        ctx.fillText(statusText, 665, 300); // مكان النص
 
         // --- عدد اللاعبين ---
         
         ctx.font = 'bold 50px Arial';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
-        ctx.fillText(countText, 540, 425);
+        ctx.fillText(countText, 640, 525);
         const numW = ctx.measureText(countText).width;
         
         ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(` / ${players.max}`, 540+ numW + 8, 422);
+        ctx.fillText(` / ${players.max}`, 640+ numW + 8, 522);
 
         // --- الإصدار ---
         ctx.font = '14px Arial';
@@ -143,11 +143,11 @@ async function generateStatusImage(server, statusData) {
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 34px Arial';
         ctx.fillStyle = '#1A1A1A';
-        ctx.fillText(`${pingValue}`, 360, 725);
+        ctx.fillText(`${pingValue}`, 400, 625);
         const pingNumW = ctx.measureText(`${pingValue}`).width;
         ctx.font = '18px Arial';
         ctx.fillStyle = '#AAAAAA';
-        ctx.fillText(' ms', 360 + pingNumW + 6, 720);
+        ctx.fillText(' ms', 400 + pingNumW + 6, 620);
 
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
         const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
@@ -158,7 +158,7 @@ async function generateStatusImage(server, statusData) {
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 15;
         const headsStartX = 580; // بداية الرؤوس في القالب
-        const headsY = 450;
+        const headsY = 620;
 
         for (let i = 0; i < playerHeads.length; i++) {
             const head = playerHeads[i];
