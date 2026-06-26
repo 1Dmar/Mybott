@@ -90,9 +90,9 @@ async function generateStatusImage(server, statusData) {
         // --- شعار السيرفر (المكعب) ---
         try {
             const icon = await loadImage(iconUrl);
-            const iconSize = 130;
+            const iconSize = 330;
             // مركز المربع الأيسر (X: 140, Y: 140)
-            ctx.drawImage(icon, 75, 75, iconSize, iconSize);
+            ctx.drawImage(icon, 95, 55, iconSize, iconSize);
         } catch { /* تجاهل الشعار إذا تعذر تحميله */ }
 
         // --- النقطة الخضراء/الحمراء والنص ---
