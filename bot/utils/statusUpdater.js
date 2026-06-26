@@ -125,11 +125,11 @@ async function generateStatusImage(server, statusData) {
         
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 1250, 295);
+        ctx.fillText(versionLabel, 1245, 315);
 
         // --- الآي بي (IP) ---
         
-        ctx.font = 'bold 22px Arial';
+        ctx.font = 'bold 28px Arial';
         ctx.fillStyle = '#2D2D2D';
         ctx.fillText(cleanIpAddr || 'play.server.net', 1250, 490);
 
@@ -145,7 +145,7 @@ async function generateStatusImage(server, statusData) {
         const playerHeads = await loadPlayerHeads(realPlayerNames);
 
         const headSize = 78;
-        const frameSize = 60;
+        const frameSize = 78;
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 105;
         const headsStartX = 650; // بداية الرؤوس في القالب
