@@ -72,7 +72,9 @@ async function generateStatusImage(server, statusData) {
         const isOnline = statusData?.online;
         const players = statusData?.players || { online: 0, max: 0 };
         const version = statusData?.version || 'N/A';
-        const versionLabel = typeof version === 'string' ? version : (version.name || 'N/A');
+        const versionLabel = /^\d+\.\d+\s*-\s*\d+\.\d+$/.test(typeof version === 'string' ? version : (version.name || '')) 
+  ? (typeof version === 'string' ? version : version.name) 
+  : 'N/A';
         const cleanIpAddr = cleanIP(server.javaIP || server.bedrockIP);
         const port = server.javaPort || server.bedrockPort || 25565;
         const iconUrl = `https://api.mcstatus.io/v2/icon/${cleanIpAddr}:${port}`;
