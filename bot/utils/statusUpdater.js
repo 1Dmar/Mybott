@@ -100,14 +100,14 @@ async function generateStatusImage(server, statusData) {
         const statusText = isOnline ? 'ONLINE' : 'OFFLINE';
 
         ctx.beginPath();
-        ctx.arc(600, 260, 12, 0, Math.PI * 2); // مكان النقطة
+        ctx.arc(610, 270, 12, 0, Math.PI * 2); // مكان النقطة
         ctx.fillStyle = statusColor;
         ctx.fill();
 
         ctx.font = 'bold 45px Arial';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
-        ctx.fillText(statusText, 665, 260); // مكان النص
+        ctx.fillText(statusText, 660, 275); // مكان النص
 
         // --- عدد اللاعبين ---
         
@@ -122,30 +122,24 @@ async function generateStatusImage(server, statusData) {
         ctx.fillText(` / ${players.max}`, 655+ numW + 5, 452);
 
         // --- الإصدار ---
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#999999';
-        ctx.fillText('VERSION', 940, 100);
         
         ctx.font = 'bold 24px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 940, 135);
+        ctx.fillText(versionLabel, 1000, 295);
 
         // --- الآي بي (IP) ---
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#999999';
-        ctx.fillText('IP ADDRESS', 940, 180);
         
         ctx.font = 'bold 22px Arial';
         ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(cleanIpAddr || 'play.server.net', 940, 215);
+        ctx.fillText(cleanIpAddr || 'play.server.net', 1000, 505);
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
-        ctx.font = 'bold 34px Arial';
+        ctx.font = 'bold 44px Arial';
         ctx.fillStyle = '#1A1A1A';
         ctx.fillText(`${pingValue}`, 370, 655);
         const pingNumW = ctx.measureText(`${pingValue}`).width;
-        ctx.font = '18px Arial';
+        ctx.font = '28px Arial';
         ctx.fillStyle = '#AAAAAA';
         ctx.fillText(' ms', 370 + pingNumW + 6, 650);
 
@@ -156,7 +150,7 @@ async function generateStatusImage(server, statusData) {
         const headSize = 78;
         const frameSize = 60;
         const framePad = (frameSize - headSize) / 2;
-        const headSpacing = 45;
+        const headSpacing = 65;
         const headsStartX = 580; // بداية الرؤوس في القالب
         const headsY = 620;
 
