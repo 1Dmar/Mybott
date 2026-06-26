@@ -104,38 +104,38 @@ async function generateStatusImage(server, statusData) {
         ctx.fillStyle = statusColor;
         ctx.fill();
 
-        ctx.font = 'bold 35px Arial';
+        ctx.font = 'SemiBold 35px Poppins';
         ctx.fillStyle = statusColor;
         ctx.textAlign = 'left';
         ctx.fillText(statusText, 660, 285); // مكان النص
 
         // --- عدد اللاعبين ---
         
-        ctx.font = 'bold 50px Arial';
+        ctx.font = 'bold 50px Poppins';
         ctx.fillStyle = '#1A1A1A';
         const countText = `${players.online}`;
         ctx.fillText(countText, 655, 455);
         const numW = ctx.measureText(countText).width;
         
-        ctx.font = '38px Arial';
+        ctx.font = '38px Poppins';
         ctx.fillStyle = '#AAAAAA';
         ctx.fillText(` / ${players.max}`, 655+ numW + 5, 452);
 
         // --- الإصدار ---
         
-        ctx.font = 'bold 24px Arial';
+        ctx.font = 'bold 24px Poppins';
         ctx.fillStyle = '#2D2D2D';
         ctx.fillText(versionLabel, 1245, 315);
 
         // --- الآي بي (IP) ---
         
-        ctx.font = 'bold 28px Arial';
+        ctx.font = 'bold 28px Poppins';
         ctx.fillStyle = '#2D2D2D';
         ctx.fillText(cleanIpAddr || 'play.server.net', 1250, 490);
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
-        ctx.font = 'bold 44px Arial';
+        ctx.font = 'bold 44px Poppins';
         ctx.fillStyle = '#1A1A1A';
         ctx.fillText(`${pingValue}`, 360, 660);
        // const pingNumW = ctx.measureText(`${pingValue}`).width;
