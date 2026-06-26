@@ -92,7 +92,7 @@ async function generateStatusImage(server, statusData) {
             const icon = await loadImage(iconUrl);
             const iconSize = 330;
             // مركز المربع الأيسر (X: 140, Y: 140)
-            ctx.drawImage(icon, 135, 165, iconSize, iconSize);
+            ctx.drawImage(icon, 155, 205, iconSize, iconSize);
         } catch { /* تجاهل الشعار إذا تعذر تحميله */ }
 
         // --- النقطة الخضراء/الحمراء والنص ---
