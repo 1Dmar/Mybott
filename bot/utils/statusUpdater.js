@@ -112,7 +112,7 @@ async function generateStatusImage(server, statusData) {
         // --- عدد اللاعبين ---
         
         ctx.font = 'bold 50px Poppins';
-        ctx.fillStyle = '#1A1A1A';
+        ctx.fillStyle = '#202a3e';
         const countText = `${players.online}`;
         ctx.fillText(countText, 655, 455);
         const numW = ctx.measureText(countText).width;
@@ -124,19 +124,19 @@ async function generateStatusImage(server, statusData) {
         // --- الإصدار ---
         
         ctx.font = '34px Poppins';
-        ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(versionLabel, 1245, 315);
+        ctx.fillStyle = '#202a3e';
+        ctx.fillText(versionLabel, 1245, 320);
 
         // --- الآي بي (IP) ---
         
         ctx.font = '38px Poppins';
-        ctx.fillStyle = '#2D2D2D';
-        ctx.fillText(cleanIpAddr || 'play.server.net', 1250, 490);
+        ctx.fillStyle = '#202a3e';
+        ctx.fillText(cleanIpAddr || 'play.server.net', 1245, 495);
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
         ctx.font = 'bold 44px Poppins';
-        ctx.fillStyle = '#1A1A1A';
+        ctx.fillStyle = '#202a3e';
         ctx.fillText(`${pingValue}`, 360, 657);
        // const pingNumW = ctx.measureText(`${pingValue}`).width;
         
@@ -148,8 +148,8 @@ async function generateStatusImage(server, statusData) {
         const frameSize = 78;
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 105;
-        const headsStartX = 600; // بداية الرؤوس في القالب
-        const headsY = 600;
+        const headsStartX = 635; // بداية الرؤوس في القالب
+        const headsY = 605;
 
         for (let i = 0; i < playerHeads.length; i++) {
             const head = playerHeads[i];
