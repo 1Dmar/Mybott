@@ -137,7 +137,7 @@ async function generateStatusImage(server, statusData) {
 
         // --- البينج (Ping) ---
         const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
-        ctx.font = 'bold 44px Poppins';
+        ctx.font = 'bold 38px Poppins';
         ctx.fillStyle = '#202a3e';
         ctx.fillText(`${pingValue}`, 360, 657);
        // const pingNumW = ctx.measureText(`${pingValue}`).width;
@@ -150,8 +150,8 @@ async function generateStatusImage(server, statusData) {
         const frameSize = 78;
         const framePad = (frameSize - headSize) / 2;
         const headSpacing = 105;
-        const headsStartX = 635; // بداية الرؤوس في القالب
-        const headsY = 605;
+        const headsStartX = 630; // بداية الرؤوس في القالب
+        const headsY = 608;
 
         for (let i = 0; i < playerHeads.length; i++) {
             const head = playerHeads[i];
