@@ -10,7 +10,7 @@ const Server = require("../../../Models/User"); // تأكد من أن هذا ا�
 
 module.exports = {
   name: "claim",
-  description: "Redeem membership codes",
+  description: "Redeem premium codes",
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
@@ -18,7 +18,7 @@ module.exports = {
   options: [
     {
       name: 'code',
-      description: 'The membership code to redeem',
+      description: 'The premium code to redeem',
       type: 3, // String type
       required: true,
     }
@@ -39,7 +39,7 @@ module.exports = {
       });
     } else if (server && server.ismembership) {
       return interaction.reply({
-        content: `**> This server is already in membership mode**`,
+        content: `**> This server is already in premium mode**`,
         ephemeral: true,
       });
     } else {
@@ -86,7 +86,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setColor(0xefc75e)
-          .setTitle(`New code claimer has been saved from ${guildName}`)
+          .setTitle(`New premium code claimer has been saved from ${guildName}`)
           .addFields(
             { name: 'Server Id', value: `( ${guildId} )`, inline: true },
             { name: 'Code', value: ` \`${code}\` `, inline: true },
@@ -99,7 +99,7 @@ module.exports = {
         await targetRoom.send({ embeds: [embed] });
 
         return interaction.reply({
-          content: `**You have successfully redeemed membership!**\n\n\`Expires at: ${expires}\``,
+          content: `**You have successfully redeemed premium!**\n\n\`Expires at: ${expires}\``,
           ephemeral: true,
         });
       } else {

@@ -5,7 +5,7 @@ const Server = require("../../../Models/User"); // تأكد من أن هذا ا�
 
 module.exports = {
   name: "claim",
-  description: `redeem membership codes`,
+  description: `redeem premium codes`,
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
@@ -25,7 +25,7 @@ module.exports = {
       Id: message.guild.id
     });
 
-    // Return an error if the User does not include any membership Code
+    // Return an error if the User does not include any premium Code
     if (!code) {
       return message.reply({
         content: `**Please specify the code you want to redeem!**`,
@@ -33,7 +33,7 @@ module.exports = {
     } else if (server && server.ismembership) {
       // If the server is already a membership server, we dont want to save that so we return it.
       return message.reply({
-        content: `**> This server is already in membership mode**`,
+        content: `**> This server is already in premium mode**`,
       });
     } else {
       // Check if the code is valid within the database
@@ -86,7 +86,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0xefc75e)
-            .setTitle(`New code claimer has been saved from ${message.guild.name}`)
+            .setTitle(`New premium code claimer has been saved from ${message.guild.name}`)
             .addFields(
                 { name: 'Server Id', value: `( ${message.guild.id} )`, inline: true },
                 { name: 'Code', value: ` \`${code}\` `, inline: true },
@@ -99,7 +99,7 @@ module.exports = {
         await targetRoom.send({ embeds: [embed] });
         // Send a success message once redeemed
         return message.reply({
-          content: `**You have successfully redeemed membership!**\n\n\`Expires at: ${expires}\``,
+          content: `**You have successfully redeemed premium!**\n\n\`Expires at: ${expires}\``,
         });
         
         // Error message if the code is not valid.

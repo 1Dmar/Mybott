@@ -4,7 +4,7 @@ const moment = require("moment");
 
 module.exports = {
   name: "mscodeslist",
-  description: "List saved, available, and unused membership codes",
+  description: "List saved, available, and unused premium codes",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",
@@ -20,7 +20,7 @@ module.exports = {
       });
 
       if (!codes.length) {
-        return interaction.reply("No unused codes available.", { ephemeral: true });
+        return interaction.reply("No unused premium codes available.", { ephemeral: true });
       }
 
       const codeList = codes.map((code, index) => {
@@ -45,7 +45,7 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setColor("Blurple")
-            .setTitle(`Available Unused Codes`)
+            .setTitle(`Available Unused Premium Codes`)
             .setDescription(`${codeList}`)
             .setFooter({ text: `To redeem, use !claim <code>` }),
         ],

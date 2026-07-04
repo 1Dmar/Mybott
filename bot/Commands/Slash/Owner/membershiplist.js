@@ -3,7 +3,7 @@ const moment = require("moment");
 
 module.exports = {
   name: "mslist",
-  description: "Show all membership servers",
+  description: "Show all premium servers",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",
@@ -17,9 +17,9 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle(`All MemberShip Servers`)
+            .setTitle(`All Premium Servers`)
             .setColor("Blurple")
-            .setDescription("No MemberShip server found"),
+            .setDescription("No Premium server found"),
         ],
         ephemeral: true,
       });
@@ -44,9 +44,9 @@ module.exports = {
         .join("\n");
 
       return new EmbedBuilder()
-        .setTitle(`All MemberShip Servers (Page ${page + 1}/${totalPages})`)
+        .setTitle(`All Premium Servers (Page ${page + 1}/${totalPages})`)
         .setColor("Blurple")
-        .setDescription(serverList || "No MemberShip server found");
+        .setDescription(serverList || "No Premium server found");
     };
 
     const generateButtons = (page) => {

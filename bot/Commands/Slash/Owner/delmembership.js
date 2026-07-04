@@ -3,7 +3,7 @@ const Server = require("../../../Models/User");
 
 module.exports = {
   name: "delmembership",
-  description: "Remove membership from server",
+  description: "Remove premium from server",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",
@@ -26,11 +26,11 @@ module.exports = {
     }
     let data = client.userSettings.get(serverId);
     if (!data?.ismembership) {
-      return interaction.reply({ content: `Server with ID \`${serverId}\` is not a MemberShip server`, ephemeral: true });
+      return interaction.reply({ content: `Server with ID \`${serverId}\` is not a Premium server`, ephemeral: true });
     } else {
       await Server.findOneAndRemove({ Id: serverId });
       await client.userSettings.delete(serverId);
-      return interaction.reply({ content: `MemberShip removed from server with ID \`${serverId}\``, ephemeral: true });
+      return interaction.reply({ content: `Premium removed from server with ID \`${serverId}\``, ephemeral: true });
     }
   },
 };

@@ -5,7 +5,7 @@ const schema = require("../../../Models/Code");
 
 module.exports = {
   name: "gencode",
-  description: "Generate membership codes",
+  description: "Generate premium codes",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",
@@ -14,7 +14,7 @@ module.exports = {
   options: [
     {
       name: 'plan',
-      description: 'The plan for the membership code (daily, weekly, monthly, yearly)',
+      description: 'The plan for the premium code (daily, weekly, monthly, yearly)',
       type: 3, // String type
       required: true,
     },
@@ -41,8 +41,8 @@ module.exports = {
     if (plan === "yearly") time = Date.now() + 86400000 * 365;
 
     for (let i = 0; i < amount; i++) {
-      const codeMemberShip = voucher_codes.generate({ pattern: "####-#####-###-####" });
-      const code = codeMemberShip.toString().toUpperCase();
+      const codePremium = voucher_codes.generate({ pattern: "####-#####-###-####" });
+      const code = codePremium.toString().toUpperCase();
       const find = await schema.findOne({ code: code });
 
       if (!find) {
