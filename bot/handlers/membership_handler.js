@@ -3,7 +3,7 @@ const cron = require("node-cron");
 
 // set the schedule, find the servers in the database.
 module.exports = async (client) => {
-  console.log("> MemberShip System Loaded !!");
+  console.log("> Premium System Loaded !!");
   cron.schedule("*/60 * * * * *", async () => {
     const servers = await Server.find({ ismembership: true });
     if (!servers?.length) return;

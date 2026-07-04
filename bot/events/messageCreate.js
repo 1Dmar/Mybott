@@ -188,7 +188,7 @@ const handleMainMessage = async (client, message) => {
             });
         } else if (command.membership && serverdb && !serverdb.ismembership) {
             const replyMessage = await message.reply({
-                content: `> \`${message.guild.name}\`${EMOJIS.WARNING} Server is Not a MemberShip Server`,
+                content: `> \`${message.guild.name}\`${EMOJIS.WARNING} Server is Not a Premium Server`,
             });
             
             setTimeout(() => {
@@ -245,12 +245,12 @@ const handleMcMessage = async (client, message) => {
         const membershipInfo = await Servermembership.findOne({ Id: serverId });
         if (serverInfo.serverType === "custom" && !membershipInfo?.ismembership) {
             if (message) {
-                const membershipMessage = await message.channel.send(`${EMOJIS.WARNING} Membership not active for this server. Please contact the server owner.`);
+                const membershipMessage = await message.channel.send(`${EMOJIS.WARNING} Premium not active for this server. Please contact the server owner.`);
                 setTimeout(() => {
                     membershipMessage.delete();
                 }, 10000);
             }
-            return { error: "Membership not active for this server." };
+            return { error: "Premium not active for this server." };
         }
 
         try {

@@ -5,7 +5,7 @@ const Server = require("../../../Models/User"); // تأكد من أن هذا ا�
 
 module.exports = {
   name: "claim",
-  description: `redeem membership codes`,
+  description: `redeem premium codes`,
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
@@ -33,17 +33,17 @@ module.exports = {
     } else if (server && server.ismembership) {
       // If the server is already a membership server, we dont want to save that so we return it.
       return message.reply({
-        content: `**> This server is already in membership mode**`,
+        content: `**> This server already has Premium enabled**`,
       });
     } else {
       // Check if the code is valid within the database
-      const membership = await Code.findOne({
+      const premiumCode = await Code.findOne({
         code: code.toUpperCase(),
       });
 
       // Set the expire date for the membership code
-      if (membership) {
-        const expires = moment(membership.expiresAt).format(
+      if (premiumCode) {
+        const expires = moment(premiumCode.expiresAt).format(
           "dddd, MMMM Do YYYY HH:mm:ss"
         );
 
@@ -67,8 +67,8 @@ module.exports = {
           tag: message.guild.name,
         });
         server.membership.redeemedAt = Date.now();
-        server.membership.expiresAt = membership.expiresAt;
-        server.membership.plan = membership.plan;
+        server.membership.expiresAt = premiumCode.expiresAt;
+        server.membership.plan = premiumCode.plan;
 
         // Save the Server within the Database
         server = await server.save().catch((error) => {
@@ -77,9 +77,9 @@ module.exports = {
 
         client.userSettings.set(message.guild.id, server);
 
-        membership.used = true;
-        await membership.save().catch((error) => {
-          console.error(`Failed to save membership: ${error}`);
+        premiumCode.used = true;
+        await premiumCode.save().catch((error) => {
+          console.error(`Failed to save premium code: ${error}`);
         });
         const targetRoom = await client.channels.fetch('1228751003206025337');
         if (!targetRoom) return console.error('Invalid target room ID!');
@@ -90,7 +90,7 @@ module.exports = {
             .addFields(
                 { name: 'Server Id', value: `( ${message.guild.id} )`, inline: true },
                 { name: 'Code', value: ` \`${code}\` `, inline: true },
-                { name: 'Plan', value: ` ${server.plan} `, inline: true },
+                { name: 'Plan', value: ` ${premiumCode.plan} `, inline: true },
                 { name: 'Redeem By', value: ` ${message.author.tag} `, inline: true },
                 { name: 'Redeem At', value: ` ${moment().format('dddd, MMMM Do YYYY HH:mm:ss') }`, inline: true },
             )
@@ -99,7 +99,7 @@ module.exports = {
         await targetRoom.send({ embeds: [embed] });
         // Send a success message once redeemed
         return message.reply({
-          content: `**You have successfully redeemed membership!**\n\n\`Expires at: ${expires}\``,
+          content: `**You have successfully redeemed Premium!**\n\n\`Expires at: ${expires}\``,
         });
         
         // Error message if the code is not valid.

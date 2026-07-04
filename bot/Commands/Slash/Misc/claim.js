@@ -10,7 +10,7 @@ const Server = require("../../../Models/User"); // تأكد من أن هذا ا�
 
 module.exports = {
   name: "claim",
-  description: "Redeem membership codes",
+  description: "Redeem premium codes",
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
@@ -18,7 +18,7 @@ module.exports = {
   options: [
     {
       name: 'code',
-      description: 'The membership code to redeem',
+      description: 'The premium code to redeem',
       type: 3, // String type
       required: true,
     }
@@ -39,16 +39,16 @@ module.exports = {
       });
     } else if (server && server.ismembership) {
       return interaction.reply({
-        content: `**> This server is already in membership mode**`,
+        content: `**> This server already has Premium enabled**`,
         ephemeral: true,
       });
     } else {
-      const membership = await Code.findOne({
+      const premiumCode = await Code.findOne({
         code: code.toUpperCase(),
       });
 
-      if (membership) {
-        const expires = moment(membership.expiresAt).format("dddd, MMMM Do YYYY HH:mm:ss");
+      if (premiumCode) {
+        const expires = moment(premiumCode.expiresAt).format("dddd, MMMM Do YYYY HH:mm:ss");
 
         if (!server) {
           server = new Server({
@@ -69,16 +69,16 @@ module.exports = {
           tag: guildName,
         });
         server.membership.redeemedAt = Date.now();
-        server.membership.expiresAt = membership.expiresAt;
-        server.membership.plan = membership.plan;
+        server.membership.expiresAt = premiumCode.expiresAt;
+        server.membership.plan = premiumCode.plan;
 
         await server.save().catch((error) => {
           console.error(`Failed to save server: ${error}`);
         });
 
-        membership.used = true;
-        await membership.save().catch((error) => {
-          console.error(`Failed to save membership: ${error}`);
+        premiumCode.used = true;
+        await premiumCode.save().catch((error) => {
+          console.error(`Failed to save premium code: ${error}`);
         });
 
         const targetRoom = await interaction.client.channels.fetch('1273517280747065427');
@@ -90,7 +90,7 @@ module.exports = {
           .addFields(
             { name: 'Server Id', value: `( ${guildId} )`, inline: true },
             { name: 'Code', value: ` \`${code}\` `, inline: true },
-            { name: 'Plan', value: ` ${membership.plan} `, inline: true },
+            { name: 'Plan', value: ` ${premiumCode.plan} `, inline: true },
             { name: 'Redeem By', value: ` ${interaction.user.tag} `, inline: true },
             { name: 'Redeem At', value: ` ${moment().format('dddd, MMMM Do YYYY HH:mm:ss') }`, inline: true },
           )
@@ -99,7 +99,7 @@ module.exports = {
         await targetRoom.send({ embeds: [embed] });
 
         return interaction.reply({
-          content: `**You have successfully redeemed membership!**\n\n\`Expires at: ${expires}\``,
+          content: `**You have successfully redeemed Premium!**\n\n\`Expires at: ${expires}\``,
           ephemeral: true,
         });
       } else {

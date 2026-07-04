@@ -4,7 +4,7 @@ const moment = require("moment");
 
 module.exports = {
   name: "mscodeslist",
-  description: "List saved, available, and unused membership codes",
+  description: "List saved, available, and unused premium codes",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",

@@ -5,7 +5,7 @@ const schema = require("../../../Models/Code");
 
 module.exports = {
   name: "sendfreecodes",
-  description: "Generate membership codes and send them",
+  description: "Generate premium codes and send them",
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",
@@ -30,7 +30,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setColor('Blurple')
-          .setTitle(`Generated Membership Code By ${interaction.user.username}`)
+          .setTitle(`Generated Premium Code By ${interaction.user.username}`)
           .setDescription(`\`\`\`${code}\`\`\``)
           .addFields([{ name: 'Expires At', value: `<t:${Math.floor(expiresAt / 1000)}:F>` }])
           .setFooter({ text: `To redeem, use your bot's redeem command (!claim \`\`\`${code}\`\`\`)` });
