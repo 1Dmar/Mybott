@@ -10,6 +10,7 @@ const Langs = require("./Models/Langs");
 const { scheduleCronJobs } = require('./utils/cronManager');
 const Server = require('./Models/Server');
 const StatusBar = require('./Models/StatusBar');
+const PlayerHistory = require('./Models/PlayerHistory');
 
 // Get config (uses environment variables)
 const { MONGO_URL } = require("./settings/config");
@@ -71,7 +72,7 @@ const client = new Client({
 });
 
 // Database setup
-client.db = { Server, StatusBar };
+client.db = { Server, StatusBar, PlayerHistory };
 mongoose.set("strictQuery", true);
 
 // Connect to MongoDB using Multi-URI Manager

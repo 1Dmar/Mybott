@@ -86,7 +86,10 @@
     "HELP_TITLE": "Help Menu - ProMcBot",
     "HELP_SUBTITLE": "${client.emojis.SHIELD} Minecraft & Discord Server Assistant",
     "HELP_DESC": "ProMcBot provides an easy way to link your Minecraft server to Discord. You can view server info and control it with one click.\n\n### 🛠️ Basic Commands:\n> **/setup_server**\n> To setup Minecraft server by choosing type from menu.\n\n> **/remove_server**\n> To disable link and remove server data from bot.\n\n> **/automod-settings**\n> To view current automod settings.\n\n### ${client.emojis.LINK} Useful Links:\n• [Support](https://discord.gg/6FjFYStz5a)\n• [Invite Bot](https://discord.com/oauth2/authorize?client_id=1220005260857311294&permissions=537250992&integration_type=0&scope=bot+applications.commands)",
-    "HELP_FOOTER": "Developed by 1Dmar"
+    "HELP_FOOTER": "Developed by 1Dmar",
+    "STATS_TITLE": "Player Statistics - {server}",
+    "STATS_SUBTITLE": "Last 48 Hours Online Players",
+    "STATS_NO_DATA": "No data collected yet. Please wait for the bot to gather some statistics."
   },
   "zh": {
     "Mentiondone": "已设置提醒类型为:",
@@ -254,7 +257,10 @@
     "HELP_TITLE": "قائمة المساعدة - ProMcBot",
     "HELP_SUBTITLE": "${client.emojis.SHIELD} مساعد سيرفرات ماينكرافت والديسكورد",
     "HELP_DESC": "يوفر **ProMcBot** طريقة سهلة لربط سيرفر ماينكرافت الخاص بك بالديسكورد. يمكنك عرض معلومات السيرفر والتحكم بها بضغطة زر واحدة.\n\n### 🛠️ الأوامر الأساسية:\n> **/setup_server**\n> لإعداد سيرفر ماينكرافت عن طريق اختيار نوع السيرفر من القائمة.\n\n> **/remove_server**\n> لتعطيل الربط وإزالة بيانات السيرفر من البوت.\n\n> **/automod-settings**\n> لعرض إعدادات الحماية التلقائية الحالية.\n\n### ${client.emojis.LINK} روابط مفيدة:\n• [الدعم الفني](https://discord.gg/6FjFYStz5a)\n• [دعوة البوت](https://discord.com/oauth2/authorize?client_id=1220005260857311294&permissions=537250992&integration_type=0&scope=bot+applications.commands)",
-    "HELP_FOOTER": "تم التطوير بواسطة 1Dmar"
+    "HELP_FOOTER": "تم التطوير بواسطة 1Dmar",
+    "STATS_TITLE": "إحصائيات اللاعبين - {server}",
+    "STATS_SUBTITLE": "عدد اللاعبين المتصلين خلال آخر 48 ساعة",
+    "STATS_NO_DATA": "لا توجد بيانات كافية حالياً. يرجى الانتظار حتى يتم جمع الإحصائيات."
   },
   "es": {
     "Mentiondone": "Tipo de mención establecido en:",
