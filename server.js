@@ -78,10 +78,12 @@ try {
     mainApp.use('/', dashboardModule.app);
     console.log(`✅ Dashboard module loaded. Callback URL set to: ${process.env.CALLBACK_URL}`);
   }
-  if (dashboardModule && dashboardModule.client1) {
-    moddyBotClient = dashboardModule.client1;
-    console.log('✅ Moddy Bot client (client1 from dashboard) extracted.');
-  }
+  // NOTE: We intentionally do NOT extract client1 to prevent duplicate message handling
+  // The Moddy Bot (client1) should only be used for dashboard features, not for command handling
+  // if (dashboardModule && dashboardModule.client1) {
+  //   moddyBotClient = dashboardModule.client1;
+  //   console.log('✅ Moddy Bot client (client1 from dashboard) extracted.');
+  // }
 } catch (err) {
   console.log('⚠️ Dashboard module not loaded or client1 not found:', err.message);
 }
@@ -110,19 +112,20 @@ const server = mainApp.listen(PORT, () => {
     console.error('❌ ProMcBot client instance is not available.');
   }
 
-  // Login Moddy Bot
-  if (moddyBotClient) {
-    if (!MODDY_BOT_TOKEN) {
-      console.warn('⚠️ MODDY_BOT_TOKEN (BOT1_TOKEN) is missing. Moddy Bot will not start.');
-    } else {
-      const loggedIn = await loginBot(moddyBotClient, MODDY_BOT_TOKEN, "Moddy Bot");
-      if (!loggedIn) {
-        console.error('❌ Moddy Bot failed to log in. Check token and intents.');
-      }
-    }
-  } else {
-    console.warn('⚠️ Moddy Bot client instance is not available from dashboard exports.');
-  }
+  // NOTE: Moddy Bot login is disabled to prevent duplicate message handling
+  // The main bot (ProMcBot) will handle all command processing
+  // if (moddyBotClient) {
+  //   if (!MODDY_BOT_TOKEN) {
+  //     console.warn('⚠️ MODDY_BOT_TOKEN (BOT1_TOKEN) is missing. Moddy Bot will not start.');
+  //   } else {
+  //     const loggedIn = await loginBot(moddyBotClient, MODDY_BOT_TOKEN, "Moddy Bot");
+  //     if (!loggedIn) {
+  //       console.error('❌ Moddy Bot failed to log in. Check token and intents.');
+  //     }
+  //   }
+  // } else {
+  //   console.warn('⚠️ Moddy Bot client instance is not available from dashboard exports.');
+  // }
 })();
 
 // Handle process termination gracefully

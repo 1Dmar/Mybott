@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { startMigration, optimizeServerData } = require("./migrationManager");
+const { startMigration, optimizeServerData, cleanupGhostServers } = require("./migrationManager");
 
 /**
  * Database Manager for Multi-URI MongoDB Support

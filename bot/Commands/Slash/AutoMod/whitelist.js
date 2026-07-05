@@ -20,9 +20,9 @@ module.exports = {
             type: 3, // STRING
             required: true,
             choices: [
-                { name: `${client.emojis.USER} User`, value: "user" },
-                { name: `${client.emojis.TAG} Role`, value: "role" },
-                { name: `${client.emojis.TV} Channel`, value: "channel" }
+                { name: "👤 User", value: "user" },
+                { name: "🏷️ Role", value: "role" },
+                { name: "📺 Channel", value: "channel" }
             ]
         },
         {
