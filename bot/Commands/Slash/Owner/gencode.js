@@ -13,56 +13,32 @@ module.exports = {
   type1: "slash",
   options: [
     {
-      name: 'plan',
-      description: 'The plan for the premium code (daily, weekly, monthly, yearly)',
-      type: 3, // String type
+      name: 'port',
+      description: 'The server port to bind this premium code to',
+      type: 4, // Integer type
       required: true,
     },
     {
-      name: 'amount',
-      description: 'The number of codes to generate',
+      name: 'days',
+      description: 'The duration in days',
       type: 4, // Integer type
-      required: false,
+      required: true,
     }
   ],
   run: async (client, interaction, args) => {
-    const plan = interaction.options.getString('plan');
-    const amount = interaction.options.getInteger('amount') || 1;
-    const codes = [];
-    const plans = ["daily", "weekly", "monthly", "yearly"];
-    let time;
+    const port = interaction.options.getInteger('port');
+    const daysValid = interaction.options.getInteger('days');
 
-    if (!plans.includes(plan)) {
-      return interaction.reply(`Available Plans: \n > \`${plans.join(", ")}\``);
-    }
-    if (plan === "daily") time = Date.now() + 86400000;
-    if (plan === "weekly") time = Date.now() + 86400000 * 7;
-    if (plan === "monthly") time = Date.now() + 86400000 * 30;
-    if (plan === "yearly") time = Date.now() + 86400000 * 365;
-
-    for (let i = 0; i < amount; i++) {
-      const codePremium = voucher_codes.generate({ pattern: "####-#####-###-####" });
-      const code = codePremium.toString().toUpperCase();
-      const find = await schema.findOne({ code: code });
-
-      if (!find) {
-        await schema.create({
-          code: code,
-          plan: plan,
-          expiresAt: time,
-        });
-        codes.push(`${code}`);
-      }
-    }
+    const { generatePremiumKey } = require('../../../utils/premiumCode');
+    const premiumCode = generatePremiumKey(port, daysValid);
 
     return interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setColor("Blurple")
-          .setTitle(`Generated ${codes.length} Codes`)
-          .setDescription(`\`\`\`\n${codes.join("\n") || "No Codes Generated"} \`\`\``)
-          .addFields([{ name: 'Expire At', value: `<t:${Math.floor(time / 1000)}:F>` }])
-          .setFooter({ text: `To redeem, use !redeem <code>` }),
+          .setTitle(`Generated Premium Code`)
+          .setDescription(`Your Premium Code for Port **${port}** (Valid for ${daysValid} days):\n\`\`\`\n${premiumCode}\n\`\`\``)
+          .setFooter({ text: `Use this code to verify in the endpoints` }),
       ],
       ephemeral: true,
     });

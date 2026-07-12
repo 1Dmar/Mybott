@@ -36,6 +36,10 @@ module.exports = model(
       type: String,
       default: null
     },
+    premiumKey: {
+      type: String,
+      default: null
+    },
     apiPort: {
       type: Number,
       default: null

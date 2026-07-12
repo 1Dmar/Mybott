@@ -57,7 +57,10 @@ async function getPlayerData(ign, serverConfig = null) {
 
                 // جلب معلومات اللاعب من Lobby السيرفر
                 const response = await axios.get(`${protocol}://${serverIP}:${apiPort}/player/${ign}`, {
-                    headers: { 'Authorization': authHeader },
+                    headers: { 
+                        'Authorization': authHeader,
+                        'X-Premium-Key': serverConfig.premiumKey || '' 
+                    },
                     timeout: 5000
                 });
 
