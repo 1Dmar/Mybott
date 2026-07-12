@@ -25,11 +25,13 @@ module.exports = {
     }
   ],
   run: async (client, interaction, args) => {
+    // Defer the reply immediately to prevent timeout errors
+    await interaction.deferReply({ ephemeral: true });
+
     // 1. Check if the user is the server owner
     if (interaction.user.id !== interaction.guild.ownerId) {
-      return interaction.reply({
+      return interaction.editReply({
         content: `**❌ Only the server owner can use this command!**`,
-        ephemeral: true,
       });
     }
 
@@ -38,18 +40,16 @@ module.exports = {
     const guildName = interaction.guild.name;
 
     if (!code) {
-      return interaction.reply({
+      return interaction.editReply({
         content: `**Please specify the code you want to redeem!**`,
-        ephemeral: true,
       });
     }
 
     // 2. Verify the code using our utility
     const verification = verifyPremiumKey(code);
     if (!verification || !verification.valid) {
-      return interaction.reply({
+      return interaction.editReply({
         content: `**The code is invalid or expired. Please try again using a valid one!**`,
-        ephemeral: true,
       });
     }
 
@@ -104,9 +104,8 @@ module.exports = {
       await targetRoom.send({ embeds: [embed] }).catch(() => null);
     }
 
-    return interaction.reply({
+    return interaction.editReply({
       content: `**✅ You have successfully redeemed premium!**\n\n\`Expires at: ${expires}\``,
-      ephemeral: true,
     });
   },
 };
