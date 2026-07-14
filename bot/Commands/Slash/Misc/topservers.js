@@ -5,6 +5,8 @@ const {
   EmbedBuilder,
   ActionRowBuilder,
   StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 const Serverdb = require("../../../Models/Server");
 const axios = require('axios');
@@ -43,41 +45,53 @@ module.exports = {
     // Defer the reply because API calls might take some time
     await interaction.deferReply();
 
-    // Generate the leaderboard function
-    const generateLeaderboard = async (sortBy) => {
-      // 1. Get all guilds the bot is in
-      const guilds = Array.from(client.guilds.cache.values());
-      
-      // 2. Get all Server configs from DB
-      const dbServers = await Serverdb.find({});
-      const dbServerMap = new Map();
-      dbServers.forEach(s => dbServerMap.set(s.serverId, s));
+    // Cache to prevent re-fetching DB every time page changes
+    let allServerData = null;
 
-      // 3. Map guild data with DB data
-      let serverDataList = guilds.map(g => {
-        const dbInfo = dbServerMap.get(g.id);
-        return {
-          id: g.id,
-          name: g.name,
-          memberCount: g.memberCount,
-          interactions: dbInfo ? (dbInfo.interactionsCount || 0) : 0,
-          dbInfo: dbInfo || null
-        };
-      });
+    // Generate the leaderboard function
+    const generateLeaderboard = async (sortBy, page) => {
+      if (!allServerData) {
+          // 1. Get all guilds the bot is in
+          const guilds = Array.from(client.guilds.cache.values());
+          
+          // 2. Get all Server configs from DB
+          const dbServers = await Serverdb.find({});
+          const dbServerMap = new Map();
+          dbServers.forEach(s => dbServerMap.set(s.serverId, s));
+
+          // 3. Map guild data with DB data
+          allServerData = guilds.map(g => {
+            const dbInfo = dbServerMap.get(g.id);
+            return {
+              id: g.id,
+              name: g.name,
+              memberCount: g.memberCount,
+              interactions: dbInfo ? (dbInfo.interactionsCount || 0) : 0,
+              dbInfo: dbInfo || null
+            };
+          });
+      }
 
       // 4. Sort
       if (sortBy === 'members') {
-        serverDataList.sort((a, b) => b.memberCount - a.memberCount);
+        allServerData.sort((a, b) => b.memberCount - a.memberCount);
       } else if (sortBy === 'interactions') {
-        serverDataList.sort((a, b) => b.interactions - a.interactions);
+        allServerData.sort((a, b) => b.interactions - a.interactions);
       }
 
-      // 5. Take Top 10
-      const top10 = serverDataList.slice(0, 10);
+      // 5. Pagination Logic
+      const itemsPerPage = 10;
+      const maxPages = Math.ceil(allServerData.length / itemsPerPage) || 1;
+      if (page > maxPages) page = maxPages;
+      if (page < 1) page = 1;
+      
+      const startIndex = (page - 1) * itemsPerPage;
+      const currentPageData = allServerData.slice(startIndex, startIndex + itemsPerPage);
 
-      // 6. Fetch Minecraft Player Count for top 10
-      const embedFields = await Promise.all(top10.map(async (server, index) => {
+      // 6. Fetch Minecraft Player Count for current page
+      const embedFields = await Promise.all(currentPageData.map(async (server, index) => {
         let mcPlayersText = "`N/A`";
+        const realIndex = startIndex + index + 1;
         
         if (server.dbInfo) {
           const type = server.dbInfo.serverType === 'bedrock' ? 'bedrock' : 'java';
@@ -99,7 +113,7 @@ module.exports = {
         }
 
         return {
-          name: `#${index + 1} | ${server.name}`,
+          name: `#${realIndex} | ${server.name}`,
           value: `👥 **Discord Members:** \`${server.memberCount}\`\n🎮 **MC Players:** ${mcPlayersText}\n🤖 **Interactions:** \`${server.interactions}\``,
           inline: false
         };
@@ -108,15 +122,15 @@ module.exports = {
       // 7. Build Embed
       const titleText = sortBy === 'members' ? "Top Servers by Discord Members" : "Top Servers by Bot Interactions";
       const embed = new EmbedBuilder()
-        .setColor(0x2b2d31) // Discord dark theme color
+        .setColor(0x2b2d31)
         .setTitle(`🏆 ${titleText}`)
-        .setDescription(`Showing the top ${top10.length} servers using this bot.`)
+        .setDescription(`Showing page ${page}/${maxPages} of all servers using this bot.`)
         .addFields(embedFields)
         .setTimestamp()
-        .setFooter({ text: `Total Servers: ${guilds.length}`, iconURL: client.user.displayAvatarURL() });
+        .setFooter({ text: `Total Servers: ${allServerData.length} | Page ${page}/${maxPages}`, iconURL: client.user.displayAvatarURL() });
 
-      // 8. Build Dropdown
-      const selectMenu = new StringSelectMenuBuilder()
+      // 8. Build Sort Dropdown
+      const sortMenu = new StringSelectMenuBuilder()
         .setCustomId('topservers_sort')
         .setPlaceholder('Sort leaderboard by...')
         .addOptions([
@@ -134,41 +148,125 @@ module.exports = {
           }
         ]);
 
-      const row = new ActionRowBuilder().addComponents(selectMenu);
+      // 9. Build Invite Dropdown (only for servers on this page)
+      const inviteMenu = new StringSelectMenuBuilder()
+        .setCustomId('topservers_invite')
+        .setPlaceholder('Get invite link for a server...')
+        .addOptions(currentPageData.map((server, index) => ({
+            label: `${startIndex + index + 1}. ${server.name.substring(0, 50)}`,
+            description: 'Click to get a 1-use invite link for this server',
+            value: server.id,
+            emoji: '🔗'
+        })));
 
-      return { embed, row };
+      const sortRow = new ActionRowBuilder().addComponents(sortMenu);
+      const inviteRow = new ActionRowBuilder().addComponents(inviteMenu);
+      
+      // 10. Build Buttons
+      const btnRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId('topservers_prev')
+            .setLabel('Previous')
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(page === 1),
+        new ButtonBuilder()
+            .setCustomId('topservers_next')
+            .setLabel('Next')
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(page === maxPages)
+      );
+
+      return { embed, components: [sortRow, inviteRow, btnRow], maxPages };
     };
 
-    // Initial load: sort by members
-    const initialData = await generateLeaderboard('members');
+    // Initial load: sort by members, page 1
+    let currentSort = 'members';
+    let currentPage = 1;
+    
+    const initialData = await generateLeaderboard(currentSort, currentPage);
     const message = await interaction.editReply({
       embeds: [initialData.embed],
-      components: [initialData.row]
+      components: initialData.components
     });
 
-    // Create a collector for the dropdown
+    // Create a collector
     const collector = message.createMessageComponentCollector({
-      filter: (i) => i.customId === 'topservers_sort' && i.user.id === interaction.user.id,
+      filter: (i) => i.user.id === interaction.user.id,
       time: 60000 * 5 // 5 minutes
     });
 
     collector.on('collect', async (i) => {
-      // Defer the update to give time for API calls
+      
+      if (i.customId === 'topservers_invite') {
+          await i.deferReply({ ephemeral: true });
+          const guildId = i.values[0];
+          const targetGuild = client.guilds.cache.get(guildId);
+          
+          if (!targetGuild) {
+              return i.editReply({ content: "❌ I couldn't find this server. I might have been kicked." });
+          }
+
+          // Try to create invite
+          let inviteUrl = null;
+          try {
+              // Find first channel bot can create invite in
+              const channels = Array.from(targetGuild.channels.cache.values());
+              const textChannel = channels.find(c => 
+                  c.isTextBased() && 
+                  c.permissionsFor(targetGuild.members.me).has('CreateInstantInvite')
+              );
+              
+              if (textChannel) {
+                  const invite = await textChannel.createInvite({
+                      maxAge: 86400, // 24 hours
+                      maxUses: 1,
+                      unique: true,
+                      reason: `Requested by ${i.user.tag} via topservers command`
+                  });
+                  inviteUrl = invite.url;
+              }
+          } catch (e) {
+              console.error("Invite creation failed:", e);
+          }
+
+          if (inviteUrl) {
+              return i.editReply({ content: `✅ **Here is your 1-use invite link to ${targetGuild.name}:**\n${inviteUrl}` });
+          } else {
+              return i.editReply({ content: `❌ **I don't have permissions to create invites in ${targetGuild.name}!**` });
+          }
+      }
+
+      // For other interactions (sort, pagination), defer update and edit main message
       await i.deferUpdate();
       
-      const sortBy = i.values[0];
-      const newData = await generateLeaderboard(sortBy);
+      if (i.customId === 'topservers_sort') {
+          currentSort = i.values[0];
+          currentPage = 1; // reset page on sort
+      } else if (i.customId === 'topservers_prev') {
+          currentPage--;
+      } else if (i.customId === 'topservers_next') {
+          currentPage++;
+      }
+      
+      const newData = await generateLeaderboard(currentSort, currentPage);
       
       await i.editReply({
         embeds: [newData.embed],
-        components: [newData.row]
+        components: newData.components
       });
     });
 
     collector.on('end', async () => {
-      // Disable the dropdown when the collector ends
-      initialData.row.components[0].setDisabled(true);
-      await interaction.editReply({ components: [initialData.row] }).catch(() => null);
+      // Disable everything
+      const disabledComponents = initialData.components.map(row => {
+          const newRow = new ActionRowBuilder();
+          row.components.forEach(c => {
+              newRow.addComponents(ButtonBuilder.from(c).setDisabled(true)); // Works generically to disable
+          });
+          return newRow;
+      });
+      // Just remove components or edit properly
+      await interaction.editReply({ components: [] }).catch(() => null);
     });
   },
 };
