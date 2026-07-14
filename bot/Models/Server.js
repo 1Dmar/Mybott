@@ -44,5 +44,9 @@ module.exports = model(
       type: Number,
       default: null
     },
+    interactionsCount: {
+      type: Number,
+      default: 0
+    },
   })
 );
