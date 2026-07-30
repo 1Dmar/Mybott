@@ -123,12 +123,16 @@ server = mainApp.listen(PORT, () => {
 (async () => {
   // Initialize the bot (connect DB and load handlers) before attempting login
   try {
-    const startBot = require('./bot/index');
-    if (typeof startBot === 'function') {
-      proMcBotClient = await startBot();
+    const botModule = require('./bot/index');
+    if (typeof botModule.start === 'function') {
+      proMcBotClient = await botModule.start();
       console.log('✅ ProMcBot initialized.');
+    } else if (botModule && botModule.user === null && botModule.options) {
+      // It's already a Client object?!
+      console.log('⚠️ require("./bot/index") returned a Client instance! Using it directly.');
+      proMcBotClient = botModule;
     } else {
-      console.error('❌ ProMcBot initialization failed: require("./bot/index") did not return a function. Returned type:', typeof startBot, 'Keys:', Object.keys(startBot));
+      console.error('❌ ProMcBot initialization failed: botModule.start is not a function. Returned keys:', Object.keys(botModule));
     }
   } catch (err) {
     console.error('❌ ProMcBot initialization failed:', err && err.message);
