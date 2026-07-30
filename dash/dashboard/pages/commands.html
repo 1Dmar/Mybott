@@ -244,12 +244,18 @@
       const prefixInput = document.getElementById('prefix');
       const savePrefixButton = document.getElementById('save-prefix');
 
-      const commands = await fetch('/api/commands')
+      let data = await fetch('/api/commands')
         .then(res => res.json())
         .catch(error => {
           console.error('Error fetching commands:', error);
-          return [];
+          return { success: false, commands: [] };
         });
+
+      let commands = data.success ? (data.commands || []) : [];
+
+      if (commands.length === 0) {
+        cardsContainer.innerHTML = '<p style="color:var(--text-secondary); width:100%; text-align:center;">No commands found.</p>';
+      }
 
       commands.forEach(command => {
         if (!command.type || !command.name) {

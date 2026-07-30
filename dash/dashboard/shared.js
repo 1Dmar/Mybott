@@ -53,7 +53,7 @@
         items: [
           { href: '/dashboard', icon: 'bx-user', text: 'Profile' },
           { href: '/servers', icon: 'bx-server', text: 'My Servers' },
-          { href: '/servers/premium', icon: 'bx-crown', text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
+          { href: '/premium', icon: 'bx-crown', text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
           { href: '/commands', icon: 'bx-command', text: 'Commands' },
         ]
       },
