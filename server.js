@@ -32,6 +32,16 @@ mainApp.use((req, res, next) => {
 // Trust proxy for Railway
 mainApp.set('trust proxy', 1);
 
+// Health check endpoint (required for Railway and Docker HEALTHCHECK)
+mainApp.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    bot: proMcBotClient ? (proMcBotClient.isReady ? proMcBotClient.isReady() : false) : false
+  });
+});
+
 // Centralized Bot Login Management
 const loginBot = async (clientInstance, token, name) => {
   if (!clientInstance || !token) {
@@ -84,16 +94,6 @@ if (process.env.BOT_ONLY !== 'true') {
 } else {
   console.log('ℹ️ BOT_ONLY=true — skipping dashboard and HTTP routes (bot-only mode).');
 }
-
-// Health check endpoint (required for Railway and Docker HEALTHCHECK)
-mainApp.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    bot: proMcBotClient ? (proMcBotClient.isReady ? proMcBotClient.isReady() : false) : false
-  });
-});
 
 // Inject bot API
 if (process.env.BOT_ONLY !== 'true') {
