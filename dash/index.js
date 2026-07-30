@@ -56,12 +56,18 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 mongoose.set("strictQuery", true);
+mongoose.set('bufferCommands', true);
 
 // ── DB ───────────────────────────────────────────────────────────
 const { initDB } = require("../bot/utils/dbManager");
-if (!mongoose.connection.readyState) {
-  initDB().catch(err => console.error("Dashboard DB Init Error:", err));
-}
+const dbInit = !mongoose.connection.readyState
+  ? initDB().catch(err => console.error("Dashboard DB Init Error:", err))
+  : Promise.resolve();
+
+app.use(async (req, res, next) => {
+  await dbInit;
+  next();
+});
 
 // ── Session ───────────────────────────────────────────────────────
 app.use(session({
@@ -252,7 +258,7 @@ app.get('/callback/check/userData', (req, res) => {
 // ── Loading / redirect page ────────────────────────────────────────────
 app.get('/loading-auth', (req, res) => {
   if (req.isAuthenticated()) return res.redirect('/dashboard');
-  res.sendFile(path.join(dashDir, 'Loading', 'index.html'));
+  res.sendFile(path.join(dashDir, 'Loading', 'loading.html'));
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -396,7 +402,15 @@ app.get('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) 
 
 app.post('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) => {
   try {
-    const item = await AutoResponder.create({ guildId: req.params.guildId, ...req.body });
+    const payload = {
+      guildId: req.params.guildId,
+      trigger: req.body.trigger,
+      response: req.body.response,
+      replyType: req.body.replyType || 'text',
+      allowedRoles: req.body.allowedRoles || [],
+      disallowedRoles: req.body.disallowedRoles || [],
+    };
+    const item = await AutoResponder.create(payload);
     res.json({ success: true, item });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

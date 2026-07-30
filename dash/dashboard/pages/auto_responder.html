@@ -125,10 +125,10 @@
                 container.innerHTML = '';
 
                 let responders = [];
-                if (data.success && data.responders) {
-                    responders = data.responders; // Assuming {success: true, responders: [...]}
+                if (data.success && Array.isArray(data.items)) {
+                    responders = data.items;
                 } else if (Array.isArray(data)) {
-                    responders = data; // Assuming it just returns the array
+                    responders = data;
                 }
 
                 if (responders.length === 0) {

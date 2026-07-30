@@ -631,9 +631,13 @@
 
       const gradient = BANNER_GRADIENTS[index % BANNER_GRADIENTS.length];
       const initial = (guild.name || 'S').charAt(0).toUpperCase();
-        const iconHtml = iconUrl
-          ? `<img class="guild-card-icon" src="${iconUrl}" alt="${guild.name}" onerror="this.outerHTML='<div class=\\'guild-card-icon icon-placeholder\\' style=\\'background:${gradient}\\'>${initial}</div>'">`
+      const iconHtml = iconUrl
+        ? `<img class="guild-card-icon" src="${iconUrl}" alt="${guild.name}" onerror="this.outerHTML='<div class=\\'guild-card-icon icon-placeholder\\' style=\\'background:${gradient}\\'>${initial}</div>'">`
         : `<div class="guild-card-icon icon-placeholder" style="background:${gradient}">${initial}</div>`;
+
+      const bannerStyle = iconUrl
+        ? `background-image: url('${iconUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;`
+        : `background: ${gradient};`;
 
       const hasBot = !!guild.botPresent;
       const badgeHtml = hasBot
@@ -652,10 +656,12 @@
         ? `<div class="guild-meta-item"><i class='bx bx-group'></i> ${guild.approximate_member_count.toLocaleString()}</div>`
         : '';
 
+      const guildName = guild.name || 'Server';
       return `
-        <div class="guild-card animated" data-name="${guild.name.toLowerCase()}" data-bot="${hasBot}">
+        <div class="guild-card animated" data-name="${guildName.toLowerCase()}" data-bot="${hasBot}">
           <div class="guild-card-banner">
-            <div class="banner-bg" style="background:${gradient};"></div>
+            <div class="banner-bg" style="${bannerStyle}"></div>
+            <div class="banner-overlay"></div>
             ${badgeHtml}
             ${iconHtml}
           </div>

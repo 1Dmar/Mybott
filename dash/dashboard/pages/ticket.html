@@ -127,17 +127,19 @@
 
         async function loadConfig() {
             try {
-                const res = await fetch(`/api/server/${guildId}/ticket-config`);
+                        const res = await fetch(`/api/server/${guildId}/ticket-config`);
                 const data = await res.json();
                 
-                let config = data;
-                if (data.success && data.config) {
-                    config = data.config;
+                let ticketConfig = {};
+                if (data.success && data.ticket) {
+                    ticketConfig = data.ticket;
+                } else if (data.ticket) {
+                    ticketConfig = data.ticket;
                 }
                 
-                if (config) {
-                    if (config.channelId) document.getElementById('channelId').value = config.channelId;
-                    if (config.enabled !== undefined) document.getElementById('enabled').checked = config.enabled;
+                if (ticketConfig) {
+                    if (ticketConfig.channelId) document.getElementById('channelId').value = ticketConfig.channelId;
+                    if (ticketConfig.enabled !== undefined) document.getElementById('enabled').checked = ticketConfig.enabled;
                 }
                 
                 // reset save bar if any changes fired during load

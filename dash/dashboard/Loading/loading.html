@@ -92,9 +92,11 @@
         }
     </style>
     <script>
-        setTimeout(() => {
-            window.location.href = "/auth/discord";
-        }, 3000);
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                window.location.href = "/auth/discord";
+            }, 600);
+        });
     </script>
 </head>
 <body>
