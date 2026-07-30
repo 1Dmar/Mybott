@@ -62,15 +62,7 @@ const MODDY_BOT_TOKEN = process.env.BOT1_TOKEN;
 // --- Bot Initialization --- 
 // Import the main bot client (ProMcBot) from bot/index.js
 let proMcBotClient = null;
-let initBot = null;
 const PORT = process.env.PORT || 8080;
-
-try {
-  initBot = require('./bot/index');
-  console.log('✅ ProMcBot initializer loaded.');
-} catch (err) {
-  console.error('❌ Failed to load ProMcBot module:', err.message);
-}
 
 // Import the dashboard module, which contains Moddy Bot client
 let dashboardModule = null;
@@ -130,13 +122,16 @@ server = mainApp.listen(PORT, () => {
 // --- Perform Bot Logins After Server Starts --- 
 (async () => {
   // Initialize the bot (connect DB and load handlers) before attempting login
-  if (initBot) {
-    try {
-      proMcBotClient = await initBot();
+  try {
+    const startBot = require('./bot/index');
+    if (typeof startBot === 'function') {
+      proMcBotClient = await startBot();
       console.log('✅ ProMcBot initialized.');
-    } catch (err) {
-      console.error('❌ ProMcBot initialization failed:', err && err.message);
+    } else {
+      console.error('❌ ProMcBot initialization failed: require("./bot/index") did not return a function. Returned type:', typeof startBot, 'Keys:', Object.keys(startBot));
     }
+  } catch (err) {
+    console.error('❌ ProMcBot initialization failed:', err && err.message);
   }
   // Login ProMcBot (Main Bot) - Strict check for BOT1_1_TOKEN
   if (proMcBotClient) {
