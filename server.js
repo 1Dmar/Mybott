@@ -110,17 +110,17 @@ if (process.env.BOT_ONLY !== 'true') {
   }
 }
 
-// تشغيل السيرفر Express أولاً
+// تشغيل السيرفر Express دائماً لتوفير نقطة /health لـ Railway
 let server = null;
-if (process.env.BOT_ONLY !== 'true') {
-  server = mainApp.listen(PORT, () => {
-    console.log(`✅ Main server running on port ${PORT}`);
-    console.log(`📊 Dashboard: http://localhost:${PORT}/dash`);
+server = mainApp.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT} (Healthcheck active)`);
+  if (process.env.BOT_ONLY !== 'true') {
+    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
     console.log(`🤖 Bot API: http://localhost:${PORT}/bot`);
-  });
-} else {
-  console.log('ℹ️ Bot-only mode: no HTTP server started.');
-}
+  } else {
+    console.log('ℹ️ Bot-only mode: Dashboard and API routes are disabled.');
+  }
+});
 
 // --- Perform Bot Logins After Server Starts --- 
 (async () => {
