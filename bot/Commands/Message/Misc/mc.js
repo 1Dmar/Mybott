@@ -120,7 +120,7 @@ module.exports = {
         new ButtonBuilder()
           .setLabel("Official Website")
           .setStyle(ButtonStyle.Link)
-          .setURL("https://promcbot.qzz.io/")
+          .setURL("https://promcbot.dev/")
         .setDisabled(true)
       );
 
