@@ -104,6 +104,24 @@ const client1 = new Client({
   partials: [Partials.Channel, Partials.Message, Partials.User, Partials.GuildMember, Partials.Reaction]
 });
 
+// Login dashboard clients so we can check guild membership
+const BOT1_TOKEN = process.env.BOT1_1_TOKEN;
+const BOT2_TOKEN = process.env.BOT2_TOKEN || process.env.BOT2_1_TOKEN;
+
+if (BOT1_TOKEN) {
+  client.login(BOT1_TOKEN)
+    .then(() => console.log('✅ Dashboard client (bot1) logged in:', client.user?.tag))
+    .catch(e => console.warn('⚠️ Dashboard client1 login failed:', e.message));
+} else {
+  console.warn('⚠️ BOT1_1_TOKEN not set — dashboard client will not connect to Discord');
+}
+
+if (BOT2_TOKEN) {
+  client1.login(BOT2_TOKEN)
+    .then(() => console.log('✅ Dashboard client2 (bot2) logged in:', client1.user?.tag))
+    .catch(e => console.warn('⚠️ Dashboard client2 login failed:', e.message));
+}
+
 // ── Webhook ────────────────────────────────────────────────────────
 let webhookClient = null;
 try {
@@ -114,6 +132,7 @@ try {
 } catch (e) {
   console.warn('⚠️ Webhook client init failed:', e.message);
 }
+
 
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1220005260857311294";
@@ -312,7 +331,25 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
       const perms = BigInt(g.permissions || 0);
       return (perms & BigInt(0x8)) === BigInt(0x8); // ADMINISTRATOR
     });
-    res.json({ success: true, guilds });
+
+    // Add botPresent flag: check if bot client has this guild in its cache
+    const enriched = guilds.map(g => {
+      let botPresent = false;
+      try {
+        if (client && client.isReady && client.isReady()) {
+          botPresent = client.guilds.cache.has(g.id);
+        }
+      } catch (_) {}
+      return {
+        id:   g.id,
+        name: g.name,
+        icon: g.icon || null,
+        permissions: g.permissions,
+        botPresent
+      };
+    });
+
+    res.json({ success: true, guilds: enriched });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

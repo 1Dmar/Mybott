@@ -83,6 +83,27 @@ body.dark {
     --shadow-xl:       0 20px 25px rgba(0,0,0,0.6);
 }
 
+/* ── LEGACY COMPAT VARIABLES (for older pages) ── */
+:root {
+    --white-color:     var(--surface);
+    --grey-color:      var(--text-secondary);
+    --grey-color-light: var(--text-muted);
+    --ggff:            var(--bg);
+    --dark-bg:         #17212b;
+    --dark-card:       #1f2a35;
+    --blue-color:      var(--primary);
+    --primary-color:   var(--primary);
+    --success-color:   var(--success);
+    --warning-color:   var(--warning);
+    --danger-color:    var(--danger);
+    --discord-purple:  #5865f2;
+    --tier1:           linear-gradient(135deg, #ff7e5f, #feb47b);
+    --tier2:           linear-gradient(135deg, #8A2BE2, #4B0082);
+    --gold:            #ffd700;
+    --premium-gradient: linear-gradient(135deg, #ffd700, #ff9800);
+    --blacklist-gradient: linear-gradient(135deg, #333, #000);
+}
+
 /* ============================================================
    3. GLOBAL RESET & BASE
    ============================================================ */
@@ -1386,8 +1407,101 @@ body.dark .alert-info    { color: #22d3ee; }
 .animated:nth-child(6) { animation-delay: 0.30s; }
 
 /* ============================================================
-   21. SHARED JS HELPER — Sidebar logic (inline script template)
-   ============================================================
-   Include the following script at the end of every page body:
-   <script src="/dashboard/shared.js"></script>
-*/
+   21. SIDEBAR SERVER CONTEXT HEADER
+   ============================================================ */
+.sidebar-server-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.sidebar-server-info {
+    overflow: hidden;
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-server-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-server-id {
+    font-size: 10px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar.close .sidebar-server-header {
+    padding: 10px 4px 14px;
+    justify-content: center;
+}
+
+.sidebar.close .sidebar-server-info {
+    display: none;
+}
+
+/* Logout link color */
+.nav_link.logout-link {
+    color: var(--danger);
+}
+
+.nav_link.logout-link:hover {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+/* Sidebar overlay (mobile) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 850;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.active {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+/* Mobile responsive */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: var(--sidebar-width) !important;
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0 !important;
+    }
+
+    .mobile-toggle {
+        display: flex;
+    }
+
+    .collapse-btn {
+        display: none;
+    }
+}
+
+/* ============================================================
+   22. SHARED JS HELPER — Include at end of every page body:
+   <script src="/shared.js"></script>
+   ============================================================ */
