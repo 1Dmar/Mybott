@@ -1,0 +1,291 @@
+{
+  "MessageDelete": {
+    "title": "🗑️ تم حذف رسالة",
+    "description": "تم رصد حذف رسالة من قبل {author} في قناة {channel}.",
+    "color": "#2B2D31",
+    "footer": {
+      "text": "نظام المراقبة الذكي",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "📝 محتوى الرسالة المحذوفة:",
+        "value": "```\n{content}\n```",
+        "inline": false
+      },
+      {
+        "name": "👤 صاحب الرسالة:",
+        "value": "<@{authorId}> (`{authorId}`)",
+        "inline": true
+      }
+    ]
+  },
+  "MessageUpdate": {
+    "title": "📝 تم تعديل رسالة",
+    "description": "قام {author} بتعديل رسالته في قناة {channel}.",
+    "color": "#2B2D31",
+    "footer": {
+      "text": "نظام المراقبة الذكي",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "⬅️ الرسالة القديمة:",
+        "value": "```\n{oldContent}\n```",
+        "inline": false
+      },
+      {
+        "name": "➡️ الرسالة الجديدة:",
+        "value": "```\n{newContent}\n```",
+        "inline": false
+      },
+      {
+        "name": "👤 صاحب الرسالة:",
+        "value": "<@{authorId}>",
+        "inline": true
+      }
+    ]
+  },
+  "GuildMemberAdd": {
+    "title": "✨ عضو جديد انضم إلينا",
+    "description": "أهلاً بك {member} في سيرفرنا! يسعدنا انضمامك.",
+    "color": "#57F287",
+    "footer": {
+      "text": "نظام الترحيب",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "👤 العضو:",
+        "value": "{member}",
+        "inline": true
+      },
+      {
+        "name": "🆔 المعرف:",
+        "value": "`{memberId}`",
+        "inline": true
+      }
+    ]
+  },
+  "GuildMemberRemove": {
+    "title": "👋 غادرنا أحد الأعضاء",
+    "description": "وداعاً {member}، نتمنى رؤيتك مجدداً.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام المغادرة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "👤 العضو:",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "RoleCreate": {
+    "title": "🎭 تم إنشاء رتبة جديدة",
+    "description": "تمت إضافة رتبة جديدة للسيرفر باسم {role}.",
+    "color": "#5865F2",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "🏷️ اسم الرتبة:",
+        "value": "{role}",
+        "inline": true
+      }
+    ]
+  },
+  "RoleDelete": {
+    "title": "🚫 تم حذف رتبة",
+    "description": "تمت إزالة رتبة {role} من السيرفر.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "🏷️ اسم الرتبة:",
+        "value": "{role}",
+        "inline": true
+      }
+    ]
+  },
+  "GuildBanAdd": {
+    "title": "🔨 تم حظر عضو",
+    "description": "تم طرد {member} نهائياً من السيرفر.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام الحماية",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "👤 المحظور:",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "GuildBanRemove": {
+    "title": "🔓 تم فك حظر عضو",
+    "description": "تمت إزالة الحظر عن {member}.",
+    "color": "#57F287",
+    "footer": {
+      "text": "نظام الحماية",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "👤 العضو:",
+        "value": "{member}",
+        "inline": true
+      }
+    ]
+  },
+  "ChannelCreate": {
+    "title": "📂 تم إنشاء قناة جديدة",
+    "description": "تمت إضافة قناة جديدة باسم {channel}.",
+    "color": "#5865F2",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "📍 القناة:",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "ChannelDelete": {
+    "title": "🗑️ تم حذف قناة",
+    "description": "تمت إزالة قناة {channel} من السيرفر.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "📍 القناة:",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "EmojiCreate": {
+    "title": "😀 تم إضافة إيموجي جديد",
+    "description": "تمت إضافة إيموجي جديد باسم {emoji}.",
+    "color": "#FEE75C",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{emojiURL}"
+    },
+    "fields": [
+      {
+        "name": "🏷️ الاسم:",
+        "value": "{emoji}",
+        "inline": true
+      }
+    ]
+  },
+  "EmojiDelete": {
+    "title": "🗑️ تم حذف إيموجي",
+    "description": "تمت إزالة إيموجي {emoji} من السيرفر.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام الإدارة",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "fields": [
+      {
+        "name": "🏷️ الاسم:",
+        "value": "{emoji}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateJoin": {
+    "title": "🎙️ دخول قناة صوتية",
+    "description": "انضم <@{memberId}> إلى القناة الصوتية {channel}.",
+    "color": "#57F287",
+    "footer": {
+      "text": "نظام الصوتيات",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "📍 القناة:",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateLeave": {
+    "title": "🎙️ مغادرة قناة صوتية",
+    "description": "غادر <@{memberId}> القناة الصوتية {channel}.",
+    "color": "#ED4245",
+    "footer": {
+      "text": "نظام الصوتيات",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "📍 القناة:",
+        "value": "{channel}",
+        "inline": true
+      }
+    ]
+  },
+  "VoiceStateUpdateMove": {
+    "title": "🎙️ انتقال بين القنوات الصوتية",
+    "description": "انتقل <@{memberId}> من {oldChannel} إلى {newChannel}.",
+    "color": "#5865F2",
+    "footer": {
+      "text": "نظام الصوتيات",
+      "iconURL": "https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp"
+    },
+    "thumbnail": {
+      "url": "{avatarURL}"
+    },
+    "fields": [
+      {
+        "name": "⬅️ من قناة:",
+        "value": "{oldChannel}",
+        "inline": true
+      },
+      {
+        "name": "➡️ إلى قناة:",
+        "value": "{newChannel}",
+        "inline": true
+      }
+    ]
+  }
+}
