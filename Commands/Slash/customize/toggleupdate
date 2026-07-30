@@ -1,0 +1,142 @@
+const {
+  CommandInteraction,
+  ApplicationCommandType,
+  PermissionFlagsBits,
+  Client,
+  ChannelType,
+  EmbedBuilder,
+} = require("discord.js");
+const Server = require("../../../Models/Server");
+const UpdateStatus = require('../../../Models/UpdateStatus');
+const MembershipServer = require("../../../Models/User");
+const axios = require('axios');
+let interval;
+
+module.exports = {
+  name: "toggle",
+  description: "Enable or disable the category update feature.",
+  userPermissions: PermissionFlagsBits.ManageChannels,
+  botPermissions: PermissionFlagsBits.ManageChannels,
+  category: "customize",
+  type: ApplicationCommandType.ChatInput,
+  type1: "slash",
+  options: [
+    {
+      name: 'type',
+      type: 3,
+      description: 'Type of update (voice or text)',
+      required: true,
+      choices: [
+        {
+          name: 'Voice Channel',
+          value: 'voice'
+        },
+        {
+          name: 'Text Channel',
+          value: 'text'
+        }
+      ]
+    }
+  ],
+  run: async (client, interaction, args) => {
+    const type = interaction.options.getString("type");
+    const guildId = interaction.guild.id;
+    const guild = interaction.guild;
+
+    let updateStatus = await UpdateStatus.findOne({ guildId });
+    const membership = await MembershipServer.findOne({ Id: guildId });
+
+    // إلغاء النظام إذا تم استخدام الأمر بنفس المعلومات
+    if (updateStatus && updateStatus.isUpdating) {
+      clearInterval(interval);
+      updateStatus.isUpdating = false;
+      await updateStatus.save();
+      return interaction.reply({ content: 'Category update feature disabled.', ephemeral: true });
+    }
+
+    const serverInfo = await Server.findOne({ serverId: guildId });
+
+    if (!serverInfo) {
+      return interaction.reply({ content: 'Server information not found.', ephemeral: true });
+    }
+
+    const categoryName = serverInfo.serverType === 'custom' ?
+      `${serverInfo.javaIP}:${serverInfo.javaPort} & ${serverInfo.bedrockIP}:${serverInfo.bedrockPort}` :
+      serverInfo.serverType === 'java' ? `${serverInfo.javaIP}:${serverInfo.javaPort}` :
+      `${serverInfo.bedrockIP}:${serverInfo.bedrockPort}`;
+
+    // البحث عن الفئة الموجودة
+    const existingCategory = guild.channels.cache.find(c => c.name === categoryName && c.type === ChannelType.GuildCategory);
+    let category = existingCategory;
+
+    // إنشاء فئة جديدة إذا لم تكن موجودة
+    if (!category) {
+      category = await guild.channels.create({
+        name: categoryName,
+        type: ChannelType.GuildCategory,
+        position: 0,
+        permissionOverwrites: [
+          {
+            id: guild.roles.everyone,
+            deny: [PermissionFlagsBits.Connect],
+          }
+        ]
+      });
+    }
+
+    await category.setPosition(0);
+
+    let statusChannel, playerCountChannel, message;
+
+    if (type === 'voice') {
+      statusChannel = await guild.channels.create({
+        name: 'Status: Waiting...',
+        type: ChannelType.GuildVoice,
+        parent: category.id,
+        permissionOverwrites: [
+          {
+            id: guild.roles.everyone,
+            deny: [PermissionFlagsBits.Connect],
+          }
+        ]
+      });
+
+      playerCountChannel = await guild.channels.create({
+        name: 'Players: Waiting...',
+        type: ChannelType.GuildVoice,
+        parent: category.id,
+        permissionOverwrites: [
+          {
+            id: guild.roles.everyone,
+            deny: [PermissionFlagsBits.Connect],
+          }
+        ]
+      });
+
+    } else {
+      statusChannel = await guild.channels.create({
+        name: 'live-status',
+        type: ChannelType.GuildText,
+        parent: category.id,
+      });
+
+      message = await statusChannel.send('Initializing status...');
+
+      playerCountChannel = null;
+    }
+
+    if (!updateStatus) {
+      updateStatus = new UpdateStatus({ guildId });
+    }
+
+    updateStatus.categoryId = category.id;
+    updateStatus.statusChannelId = statusChannel.id;
+    updateStatus.playerCountChannelId = playerCountChannel ? playerCountChannel.id : null;
+    updateStatus.updateType = type;
+    updateStatus.messageId = message ? message.id : null;
+    updateStatus.isUpdating = true;
+    await updateStatus.save();
+
+    interaction.reply({ content: 'Category update feature enabled.', ephemeral: true });
+  },
+};
