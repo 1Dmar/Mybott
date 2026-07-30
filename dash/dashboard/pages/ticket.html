@@ -5,42 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Archived Ticket Chat</title>
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/shared.css">
 
   <style>
     :root {
       --blue: #2563eb;
       --blue-light: #dbeafe;
-      --gray-light: #f3f4f6;
-      --gray-medium: #e5e7eb;
-      --white: #ffffff;
-      --text-dark: #1e293b;
-      --text-muted: #6b7280;
-      --radius: 12px;
-      --shadow-light: rgba(0, 0, 0, 0.05);
-      --shadow-dropdown: rgba(0, 0, 0, 0.1);
-      --font: 'Inter', sans-serif;
       --avatar-size: 40px;
-      --dropdown-bg: #ffffff;
+      --dropdown-bg: var(--surface, #ffffff);
       --dropdown-radius: 8px;
-      --dropdown-item-hover: #f3f4f6;
+      --dropdown-item-hover: var(--bg, #f3f4f6);
       --max-width-desktop: 900px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: var(--font);
-      background: var(--gray-light);
-      color: var(--text-dark);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
     }
 
     /* ------ Header ------ */
@@ -55,12 +31,6 @@
     }
 
     /* ------ Main Container ------ */
-    main {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      padding: 1rem;
-    }
     .chat-window {
       width: 100%;
       max-width: var(--max-width-desktop);
@@ -193,28 +163,28 @@
     }
 
     /* ------ Dropdown Menu (fixed) ------ */
-    .dropdown {
+    .ticket-dropdown {
       position: fixed;
       background: var(--dropdown-bg);
       border-radius: var(--dropdown-radius);
-      box-shadow: 0 2px 8px var(--shadow-dropdown);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       display: none;
       z-index: 1000;
       min-width: 140px;
     }
-    .dropdown.visible {
+    .ticket-dropdown.visible {
       display: block;
     }
-    .dropdown-item {
+    .ticket-dropdown-item {
       padding: 0.5rem 0.75rem;
       font-size: 0.875rem;
-      color: var(--text-dark);
+      color: var(--text);
       cursor: pointer;
       display: block;
       text-decoration: none;
     }
-    .dropdown-item:hover {
+    .ticket-dropdown-item:hover {
       background: var(--dropdown-item-hover);
     }
 
@@ -251,12 +221,79 @@
   </style>
 </head>
 <body>
+<nav class="navbar">
+  <div class="logo_item">
+    <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+    <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot">
+    <span class="brand-name">ProMcBot</span>
+  </div>
+  <div class="search_bar"><input type="text" id="searchInput" placeholder="Search..."></div>
+  <div class="navbar_content">
+    <div class="dropdown">
+      <div class="nav-icon-btn" id="notificationBtn"><i class='bx bx-bell'></i><span class="notification-badge">3</span></div>
+      <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+        <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+        <div class="notification-item">
+          <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+          <div class="notification-content">
+            <div class="notification-title">Welcome back!</div>
+            <div class="notification-desc">Manage your servers from the dashboard</div>
+            <div class="notification-time">Just now</div>
+          </div>
+        </div>
+        <div class="dropdown-footer">View All</div>
+      </div>
+    </div>
+    <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+    <div class="dropdown">
+      <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User" class="user-avatar" id="userBtn" data-user-avatar>
+      <div class="dropdown-content" id="userDropdown">
+        <div class="dropdown-header"><img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px"><span id="navUserName">User</span></div>
+        <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+        <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+        <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
+        <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+        <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<nav class="sidebar" id="sidebar">
+  <div class="menu_content">
+    <ul class="menu_items">
+      <div class="menu_title"><span>User</span></div>
+      <li class="item"><a href="/dashboard" class="nav_link"><span class="navlink_icon"><i class='bx bx-user'></i></span><div class="navlink-container"><span class="navlink">Profile</span></div></a></li>
+      <li class="item"><a href="/servers" class="nav_link"><span class="navlink_icon"><i class='bx bx-server'></i></span><div class="navlink-container"><span class="navlink">Servers</span></div></a></li>
+      <li class="item"><a href="/premium" class="nav_link"><span class="navlink_icon"><i class='bx bx-crown'></i></span><div class="navlink-container"><span class="navlink">Premium</span><span class="tag tag-new">New</span></div></a></li>
+    </ul>
+    <ul class="menu_items">
+      <div class="menu_title"><span>Server</span></div>
+      <li class="item"><a href="/overview" class="nav_link"><span class="navlink_icon"><i class='bx bx-stats'></i></span><div class="navlink-container"><span class="navlink">Overview</span></div></a></li>
+      <li class="item"><a href="/settings" class="nav_link"><span class="navlink_icon"><i class='bx bx-cog'></i></span><div class="navlink-container"><span class="navlink">Settings</span></div></a></li>
+      <li class="item"><a href="/moderation" class="nav_link"><span class="navlink_icon"><i class='bx bx-shield'></i></span><div class="navlink-container"><span class="navlink">Moderation</span></div></a></li>
+      <li class="item"><a href="/roles" class="nav_link"><span class="navlink_icon"><i class='bx bx-palette'></i></span><div class="navlink-container"><span class="navlink">Roles</span></div></a></li>
+      <li class="item"><a href="/logs" class="nav_link"><span class="navlink_icon"><i class='bx bx-notepad'></i></span><div class="navlink-container"><span class="navlink">Logs</span></div></a></li>
+      <li class="item"><a href="/auto-responder" class="nav_link"><span class="navlink_icon"><i class='bx bx-bot'></i></span><div class="navlink-container"><span class="navlink">Auto Responder</span></div></a></li>
+      <li class="item"><a href="/configuration" class="nav_link"><span class="navlink_icon"><i class='bx bx-slider-alt'></i></span><div class="navlink-container"><span class="navlink">Configuration</span></div></a></li>
+      <li class="item"><a href="/ticket" class="nav_link active"><span class="navlink_icon"><i class='bx bx-support'></i></span><div class="navlink-container"><span class="navlink">Tickets</span></div></a></li>
+    </ul>
+    <ul class="menu_items">
+      <div class="menu_title"><span>Other</span></div>
+      <li class="item"><a href="/invitebot" class="nav_link"><span class="navlink_icon"><i class='bx bx-cube-alt'></i></span><div class="navlink-container"><span class="navlink">Invite Bot</span></div></a></li>
+      <li class="item"><a href="/commands" class="nav_link"><span class="navlink_icon"><i class='bx bx-command'></i></span><div class="navlink-container"><span class="navlink">Commands</span></div></a></li>
+      <li class="item"><a href="/api/logout" class="nav_link"><span class="navlink_icon"><i class='bx bx-log-out'></i></span><div class="navlink-container"><span class="navlink">Logout</span></div></a></li>
+    </ul>
+  </div>
+  <div class="sidebar-footer">
+    <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span>Collapse</span></div>
+  </div>
+</nav>
 
-  <header>
-    Archived Ticket <span id="ticket-id" style="font-weight: normal;"></span>
-  </header>
+  <main class="main-content" style="display:flex; flex-direction:column; align-items:center;">
+    <header style="width:100%; max-width:var(--max-width-desktop); border-radius:var(--radius); margin-bottom:1rem;">
+      Archived Ticket <span id="ticket-id" style="font-weight: normal;"></span>
+    </header>
 
-  <main>
     <div class="chat-window">
       <div class="banner">This ticket has been closed and archived</div>
       <div class="messages" id="messages">
@@ -373,17 +410,17 @@
 
         // Dropdown menu
         const dropdown = document.createElement('div');
-        dropdown.className = 'dropdown';
+        dropdown.className = 'ticket-dropdown';
         dropdown.innerHTML = `
-          <div class="dropdown-item" data-action="copy">Copy ID</div>
-          <div class="dropdown-item" data-action="report">Report</div>
-          <a href="/u/${msg.authorId}" class="dropdown-item" data-action="info">Info</a>
+          <div class="ticket-dropdown-item" data-action="copy">Copy ID</div>
+          <div class="ticket-dropdown-item" data-action="report">Report</div>
+          <a href="/u/${msg.authorId}" class="ticket-dropdown-item" data-action="info">Info</a>
         `;
 
         // Toggle dropdown on avatar, username, or userId click
         function toggleDropdown(event) {
           event.stopPropagation();
-          document.querySelectorAll('.dropdown.visible').forEach(dd => {
+          document.querySelectorAll('.ticket-dropdown.visible').forEach(dd => {
             if (dd !== dropdown) dd.classList.remove('visible');
           });
           const rect = event.currentTarget.getBoundingClientRect();
@@ -459,5 +496,6 @@
       }
     });
   </script>
+  <script src="/shared.js"></script>
 </body>
 </html>

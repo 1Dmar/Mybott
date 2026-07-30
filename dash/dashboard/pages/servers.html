@@ -1,18 +1,13 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ProMcBot - Server Dashboard</title>
-
+    <title>ProMcBot - My Servers</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="/shared.css">
     <style>
+        /* Page-specific styles only */
 
         /* Import Google font - Poppins */
 
@@ -1609,44 +1604,18 @@
 <body>
 
     <!-- navbar -->
-
     <nav class="navbar">
-
         <div class="logo_item">
-
             <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
-
-            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot"/>ProMcBot
-
+            <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot">
+            <span class="brand-name">ProMcBot</span>
         </div>
-
-        <div class="search_bar">
-
-            <input type="text" placeholder="Search Servers..." />
-
-        </div>
-
+        <div class="search_bar"><input type="text" id="searchInput" placeholder="Search Servers..."></div>
         <div class="navbar_content">
-
-            <i class="bi bi-grid"></i>
-
-            
-
-            <!-- Notifications dropdown -->
-
             <div class="dropdown">
-
-                <i class='bx bx-bell' id="notificationBtn"></i>
-
-                <div class="notification-badge">3</div>
-
+                <div class="nav-icon-btn" id="notificationBtn"><i class='bx bx-bell'></i><span class="notification-badge">3</span></div>
                 <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-
-                    <div class="dropdown-header">
-
-                        <i class='bx bx-bell'></i> Notifications
-
-                    </div>
+                    <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
 
                     <div class="notification-item">
 
@@ -1756,16 +1725,26 @@
 
                 </div>
 
+            <div class="dropdown-footer">View All</div>
+                </div>
             </div>
-
+            <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+            <div class="dropdown">
+                <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User" class="user-avatar" id="userBtn" data-user-avatar>
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header"><img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px"><span id="navUserName">User</span></div>
+                    <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+                    <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+                    <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
+                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                    <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+                </div>
+            </div>
         </div>
-
     </nav>
 
     <!-- sidebar -->
-
     <nav class="sidebar" id="sidebar">
-
         <div class="menu_content">
 
             <ul class="menu_items">
@@ -2032,20 +2011,10 @@
 
             </ul>
 
-            <div class="bottom_content">
-
-                <div class="bottom expand_sidebar">
-
-                    <i class='bx bx-chevron-left'></i>
-
-                    <span>Collapse</span>
-
-                </div>
-
-            </div>
-
         </div>
-
+        <div class="sidebar-footer">
+            <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span>Collapse</span></div>
+        </div>
     </nav>
 
     <!-- Main Content -->
@@ -2593,6 +2562,7 @@ function createGuildCard(guild) {
      document.addEventListener('DOMContentLoaded', fetchServerData);
 */
 </script>
+<script src="/shared.js"></script>
 </body>
 
 </html>

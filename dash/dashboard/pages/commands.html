@@ -4,16 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Discord Bot Dashboard</title>
-  <style>
-    /* public/styles.css */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1f2a35;
-      margin: 0;
-      padding: 0;
-        color:white;
-    }
 
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/shared.css">
+
+  <style>
     #dashboard {
       padding: 20px;
     }
@@ -174,7 +169,63 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 </head>
 <body>
-  <section id="dashboard">
+<nav class="navbar">
+  <div class="logo_item">
+    <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
+    <img src="https://i.ibb.co/7GCzzTZ/7df0b585344a4e68c64e52c419129aa4.webp" alt="ProMcBot">
+    <span class="brand-name">ProMcBot</span>
+  </div>
+  <div class="search_bar"><input type="text" id="searchInput" placeholder="Search..."></div>
+  <div class="navbar_content">
+    <div class="dropdown">
+      <div class="nav-icon-btn" id="notificationBtn"><i class='bx bx-bell'></i><span class="notification-badge">3</span></div>
+      <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+        <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+        <div class="notification-item">
+          <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+          <div class="notification-content">
+            <div class="notification-title">Welcome back!</div>
+            <div class="notification-desc">Manage your servers from the dashboard</div>
+            <div class="notification-time">Just now</div>
+          </div>
+        </div>
+        <div class="dropdown-footer">View All</div>
+      </div>
+    </div>
+    <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+    <div class="dropdown">
+      <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User" class="user-avatar" id="userBtn" data-user-avatar>
+      <div class="dropdown-content" id="userDropdown">
+        <div class="dropdown-header"><img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px"><span id="navUserName">User</span></div>
+        <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+        <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+        <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
+        <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+        <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+      </div>
+    </div>
+  </div>
+</nav>
+<nav class="sidebar" id="sidebar">
+  <div class="menu_content">
+    <ul class="menu_items">
+      <div class="menu_title"><span>User</span></div>
+      <li class="item"><a href="/dashboard" class="nav_link"><span class="navlink_icon"><i class='bx bx-user'></i></span><div class="navlink-container"><span class="navlink">Profile</span></div></a></li>
+      <li class="item"><a href="/servers" class="nav_link"><span class="navlink_icon"><i class='bx bx-server'></i></span><div class="navlink-container"><span class="navlink">Servers</span></div></a></li>
+      <li class="item"><a href="/premium" class="nav_link"><span class="navlink_icon"><i class='bx bx-crown'></i></span><div class="navlink-container"><span class="navlink">Premium</span><span class="tag tag-new">New</span></div></a></li>
+    </ul>
+    <ul class="menu_items">
+      <div class="menu_title"><span>Other</span></div>
+      <li class="item"><a href="/invitebot" class="nav_link"><span class="navlink_icon"><i class='bx bx-cube-alt'></i></span><div class="navlink-container"><span class="navlink">Invite Bot</span></div></a></li>
+      <li class="item"><a href="/commands" class="nav_link active"><span class="navlink_icon"><i class='bx bx-command'></i></span><div class="navlink-container"><span class="navlink">Commands</span></div></a></li>
+      <li class="item"><a href="/api/logout" class="nav_link"><span class="navlink_icon"><i class='bx bx-log-out'></i></span><div class="navlink-container"><span class="navlink">Logout</span></div></a></li>
+    </ul>
+  </div>
+  <div class="sidebar-footer">
+    <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span>Collapse</span></div>
+  </div>
+</nav>
+  <main class="main-content" id="dashboard">
     <div class="controls">
       <input type="text" id="prefix" placeholder="COMING SOON" disabled/>
       <button id="save-prefix" disabled>Save</button>
@@ -182,7 +233,7 @@
     <div class="cards-container" id="cards-container">
       <!-- البطاقات ستُضاف هنا بواسطة JavaScript -->
     </div>
-  </section>
+  </main>
   <script>
     // public/scripts.js
     document.addEventListener('DOMContentLoaded', async () => {
@@ -296,5 +347,6 @@
       }
     });
   </script>
+  <script src="/shared.js"></script>
 </body>
 </html>
