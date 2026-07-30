@@ -14,11 +14,16 @@ const mainApp = express();
 
 // Middleware to handle custom domain and redirect from random Railway links
 mainApp.use((req, res, next) => {
+  // Skip custom domain redirect for health checks
+  if (req.path === '/health') {
+    return next();
+  }
+
   const customDomain = process.env.CUSTOM_DOMAIN; // Example: bot.yourdomain.com
   const host = req.get('host');
   
   // If a custom domain is set and the request is coming from a different host (like railway.app)
-  if (customDomain && host !== customDomain && !host.includes('localhost')) {
+  if (customDomain && host !== customDomain && !host.includes('localhost') && !host.includes('127.0.0.1')) {
     return res.redirect(301, `https://${customDomain}${req.originalUrl}`);
   }
   next();
