@@ -95,23 +95,28 @@ module.exports = {
 
     // تحميل البيانات الأولية
     try {
-      const Langs = require("../Models/Langs");
-      const [servers, servers1, blacklists, serverLangs] = await Promise.all([
-        Server.find().lean(),
-        Serverdb.find().lean(),
-        BlackList.find().lean(),
-        Langs.find().lean()
-      ]);
-      
-      servers.forEach((server) => client.userSettings.set(server.Id, server));
-      servers1.forEach((server1) => client.userSettings.set(server1.Id, server1));
-      blacklists.forEach((server2) => client.userSettings.set(server2.Id, server2));
-      serverLangs.forEach((lang) => client.languages.set(lang.guildIds, lang.language));
-      
-      await Server.updateMany(
-        { serverType: { $exists: false } },
-        { $set: { serverType: 'java' } }
-      );
+      const dbManager = require('../utils/dbManager');
+      if (!dbManager.isConnected()) {
+        console.log('ℹ️ DB not connected — skipping initial data load.');
+      } else {
+        const Langs = require("../Models/Langs");
+        const [servers, servers1, blacklists, serverLangs] = await Promise.all([
+          Server.find().lean(),
+          Serverdb.find().lean(),
+          BlackList.find().lean(),
+          Langs.find().lean()
+        ]);
+        
+        servers.forEach((server) => client.userSettings.set(server.Id, server));
+        servers1.forEach((server1) => client.userSettings.set(server1.Id, server1));
+        blacklists.forEach((server2) => client.userSettings.set(server2.Id, server2));
+        serverLangs.forEach((lang) => client.languages.set(lang.guildIds, lang.language));
+        
+        await Server.updateMany(
+          { serverType: { $exists: false } },
+          { $set: { serverType: 'java' } }
+        );
+      }
     } catch (err) {
       console.error("Error loading initial data:", err.message);
     }

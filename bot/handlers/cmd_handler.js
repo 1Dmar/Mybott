@@ -2,6 +2,7 @@ const { Client } = require("discord.js");
 const { readdirSync } = require("fs");
 const path = require('path');
 const Command = require('../Models/Command');
+const { isConnected } = require('../utils/dbManager');
 
 /**
  *
@@ -32,13 +33,21 @@ module.exports = async (client) => {
 
     console.log(`> ${client.mcommands.size} Message Commands Loaded !!`);
 
-    // تحديث الأوامر في قاعدة البيانات باستخدام المصفوفة
-    for (const command of loadedCommands) {
-      await Command.findOneAndUpdate(
-        { name: command.name, type: command.type1 },
-        { description: command.description || '', settings: command.settings || {}, enabled: true },
-        { upsert: true }
-      );
+    // تحديث الأوامر في قاعدة البيانات باستخدام المصفوفة (تجاهل إذا لم تتصل DB)
+    if (isConnected()) {
+      for (const command of loadedCommands) {
+        try {
+          await Command.findOneAndUpdate(
+            { name: command.name, type: command.type1 },
+            { description: command.description || '', settings: command.settings || {}, enabled: true },
+            { upsert: true }
+          );
+        } catch (e) {
+          console.warn('⚠️ Failed to upsert command to DB:', command.name, e.message);
+        }
+      }
+    } else {
+      console.log('ℹ️ DB not connected — skipping command DB synchronization.');
     }
   } catch (error) {
     console.log(error);
