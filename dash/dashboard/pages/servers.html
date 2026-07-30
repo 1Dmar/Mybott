@@ -438,7 +438,7 @@
         <i class='bx bx-menu'></i>
       </div>
       <a href="/dashboard" class="logo_item">
-        <img src="/public/images/logo.png" alt="Logo" onerror="this.style.display='none'">
+        <img src="/public/images/logo.svg" alt="Logo" onerror="this.style.display='none'">
         <span class="brand-name">ProMcBot</span>
       </a>
     </div>
@@ -631,8 +631,8 @@
 
       const gradient = BANNER_GRADIENTS[index % BANNER_GRADIENTS.length];
       const initial = (guild.name || 'S').charAt(0).toUpperCase();
-      const iconHtml = iconUrl
-        ? `<img class="guild-card-icon" src="${iconUrl}" alt="${guild.name}" onerror="this.outerHTML='<div class=\\'guild-card-icon icon-placeholder\\' style=\\'background:${gradient.replace(/'/g, '\\'')}\\'>${initial}</div>'">`
+        const iconHtml = iconUrl
+          ? `<img class="guild-card-icon" src="${iconUrl}" alt="${guild.name}" onerror="this.outerHTML='<div class=\\'guild-card-icon icon-placeholder\\' style=\\'background:${gradient}\\'>${initial}</div>'">`
         : `<div class="guild-card-icon icon-placeholder" style="background:${gradient}">${initial}</div>`;
 
       const hasBot = !!guild.botPresent;
