@@ -771,7 +771,10 @@
 
     // ── Event Listeners ──
     document.addEventListener('DOMContentLoaded', () => {
-      loadServers();
+      // Wait a tiny bit to ensure shared.js has initialized auth
+      setTimeout(() => {
+        loadServers();
+      }, 500);
 
       // Filter buttons
       document.querySelectorAll('.filter-btn').forEach(btn => {

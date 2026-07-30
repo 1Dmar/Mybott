@@ -78,32 +78,41 @@
       {
         label: 'Server',
         items: [
-          { href: `/servers/${guildId}/overview`, icon: 'bx-home-alt', text: 'Overview' },
-          { href: `/servers/${guildId}/settings`, icon: 'bx-cog', text: 'Settings' },
-          { href: `/servers/${guildId}/configuration`, icon: 'bx-slider', text: 'Configuration' },
+          { href: `/servers/${guildId}/overview`,       icon: 'bx-home-alt',    text: 'Overview' },
+          { href: `/servers/${guildId}/configuration`,  icon: 'bx-slider',      text: 'Configuration' },
+          { href: `/servers/${guildId}/modules`,        icon: 'bx-extension',   text: 'Modules' },
         ]
       },
       {
         label: 'Moderation',
         items: [
-          { href: `/servers/${guildId}/moderation`, icon: 'bx-shield', text: 'Moderation' },
-          { href: `/servers/${guildId}/roles`, icon: 'bx-group', text: 'Roles' },
-          { href: `/servers/${guildId}/logs`, icon: 'bx-list-ul', text: 'Logs' },
+          { href: `/servers/${guildId}/moderation`,    icon: 'bx-shield',      text: 'Moderation' },
+          { href: `/servers/${guildId}/roles`,          icon: 'bx-group',       text: 'Roles' },
+          { href: `/servers/${guildId}/logs`,           icon: 'bx-list-ul',     text: 'Logs' },
         ]
       },
       {
         label: 'Features',
         items: [
-          { href: `/servers/${guildId}/auto-responder`, icon: 'bx-bot', text: 'Auto Responder' },
-          { href: `/servers/${guildId}/ticket`, icon: 'bx-support', text: 'Tickets' },
-          { href: `/servers/${guildId}/premium`, icon: 'bx-crown', text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
+          { href: `/servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'Auto Responder' },
+          { href: `/servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
+          { href: `/servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
+          { href: `/servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
+        ]
+      },
+      {
+        label: 'Management',
+        items: [
+          { href: `/servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'Members' },
+          { href: `/servers/${guildId}/premium`,        icon: 'bx-crown',       text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
+          { href: `/servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'Danger Zone', cls: 'danger-link' },
         ]
       },
       {
         label: 'Navigation',
         items: [
-          { href: '/servers', icon: 'bx-arrow-back', text: 'Back to Servers' },
-          { href: '/api/logout', icon: 'bx-log-out', text: 'Logout', cls: 'logout-link' },
+          { href: '/servers',      icon: 'bx-arrow-back', text: 'Back to Servers' },
+          { href: '/api/logout',   icon: 'bx-log-out',    text: 'Logout', cls: 'logout-link' },
         ]
       }
     ]

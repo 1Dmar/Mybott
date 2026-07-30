@@ -27,23 +27,24 @@ const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
 
 // ── Models ──────────────────────────────────────────────────────
-const Blacklist    = require('../bot/Models/BlackList');
-const Ticket       = require('../bot/Models/Ticket');
-const BotConfig    = require('../bot/Models/BotConfig');
-const Message      = require('../bot/Models/Message');
-const User         = require('../bot/Models/apiKey');
-const ServerStatus = require('../bot/Models/ServerStatus');
-const Membership   = require('../bot/Models/User');
-const AutoResponder = require('../bot/Models/AutoResponder');
-const Mentions     = require('../bot/Models/Mentions');
-const Language     = require('../bot/Models/Langs');
-const ApiKey       = require('../bot/Models/Api');
-const BumpedServer = require('../bot/Models/bumpedServer');
-const ServerInfo   = require('../bot/Models/Server');
-const Log          = require('../bot/Models/Log');
-const Feature      = require('../bot/Models/Feature');
-const Command      = require('../bot/Models/Command');
-const { addFeature, removeFeature, fetchFeatures } = require('../bot/Models/featuresService');
+const Blacklist      = require('../bot/Models/BlackList');
+const Ticket         = require('../bot/Models/Ticket');
+const BotConfig      = require('../bot/Models/BotConfig');
+const Message        = require('../bot/Models/Message');
+const User           = require('../bot/Models/apiKey');
+const ServerStatus   = require('../bot/Models/ServerStatus');
+const Membership     = require('../bot/Models/User');
+const AutoResponder  = require('../bot/Models/AutoResponder');
+const Mentions       = require('../bot/Models/Mentions');
+const Language       = require('../bot/Models/Langs');
+const ApiKey         = require('../bot/Models/Api');
+const BumpedServer   = require('../bot/Models/bumpedServer');
+const ServerInfo     = require('../bot/Models/Server');
+const Log            = require('../bot/Models/Log');
+const Feature        = require('../bot/Models/Feature');
+const Command        = require('../bot/Models/Command');
+const GuildSettings  = require('../bot/Models/GuildSettings');
+const WelcomeChannel = require('../bot/Models/WelcomeChannel');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -299,6 +300,10 @@ app.get('/servers/:guildId/auto-responder', ...serveServerPage('auto_responder.h
 app.get('/servers/:guildId/premium',        ...serveServerPage('premium.html'));
 app.get('/servers/:guildId/configuration',  ...serveServerPage('configuration.html'));
 app.get('/servers/:guildId/ticket',         ...serveServerPage('ticket.html'));
+app.get('/servers/:guildId/modules',        ...serveServerPage('modules.html'));
+app.get('/servers/:guildId/welcome',        ...serveServerPage('welcome.html'));
+app.get('/servers/:guildId/members',        ...serveServerPage('members.html'));
+app.get('/servers/:guildId/danger',         ...serveServerPage('danger.html'));
 
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -425,29 +430,192 @@ app.get('/api/server/:guildId/logs', isAuthenticated, async (req, res) => {
   }
 });
 
-// ── Features (enable/disable) ─────────────────────────────────────────
-app.get('/api/server/:guildId/features', isAuthenticated, async (req, res) => {
+// ── Guild Info (from bot cache) ───────────────────────────────────────
+app.get('/api/server/:guildId/info', isAuthenticated, async (req, res) => {
   try {
-    const features = await fetchFeatures(req.params.guildId);
-    res.json({ success: true, features });
+    const { guildId } = req.params;
+    let guildInfo = { id: guildId, name: null, icon: null, memberCount: null, botPresent: false };
+    try {
+      const botClients = [client, client1];
+      for (const bc of botClients) {
+        if (bc && bc.isReady && bc.isReady()) {
+          const g = bc.guilds.cache.get(guildId);
+          if (g) {
+            guildInfo = { id: guildId, name: g.name, icon: g.icon ? `https://cdn.discordapp.com/icons/${guildId}/${g.icon}.png` : null, memberCount: g.memberCount, botPresent: true };
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+    res.json({ success: true, guild: guildInfo });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/server/:guildId/features/:featureName/enable', isAuthenticated, async (req, res) => {
+// ── Roles (from bot cache) ────────────────────────────────────────────
+app.get('/api/server/:guildId/roles', isAuthenticated, async (req, res) => {
   try {
-    await addFeature(req.params.guildId, req.params.featureName);
-    res.json({ success: true });
+    const { guildId } = req.params;
+    let roles = [];
+    try {
+      const botClients = [client, client1];
+      for (const bc of botClients) {
+        if (bc && bc.isReady && bc.isReady()) {
+          const g = bc.guilds.cache.get(guildId);
+          if (g) {
+            roles = g.roles.cache
+              .filter(r => r.name !== '@everyone')
+              .sort((a, b) => b.position - a.position)
+              .map(r => ({ id: r.id, name: r.name, color: r.hexColor, position: r.position, permissions: r.permissions.bitfield.toString() }));
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+    res.json({ success: true, roles });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/server/:guildId/features/:featureName/disable', isAuthenticated, async (req, res) => {
+// ── Channels (from bot cache) ─────────────────────────────────────────
+app.get('/api/server/:guildId/channels', isAuthenticated, async (req, res) => {
   try {
-    await removeFeature(req.params.guildId, req.params.featureName);
-    res.json({ success: true });
+    const { guildId } = req.params;
+    let channels = [];
+    try {
+      const botClients = [client, client1];
+      for (const bc of botClients) {
+        if (bc && bc.isReady && bc.isReady()) {
+          const g = bc.guilds.cache.get(guildId);
+          if (g) {
+            channels = g.channels.cache
+              .filter(c => [ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildForum, ChannelType.GuildCategory, ChannelType.GuildVoice].includes(c.type))
+              .sort((a, b) => (a.rawPosition || 0) - (b.rawPosition || 0))
+              .map(c => ({ id: c.id, name: c.name, type: c.type, parentId: c.parentId || null }));
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+    res.json({ success: true, channels });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Overview Stats ────────────────────────────────────────────────────
+app.get('/api/server/:guildId/overview', isAuthenticated, async (req, res) => {
+  try {
+    const { guildId } = req.params;
+    const config = await BotConfig.findOne({ guildId }).lean() || {};
+    const logCount = await Log.countDocuments({ guildId });
+    const arCount  = await AutoResponder.countDocuments({ guildId });
+    const recentLogs = await Log.find({ guildId }).sort({ createdAt: -1 }).limit(10).lean();
+    let guildInfo = { memberCount: null, botPresent: false };
+    try {
+      const botClients = [client, client1];
+      for (const bc of botClients) {
+        if (bc && bc.isReady && bc.isReady()) {
+          const g = bc.guilds.cache.get(guildId);
+          if (g) { guildInfo = { memberCount: g.memberCount, botPresent: true }; break; }
+        }
+      }
+    } catch (_) {}
+    res.json({ success: true, overview: { memberCount: guildInfo.memberCount, botPresent: guildInfo.botPresent, logCount, arCount, modules: config.modules || {}, recentLogs } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Modules (per-guild toggle) ────────────────────────────────────────
+app.get('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
+    res.json({ success: true, modules: config?.modules || {} });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { $set: { modules: req.body } },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, modules: config.modules });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── GuildSettings (automod config) ───────────────────────────────────
+app.get('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res) => {
+  try {
+    const settings = await GuildSettings.getSettings(req.params.guildId);
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res) => {
+  try {
+    const settings = await GuildSettings.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { $set: req.body },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Welcome configuration ─────────────────────────────────────────────
+app.get('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
+    res.json({ success: true, welcome: config?.welcome || {} });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { $set: { welcome: req.body } },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, welcome: config.welcome });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Ticket configuration ──────────────────────────────────────────────
+app.get('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
+    res.json({ success: true, ticket: config?.ticket || {} });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { $set: { ticket: req.body } },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, ticket: config.ticket });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

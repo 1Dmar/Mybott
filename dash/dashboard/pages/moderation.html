@@ -3,932 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProMcBot - Moderation System</title>
-    
-    <style>
-        /* Existing styles from premium page */
-        /* Import Google font - Poppins */
-        
-        
-        
-        
-        
-        
-        
-
-        /* Navbar - Fixed */
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /* Notification badge */
-        
-
-        /* Dropdown menus */
-        
-        
-        
-        
-        body.dark 
-        
-        
-        
-        body.dark 
-        
-        
-        
-        
-        
-        
-        
-        body.dark 
-        
-        
-        
-        
-        
-        
-        
-        body.dark 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        /* Sidebar - Fixed Styles */
-        
-        
-        /* Fixed tag styling */
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        .moderation-header h1 {
-            font-size: 2.5rem;
-            color: var(--text);
-            margin-bottom: 10px;
-        }
-        
-        .moderation-header p {
-            font-size: 1.1rem;
-            color: var(--text);
-            opacity: 0.8;
-        }
-        
-        .moderation-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        
-        .search-box {
-            flex: 1;
-            min-width: 300px;
-            max-width: 500px;
-        }
-        
-        .search-box input {
-            width: 100%;
-            padding: 12px 20px;
-            border-radius: 30px;
-            border: 1px solid var(--grey-color-light);
-            background: var(--surface);
-            color: var(--text);
-            font-size: 1rem;
-        }
-        
-        .filters {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .filter-group label {
-            font-size: 0.9rem;
-        }
-        
-        .filter-toggle {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        
-        .filter-toggle input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background-color: var(--blue-color);
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        
-        /* User Cards Grid */
-        .user-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-            margin-bottom: 50px;
-        }
-        
-        .user-card {
-            background: var(--surface);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--grey-color-light);
-        }
-        
-        body.dark .user-card {
-            background: var(--surface);
-            border-color: #2a3947;
-        }
-        
-        .user-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        .user-header {
-            position: relative;
-            padding: 20px;
-            text-align: center;
-            background: linear-gradient(to bottom, #f5f5f5, #e0e0e0);
-        }
-        
-        body.dark .user-header {
-            background: linear-gradient(to bottom, #2a3947, #1f2a35);
-        }
-        
-        .user-avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            border: 4px solid var(--surface);
-            object-fit: cover;
-            margin-bottom: 15px;
-        }
-        
-        .user-username {
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--text);
-        }
-        
-        .user-id {
-            font-size: 0.85rem;
-            color: var(--text);
-            opacity: 0.7;
-            margin-bottom: 15px;
-        }
-        
-        .user-roles {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        
-        .role-tag {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            background: #e0e0e0;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        body.dark .role-tag {
-            background: #2a3947;
-            color: #f2f2f2;
-        }
-        
-        .role-color {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        
-        .user-details {
-            padding: 20px;
-        }
-        
-        .user-type {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-        
-        .user-type.member {
-            background: rgba(64, 112, 244, 0.15);
-            color: var(--blue-color);
-        }
-        
-        .user-type.bot {
-            background: rgba(114, 137, 218, 0.15);
-            color: var(--discord-purple);
-        }
-        
-        .user-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-        
-        .stat-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-        
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text);
-            opacity: 0.7;
-        }
-        
-        .user-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .action-btn {
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-        
-        .action-btn i {
-            font-size: 1.1rem;
-        }
-        
-        .action-btn.ban {
-            background: rgba(220, 53, 69, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .action-btn.ban:hover {
-            background: var(--danger-color);
-            color: white;
-        }
-        
-        .action-btn.kick {
-            background: rgba(255, 193, 7, 0.1);
-            color: var(--warning-color);
-        }
-        
-        .action-btn.kick:hover {
-            background: var(--warning-color);
-            color: white;
-        }
-        
-        .action-btn.mute {
-            background: rgba(108, 117, 125, 0.1);
-            color: #6c757d;
-        }
-        
-        .action-btn.mute:hover {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .action-btn.warn {
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--success-color);
-        }
-        
-        .action-btn.warn:hover {
-            background: var(--success-color);
-            color: white;
-        }
-        
-        .action-btn.nickname {
-            background: rgba(114, 137, 218, 0.1);
-            color: var(--discord-purple);
-        }
-        
-        .action-btn.nickname:hover {
-            background: var(--discord-purple);
-            color: white;
-        }
-        
-        .action-btn.timeout {
-            background: rgba(64, 112, 244, 0.1);
-            color: var(--blue-color);
-        }
-        
-        .action-btn.timeout:hover {
-            background: var(--blue-color);
-            color: white;
-        }
-        
-        .bot-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .bot-action-btn {
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
-            background: rgba(114, 137, 218, 0.1);
-            color: var(--discord-purple);
-        }
-        
-        .bot-action-btn:hover {
-            background: var(--discord-purple);
-            color: white;
-        }
-        
-        /* Responsive Design */
-        @media screen and (max-width: 1200px) {
-            .user-grid {
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            }
-        }
-        
-        @media screen and (max-width: 992px) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            .search-box {
-                min-width: 100%;
-            }
-        }
-        
-        @media screen and (max-width: 576px) {
-            
-            
-            
-            
-            .user-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .user-actions {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .user-card {
-            animation: fadeIn 0.4s ease-out forwards;
-            opacity: 0;
-        }
-        
-        .user-card:nth-child(1) { animation-delay: 0.1s; }
-        .user-card:nth-child(2) { animation-delay: 0.2s; }
-        .user-card:nth-child(3) { animation-delay: 0.3s; }
-        .user-card:nth-child(4) { animation-delay: 0.4s; }
-        .user-card:nth-child(5) { animation-delay: 0.5s; }
-        .user-card:nth-child(6) { animation-delay: 0.6s; }
-        .user-card:nth-child(7) { animation-delay: 0.7s; }
-        .user-card:nth-child(8) { animation-delay: 0.8s; }
-    </style>
-<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <title>Moderation - ProMcBot</title>
     <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .filter-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: var(--text); }
+        .filter-info p { margin: 0; font-size: 12px; color: var(--text-secondary); }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--text); }
+        .select-input { width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background-color: var(--surface-2); color: var(--text); font-family: inherit; font-size: 14px; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236b7280\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'m6 9 6 6 6-6\'/></svg>'); background-repeat: no-repeat; background-position: right 14px center; }
+    </style>
 </head>
 <body>
-    <!-- navbar -->
+    <!-- Navbar -->
     <nav class="navbar">
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div class="mobile-toggle" id="sidebarToggle">
-        <i class='bx bx-menu'></i>
-      </div>
-      <a href="/dashboard" class="logo_item">
-        <img src="/public/images/logo.png" alt="Logo" onerror="this.style.display='none'">
-        <span class="brand-name">ProMcBot</span>
-      </a>
-    </div>
-
-    <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
-        <i class='bx bx-sun'></i>
-      </div>
-      <div class="dropdown">
-        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
-          <i class='bx bx-bell'></i>
-          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
         </div>
-        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Welcome to ProMcBot!</div>
-              <div class="notification-desc">Select a server to start managing it</div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
             </div>
-          </div>
-          <div class="dropdown-footer">Mark all as read</div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
         </div>
-      </div>
-      <div class="dropdown">
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
-             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
-        <div class="dropdown-content" id="userDropdown">
-          <div class="dropdown-header">
-            <i class='bx bx-user'></i>
-            <span id="navUserName">Loading...</span>
-          </div>
-          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
-          <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
-          <a href="/commands"><i class='bx bx-command'></i> Commands</a>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
-        </div>
-      </div>
-    </div>
-  </nav>
+    </nav>
 
-    <!-- sidebar -->
-    <!-- SIDEBAR (auto-built by shared.js) -->
-  <nav class="sidebar" id="sidebar">
-    <div class="menu_content"></div>
-    <div class="sidebar-footer">
-      <div class="collapse-btn">
-        <i class='bx bx-chevron-left'></i>
-        <span>Collapse</span>
-      </div>
-    </div>
-  </nav>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
 
     <!-- Main Content -->
-    <section class="main-content">
-        <!-- Header -->
-        <div class="moderation-header">
-            <h1>Server Moderation</h1>
-            <p>Manage your server members and bots efficiently</p>
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <a href="/servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Moderation</span>
         </div>
-        
-        <!-- Controls -->
-        <div class="moderation-controls">
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search members by name or ID...">
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-shield-quarter'></i></div>
+            <div>
+                <h1 class="page-title">Moderation Settings</h1>
+                <p class="page-subtitle">Configure auto-moderation and logging for your server.</p>
             </div>
-            
-            <div class="filters">
-                <div class="filter-group">
-                    <label class="switch">
-                        <input type="checkbox" id="botToggle" checked>
-                        <span class="slider round"></span>
-                    </label>
-                    <span>Show Bots</span>
-                </div>
-                
-                <div class="filter-group">
-                    <label class="switch">
-                        <input type="checkbox" id="roleFilter" checked>
-                        <span class="slider round"></span>
-                    </label>
-                    <span>Filter by Roles</span>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class='bx bx-bot'></i></div>
+                <div>
+                    <div class="card-title">Automod Engine</div>
+                    <div class="card-subtitle">Automatically detect and act on malicious behavior.</div>
                 </div>
             </div>
-        </div>
-        
-        <!-- User Grid -->
-        <div class="user-grid" id="userGrid">
-            <!-- User cards will be inserted here -->
-        </div>
-        
-        <!-- Footer -->
-        <footer class="footer">
-            <div class="footer-links">
-                <a href="#">Home</a>
-                <a href="#">Features</a>
-                <a href="#">Pricing</a>
-                <a href="#">Documentation</a>
-                <a href="#">Support</a>
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms of Service</a>
+            
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Enable Automod</label>
+                <div style="margin-top: 8px;">
+                    <label class="module-switch">
+                        <input type="checkbox" id="automodEnabled" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
             </div>
-            <div class="copyright">
-                &copy; 2023 ProMcBot. All rights reserved. Minecraft is a trademark of Mojang AB.
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Automod Action</label>
+                <select id="automodAction" class="select-input" onchange="showSaveBar()">
+                    <option value="warn">Warn User</option>
+                    <option value="mute">Mute User</option>
+                    <option value="kick">Kick User</option>
+                    <option value="ban">Ban User</option>
+                </select>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px; font-size: 12px;">Action to take when a user repeatedly violates filters.</small>
             </div>
-        </footer>
-    </section>
 
-    <script>
-        // Mobile sidebar toggle
-        // Auto-close sidebar after 0.5 seconds on desktop
-        setTimeout(() => {
-            if (window.innerWidth > 992) {
-                sidebar.classList.add('auto-close');
-                setTimeout(() => {
-                    sidebar.classList.add('close');
-                }, 400);
-            }
-        }, 500);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        // Apply saved theme
-        document.addEventListener('DOMContentLoaded', () => {
-            // Close sidebar on mobile by default
-            if (window.innerWidth <= 992) {
-                sidebar.classList.remove('active');
-            }
-            
-            // Load moderation data
-            loadModerationData();
-        });
-        
-        
-        
-        
-        
-        
-        
-        // Handle resize
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 992) {
-                sidebar.classList.remove('active');
-            }
-        });
-        
-        // Moderation Data
-        const moderationData = [
-            {
-                "id": "804999528129363998",
-                "username": ".iv2",
-                "avatar": "https://cdn.discordapp.com/avatars/804999528129363998/5db4de9a19079896517fd8c1d9aaf0fd.png?size=2048",
-                "banner": "fc2c639c7b0eb94cb61a1d9bc0b77f06",
-                "roles": [
-                    {"id": "1221411923627610192", "name": "Mod", "color": "#206694"},
-                    {"id": "1221411924563202108", "name": "Helper", "color": "#2ecc71"},
-                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
-                ],
-                "type": "member",
-                "messages": 1247,
-                "warnings": 2,
-                "status": "active"
-            },
-            {
-                "id": "1220005260857311294",
-                "username": "ProMcBot ✨",
-                "avatar": "https://cdn.discordapp.com/avatars/1220005260857311294/7df0b585344a4e68c64e52c419129aa4.png?size=2048",
-                "roles": [
-                    {"id": "1264196607621070903", "name": "ProMcBot", "color": "#7289da"},
-                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
-                ],
-                "type": "bot",
-                "messages": 9821,
-                "warnings": 0,
-                "status": "active",
-                "bot_owner": "Admin"
-            },
-            {
-                "id": "123456789012345678",
-                "username": "MineCrafter42",
-                "avatar": "https://cdn.discordapp.com/avatars/123456789012345678/a1b2c3d4e5f6g7h8i9j0.png?size=2048",
-                "roles": [
-                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"},
-                    {"id": "1221411923627610193", "name": "Builder", "color": "#e67e22"}
-                ],
-                "type": "member",
-                "messages": 543,
-                "warnings": 1,
-                "status": "active"
-            },
-            {
-                "id": "234567890123456789",
-                "username": "ServerHelperBot",
-                "avatar": "https://cdn.discordapp.com/avatars/234567890123456789/abcdef1234567890.png?size=2048",
-                "roles": [
-                    {"id": "1264196607621070903", "name": "Helper Bot", "color": "#3498db"},
-                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
-                ],
-                "type": "bot",
-                "messages": 3210,
-                "warnings": 0,
-                "status": "active",
-                "bot_owner": "Mod Team"
-            },
-            {
-                "id": "345678901234567890",
-                "username": "DiamondFinder",
-                "avatar": "https://cdn.discordapp.com/avatars/345678901234567890/1234567890abcdef.png?size=2048",
-                "roles": [
-                    {"id": "1221411923627610192", "name": "Mod", "color": "#206694"},
-                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
-                ],
-                "type": "member",
-                "messages": 2876,
-                "warnings": 0,
-                "status": "active"
-            },
-            {
-                "id": "456789012345678901",
-                "username": "RedstoneWizard",
-                "avatar": "https://cdn.discordapp.com/avatars/456789012345678901/a0b1c2d3e4f5g6h7i8j9.png?size=2048",
-                "roles": [
-                    {"id": "1221411923627610193", "name": "Builder", "color": "#e67e22"},
-                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
-                ],
-                "type": "member",
-                "messages": 876,
-                "warnings": 3,
-                "status": "muted"
-            },
-            {
-                "id": "567890123456789012",
-                "username": "MusicBot",
-                "avatar": "https://cdn.discordapp.com/avatars/567890123456789012/9876543210fedcba.png?size=2048",
-                "roles": [
-                    {"id": "1264196607621070904", "name": "Music Bot", "color": "#9b59b6"},
-                    {"id": "1058104907204395008", "name": "@everyone", "color": "#000000"}
-                ],
-                "type": "bot",
-                "messages": 15432,
-                "warnings": 0,
-                "status": "active",
-                "bot_owner": "Admin"
-            },
-            {
-                "id": "678901234567890123",
-                "username": "NetherExplorer",
-                "avatar": "https://cdn.discordapp.com/avatars/678901234567890123/abcdef0123456789.png?size=2048",
-                "roles": [
-                    {"id": "1221411924563202108", "name": "Helper", "color": "#2ecc71"},
-                    {"id": "1221411925498400798", "name": "Verified", "color": "#000000"}
-                ],
-                "type": "member",
-                "messages": 1298,
-                "warnings": 0,
-                "status": "active"
-            }
-        ];
+            <div class="form-group" style="margin-bottom: 32px;">
+                <label class="form-label">Automod Log Channel</label>
+                <select id="automodLogChannel" class="select-input" onchange="showSaveBar()">
+                    <option value="">None</option>
+                </select>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px; font-size: 12px;">Channel where automod actions will be logged.</small>
+            </div>
 
-        // Load moderation data
-        function loadModerationData() {
-            const userGrid = document.getElementById('userGrid');
-            userGrid.innerHTML = '';
-            
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const showBots = document.getElementById('botToggle').checked;
-            
-            moderationData.forEach(user => {
-                // Filter by search term
-                if (searchTerm && !user.username.toLowerCase().includes(searchTerm) {
-                    return;
-                }
-                
-                // Filter by bot toggle
-                if (user.type === 'bot' && !showBots) {
-                    return;
-                }
-                
-                // Create user card
-                const userCard = document.createElement('div');
-                userCard.className = 'user-card';
-                
-                // Build roles HTML
-                let rolesHTML = '';
-                user.roles.forEach(role => {
-                    rolesHTML += `<div class="role-tag"><span class="role-color" style="background-color:${role.color}"></span>${role.name}</div>`;
-                });
-                
-                // Build actions HTML
-                let actionsHTML = '';
-                if (user.type === 'member') {
-                    actionsHTML = `
-                        <div class="user-actions">
-                            <button class="action-btn ban" onclick="moderateUser('${user.id}', 'ban')"><i class='bx bxs-user-x'></i> Ban</button>
-                            <button class="action-btn kick" onclick="moderateUser('${user.id}', 'kick')"><i class='bx bx-log-out-circle'></i> Kick</button>
-                            <button class="action-btn mute" onclick="moderateUser('${user.id}', 'mute')"><i class='bx bxs-microphone-off'></i> Mute</button>
-                            <button class="action-btn warn" onclick="moderateUser('${user.id}', 'warn')"><i class='bx bxs-error-alt'></i> Warn</button>
-                            <button class="action-btn nickname" onclick="moderateUser('${user.id}', 'nickname')"><i class='bx bx-rename'></i> Nickname</button>
-                            <button class="action-btn timeout" onclick="moderateUser('${user.id}', 'timeout')"><i class='bx bx-time'></i> Timeout</button>
-                        </div>
-                    `;
-                } else if (user.type === 'bot') {
-                    actionsHTML = `
-                        <div class="bot-actions">
-                            <button class="bot-action-btn" onclick="manageBot('${user.id}', 'restart')"><i class='bx bx-reset'></i> Restart Bot</button>
-                            <button class="bot-action-btn" onclick="manageBot('${user.id}', 'update')"><i class='bx bx-update'></i> Update Permissions</button>
-                        </div>
-                    `;
-                }
-                
-                // Build card HTML
-                userCard.innerHTML = `
-                    <div class="user-header">
-                        <img src="${user.avatar}" alt="${user.username}" class="user-avatar">
-                        <h3 class="user-username">${user.username}</h3>
-                        <div class="user-id">ID: ${user.id}</div>
-                        <div class="user-roles">${rolesHTML}</div>
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--text); padding-bottom: 12px; border-bottom: 1px solid var(--border);">Content Filters</h3>
+            <div class="filter-grid">
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Bad Words</h4>
+                        <p>Block profanity and slurs.</p>
                     </div>
-                    <div class="user-details">
-                        <div class="user-type ${user.type}">${user.type === 'bot' ? 'BOT' : 'MEMBER'}</div>
-                        ${user.type === 'bot' ? `<div><strong>Owner:</strong> ${user.bot_owner}</div>` : ''}
-                        <div class="user-stats">
-                            <div class="stat-item">
-                                <div class="stat-value">${user.messages}</div>
-                                <div class="stat-label">Messages</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${user.warnings}</div>
-                                <div class="stat-label">Warnings</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${user.status}</div>
-                                <div class="stat-label">Status</div>
-                            </div>
-                        </div>
-                        ${actionsHTML}
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_badwords" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Links</h4>
+                        <p>Block unauthorized links.</p>
                     </div>
-                `;
-                
-                userGrid.appendChild(userCard);
-            });
-        }
-        
-        // Moderate user function
-        function moderateUser(userId, action) {
-            const user = moderationData.find(u => u.id === userId);
-            if (!user) return;
-            
-            let message = '';
-            switch(action) {
-                case 'ban':
-                    message = `Are you sure you want to ban ${user.username}?`;
-                    break;
-                case 'kick':
-                    message = `Are you sure you want to kick ${user.username}?`;
-                    break;
-                case 'mute':
-                    message = `Mute ${user.username} for how long?`;
-                    break;
-                case 'warn':
-                    message = `Send warning to ${user.username}`;
-                    break;
-                case 'nickname':
-                    message = `Change nickname for ${user.username}`;
-                    break;
-                case 'timeout':
-                    message = `Timeout ${user.username} for how long?`;
-                    break;
-            }
-            
-            alert(`Moderation Action: ${action.toUpperCase()}\n${message}`);
-            // In a real app, you would make an API call here
-        }
-        
-        // Manage bot function
-        function manageBot(botId, action) {
-            const bot = moderationData.find(b => b.id === botId && b.type === 'bot');
-            if (!bot) return;
-            
-            let message = '';
-            switch(action) {
-                case 'restart':
-                    message = `Restarting ${bot.username}...`;
-                    break;
-                case 'update':
-                    message = `Updating permissions for ${bot.username}...`;
-                    break;
-            }
-            
-            alert(`Bot Management: ${action.toUpperCase()}\n${message}`);
-            // In a real app, you would make an API call here
-        }
-        
-        // Setup event listeners for filters
-        document.getElementById('searchInput').addEventListener('input', loadModerationData);
-        document.getElementById('botToggle').addEventListener('change', loadModerationData);
-        document.getElementById('roleFilter').addEventListener('change', loadModerationData);
-    </script>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_links" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Invites</h4>
+                        <p>Block Discord server invites.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_invites" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Spam</h4>
+                        <p>Block repeated messages.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_spam" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Caps</h4>
+                        <p>Block excessive capitalization.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_caps" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Save Bar -->
+    <div class="save-bar" id="saveBar">
+        <span class="save-bar-text">You have unsaved changes.</span>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
+
     <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+            await loadChannels();
+            await loadData();
+        });
+
+        async function loadChannels() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/channels`);
+                const data = await res.json();
+                const select = document.getElementById('automodLogChannel');
+                
+                if (data.channels) {
+                    data.channels.forEach(ch => {
+                        const opt = document.createElement('option');
+                        opt.value = ch.id;
+                        opt.textContent = '#' + ch.name;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading channels:', err);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/guild-settings`);
+                const data = await res.json();
+                
+                if (data.settings && data.settings.automod) {
+                    const automod = data.settings.automod;
+                    
+                    document.getElementById('automodEnabled').checked = !!automod.enabled;
+                    document.getElementById('automodAction').value = automod.action || 'warn';
+                    document.getElementById('automodLogChannel').value = automod.logChannel || '';
+                    
+                    const filters = automod.filters || [];
+                    document.getElementById('filter_badwords').checked = filters.includes('badwords');
+                    document.getElementById('filter_links').checked = filters.includes('links');
+                    document.getElementById('filter_invites').checked = filters.includes('invites');
+                    document.getElementById('filter_spam').checked = filters.includes('spam');
+                    document.getElementById('filter_caps').checked = filters.includes('caps');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function showSaveBar() {
+            document.getElementById('saveBar').classList.add('show');
+        }
+
+        function hideSaveBar() {
+            document.getElementById('saveBar').classList.remove('show');
+        }
+
+        async function saveSettings() {
+            const enabled = document.getElementById('automodEnabled').checked;
+            const action = document.getElementById('automodAction').value;
+            const logChannel = document.getElementById('automodLogChannel').value;
+            
+            const filters = [];
+            if (document.getElementById('filter_badwords').checked) filters.push('badwords');
+            if (document.getElementById('filter_links').checked) filters.push('links');
+            if (document.getElementById('filter_invites').checked) filters.push('invites');
+            if (document.getElementById('filter_spam').checked) filters.push('spam');
+            if (document.getElementById('filter_caps').checked) filters.push('caps');
+
+            try {
+                const getRes = await fetch(`/api/server/${guildId}/guild-settings`);
+                const getData = await getRes.json();
+                const updatedSettings = getData.settings || {};
+                
+                updatedSettings.automod = {
+                    ...updatedSettings.automod,
+                    enabled,
+                    action,
+                    logChannel,
+                    filters
+                };
+
+                const res = await fetch(`/api/server/${guildId}/guild-settings`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ settings: updatedSettings })
+                });
+
+                if (res.ok) {
+                    Swal.fire('Saved!', 'Moderation settings have been updated.', 'success');
+                    hideSaveBar();
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Failed to save moderation settings.', 'error');
+            }
+        }
+    </script>
 </body>
 </html>

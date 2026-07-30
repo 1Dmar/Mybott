@@ -3,928 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProMcBot - Auto Responder</title>
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <title>Auto Responder - ProMcBot</title>
     <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Auto Responder Styles */
-        .auto-responder-header {
-            margin-bottom: 30px;
-        }
-        
-        .auto-responder-header h1 {
-            font-size: 2.5rem;
-            color: var(--text);
-            background: linear-gradient(90deg, var(--primary), #7289da);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
-        
-        .auto-responder-header p {
-            font-size: 1.1rem;
-            color: var(--text-light);
-            max-width: 800px;
-            margin-top: 10px;
-        }
-        
-        /* Form Card */
-        .form-card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 30px;
-            box-shadow: var(--shadow);
-            margin-bottom: 30px;
-            transition: var(--transition);
-        }
-        
-        .form-card h2 {
-            font-size: 1.6rem;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(0,0,0,0.05);
+        .responder-card {
             display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text);
-        }
-        
-        .form-group input, 
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            border: 1px solid #ddd;
-            background: var(--lighter);
-            color: var(--text);
-            font-size: 1rem;
-            outline: none;
-            transition: var(--transition);
-        }
-        
-        .form-group input:focus, 
-        .form-group select:focus,
-        .form-group textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(64, 112, 244, 0.2);
-        }
-        
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .form-row .form-group {
-            flex: 1;
-        }
-        
-        .btn {
-            padding: 14px 28px;
-            border-radius: 10px;
-            border: none;
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 1rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(64, 112, 244, 0.3);
-        }
-        
-        .btn-success {
-            background: var(--success);
-        }
-        
-        .btn-danger {
-            background: var(--danger);
-        }
-        
-        /* Responses Table */
-        .responses-card {
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 30px;
-            box-shadow: var(--shadow);
-            transition: var(--transition);
-        }
-        
-        .responses-card h2 {
-            font-size: 1.6rem;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .table_header {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 0.5fr;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(64, 112, 244, 0.05);
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .table_row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 0.5fr;
-            gap: 15px;
-            padding: 15px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            align-items: center;
-            transition: var(--transition);
-        }
-        
-        .table_row:hover {
-            background: rgba(64, 112, 244, 0.03);
-        }
-        
-        .table_row:last-child {
-            border-bottom: none;
-        }
-        
-        .status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        
-        .status.active {
-            background: rgba(40, 167, 69, 0.1);
-            color: var(--success);
-        }
-        
-        .status.inactive {
-            background: rgba(108, 117, 125, 0.1);
-            color: #6c757d;
-        }
-        
-        .btn_primary_small {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            background: var(--primary);
-            color: white;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-        }
-        
-        .btn_delete {
-            background: var(--danger);
-        }
-        
-        .btn_primary_small:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        
-        .no-responses {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-light);
-        }
-        
-        .no-responses i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
-        .no-responses p {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-        }
-        
-        /* Auto Response Form Overlay */
-        .auto-response-form {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--card-bg);
-            border-radius: var(--border-radius);
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 1100;
-            width: 90%;
-            max-width: 700px;
-            display: none;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .auto-response-form h2 {
-            font-size: 1.6rem;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .blur {
-            filter: blur(5px);
-            pointer-events: none;
-            user-select: none;
-        }
-        
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+            flex-direction: column;
+            justify-content: space-between;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            display: none;
         }
-        
-        /* Blacklist Card */
-        #blacklist-card {
-            background: rgba(255, 69, 58, 0.9);
-            border: 2px solid rgba(255, 69, 58, 1);
-            color: white;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            display: none;
+        .responder-trigger {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 15px;
         }
-        
-        #blacklist-card a {
-            color: white;
-            text-decoration: underline;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .table_header,
-            .table_row {
-                grid-template-columns: 1fr 1fr 0.8fr 0.8fr 0.5fr;
-            }
-        }
-
-        @media (max-width: 992px) {
-            
-            
-            
-            
-            .main-content {
-                margin-left: 0;
-                padding-top: 90px;
-            }
-            
-            .mobile-toggle {
-                display: block;
-            }
-            
-            .table_header,
-            .table_row {
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }
-            
-            .table_header :nth-child(3),
-            .table_header :nth-child(4),
-            .table_row :nth-child(3),
-            .table_row :nth-child(4) {
-                display: none;
-            }
-            
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .search_bar {
-                display: none;
-            }
-            
-            
-            
-            .auto-responder-header h1 {
-                font-size: 2rem;
-            }
-            
-            .form-card, .responses-card {
-                padding: 20px;
-            }
-            
-            .table_header,
-            .table_row {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .table_header :nth-child(2),
-            .table_row :nth-child(2) {
-                display: none;
-            }
-            
-            .auto-response-form {
-                width: 95%;
-                padding: 20px;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            
-            
-            .auto-responder-header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .auto-responder-header p {
-                font-size: 1rem;
-            }
-            
-            .form-actions {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        /* Loading spinner */
-        .spinner {
-            width: 40px;
-            height: 40px;
-            margin: 20px auto;
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .hidden {
-            display: none;
+        .responder-response {
+            font-size: 13px;
+            color: var(--text-secondary);
+            background: var(--surface-2);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 16px;
+            flex: 1;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <!-- Overlay for modals -->
-    <div class="overlay" id="overlay"></div>
-    
-    <!-- navbar -->
+    <!-- Navbar -->
     <nav class="navbar">
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div class="mobile-toggle" id="sidebarToggle">
-        <i class='bx bx-menu'></i>
-      </div>
-      <a href="/dashboard" class="logo_item">
-        <img src="/public/images/logo.png" alt="Logo" onerror="this.style.display='none'">
-        <span class="brand-name">ProMcBot</span>
-      </a>
-    </div>
-
-    <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
-        <i class='bx bx-sun'></i>
-      </div>
-      <div class="dropdown">
-        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
-          <i class='bx bx-bell'></i>
-          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
         </div>
-        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Welcome to ProMcBot!</div>
-              <div class="notification-desc">Select a server to start managing it</div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
             </div>
-          </div>
-          <div class="dropdown-footer">Mark all as read</div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
         </div>
-      </div>
-      <div class="dropdown">
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
-             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
-        <div class="dropdown-content" id="userDropdown">
-          <div class="dropdown-header">
-            <i class='bx bx-user'></i>
-            <span id="navUserName">Loading...</span>
-          </div>
-          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
-          <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
-          <a href="/commands"><i class='bx bx-command'></i> Commands</a>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
-        </div>
-      </div>
-    </div>
-  </nav>
+    </nav>
 
-<!-- SIDEBAR (auto-built by shared.js) -->
-  <nav class="sidebar" id="sidebar">
-    <div class="menu_content"></div>
-    <div class="sidebar-footer">
-      <div class="collapse-btn">
-        <i class='bx bx-chevron-left'></i>
-        <span>Collapse</span>
-      </div>
-    </div>
-  </nav>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
 
     <!-- Main Content -->
-    <section class="main-content" id="mainContent">
-        <!-- Header -->
-        <div class="auto-responder-header">
-            <h1>Auto Responder</h1>
-            <p>Set up automatic responses to specific triggers in your Discord server</p>
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <a href="/servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Auto Responder</span>
         </div>
-        
-        <!-- Blacklist Banner (only shown if blacklisted) -->
-        <div class="form-card" id="blacklist-card">
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <i class='bx bx-error-circle' style="font-size: 2.5rem; color: white;"></i>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-message-dots'></i></div>
+            <div>
+                <h1 class="page-title">Auto Responder</h1>
+                <p class="page-subtitle">Automatically reply to specific trigger words or phrases.</p>
+            </div>
+        </div>
+
+        <div class="card animated" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <div class="card-icon"><i class='bx bx-plus'></i></div>
                 <div>
-                    <h3>Server Blacklisted</h3>
-                    <p>This server has been blacklisted due to policy violations. Auto responder settings cannot be modified.</p>
+                    <h2 class="card-title">Add New Auto Responder</h2>
+                    <p class="card-subtitle">Create a new trigger and response combination.</p>
                 </div>
             </div>
-        </div>
-        
-        <!-- Add New Response Button -->
-        <div class="form-card">
-            <button class="btn" id="addNewBtn" onclick="showAutoResponderForm()">
-                <i class='bx bx-plus'></i> Add New Auto Response
-            </button>
-        </div>
-        
-        <!-- Responses Table -->
-        <div class="responses-card">
-            <h2>
-                <i class='bx bx-list-ul'></i> Auto Responses
-            </h2>
-            
-            <div id="autoResponseList">
-                <div class="table_header">
-                    <p>Trigger</p>
-                    <p>Response</p>
-                    <p>Status</p>
-                    <p>Created</p>
-                    <p>Actions</p>
-                </div>
-                
-                <div id="autoResponseTable">
-                    <!-- Responses will be loaded here -->
-                </div>
-                
-                <div class="spinner hidden" id="loadingSpinner"></div>
-                
-                <div class="no-responses" id="noResponses">
-                    <i class='bx bx-bot'></i>
-                    <p>No auto responses set up yet</p>
-                    <p>Click "Add New Auto Response" to create your first one</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Auto Response Form -->
-    <div class="auto-response-form" id="autoResponseCard">
-        <h2><i class='bx bx-plus'></i> Add New Auto Response</h2>
-        
-        <form id="autoResponseForm" onsubmit="submitForm(event)">
-            <div class="form-group">
-                <label for="trigger">Trigger Phrase</label>
-                <input type="text" id="trigger" name="trigger" placeholder="e.g., !help" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="response">Response</label>
-                <textarea id="response" name="response" rows="3" placeholder="Enter the response message" required></textarea>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="replyType">Response Type</label>
-                    <select id="replyType" name="replyType">
-                        <option value="message">Regular Message</option>
-                        <option value="embed">Embed Message</option>
-                        <option value="dm">Direct Message</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="cooldown">Cooldown (seconds)</label>
-                    <input type="number" id="cooldown" name="cooldown" min="0" value="5">
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="allowedRoles">Allowed Roles (comma separated)</label>
-                    <input type="text" id="allowedRoles" name="allowedRoles" placeholder="e.g., Admin, Moderator">
-                </div>
-                
-                <div class="form-group">
-                    <label for="disallowedRoles">Disallowed Roles (comma separated)</label>
-                    <input type="text" id="disallowedRoles" name="disallowedRoles" placeholder="e.g., Muted, Banned">
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <button type="button" class="btn btn-danger" onclick="closeForm()">Cancel</button>
-                <button type="submit" class="btn btn-success">Save Response</button>
-            </div>
-        </form>
-    </div>
 
+            <form id="addResponderForm">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Trigger Word / Phrase <span class="required">*</span></label>
+                        <input type="text" class="form-control" id="triggerInput" placeholder="e.g. !ip" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Bot Response <span class="required">*</span></label>
+                        <textarea class="form-control" id="responseInput" placeholder="e.g. play.example.com" required style="min-height: 40px; height: 40px;"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="addBtn"><i class='bx bx-save'></i> Add Responder</button>
+            </form>
+        </div>
+
+        <h3 style="margin-bottom: 16px; font-size: 16px;">Active Responders</h3>
+        <div class="grid-auto animated" id="respondersGrid" style="animation-delay: 0.1s;">
+            <!-- Loading -->
+            <div class="card"><div class="skeleton" style="height: 100px;"></div></div>
+            <div class="card"><div class="skeleton" style="height: 100px;"></div></div>
+        </div>
+
+    </main>
+
+    <script src="/shared.js"></script>
     <script>
-        // Server ID from URL
-        const serverId = window.location.pathname.split('/')[1] || "default-server-id";
+        const guildId = window.location.pathname.split('/')[2];
 
-        // DOM Elements
-        const sidebar = document.getElementById('sidebar');
-        
-        
-        const notificationBtn = document.getElementById('notificationBtn');
-        const notificationDropdown = document.getElementById('notificationDropdown');
-        const userBtn = document.getElementById('userBtn');
-        const userDropdown = document.getElementById('userDropdown');
-        const mainContent = document.getElementById('mainContent');
-        const autoResponseCard = document.getElementById('autoResponseCard');
-        const addNewBtn = document.getElementById('addNewBtn');
-        const autoResponseTable = document.getElementById('autoResponseTable');
-        const noResponses = document.getElementById('noResponses');
-        const overlay = document.getElementById('overlay');
-        const blacklistCard = document.getElementById('blacklist-card');
-        const loadingSpinner = document.getElementById('loadingSpinner');
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+            loadResponders();
 
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set theme based on preference
-            if (localStorage.getItem('theme') === 'dark') {
-                document.body.classList.add('dark');
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-            }
-            
-            // Fetch auto responses
-            fetchAutoResponses();
-            
-            // Check blacklist status
-            checkBlacklistStatus();
+            document.getElementById('addResponderForm').addEventListener('submit', addResponder);
         });
 
-        // Toggle sidebar
-        
-            
-            overlay.classList.toggle('show');
-        });
-        
-        // Close sidebar when clicking on overlay
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            overlay.classList.remove('show');
-            notificationDropdown.classList.remove('show');
-            userDropdown.classList.remove('show');
-        });
-        
-        // Theme toggle
-        
-            document.
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                ;
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'light');
-            }
-        });
-        
-        // Dropdown functionality
-        notificationBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle('show');
-            userDropdown.classList.remove('show');
-        });
-        
-        userBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            userDropdown.classList.toggle('show');
-            notificationDropdown.classList.remove('show');
-        });
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.remove('show');
-            }
-            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-                userDropdown.classList.remove('show');
-            }
-        });
-
-        // Auto Responder Functions
-        function showAutoResponderForm() {
-            mainContent.classList.add('blur');
-            autoResponseCard.style.display = 'block';
-            overlay.style.display = 'block';
-            addNewBtn.style.display = 'none';
-        }
-
-        function closeForm() {
-            mainContent.classList.remove('blur');
-            autoResponseCard.style.display = 'none';
-            overlay.style.display = 'none';
-            addNewBtn.style.display = 'block';
-            document.getElementById('autoResponseForm').reset();
-        }
-
-        async function submitForm(event) {
-            event.preventDefault();
-            
-            const trigger = document.getElementById('trigger').value;
-            const response = document.getElementById('response').value;
-            const replyType = document.getElementById('replyType').value;
-            const cooldown = document.getElementById('cooldown').value;
-            const allowedRoles = document.getElementById('allowedRoles').value.split(',').map(role => role.trim());
-            const disallowedRoles = document.getElementById('disallowedRoles').value.split(',').map(role => role.trim());
-
+        async function loadResponders() {
             try {
-                const res = await fetch(`/${serverId}/auto_responder`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        trigger,
-                        response,
-                        replyType,
-                        cooldown,
-                        allowedRoles,
-                        disallowedRoles
-                    })
-                });
+                const res = await fetch(`/api/server/${guildId}/autoresponder`);
+                const data = await res.json();
+                const container = document.getElementById('respondersGrid');
+                container.innerHTML = '';
 
-                if (res.ok) {
-                    const result = await res.json();
-                    addAutoResponse({
-                        trigger,
-                        response,
-                        date: new Date().toLocaleDateString(),
-                        status: 'active'
-                    });
-                    closeForm();
-                    showNotification('Auto-response added successfully!', 'success');
-                } else {
-                    showNotification('Failed to add auto-response.', 'error');
+                let responders = [];
+                if (data.success && data.responders) {
+                    responders = data.responders; // Assuming {success: true, responders: [...]}
+                } else if (Array.isArray(data)) {
+                    responders = data; // Assuming it just returns the array
                 }
-            } catch (error) {
-                showNotification('Failed to add auto-response.', 'error');
-            }
-        }
 
-        function addAutoResponse({ trigger, response, date, status }) {
-            // Hide no responses message
-            noResponses.style.display = 'none';
-            
-            // Create new row
-            const row = document.createElement('div');
-            row.className = 'table_row';
-            row.innerHTML = `
-                <p>${trigger}</p>
-                <p>${response.length > 50 ? response.substring(0, 50) + '...' : response}</p>
-                <p><span class="status ${status}"></span> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
-                <p>${date}</p>
-                <div class="btn_box">
-                    <button class="btn_primary_small" onclick="toggleStatus('${trigger}')">${status === 'active' ? 'Disable' : 'Enable'}</button>
-                    <button class="btn_primary_small btn_delete" onclick="deleteRow('${trigger}')">Delete</button>
-                </div>
-            `;
-            
-            autoResponseTable.appendChild(row);
-        }
-
-        async function deleteRow(trigger) {
-            if (!confirm('Are you sure you want to delete this auto-response?')) return;
-            
-            try {
-                const res = await fetch(`/${serverId}/auto_responder/${trigger}`, {
-                    method: 'DELETE'
-                });
-                
-                if (res.ok) {
-                    showNotification('Auto-response deleted successfully!', 'success');
-                    fetchAutoResponses();
-                } else {
-                    const result = await res.json();
-                    showNotification(`Error: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showNotification('Failed to delete auto-response.', 'error');
-            }
-        }
-
-        async function toggleStatus(trigger) {
-            try {
-                const res = await fetch(`/${serverId}/auto_responder/${trigger}/toggle`, {
-                    method: 'POST'
-                });
-                
-                if (res.ok) {
-                    showNotification('Auto-response status updated!', 'success');
-                    fetchAutoResponses();
-                } else {
-                    const result = await res.json();
-                    showNotification(`Error: ${result.message}`, 'error');
-                }
-            } catch (error) {
-                showNotification('Failed to update auto-response status.', 'error');
-            }
-        }
-
-        async function fetchAutoResponses() {
-            try {
-                loadingSpinner.classList.remove('hidden');
-                noResponses.style.display = 'none';
-                
-                // In a real implementation, this would fetch from your API
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                const mockResponses = [
-                    {
-                        trigger: "!help",
-                        response: "Here's a list of available commands: !status, !players, !ip",
-                        date: "2023-10-15",
-                        status: "active"
-                    },
-                    {
-                        trigger: "!status",
-                        response: "Server is currently online with 12/50 players",
-                        date: "2023-10-10",
-                        status: "active"
-                    },
-                    {
-                        trigger: "!website",
-                        response: "Check out our website at https://example.com",
-                        date: "2023-10-05",
-                        status: "inactive"
-                    }
-                ];
-                
-                // Clear table
-                autoResponseTable.innerHTML = '';
-                
-                if (mockResponses.length === 0) {
-                    noResponses.style.display = 'block';
+                if (responders.length === 0) {
+                    container.innerHTML = `
+                        <div class="card" style="grid-column: 1 / -1;">
+                            <div class="alert alert-info" style="margin: 0;">
+                                <i class='bx bx-info-circle'></i> No auto responders configured yet.
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
-                
-                noResponses.style.display = 'none';
-                
-                // Add responses to table
-                mockResponses.forEach(response => {
-                    addAutoResponse(response);
+
+                responders.forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'card responder-card';
+                    // We assume r.id or r._id
+                    const rId = r.id || r._id;
+                    card.innerHTML = `
+                        <div>
+                            <div class="responder-trigger"><i class='bx bx-purchase-tag'></i> ${r.trigger}</div>
+                            <div class="responder-response">${r.response}</div>
+                        </div>
+                        <button class="btn btn-danger btn-sm" onclick="deleteResponder('${rId}')">
+                            <i class='bx bx-trash'></i> Delete
+                        </button>
+                    `;
+                    container.appendChild(card);
                 });
             } catch (error) {
-                console.error('Error fetching auto responses:', error);
-                showNotification('Failed to load auto responses.', 'error');
-            } finally {
-                loadingSpinner.classList.add('hidden');
+                console.error(error);
+                document.getElementById('respondersGrid').innerHTML = `
+                    <div class="card" style="grid-column: 1 / -1;">
+                        <div class="alert alert-danger" style="margin: 0;"><i class='bx bx-error-circle'></i> Failed to load responders.</div>
+                    </div>
+                `;
             }
         }
 
-        async function checkBlacklistStatus() {
+        async function addResponder(e) {
+            e.preventDefault();
+            const btn = document.getElementById('addBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Adding...`;
+            btn.disabled = true;
+
+            const trigger = document.getElementById('triggerInput').value.trim();
+            const response = document.getElementById('responseInput').value.trim();
+
             try {
-                // In a real implementation, this would fetch from your API
-                const mockBlacklistData = {
-                    blacklisted: false,
-                    reason: ""
-                };
-                
-                if (mockBlacklistData.blacklisted) {
-                    blacklistCard.style.display = 'block';
-                    mainContent.classList.add('blur');
-                    
-                    // Disable form inputs
-                    const formInputs = document.querySelectorAll('input, select, textarea, button');
-                    formInputs.forEach(input => {
-                        input.disabled = true;
-                    });
-                    
-                    // Hide add new button
-                    addNewBtn.style.display = 'none';
+                const res = await fetch(`/api/server/${guildId}/autoresponder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trigger, response })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    Swal.fire({ icon: 'success', title: 'Added!', text: 'Auto responder added successfully', timer: 1500, showConfirmButton: false });
+                    document.getElementById('triggerInput').value = '';
+                    document.getElementById('responseInput').value = '';
+                    loadResponders();
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Failed to add auto responder' });
                 }
             } catch (error) {
-                console.error('Error checking blacklist status:', error);
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Network error occurred' });
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: var(--border-radius);
-                color: white;
-                font-weight: 500;
-                z-index: 1200;
-                box-shadow: var(--shadow);
-                animation: slideIn 0.3s ease-out;
-            `;
-            
-            // Set background color based on type
-            if (type === 'success') {
-                notification.style.backgroundColor = 'var(--success)';
-            } else if (type === 'error') {
-                notification.style.backgroundColor = 'var(--danger)';
-            } else {
-                notification.style.backgroundColor = 'var(--primary)';
-            }
-            
-            notification.textContent = message;
-            
-            // Add to document
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.style.animation = 'fadeOut 0.3s ease-out';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
-        }
+        async function deleteResponder(id) {
+            const result = await Swal.fire({
+                title: 'Are you sure?',
+                text: "This responder will be deleted.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, delete it!'
+            });
 
-        // Refresh auto responses every 30 seconds
-        setInterval(fetchAutoResponses, 30000);
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/server/${guildId}/autoresponder/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (res.ok) {
+                        Swal.fire({ icon: 'success', title: 'Deleted!', text: 'Auto responder has been removed.', timer: 1500, showConfirmButton: false });
+                        loadResponders();
+                    } else {
+                        const data = await res.json();
+                        Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Failed to delete' });
+                    }
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire({ icon: 'error', title: 'Error', text: 'Network error occurred' });
+                }
+            }
+        }
     </script>
-    <script src="/shared.js"></script>
 </body>
 </html>
