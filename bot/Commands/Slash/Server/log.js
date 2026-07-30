@@ -1,79 +1,89 @@
-const { ApplicationCommandType, PermissionFlagsBits } = require('discord.js');
+const { ApplicationCommandType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const Log = require('../../../Models/Log');
 
+const LOG_TYPES = [
+  'MessageDelete', 'MessageUpdate', 'GuildMemberAdd', 'GuildMemberRemove',
+  'RoleCreate', 'RoleDelete', 'GuildBanAdd', 'GuildBanRemove',
+  'ChannelCreate', 'ChannelDelete', 'EmojiCreate', 'EmojiDelete',
+  'VoiceStateUpdateJoin', 'VoiceStateUpdateLeave', 'VoiceStateUpdateMove',
+];
+
 module.exports = {
-    name: "setup_log",
-    description: "Set up log channels for various log types.",
-    userPermissions: PermissionFlagsBits.Administrator,
-    botPermissions: PermissionFlagsBits.SendMessages,
-    category: "Server",
-    type1: "slash",
-    type: ApplicationCommandType.ChatInput,
-    options: [
-        {
-            name: 'log_type',
-            description: 'The type of log to set up.',
-            type: 3, // STRING type
-            required: true,
-            choices: [
-                { name: 'MessageDelete', value: 'MessageDelete' },
-                { name: 'MessageUpdate', value: 'MessageUpdate' },
-                { name: 'GuildMemberAdd', value: 'GuildMemberAdd' },
-                { name: 'GuildMemberRemove', value: 'GuildMemberRemove' },
-                { name: 'RoleCreate', value: 'RoleCreate' },
-                { name: 'RoleDelete', value: 'RoleDelete' },
-                { name: 'GuildBanAdd', value: 'GuildBanAdd' },
-                { name: 'GuildBanRemove', value: 'GuildBanRemove' },
-                { name: 'ChannelCreate', value: 'ChannelCreate' },
-                { name: 'ChannelDelete', value: 'ChannelDelete' },
-                { name: 'EmojiCreate', value: 'EmojiCreate' },
-                { name: 'EmojiDelete', value: 'EmojiDelete' },
-                { name: 'VoiceStateUpdateJoin', value: 'VoiceStateUpdateJoin' },
-                { name: 'VoiceStateUpdateLeave', value: 'VoiceStateUpdateLeave' },
-                { name: 'VoiceStateUpdateMove', value: 'VoiceStateUpdateMove' }
-            ]
-        },
-        {
-            name: 'channel',
-            description: 'The channel to set for the log.',
-            type: 7, // CHANNEL type
-            required: true
-        }
-    ],
-    run: async (client, interaction) => {
-        const logType = interaction.options.getString('log_type');
-        const channel = interaction.options.getChannel('channel');
+  name: 'setup_log',
+  description: 'إعداد قنوات السجل لأحداث السيرفر',
+  userPermissions: PermissionFlagsBits.Administrator,
+  botPermissions: PermissionFlagsBits.SendMessages,
+  category: 'Server',
+  type1: 'slash',
+  type: ApplicationCommandType.ChatInput,
+  options: [
+    {
+      name: 'log_type',
+      description: 'نوع السجل',
+      type: 3,
+      required: true,
+      choices: LOG_TYPES.map(t => ({ name: t, value: t })),
+    },
+    {
+      name: 'channel',
+      description: 'القناة التي ستستقبل السجلات',
+      type: 7,
+      required: true,
+    },
+  ],
+  run: async (client, interaction) => {
+    const logType = interaction.options.getString('log_type');
+    const channel = interaction.options.getChannel('channel');
 
-        const logTypes = [
-            'MessageDelete', 'MessageUpdate', 'GuildMemberAdd', 'GuildMemberRemove',
-            'RoleCreate', 'RoleDelete', 'GuildBanAdd', 'GuildBanRemove',
-            'ChannelCreate', 'ChannelDelete', 'EmojiCreate', 'EmojiDelete',
-            'VoiceStateUpdateJoin', 'VoiceStateUpdateLeave', 'VoiceStateUpdateMove'
-        ];
-
-        if (!logType || !logTypes.includes(logType)) {
-            const availableTypes = logTypes.join(', ');
-            await interaction.reply(`Please provide a valid log type. Available types are: ${availableTypes}`);
-            return;
-        }
-
-        if (!channel) {
-            await interaction.reply('Please provide a valid channel.');
-            return;
-        }
-
-        await Log.findOneAndUpdate(
-            { serverId: interaction.guild.id },
-            { $pull: { logs: { logType } } }, // Remove existing log type if it exists
-            { upsert: true }
-        );
-
-        await Log.findOneAndUpdate(
-            { serverId: interaction.guild.id },
-            { $push: { logs: { logType, logChannelId: channel.id } } },
-            { upsert: true }
-        );
-
-        await interaction.reply(`Log type ${logType} has been set to channel <#${channel.id}>.`);
+    if (!LOG_TYPES.includes(logType)) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xEF4444)
+            .setTitle('❌ نوع سجل غير صحيح')
+            .setDescription(`الأنواع المتاحة: ${LOG_TYPES.map(t => `\`${t}\``).join(', ')}`)
+            .setTimestamp(),
+        ],
+        ephemeral: true,
+      });
     }
+
+    if (!channel) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xEF4444)
+            .setTitle('❌ قناة غير صحيحة')
+            .setDescription('يرجى اختيار قناة صحيحة.')
+            .setTimestamp(),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    // Remove existing and add new
+    await Log.findOneAndUpdate(
+      { serverId: interaction.guild.id },
+      { $pull: { logs: { logType } } },
+      { upsert: true }
+    );
+    await Log.findOneAndUpdate(
+      { serverId: interaction.guild.id },
+      { $push: { logs: { logType, logChannelId: channel.id } } },
+      { upsert: true }
+    );
+
+    const successEmbed = new EmbedBuilder()
+      .setColor(0x10B981)
+      .setTitle('✅ تم إعداد السجل')
+      .setDescription(`سيتم إرسال سجلات **${logType}** إلى ${channel}.`)
+      .addFields(
+        { name: '📋 النوع',   value: `\`${logType}\``,      inline: true },
+        { name: '📣 القناة',  value: `<#${channel.id}>`,   inline: true },
+      )
+      .setFooter({ text: `أُعِدَّ بواسطة ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [successEmbed], ephemeral: true });
+  },
 };
