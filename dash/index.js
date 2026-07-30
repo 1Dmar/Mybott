@@ -149,7 +149,7 @@ passport.use(new DiscordStrategy(
   {
     clientID: DISCORD_CLIENT_ID,
     clientSecret: DISCORD_CLIENT_SECRET,
-    callbackURL: process.env.CALLBACK_URL || "https://promcbot.qzz.io/auth/discord/callback",
+    callbackURL: process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback",
     scope: ["identify", "guilds", "email"],
   },
   async function (accessToken, refreshToken, profile, done) {
