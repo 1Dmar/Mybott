@@ -14,7 +14,7 @@ const connections = {
 };
 
 mongoose.set("strictQuery", true);
-mongoose.set('bufferCommands', false);
+mongoose.set('bufferCommands', true);
 
 mongoose.connection.on('connected', () => {
     console.log('🗄️ MongoDB default connection established.');
