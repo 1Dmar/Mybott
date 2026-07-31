@@ -94,9 +94,17 @@ async function initDB() {
             }
 
         // Connect default mongoose instance so models created with mongoose.model work correctly
-        await mongoose.connect(connectionURI, options);
-        connections.main = mongoose.connection;
-        console.log("✅ Main MongoDB Connected (Primary Storage)");
+        if (mongoose.connection.readyState === 0) {
+            await mongoose.connect(connectionURI, options);
+            connections.main = mongoose.connection;
+            console.log("✅ Main MongoDB Connected (Primary Storage)");
+        } else if (mongoose.connection.client && mongoose.connection.client.s.url !== connectionURI) {
+            console.warn('⚠️ Mongoose already has an active connection with a different URI. Skipping duplicate connect.');
+            connections.main = mongoose.connection;
+        } else {
+            connections.main = mongoose.connection;
+            console.log('✅ Mongoose already connected or connecting to the same URI.');
+        }
 
         // Create Secondary Connection (if different)
         if (process.env.MONGO_URL_SECONDARY && process.env.MONGO_URL_SECONDARY !== mainURI) {
