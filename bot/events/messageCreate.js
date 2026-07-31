@@ -68,7 +68,7 @@ const EMOJIS = {
     DOWN: getEmoji('DOWN')
 };
 
-const url = "http://promcbot.qzz.io";
+const url = "https://promcbot.dev";
 
 const handleMainMessage = async (client, message) => {
     if (message.author.bot || !message.guild) return;
