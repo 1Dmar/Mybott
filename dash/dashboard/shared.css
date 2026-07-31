@@ -1540,6 +1540,12 @@ body.dark .alert-info    { color: #22d3ee; }
 .nav_link.danger-link .navlink_icon i { color: var(--danger) !important; }
 .nav_link.danger-link:hover { background: var(--danger-light) !important; }
 
+/* Admin sidebar links — purple accent */
+.nav_link.admin-link { color: #a78bfa !important; }
+.nav_link.admin-link .navlink_icon i { color: #a78bfa !important; }
+.nav_link.admin-link:hover { background: rgba(167, 139, 250, 0.1) !important; }
+.nav_link.admin-link.active { background: rgba(167, 139, 250, 0.15) !important; }
+
 /* ── Module Toggle Switch ── */
 .module-switch {
   position: relative;

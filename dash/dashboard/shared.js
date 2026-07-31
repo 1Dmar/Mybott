@@ -123,8 +123,34 @@
     if (!sidebar) return;
 
     const guildId = getGuildIdFromPath();
-    const sections = guildId ? NAV_CONFIG.server(guildId) : NAV_CONFIG.user;
     const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.startsWith('/admin');
+
+    // Choose sections based on context
+    let sections;
+    if (guildId) {
+      sections = NAV_CONFIG.server(guildId);
+    } else {
+      sections = [...NAV_CONFIG.user];
+      // Inject Admin section if on admin pages OR if user is owner
+      // We check for a data attribute set by initAuth
+      if (isAdminPage || document.body.dataset.isAdmin === 'true') {
+        sections = [
+          ...sections,
+          {
+            label: 'Admin Panel',
+            items: [
+              { href: '/admin',           icon: 'bx-shield-quarter',  text: 'Overview', cls: 'admin-link' },
+              { href: '/admin/stats',     icon: 'bx-bar-chart-alt-2', text: 'Statistics', cls: 'admin-link' },
+              { href: '/admin/users',     icon: 'bx-user-check',      text: 'Users', cls: 'admin-link' },
+              { href: '/admin/email',     icon: 'bx-envelope',        text: 'Send Email', cls: 'admin-link' },
+              { href: '/admin/sendembed', icon: 'bx-message-square-dots', text: 'Send Embed', cls: 'admin-link' },
+              { href: '/admin/bugs',      icon: 'bx-bug',             text: 'Bug Reports', cls: 'admin-link' },
+            ]
+          }
+        ];
+      }
+    }
 
     // Keep existing sidebar-footer (collapse button), rebuild menu_content
     let menuContent = sidebar.querySelector('.menu_content');
@@ -367,6 +393,14 @@
 
       // Store guilds count for profile page
       window.__pmcUser = user;
+
+      // Tag body so sidebar can show admin links
+      const ADMIN_IDS = (window.__adminIds || '804999528129363998').split(',');
+      if (ADMIN_IDS.includes(user.id)) {
+        document.body.dataset.isAdmin = 'true';
+        // Rebuild sidebar so admin section appears
+        buildSidebar();
+      }
 
     } catch (err) {
       console.warn('[PMC] Auth check failed:', err.message);
