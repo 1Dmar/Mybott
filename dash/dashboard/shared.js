@@ -245,9 +245,36 @@
   // ============================================================
   // DROPDOWN MANAGEMENT
   // ============================================================
-  function initDropdowns() {
+  function ensureNotificationUi() {
     const notificationBtn = document.getElementById('notificationBtn');
-    const notificationDropdown = document.getElementById('notificationDropdown');
+    if (!notificationBtn) return { badge: null, dropdown: null };
+
+    let badge = document.getElementById('notifBadge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'notifBadge';
+      badge.className = 'notification-badge';
+      badge.textContent = '0';
+      badge.style.display = 'none';
+      notificationBtn.appendChild(badge);
+    }
+
+    let dropdown = document.getElementById('notificationDropdown');
+    if (!dropdown) {
+      dropdown = document.createElement('div');
+      dropdown.id = 'notificationDropdown';
+      dropdown.className = 'dropdown-content notification-dropdown';
+      dropdown.innerHTML = '<div class="dropdown-header"><i class="bx bx-bell"></i> Notifications</div><div class="dropdown-content-body"></div>';
+      notificationBtn.parentElement?.appendChild(dropdown);
+    }
+
+    return { badge, dropdown };
+  }
+
+  function initDropdowns() {
+    const notificationUi = ensureNotificationUi();
+    const notificationBtn = document.getElementById('notificationBtn');
+    const notificationDropdown = notificationUi.dropdown;
     const userBtn = document.getElementById('userBtn');
     const userDropdown = document.getElementById('userDropdown');
 
@@ -356,6 +383,56 @@
   };
 
   // ============================================================
+  // REAL-TIME DASHBOARD NOTIFICATIONS
+  // ============================================================
+  async function initNotifications() {
+    const ui = ensureNotificationUi();
+    const badge = ui.badge;
+    const dropdown = ui.dropdown;
+    if (!badge || !dropdown) return;
+
+    const body = dropdown.querySelector('.dropdown-content-body') || dropdown;
+
+    async function refreshNotifications() {
+      try {
+        const res = await fetch('/api/notifications', { credentials: 'same-origin' });
+        if (!res.ok) {
+          body.innerHTML = '<div class="notification-empty">Unable to load notifications right now.</div>';
+          return;
+        }
+        const data = await res.json();
+        if (!data.success) {
+          body.innerHTML = '<div class="notification-empty">No notifications available.</div>';
+          return;
+        }
+
+        const items = data.notifications || [];
+        badge.textContent = String(items.length);
+        badge.style.display = items.length > 0 ? 'inline-flex' : 'none';
+
+        body.innerHTML = items.length
+          ? items.map(item => `
+            <div class="notification-item">
+              <div class="notification-icon"><i class='bx ${item.icon || 'bx-info-circle'}'></i></div>
+              <div class="notification-content">
+                <div class="notification-title">${item.title}</div>
+                <div class="notification-desc">${item.description}</div>
+                <div class="notification-time">${item.time || 'Just now'}</div>
+              </div>
+            </div>
+          `).join('')
+          : '<div class="notification-empty">No new notifications.</div>';
+      } catch (err) {
+        console.warn('[PMC] Notification refresh failed:', err.message);
+        body.innerHTML = '<div class="notification-empty">No new notifications.</div>';
+      }
+    }
+
+    await refreshNotifications();
+    setInterval(refreshNotifications, 25000);
+  }
+
+  // ============================================================
   // GUILD DATA CACHING HELPER
   // ============================================================
   window.cacheGuildInfo = function(guild) {
@@ -377,6 +454,7 @@
     initDropdowns();
     initThemeBtn();
     initAuth();
+    initNotifications();
   });
 
 })();

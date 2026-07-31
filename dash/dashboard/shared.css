@@ -255,17 +255,36 @@ img {
 }
 
 /* Notification badge */
+.nav_btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+
+.nav_btn:hover {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
 .notification-badge {
     position: absolute;
     top: 2px;
     right: 2px;
-    width: 16px;
+    min-width: 16px;
     height: 16px;
+    padding: 0 4px;
     background: var(--danger);
     color: white;
     font-size: 9px;
     font-weight: 700;
-    border-radius: 50%;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -369,6 +388,12 @@ img {
 
 .notification-item:hover {
     background-color: var(--primary-light);
+}
+
+.notification-empty {
+    padding: 14px 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
 }
 
 .notification-icon {

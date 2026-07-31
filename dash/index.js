@@ -60,9 +60,12 @@ mongoose.set('bufferCommands', true);
 
 // ── DB ───────────────────────────────────────────────────────────
 const { initDB } = require("../bot/utils/dbManager");
-const dbInit = !mongoose.connection.readyState
-  ? initDB().catch(err => console.error("Dashboard DB Init Error:", err))
-  : Promise.resolve();
+const dbInit = initDB()
+  .then(() => console.log('✅ Dashboard DB initialized'))
+  .catch(err => {
+    console.error("Dashboard DB Init Error:", err);
+    return null;
+  });
 
 app.use(async (req, res, next) => {
   await dbInit;
@@ -144,12 +147,20 @@ try {
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1220005260857311294";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G";
+let callbackHost = process.env.CALLBACK_URL || null;
+if (!callbackHost) {
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    callbackHost = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/discord/callback`;
+  } else {
+    callbackHost = "https://promcbot.dev/auth/discord/callback";
+  }
+}
 
 passport.use(new DiscordStrategy(
   {
     clientID: DISCORD_CLIENT_ID,
     clientSecret: DISCORD_CLIENT_SECRET,
-    callbackURL: process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback",
+    callbackURL: callbackHost,
     scope: ["identify", "guilds", "email"],
   },
   async function (accessToken, refreshToken, profile, done) {
@@ -514,6 +525,41 @@ app.get('/api/server/:guildId/channels', isAuthenticated, async (req, res) => {
       }
     } catch (_) {}
     res.json({ success: true, channels });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/notifications', isAuthenticated, async (req, res) => {
+  try {
+    const guildId = req.query.guildId || null;
+    const notifications = [];
+    if (guildId) {
+      const recentLogs = await Log.find({ guildId }).sort({ createdAt: -1 }).limit(3).lean();
+      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
+        recentLogs.forEach(log => {
+          const title = log.action || 'Server Activity';
+          const description = log.reason || (log.message || 'Recent server event');
+          notifications.push({
+            title,
+            description: description.toString().slice(0, 120),
+            time: log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : 'Just now',
+            icon: 'bx-history'
+          });
+        });
+      }
+    }
+
+    if (notifications.length === 0) {
+      notifications.push({
+        title: 'Welcome to ProMcBot!',
+        description: 'Your dashboard is connected and ready.',
+        time: 'Just now',
+        icon: 'bx-bell'
+      });
+    }
+
+    res.json({ success: true, notifications });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
