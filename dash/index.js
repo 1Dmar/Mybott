@@ -337,10 +337,13 @@ app.get('/commands',       isAuthenticated, (req, res) => res.sendFile(path.join
 app.get('/server-status',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ServerStatus.html')));
 
 // ── Admin pages ─────────────────────────────────────────────────────
+app.get('/admin',              isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-overview.html')));
 app.get('/admin/users',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'users.html')));
 app.get('/admin/invite',       isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'invite.html')));
 app.get('/admin/bugs',         isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'bugs.html')));
 app.get('/admin/sendembed',    isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'sendembed.html')));
+app.get('/admin/email',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-email.html')));
+app.get('/admin/stats',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-stats.html')));
 
 // ════════════════════════════════════════════════════════════════════
 //  API ROUTES (JSON)
@@ -742,16 +745,65 @@ app.post('/api/admin/sendembed', isAdmin, async (req, res) => {
   try {
     const { channelId, title, description, color, image } = req.body;
     if (!channelId) return res.status(400).json({ success: false, error: 'channelId required' });
-
-    // We need the bot client — it's available via the global proMcBotClient
-    // But here in dash context we use client1 or try to access through require
-    let botClient;
-    try {
-      const botModule = require('../bot/index');
-      // botModule returns a promise/client - handle accordingly
-    } catch (e) {}
-
     res.json({ success: true, message: 'Embed sent (requires bot client connection)' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Admin: Send Email via Brevo ──────────────────────────────────────────
+app.post('/api/email/send', isAdmin, async (req, res) => {
+  try {
+    const { to, name, subject, html, from_name, from_email } = req.body;
+    if (!to || !subject || !html) {
+      return res.status(400).json({ success: false, error: 'to, subject, and html are required' });
+    }
+
+    const BREVO_API_KEY = process.env.BREVO_API_KEY;
+    if (!BREVO_API_KEY) {
+      return res.status(500).json({ success: false, error: 'BREVO_API_KEY not configured in environment variables' });
+    }
+
+    const payload = {
+      sender: {
+        name: from_name || 'ProMcBot',
+        email: from_email || 'support@promcbot.dev'
+      },
+      to: [{ email: to, name: name || to }],
+      subject: subject,
+      htmlContent: html
+    };
+
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', payload, {
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      }
+    });
+
+    console.log(`[Email] Sent to ${to} — Subject: "${subject}" — MessageId: ${response.data?.messageId}`);
+    res.json({ success: true, messageId: response.data?.messageId });
+  } catch (err) {
+    const errMsg = err.response?.data?.message || err.message;
+    console.error('[Email] Send error:', errMsg);
+    res.status(500).json({ success: false, error: errMsg });
+  }
+});
+
+// ── Admin: Stats ──────────────────────────────────────────────────────
+app.get('/api/admin/stats', isAdmin, async (req, res) => {
+  try {
+    const [totalUsers, totalServers, totalTickets, totalLogs] = await Promise.all([
+      Membership.countDocuments().catch(() => 0),
+      ServerInfo.countDocuments().catch(() => 0),
+      Ticket.countDocuments().catch(() => 0),
+      Log.countDocuments().catch(() => 0),
+    ]);
+    res.json({
+      success: true,
+      stats: { totalUsers, totalServers, totalTickets, totalLogs, uptime: process.uptime() }
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
