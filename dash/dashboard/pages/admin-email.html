@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Sender - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .split-layout {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        .form-column, .preview-column {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .preview-container {
+            background: #f6f9fc;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 400px;
+            height: 100%;
+            border: 1px solid #e1e8ed;
+            overflow: hidden;
+        }
+        .preview-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+            border-radius: 4px;
+            min-height: 500px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-family: inherit;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        textarea.form-control {
+            min-height: 200px;
+            resize: vertical;
+        }
+        
+        @media (max-width: 992px) {
+            .split-layout {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
+        </div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
+            </div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <span>Admin</span> <span class="sep">/</span> <span>Email</span>
+        </div>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-envelope'></i></div>
+            <div>
+                <h1 class="page-title">Email Sender</h1>
+                <p class="page-subtitle">Send beautifully formatted emails to users.</p>
+            </div>
+        </div>
+
+        <div class="split-layout">
+            <div class="form-column">
+                <h3 style="margin-bottom: 20px;">Compose Email</h3>
+                <form id="emailForm">
+                    <div class="form-group">
+                        <label for="templateSelect">Template</label>
+                        <select id="templateSelect" class="form-control">
+                            <option value="custom">Custom</option>
+                            <option value="welcome">Welcome</option>
+                            <option value="verify">Verify Email</option>
+                            <option value="reset">Reset Password</option>
+                            <option value="premium_act">Premium Activated</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 16px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="recipientEmail">Recipient Email</label>
+                            <input type="email" id="recipientEmail" class="form-control" required placeholder="user@example.com">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="recipientName">Recipient Name</label>
+                            <input type="text" id="recipientName" class="form-control" placeholder="John Doe">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="senderEmail">Sender Email</label>
+                            <input type="email" id="senderEmail" class="form-control" value="support@promcbot.dev" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="senderName">Sender Name</label>
+                            <input type="text" id="senderName" class="form-control" value="ProMcBot" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailSubject">Subject</label>
+                        <input type="text" id="emailSubject" class="form-control" required placeholder="Email Subject">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emailContent">Email Content (HTML supported)</label>
+                        <textarea id="emailContent" class="form-control" placeholder="Write your email content here..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;" id="sendBtn">
+                        <i class='bx bx-send'></i> Send Email
+                    </button>
+                </form>
+            </div>
+            
+            <div class="preview-column">
+                <h3 style="margin-bottom: 20px;">Live Preview</h3>
+                <div class="preview-container">
+                    <iframe id="previewIframe" class="preview-iframe"></iframe>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/shared.js"></script>
+    <script>
+        const templates = {
+            welcome: { subject: 'Welcome to ProMcBot! 🚀', body: '<h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Welcome aboard, {{username}}!</h2><p style="color:#555;line-height:1.6;">We are thrilled to have you. Click the button below to get started.</p>' },
+            verify: { subject: 'Verify Your Email Address', body: '<h2 style="font-size:20px;font-weight:700;">Verify your email</h2><p style="color:#555;">Your verification code is:</p><div style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:16px;background:#f1f5f9;border-radius:8px;margin:16px 0;">{{code}}</div>' },
+            reset: { subject: 'Reset Your Password', body: '<h2 style="font-size:20px;font-weight:700;">Password Reset Request</h2><p style="color:#555;">Click the button below to reset your password. This link expires in 1 hour.</p>' },
+            premium_act: { subject: 'Premium Activated! 🎉', body: '<h2 style="font-size:20px;font-weight:700;">Your Premium is now active!</h2><p style="color:#555;">Thank you for upgrading to {{premium_plan}}. Enjoy all premium features!</p>' },
+            custom: { subject: '', body: '' }
+        };
+
+        const templateSelect = document.getElementById('templateSelect');
+        const emailSubject = document.getElementById('emailSubject');
+        const emailContent = document.getElementById('emailContent');
+        const previewIframe = document.getElementById('previewIframe');
+        const emailForm = document.getElementById('emailForm');
+        
+        // Listeners for live preview update
+        emailSubject.addEventListener('input', updatePreview);
+        emailContent.addEventListener('input', updatePreview);
+        
+        templateSelect.addEventListener('change', () => {
+            const tpl = templates[templateSelect.value];
+            if (tpl) {
+                emailSubject.value = tpl.subject;
+                emailContent.value = tpl.body;
+                updatePreview();
+            }
+        });
+
+        function generateFullEmailHTML(subject, content) {
+            return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f6f9fc; margin: 0; padding: 40px 0; }
+                    .email-wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+                    .email-header { background: #5865F2; padding: 24px; text-align: center; color: white; }
+                    .email-header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+                    .email-body { padding: 32px; color: #333333; }
+                    .email-footer { background: #f8f9fa; padding: 24px; text-align: center; color: #888888; font-size: 14px; border-top: 1px solid #eeeeee; }
+                    .btn-action { display: inline-block; background: #5865F2; color: white; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 600; margin-top: 16px; }
+                </style>
+            </head>
+            <body>
+                <div class="email-wrapper">
+                    <div class="email-header">
+                        <h1>${subject || 'ProMcBot Notification'}</h1>
+                    </div>
+                    <div class="email-body">
+                        ${content || '<p>Your content will appear here.</p>'}
+                    </div>
+                    <div class="email-footer">
+                        &copy; ${new Date().getFullYear()} ProMcBot. All rights reserved.
+                    </div>
+                </div>
+            </body>
+            </html>
+            `;
+        }
+
+        function updatePreview() {
+            const subject = emailSubject.value;
+            const content = emailContent.value;
+            previewIframe.srcdoc = generateFullEmailHTML(subject, content);
+        }
+
+        emailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const to = document.getElementById('recipientEmail').value;
+            const name = document.getElementById('recipientName').value;
+            const from_email = document.getElementById('senderEmail').value;
+            const from_name = document.getElementById('senderName').value;
+            const subject = emailSubject.value;
+            const content = emailContent.value;
+            
+            const btn = document.getElementById('sendBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Sending...';
+            btn.disabled = true;
+
+            const html = generateFullEmailHTML(subject, content);
+
+            try {
+                const res = await fetch('/api/email/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ to, name, subject, html, from_name, from_email })
+                });
+
+                if (res.ok) {
+                    if (window.showToast) window.showToast('Email sent successfully!', 'success');
+                    else alert('Email sent successfully!');
+                } else {
+                    const data = await res.json();
+                    if (window.showToast) window.showToast(data.message || 'Failed to send email', 'error');
+                    else alert(data.message || 'Failed to send email');
+                }
+            } catch (err) {
+                console.error(err);
+                if (window.showToast) window.showToast('An error occurred.', 'error');
+                else alert('An error occurred.');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+        
+        // Initialize preview
+        updatePreview();
+    </script>
+</body>
+</html>
