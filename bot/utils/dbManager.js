@@ -31,80 +31,37 @@ const options = {
     serverSelectionTimeoutMS: 10000,
 };
 
+let initDBPromise = null;
+
 async function initDB() {
-    if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
-        console.log("✅ MongoDB already connected or connecting. Skipping duplicate initialization.");
-        return;
-    }
+    if (initDBPromise) return initDBPromise;
 
-    const mainURI = process.env.MONGO_URL?.trim();
-    const secondaryURI = process.env.MONGO_URL_SECONDARY?.trim() || mainURI;
-    let connectionURI = mainURI;
-
-    if (!mainURI) {
-        throw new Error('MONGO_URL environment variable is not set. Database initialization aborted.');
-    }
-
-    try {
-            // If the provided URI uses the SRV scheme, verify SRV resolves first.
-            if (mainURI && mainURI.startsWith('mongodb+srv://')) {
-                // Allow overriding DNS servers via env or default to Google's public DNS
-                try {
-                    const servers = (process.env.DNS_SERVERS || '8.8.8.8,8.8.4.4').split(',').map(s => s.trim()).filter(Boolean);
-                    dns.setServers(servers);
-                    console.log('🔧 Using DNS servers:', dns.getServers());
-                } catch (e) {
-                    console.warn('⚠️ Could not set DNS servers:', e?.message || e);
-                }
-
-                let host;
-                try {
-                    host = new URL(mainURI).hostname;
-                } catch (e) {
-                    host = mainURI.replace('mongodb+srv://', '').split('/')[0];
-                }
-                try {
-                    console.log(`🔎 Performing SRV lookup for ${host}...`);
-                    const records = await dnsPromises.resolveSrv(`_mongodb._tcp.${host}`);
-                    console.log('✅ SRV DNS lookup succeeded:', records.map(r => r.name).join(', '));
-
-                    // Build seed list automatically from SRV records if no explicit seedlist provided
-                    if (!process.env.MONGO_URL_SEEDLIST) {
-                        try {
-                            const url = new URL(mainURI);
-                            const auth = url.username ? `${encodeURIComponent(url.username)}:${encodeURIComponent(url.password)}@` : '';
-                            const dbName = (url.pathname || '/').replace('/', '') || '';
-                            const params = url.search || '';
-                            const hosts = records.map(r => `${r.name.replace(/\.$/, '')}:${r.port || 27017}`).join(',');
-                            connectionURI = `mongodb://${auth}${hosts}/${dbName}${params}`;
-                            console.log('🔁 Auto-generated non-SRV seed list connection URI will be used as fallback.');
-                        } catch (parseErr) {
-                            console.warn('⚠️ Failed to auto-generate seed list from SRV records:', parseErr?.message || parseErr);
-                        }
-                    }
-                } catch (srvErr) {
-                    console.warn('⚠️ SRV DNS lookup failed:', srvErr && (srvErr.code || srvErr.message));
-                    if (process.env.MONGO_URL_SEEDLIST) {
-                        connectionURI = process.env.MONGO_URL_SEEDLIST.trim();
-                        console.log('➡️ Falling back to non-SRV seed list from MONGO_URL_SEEDLIST.');
-                    } else {
-                        throw new Error('SRV lookup failed and no MONGO_URL_SEEDLIST fallback was provided.');
-                    }
-                }
-            }
-
-        // Connect default mongoose instance so models created with mongoose.model work correctly
-        if (mongoose.connection.readyState === 0) {
-            await mongoose.connect(connectionURI, options);
-            connections.main = mongoose.connection;
-            console.log("✅ Main MongoDB Connected (Primary Storage)");
-        } else if (mongoose.connection.client && mongoose.connection.client.s.url !== connectionURI) {
-            console.warn('⚠️ Mongoose already has an active connection with a different URI. Skipping duplicate connect.');
-            connections.main = mongoose.connection;
-        } else {
-            connections.main = mongoose.connection;
-            console.log('✅ Mongoose already connected or connecting to the same URI.');
+    initDBPromise = (async () => {
+        if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) {
+            console.log("✅ MongoDB already connected or connecting. Skipping duplicate initialization.");
+            return;
         }
+
+        const mainURI = process.env.MONGO_URL?.trim();
+        const secondaryURI = process.env.MONGO_URL_SECONDARY?.trim() || mainURI;
+
+        if (!mainURI) {
+            throw new Error('MONGO_URL environment variable is not set. Database initialization aborted.');
+        }
+
+        try {
+            // Connect default mongoose instance so models created with mongoose.model work correctly
+            if (mongoose.connection.readyState === 0) {
+                await mongoose.connect(mainURI, options);
+                connections.main = mongoose.connection;
+                console.log("✅ Main MongoDB Connected (Primary Storage)");
+            } else if (mongoose.connection.client && mongoose.connection.client.s.url !== mainURI) {
+                console.warn('⚠️ Mongoose already has an active connection with a different URI. Skipping duplicate connect.');
+                connections.main = mongoose.connection;
+            } else {
+                connections.main = mongoose.connection;
+                console.log('✅ Mongoose already connected or connecting to the same URI.');
+            }
 
         // Create Secondary Connection (if different)
         if (process.env.MONGO_URL_SECONDARY && process.env.MONGO_URL_SECONDARY !== mainURI) {
@@ -123,6 +80,9 @@ async function initDB() {
         // Do not exit the process; let caller decide. Throw so startup can continue without DB.
         throw error;
     }
+    })();
+    
+    return initDBPromise;
 }
 
 /**
