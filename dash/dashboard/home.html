@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ProMcBot — The ultimate Discord & Minecraft integration bot. Manage, automate and control your Minecraft servers directly from Discord with elite design and unmatched performance.">
+  <meta name="description" content="ProMcBot — Link your Discord and Minecraft servers seamlessly. Manage, automate and control with ease.">
   <title>ProMcBot — Discord & Minecraft Integration</title>
 
   <!-- Boxicons -->
@@ -105,6 +105,66 @@
       background: rgba(255, 81, 47, 0.08);
       color: #FF512F;
       border-color: rgba(255, 81, 47, 0.3);
+    }
+
+    /* Navbar User Dropdown on Home Page */
+    .landing-nav .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .landing-nav .user-avatar-nav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid #FF512F;
+      transition: transform 0.2s ease;
+    }
+    .landing-nav .user-avatar-nav:hover {
+      transform: scale(1.05);
+    }
+    .landing-nav .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: var(--surface);
+      min-width: 200px;
+      box-shadow: var(--shadow-xl);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      z-index: 1000;
+      overflow: hidden;
+      animation: fadeInUp 0.2s ease-out;
+    }
+    .landing-nav .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .landing-nav .dropdown-header {
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .landing-nav .dropdown-content a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .landing-nav .dropdown-content a:hover {
+      background: rgba(255, 81, 47, 0.08);
+      color: #FF512F;
     }
 
     /* ── Hero Section ── */
@@ -218,6 +278,7 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
+      text-decoration: none;
     }
 
     .hero-actions .btn-primary:hover {
@@ -237,6 +298,7 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
+      text-decoration: none;
     }
 
     .hero-actions .btn-secondary:hover {
@@ -414,30 +476,25 @@
       line-height: 1.75;
     }
 
-    /* ── FAQ Section ── */
+    /* ── FAQ Section (Restored Original Questions) ── */
     .faq-section {
-      max-width: 800px;
-      margin: 0 auto 90px;
-      padding: 0 24px;
+      max-width: 700px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
     }
 
     .faq-item {
-      margin-bottom: 14px;
+      margin-bottom: 10px;
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-md);
       overflow: hidden;
       background: var(--surface);
-      transition: border-color 0.2s ease;
-    }
-
-    .faq-item:hover {
-      border-color: rgba(255, 81, 47, 0.3);
     }
 
     .faq-q {
-      padding: 18px 24px;
-      font-size: 15px;
-      font-weight: 700;
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 600;
       color: var(--text);
       cursor: pointer;
       display: flex;
@@ -448,12 +505,12 @@
     }
 
     .faq-q:hover {
-      background: rgba(255, 81, 47, 0.05);
+      background: rgba(255, 81, 47, 0.08);
       color: #FF512F;
     }
 
     .faq-q .faq-arrow {
-      font-size: 22px;
+      font-size: 20px;
       transition: transform 0.3s ease;
       flex-shrink: 0;
     }
@@ -467,16 +524,16 @@
       max-height: 0;
       overflow: hidden;
       transition: max-height 0.35s ease, padding 0.2s ease;
-      padding: 0 24px;
-      font-size: 14px;
+      padding: 0 20px;
+      font-size: 13px;
       color: var(--text-secondary);
-      line-height: 1.75;
+      line-height: 1.7;
       border-top: 0 solid var(--border);
     }
 
     .faq-item.open .faq-a {
       max-height: 300px;
-      padding: 16px 24px 20px;
+      padding: 14px 20px;
       border-top-width: 1px;
       border-top-color: var(--border);
     }
@@ -620,7 +677,9 @@
       <a href="#faq">FAQ</a>
       <a href="/privacy">Privacy</a>
       <button class="theme-toggle" id="themeToggle" title="Toggle theme"><i class='bx bx-sun'></i></button>
-      <a id="authButton" href="/loading-auth" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #FF512F 0%, #F09819 100%);color:white;padding:8px 18px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;">Login</a>
+      <div id="authContainer">
+        <a id="authButton" href="/loading-auth" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #FF512F 0%, #F09819 100%);color:white;padding:8px 18px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;">Login</a>
+      </div>
     </nav>
   </header>
 
@@ -727,11 +786,11 @@
     </div>
   </section>
 
-  <!-- FAQ -->
+  <!-- FAQ (Restored Original Questions) -->
   <section class="faq-section" id="faq">
     <div class="section-header">
       <h2>Frequently Asked Questions</h2>
-      <p>Everything you need to know about setting up ProMcBot.</p>
+      <p>Got questions? We've got answers.</p>
     </div>
 
     <div class="faq-item">
@@ -739,42 +798,42 @@
         What is ProMcBot?
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">ProMcBot is the ultimate Discord & Minecraft integration platform. It links your Discord server with your Minecraft server for seamless management, automation, and real-time monitoring.</div>
+      <div class="faq-a">ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control, automation, and community management.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        How do I connect my Minecraft server?
+        How do I connect my server?
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">Simply invite ProMcBot to your Discord server, access our elite web dashboard, go to your server configuration, and link your server using our secure plugin token.</div>
+      <div class="faq-a">Invite ProMcBot to your Discord, run the <code>/setup_server</code> command, and follow the prompts to authorize your Minecraft server via our plugin.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        Is ProMcBot free to use?
-        <span class='bx bx-chevron-down faq-arrow'></span>
-      </div>
-      <div class="faq-a">Yes! All core bridging, monitoring, and moderation features are 100% free. Premium plans are available for networks requiring advanced enterprise scaling.</div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">
-        Which Minecraft server versions are supported?
+        Is it free?
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">ProMcBot supports Java and Bedrock editions, fully compatible with Paper, Spigot, Purpur, Velocity, and Bungeecord from version 1.16 up to 1.21+.</div>
+      <div class="faq-a">Yes — ProMcBot's core features are completely free. Premium plans are available for advanced features and priority support.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        Is my server data and token secure?
+        Which Minecraft versions are supported?
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">Absolutely. All communications are encrypted using industrial-grade TLS, and we strictly adhere to privacy standards. Read our <a href="/privacy">Privacy Policy</a> for details.</div>
+      <div class="faq-a">ProMcBot supports both Java Edition and Bedrock Edition servers. Our plugin is compatible with popular server softwares like Paper, Spigot, and Velocity.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">
+        Is my data secure?
+        <i class='bx bx-chevron-down faq-arrow'></i>
+      </div>
+      <div class="faq-a">Absolutely. We follow industry best practices for data security. Read our <a href="/privacy" style="color:var(--primary)">Privacy Policy</a> for details.</div>
     </div>
   </section>
 
   <!-- CTA -->
   <section class="cta-section">
-    <h2>Ready to elevate your Minecraft community?</h2>
-    <p>Join thousands of top-tier server administrators who trust ProMcBot for unbeatable uptime and automation.</p>
+    <h2>Ready to supercharge your Minecraft community?</h2>
+    <p>Join thousands of servers already using ProMcBot to manage and automate their worlds.</p>
     <a href="/loading-auth" class="btn">
       <i class='bx bx-rocket'></i> Get Started for Free
     </a>
@@ -782,12 +841,12 @@
 
   <!-- FOOTER -->
   <footer>
-    <p>© ProMcBot 2024–<span id="year"></span> &nbsp;•&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;•&nbsp; Powered by Elite Engineering</p>
+    <p>© ProMcBot 2024–<span id="year"></span> &nbsp;•&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;•&nbsp; All rights reserved.</p>
   </footer>
 
   <!-- COOKIE BANNER -->
   <div id="cookie-banner" style="display:none">
-    <p>We use cookies to ensure you get the absolute best experience on our platform.</p>
+    <p>We use cookies to enhance your experience.</p>
     <button class="btn" id="cookie-ok">Accept</button>
   </div>
 
@@ -852,21 +911,43 @@
         document.getElementById('stat-users').textContent   = fmt(s.users || 0);
       }
     }).catch(() => {
-      document.getElementById('stat-servers').textContent = '250+';
-      document.getElementById('stat-users').textContent = '10k+';
+      document.getElementById('stat-servers').textContent = '200+';
+      document.getElementById('stat-users').textContent = '5k+';
     });
 
-    // ── Auth-aware buttons ────────────────────────────────────────
+    // ── Auth-aware buttons & Avatar Dropdown in Navbar ────────────
     document.addEventListener('DOMContentLoaded', async () => {
       try {
         const resp = await fetch('/callback/check/userData');
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.authenticated) {
-          const authBtn  = document.getElementById('authButton');
+          const authContainer = document.getElementById('authContainer');
           const authBtn1 = document.getElementById('authButton1');
-          if (authBtn)  { authBtn.href  = '/dashboard'; authBtn.textContent  = data.user.username; }
-          if (authBtn1) { authBtn1.href = '/dashboard'; authBtn1.innerHTML   = '<i class="bx bx-layout"></i> Open Dashboard'; }
+          
+          if (authContainer) {
+            authContainer.innerHTML = `
+              <div class="dropdown">
+                <img src="${data.user.avatar}" alt="User" class="user-avatar-nav" id="homeUserBtn">
+                <div class="dropdown-content">
+                  <div class="dropdown-header">
+                    <img src="${data.user.avatar}" alt="" style="width:28px;height:28px;border-radius:50%;">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.user.global_name || data.user.username}</span>
+                  </div>
+                  <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+                  <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+                  <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
+                  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                  <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+                </div>
+              </div>
+            `;
+          }
+
+          if (authBtn1) {
+            authBtn1.href = '/dashboard';
+            authBtn1.innerHTML = '<i class="bx bx-layout"></i> Open Dashboard';
+          }
         }
       } catch (e) {}
     });
