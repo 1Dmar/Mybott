@@ -266,6 +266,52 @@
     .usage-val  { font-size: 24px; font-weight: 800; display: block; }
     .usage-lbl  { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 
+    /* Banner Customization */
+    .banner-preview {
+      width: 100%;
+      height: 60px;
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: var(--surface-2);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    .session-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    
+    .session-device {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .session-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .current-badge {
+      font-size: 10px;
+      background: #10B981;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .profile-banner   { flex-direction: column; text-align: center; padding: 24px; }
@@ -447,6 +493,57 @@
       </div>
     </div>
 
+    <!-- Security & Sessions + Banner Customization -->
+    <div class="profile-grid">
+      <!-- Banner Customization -->
+      <div class="card animated">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class='bx bx-palette'></i></div>
+          <div>
+            <div class="card-title">تخصيص البنر (Banner Customization)</div>
+            <div class="card-subtitle">تغيير مظهر ملفك الشخصي للآخرين</div>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-field">
+            <div class="info-field-label">معاينة البنر</div>
+            <div id="bannerPreview" class="banner-preview" style="background: linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%);"></div>
+          </div>
+          <div class="info-field">
+            <div class="info-field-label">نوع البنر</div>
+            <select id="bannerType" class="info-field-value" style="width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border);">
+              <option value="color">تدرج لوني (Gradient)</option>
+              <option value="image">رابط صورة (Image URL)</option>
+            </select>
+          </div>
+          <div class="info-field" id="bannerValueContainer">
+            <div class="info-field-label">قيمة البنر (CSS Gradient or URL)</div>
+            <input type="text" id="bannerValue" class="info-field-value" style="width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border);" placeholder="linear-gradient(135deg, #1e1b4b 0%, #311026 50%)">
+          </div>
+          <button id="saveBannerBtn" class="btn btn-primary" style="margin-top:8px">حفظ التغييرات</button>
+        </div>
+      </div>
+
+      <!-- Security & Sessions -->
+      <div class="card animated">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class='bx bx-shield-quarter'></i></div>
+          <div>
+            <div class="card-title">إدارة الجلسات والأمان (Security & Sessions)</div>
+            <div class="card-subtitle">الأجهزة النشطة حالياً المرتبطة بحسابك</div>
+          </div>
+        </div>
+        <div id="sessionsList" style="margin-bottom:16px">
+          <div class="session-item">
+            <div class="session-info">
+              <span class="session-device">جاري التحميل...</span>
+            </div>
+          </div>
+        </div>
+        <button id="revokeOthersBtn" class="btn btn-secondary" style="width:100%;color:var(--danger);border-color:var(--danger)">تسجيل الخروج من جميع الأجهزة الأخرى</button>
+      </div>
+    </div>
+
     <!-- API Key Section -->
     <div class="api-section animated">
       <h3><i class='bx bx-key'></i> ProMcBot Developer API Key & Integration</h3>
@@ -488,6 +585,129 @@
   <!-- Scripts -->
   <script src="/shared.js"></script>
   <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const bannerPreview = document.getElementById('bannerPreview');
+      const bannerType = document.getElementById('bannerType');
+      const bannerValue = document.getElementById('bannerValue');
+      const saveBannerBtn = document.getElementById('saveBannerBtn');
+      const sessionsList = document.getElementById('sessionsList');
+      const revokeOthersBtn = document.getElementById('revokeOthersBtn');
+      const profileBanner = document.querySelector('.profile-banner');
+
+      // 1. Load Profile Data
+      async function loadProfile() {
+        try {
+          const res = await fetch('/api/user/profile');
+          const data = await res.json();
+          if (data.success && data.profile) {
+            const p = data.profile;
+            bannerType.value = p.bannerType || 'color';
+            bannerValue.value = p.banner || '';
+            updatePreview();
+          }
+        } catch (e) { console.error('Failed to load profile', e); }
+      }
+
+      function updatePreview() {
+        const val = bannerValue.value || 'linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%)';
+        const type = bannerType.value;
+        
+        if (type === 'image') {
+          bannerPreview.style.background = `url('${val}') center/cover no-repeat`;
+          profileBanner.style.background = `url('${val}') center/cover no-repeat`;
+        } else {
+          bannerPreview.style.background = val;
+          profileBanner.style.background = val;
+        }
+      }
+
+      bannerValue.addEventListener('input', updatePreview);
+      bannerType.addEventListener('change', updatePreview);
+
+      saveBannerBtn.addEventListener('click', async () => {
+        saveBannerBtn.disabled = true;
+        saveBannerBtn.innerText = 'جاري الحفظ...';
+        try {
+          const res = await fetch('/api/user/profile/banner', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              banner: bannerValue.value,
+              bannerType: bannerType.value
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            window.showToast?.('تم حفظ البنر بنجاح!', 'success');
+          }
+        } catch (e) {
+          window.showToast?.('فشل حفظ البنر', 'error');
+        } finally {
+          saveBannerBtn.disabled = false;
+          saveBannerBtn.innerText = 'حفظ التغييرات';
+        }
+      });
+
+      // 2. Load Sessions
+      async function loadSessions() {
+        try {
+          const res = await fetch('/api/user/sessions');
+          const data = await res.json();
+          if (data.success) {
+            sessionsList.innerHTML = '';
+            data.sessions.forEach(s => {
+              const item = document.createElement('div');
+              item.className = 'session-item';
+              item.innerHTML = `
+                <div class="session-info">
+                  <span class="session-device">
+                    متصفح نشط ${s.current ? '<span class="current-badge">هذا الجهاز</span>' : ''}
+                  </span>
+                  <span class="session-meta">آخر ظهور: ${new Date(s.lastAccess).toLocaleString()}</span>
+                </div>
+                ${!s.current ? `<button class="btn btn-secondary btn-sm revoke-btn" data-id="${s.id}" style="padding:4px 8px;font-size:12px;color:var(--danger)">إلغاء</button>` : ''}
+              `;
+              sessionsList.appendChild(item);
+            });
+
+            document.querySelectorAll('.revoke-btn').forEach(btn => {
+              btn.addEventListener('click', async () => {
+                const sid = btn.getAttribute('data-id');
+                if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج من هذا الجهاز؟')) {
+                  const res = await fetch('/api/user/sessions/revoke', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId: sid })
+                  });
+                  if ((await res.json()).success) {
+                    loadSessions();
+                    window.showToast?.('تم إلغاء الجلسة بنجاح', 'success');
+                  }
+                }
+              });
+            });
+          }
+        } catch (e) { console.error('Failed to load sessions', e); }
+      }
+
+      revokeOthersBtn.addEventListener('click', async () => {
+        if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج من جميع الأجهزة الأخرى؟')) {
+          try {
+            const res = await fetch('/api/user/sessions/revoke-others', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+              loadSessions();
+              window.showToast?.(`تم إلغاء ${data.revokedCount} جلسة بنجاح`, 'success');
+            }
+          } catch (e) { window.showToast?.('فشل إلغاء الجلسات', 'error'); }
+        }
+      });
+
+      loadProfile();
+      loadSessions();
+    });
+  </script>
+</body>  <script>
     document.getElementById('year').textContent = new Date().getFullYear();
 
     // Load server count

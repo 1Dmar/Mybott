@@ -25,6 +25,7 @@ const cookieParser = require('cookie-parser');
 const cors       = require('cors');
 const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
+const MongoStore = require('connect-mongo');
 
 // ── Models ──────────────────────────────────────────────────────
 const Blacklist      = require('../bot/Models/BlackList');
@@ -45,6 +46,7 @@ const Feature        = require('../bot/Models/Feature');
 const Command        = require('../bot/Models/Command');
 const GuildSettings  = require('../bot/Models/GuildSettings');
 const WelcomeChannel = require('../bot/Models/WelcomeChannel');
+const UserProfile    = require('../bot/Models/UserProfile');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -77,6 +79,11 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "nfJ90bf5X2VnFsU8sLGgvZqcDA1Ce9A3",
   resave: false,
   saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mybott",
+    collectionName: 'sessions',
+    ttl: 7 * 24 * 60 * 60 // 7 days
+  }),
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 days
 }));
 
@@ -804,6 +811,95 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
       success: true,
       stats: { totalUsers, totalServers, totalTickets, totalLogs, uptime: process.uptime() }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── User Profile & Banner ──────────────────────────────────────────
+app.get('/api/user/profile', isAuthenticated, async (req, res) => {
+  try {
+    let profile = await UserProfile.findOne({ userId: req.user.id });
+    if (!profile) {
+      profile = await UserProfile.create({ userId: req.user.id });
+    }
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/user/profile/banner', isAuthenticated, async (req, res) => {
+  try {
+    const { banner, bannerType } = req.body;
+    const profile = await UserProfile.findOneAndUpdate(
+      { userId: req.user.id },
+      { banner, bannerType, updatedAt: Date.now() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Session Management ───────────────────────────────────────────────
+app.get('/api/user/sessions', isAuthenticated, async (req, res) => {
+  try {
+    const sessions = await mongoose.connection.db.collection('sessions').find({}).toArray();
+    const userSessions = sessions
+      .filter(s => {
+        try {
+          const data = JSON.parse(s.session);
+          return data.passport && data.passport.user && data.passport.user.id === req.user.id;
+        } catch (e) { return false; }
+      })
+      .map(s => {
+        const data = JSON.parse(s.session);
+        return {
+          id: s._id,
+          current: s._id === req.sessionID,
+          expires: s.expires,
+          lastAccess: s.lastModified || s.expires,
+          // We can try to extract user agent if we stored it, but connect-mongo doesn't by default
+          // For now, just return basic info
+        };
+      });
+    res.json({ success: true, sessions: userSessions });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/user/sessions/revoke', isAuthenticated, async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ success: false, error: 'Session ID required' });
+    
+    // Safety check: Don't allow revoking current session via this endpoint if you want to stay logged in
+    // But user asked for "remote logout", so they might want to revoke others
+    
+    await mongoose.connection.db.collection('sessions').deleteOne({ _id: sessionId });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/user/sessions/revoke-others', isAuthenticated, async (req, res) => {
+  try {
+    const sessions = await mongoose.connection.db.collection('sessions').find({}).toArray();
+    const toDelete = sessions
+      .filter(s => {
+        try {
+          const data = JSON.parse(s.session);
+          return data.passport && data.passport.user && data.passport.user.id === req.user.id && s._id !== req.sessionID;
+        } catch (e) { return false; }
+      })
+      .map(s => s._id);
+    
+    await mongoose.connection.db.collection('sessions').deleteMany({ _id: { $in: toDelete } });
+    res.json({ success: true, revokedCount: toDelete.length });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
