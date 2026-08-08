@@ -2,7 +2,6 @@ const { ApplicationCommandType } = require("discord.js");
 const Server = require('../../../Models/Server');
 const StatusBar = require('../../../Models/StatusBar');
 const { updateServerStatus } = require('../../../utils/statusUpdater');
-const CONFIG = require('../../../config');
 
 module.exports = {
   name: "statusbar-update",
@@ -20,6 +19,10 @@ module.exports = {
   run: async (client, interaction) => {
   //  const serverId = interaction.options.getString("server");
       const serverId = interaction.member.guild.id;
+      const t = (key, fallback) => {
+        const value = client.t(serverId, key);
+        return value && value !== key ? value : fallback;
+      };
 
     try {
       const server = await Server.findOne({ serverId });
@@ -27,19 +30,19 @@ module.exports = {
 
       if (!server || !settings) {
         return interaction.reply({ 
-          content: `${client.emojis.ERROR} Server not configured!`, 
+          content: `${client.emojis.ERROR} ${t("STATUSBAR_NOT_CONFIGURED", "Server not configured!")}`, 
           ephemeral: true 
         });
       }
 
       await updateServerStatus(client, server, settings);
       interaction.reply({ 
-        content: CONFIG.MESSAGES.UPDATE_SUCCESS, 
+        content: `✅ ${t("STATUSBAR_UPDATED", "Status bar updated successfully!")}`, 
         ephemeral: true 
       });
     } catch (error) {
       interaction.reply({ 
-        content: `${client.emojis.ERROR} Update failed!`, 
+        content: `${client.emojis.ERROR} ${t("STATUSBAR_UPDATE_FAILED", "Update failed!")}`, 
         ephemeral: true 
       });
     }

@@ -27,6 +27,10 @@ module.exports = {
   run: async (client, interaction) => {
   //  const serverId = interaction.options.getString("server");
       const serverId = interaction.member.guild.id;
+    const t = (key, fallback) => {
+      const value = client.t(serverId, key);
+      return value && value !== key ? value : fallback;
+    };
     const minutes = interaction.options.getInteger("minutes");
 
     try {
@@ -37,12 +41,12 @@ module.exports = {
       await settings.save();
       
       interaction.reply({ 
-        content: CONFIG.MESSAGES.INTERVAL_UPDATED(minutes), 
+        content: `✅ ${t("STATUSBAR_INTERVAL_UPDATED", "Update interval set to")} ${minutes} ${t("MINUTES_LABEL", "minutes")}!`, 
         ephemeral: true 
       });
     } catch (error) {
       interaction.reply({ 
-        content: `${client.emojis.ERROR} Interval update failed!`, 
+        content: `${client.emojis.ERROR} ${t("STATUSBAR_INTERVAL_FAILED", "Interval update failed!")}`, 
         ephemeral: true 
       });
     }

@@ -234,6 +234,97 @@ function drawStatIcon(ctx, type, cx, cy, r, color) {
     else if (type === 'globe') drawGlobeIcon(ctx, cx, cy, r, color);
 }
 
+function rgbToHex(r, g, b) {
+    const toHex = (v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function adjustColor(hex, factor = 1) {
+    const normalized = String(hex || '').replace('#', '');
+    if (normalized.length !== 6) return '#ffffff';
+    const r = parseInt(normalized.slice(0, 2), 16) * factor;
+    const g = parseInt(normalized.slice(2, 4), 16) * factor;
+    const b = parseInt(normalized.slice(4, 6), 16) * factor;
+    return rgbToHex(r, g, b);
+}
+
+function rgbToHsl(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r:
+                h = (g - b) / d + (g < b ? 6 : 0);
+                break;
+            case g:
+                h = (b - r) / d + 2;
+                break;
+            default:
+                h = (r - g) / d + 4;
+                break;
+        }
+        h /= 6;
+    }
+
+    return { h, s, l };
+}
+
+function extractPaletteFromImage(ctx, img, w = 36, h = 36) {
+    try {
+        const sample = createCanvas(w, h);
+        const sctx = sample.getContext('2d');
+        sctx.drawImage(img, 0, 0, w, h);
+        const data = sctx.getImageData(0, 0, w, h).data;
+        let sumR = 0, sumG = 0, sumB = 0, count = 0;
+        let bestSat = -1;
+        let accent = { r: 255, g: 215, b: 0 };
+
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            if (a < 140) continue;
+
+            const brightness = (r + g + b) / 3;
+            if (brightness < 20 || brightness > 245) continue;
+
+            const { s, l } = rgbToHsl(r, g, b);
+            if (s > bestSat && l > 0.18 && l < 0.85) {
+                bestSat = s;
+                accent = { r, g, b };
+            }
+
+            sumR += r;
+            sumG += g;
+            sumB += b;
+            count++;
+        }
+
+        if (!count) {
+            return { primary: '#FFD700', secondary: '#00E5FF', soft: 'rgba(255, 215, 0, 0.25)' };
+        }
+
+        const avg = { r: sumR / count, g: sumG / count, b: sumB / count };
+        return {
+            primary: rgbToHex(accent.r, accent.g, accent.b),
+            secondary: rgbToHex(avg.r, avg.g, avg.b),
+            soft: `rgba(${Math.round(accent.r)}, ${Math.round(accent.g)}, ${Math.round(accent.b)}, 0.28)`
+        };
+    } catch {
+        return { primary: '#FFD700', secondary: '#00E5FF', soft: 'rgba(255, 215, 0, 0.25)' };
+    }
+}
+
 /**
  * يرسم الكيب الحقيقي (Mojang/OptiFine) جوة مساحة محددة
  * لو cropFrontFace=true بنقص الواجهة الأمامية بس من ملف التيكستشر (الشكل القياسي بتاع Mojang: 64x32)
@@ -380,20 +471,31 @@ function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
 /**
  * توليد بطاقة اللاعب بتصميم فخم
  */
-async function generatePlayerCard(ign, template = 'glass', serverConfig = null) {
+async function generatePlayerCard(ign, template = 'glass', serverConfig = null, options = {}) {
     const width = 1000;
     const height = 550;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
     const playerData = await getPlayerData(ign, serverConfig);
+    const labels = options.labels || {};
+    const texts = {
+        notFound: labels.notFound || 'Player not found',
+        level: labels.level || 'Level',
+        balance: labels.balance || 'Balance',
+        server: labels.server || 'Server',
+        verified: labels.verified || 'VERIFIED',
+        online: labels.online || 'ONLINE',
+        offline: labels.offline || 'OFFLINE',
+        systemFooter: labels.systemFooter || 'PROMCBOT SYSTEM',
+    };
     if (!playerData) {
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 40px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('اللاعب غير موجود', width / 2, height / 2);
+        ctx.fillText(texts.notFound, width / 2, height / 2);
         return canvas.toBuffer();
     }
 
@@ -402,14 +504,6 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
         const bgUrl = serverConfig?.wallpaper || "https://i.ibb.co/TBVZycXV/2.png";
         const background = await loadImage(bgUrl);
         ctx.drawImage(background, 0, 0, width, height);
-        
-        // طبقة تعتيم فخمة (Dark Overlay)
-        const overlay = ctx.createLinearGradient(0, 0, width, 0);
-        overlay.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
-        overlay.addColorStop(0.5, 'rgba(0, 0, 0, 0.6)');
-        overlay.addColorStop(1, 'rgba(0, 0, 0, 0.85)');
-        ctx.fillStyle = overlay;
-        ctx.fillRect(0, 0, width, height);
     } catch (e) {
         ctx.fillStyle = '#0f0f1b';
         ctx.fillRect(0, 0, width, height);
@@ -446,9 +540,11 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     const blockTop = panelY + (panelH - blockH) / 2; // نتوسط الكل عموديًا داخل اللوحة
     const skinX = columnX + (columnW - skinSize) / 2; // السكن في النص أفقيًا
     const skinY = blockTop;
+    let theme = { primary: '#FFD700', secondary: '#00E5FF', soft: 'rgba(255, 215, 0, 0.25)' };
     if (skinImg) {
+        theme = extractPaletteFromImage(ctx, skinImg);
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowColor = theme.soft;
         ctx.shadowBlur = 40;
         ctx.drawImage(skinImg, skinX, skinY, skinSize, skinSize);
         ctx.restore();
@@ -467,25 +563,40 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
         ctx.restore();
     }
 
+    const overlay = ctx.createLinearGradient(0, 0, width, height);
+    overlay.addColorStop(0, 'rgba(0, 0, 0, 0.86)');
+    overlay.addColorStop(0.5, `${theme.soft.replace('0.28', '0.18').replace('0.25', '0.18')}`);
+    overlay.addColorStop(1, 'rgba(0, 0, 0, 0.82)');
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.10)';
+    ctx.beginPath();
+    ctx.roundRect(12, 12, width - 24, height - 24, 28);
+    ctx.fill();
+    ctx.strokeStyle = adjustColor(theme.primary, 1.05);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
     // 3.5 الكيب (Cape Badges) - بيفحص Mojang و OptiFine، ولو مفيش كيب حقيقي يعرض كيب البوت الخاص
     const capeBadges = await buildCapeBadges(playerData);
-    drawBadgesRow(ctx, capeBadges, columnX, skinY + skinSize + badgesGapTop, columnW, badgesH, '#FFD700');
+    drawBadgesRow(ctx, capeBadges, columnX, skinY + skinSize + badgesGapTop, columnW, badgesH, theme.primary);
 
     // 4. معلومات اللاعب (Player Information)
     const infoX = 500;
     
     // الاسم (IGN) مع توهج ذهبي
     ctx.save();
-    ctx.shadowColor = 'rgba(212, 175, 55, 0.6)';
+    ctx.shadowColor = theme.soft;
     ctx.shadowBlur = 15;
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = adjustColor(theme.primary, 1.08);
     ctx.font = 'bold 75px Arial';
     ctx.fillText(playerData.ign, infoX, 140);
     ctx.restore();
 
     // حالة الاتصال (Status Badge)
-    const statusText = playerData.customApi ? (playerData.isOnline ? "ONLINE" : "OFFLINE") : "VERIFIED";
-    const statusColor = (playerData.customApi && !playerData.isOnline) ? "#FF4B2B" : "#00F260";
+    const statusText = playerData.customApi ? (playerData.isOnline ? texts.online : texts.offline) : texts.verified;
+    const statusColor = (playerData.customApi && !playerData.isOnline) ? "#FF4B2B" : adjustColor(theme.primary, 1.12);
     
     ctx.fillStyle = statusColor;
     ctx.beginPath();
@@ -502,9 +613,9 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     const statsY = 222; // رفعنا الفريمات لفوق شوية
     const rowGap = 80;  // مسافة أقصر بين الفريمات
     const stats = [
-        { label: "Level", value: playerData.level !== undefined ? `[${playerData.level}★]` : "N/A", icon: "star", color: "#00E5FF" },
-        { label: "Balance", value: playerData.balance !== undefined ? `$${playerData.balance.toLocaleString()}` : "N/A", icon: "coin", color: "#FFC107" },
-        { label: "Server", value: serverConfig?.serverName || "Lobby", icon: "globe", color: "#A18CD1" }
+        { label: texts.level, value: playerData.level !== undefined ? `[${playerData.level}★]` : "N/A", icon: "star", color: adjustColor(theme.secondary, 1.2) },
+        { label: texts.balance, value: playerData.balance !== undefined ? `$${playerData.balance.toLocaleString()}` : "N/A", icon: "coin", color: adjustColor(theme.primary, 1.06) },
+        { label: texts.server, value: serverConfig?.serverName || "Lobby", icon: "globe", color: '#C4B5FD' }
     ];
 
     stats.forEach((stat, i) => {
@@ -540,7 +651,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`${serverConfig?.javaIP || 'play.server.com'} • PROMCBOT SYSTEM`, width / 2, height - 65);
+    ctx.fillText(`${serverConfig?.javaIP || 'play.server.com'} • ${texts.systemFooter}`, width / 2, height - 65);
 
     return canvas.toBuffer();
 }

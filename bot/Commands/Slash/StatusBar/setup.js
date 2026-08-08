@@ -2,8 +2,6 @@ const { ApplicationCommandType, PermissionFlagsBits } = require("discord.js");
 const Server = require('../../../Models/Server');
 const StatusBar = require('../../../Models/StatusBar');
 const { updateServerStatus } = require('../../../utils/statusUpdater');
-const CONFIG = require('../../../config');
-
 module.exports = {
   name: "statusbar-setup",
   description: "Setup server status bar",
@@ -37,6 +35,10 @@ module.exports = {
   ],
   run: async (client, interaction) => {
     const serverId = interaction.member.guild.id;
+    const t = (key, fallback) => {
+      const value = client.t(serverId, key);
+      return value && value !== key ? value : fallback;
+    };
     const channel = interaction.options.getChannel("channel");
     const template = interaction.options.getString("template") || "neon";
     const autoWallpaper = interaction.options.getBoolean("auto_wallpaper") ?? true;
@@ -45,7 +47,7 @@ module.exports = {
       const server = await Server.findOne({ serverId });
       if (!server) {
         return interaction.reply({ 
-          content: CONFIG.MESSAGES.SERVER_NOT_FOUND, 
+          content: `❌ ${t("SERVER_NOT_FOUND", "Server not found in database!")}`, 
           ephemeral: true 
         });
       }
@@ -60,20 +62,23 @@ module.exports = {
       await settings.save();
 
       await interaction.reply({ 
-        content: `⏳ Initializing live status bar in ${channel}...`,
+        content: `⏳ ${t("STATUSBAR_SETUP_INIT", "Initializing live status bar in")} ${channel}...`,
         ephemeral: true 
       });
 
       await updateServerStatus(client, server, settings);
 
       await interaction.editReply({ 
-        content: CONFIG.MESSAGES.SETUP_SUCCESS(channel.toString()) + 
-                 `\nTemplate: **${template}**\nAuto Wallpaper: **${autoWallpaper ? 'Enabled' : 'Disabled'}**\nUpdate Frequency: **Every 1 Minute**`,
+        content:
+          `✅ ${t("STATUSBAR_SETUP_SUCCESS", "Status bar setup complete in")} ${channel.toString()}\n` +
+          `${t("TEMPLATE_LABEL", "Template")}: **${template}**\n` +
+          `${t("AUTO_WALLPAPER_LABEL", "Auto Wallpaper")}: **${autoWallpaper ? t("ENABLED", "Enabled") : t("DISABLED", "Disabled")}**\n` +
+          `${t("UPDATE_FREQUENCY_LABEL", "Update Frequency")}: **${t("EVERY_ONE_MINUTE", "Every 1 Minute")}**`,
       });
     } catch (error) {
       console.error(error);
       interaction.reply({ 
-        content: `❌ Setup failed!`, 
+        content: `❌ ${t("STATUSBAR_SETUP_FAILED", "Setup failed!")}`, 
         ephemeral: true 
       });
     }

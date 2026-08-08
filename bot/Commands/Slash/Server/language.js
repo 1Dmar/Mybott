@@ -10,12 +10,14 @@ const LANGUAGE_CHOICES = [
   { name: "English (Default)", value: "en" },
   { name: "العربية", value: "ar" },
   { name: "Español", value: "es" },
+  { name: "中文", value: "zh" },
 ];
 
 const LANGUAGE_LABELS = {
   en: "English (Default)",
   ar: "العربية",
   es: "Español",
+  zh: "中文",
 };
 
 module.exports = {

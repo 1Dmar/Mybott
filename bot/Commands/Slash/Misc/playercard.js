@@ -28,6 +28,11 @@ module.exports = {
     }
   ],
   run: async (client, interaction) => {
+    const guildId = interaction.guild?.id;
+    const t = (key, fallback) => {
+      const value = client.t(guildId, key);
+      return value && value !== key ? value : fallback;
+    };
     const ign = interaction.options.getString("ign").trim();
     const template = interaction.options.getString("template") || "darkmode";
 
@@ -37,11 +42,22 @@ module.exports = {
       const serverConfig = await Server.findOne({ serverId: interaction.guild.id });
       
       // Generate player card
-      const imageBuffer = await generatePlayerCard(ign, template, serverConfig);
+      const imageBuffer = await generatePlayerCard(ign, template, serverConfig, {
+        labels: {
+          notFound: t("PLAYER_NOT_FOUND", "Player not found"),
+          level: t("PLAYER_LEVEL", "Level"),
+          balance: t("PLAYER_BALANCE", "Balance"),
+          server: t("SERVER_NAME_LABEL", "Server"),
+          verified: t("VERIFIED", "VERIFIED"),
+          online: t("ONLINE", "ONLINE"),
+          offline: t("OFFLINE", "OFFLINE"),
+          systemFooter: t("PROMCBOT_SYSTEM", "PROMCBOT SYSTEM"),
+        }
+      });
       
       if (!imageBuffer) {
         return interaction.editReply({
-          content: `❌ Could not generate card for player: **${ign}**`
+          content: `❌ ${t("PLAYER_CARD_GENERATE_FAILED", "Could not generate card for player")}: **${ign}**`
         });
       }
 
@@ -63,13 +79,13 @@ module.exports = {
       }
 
       await interaction.editReply({
-        content: `**${ign}'s Player Card** (Template: ${template})`,
+        content: `**${ign}** • ${t("PLAYER_CARD_TITLE", "Player Card")} (${t("TEMPLATE_LABEL", "Template")}: ${template})`,
         files: [attachment]
       });
     } catch (error) {
       console.error('Player card error:', error);
       await interaction.editReply({
-        content: `❌ Error generating player card: ${error.message}`
+        content: `❌ ${t("PLAYER_CARD_ERROR", "Error generating player card")}: ${error.message}`
       });
     }
   }
