@@ -424,6 +424,37 @@
       margin-bottom: 28px;
     }
 
+    .servers-logo-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px 4px 4px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition-fast);
+    }
+
+    .servers-logo-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .servers-logo-image {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.65);
+    }
+
+    .servers-logo-card .brand-name {
+      -webkit-text-fill-color: initial;
+      background: none;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
     @media (max-width: 640px) {
       .servers-grid {
         grid-template-columns: 1fr;
@@ -440,8 +471,8 @@
       <div class="mobile-toggle" id="sidebarToggle">
         <i class='bx bx-menu'></i>
       </div>
-      <a href="/dashboard" class="logo_item">
-        <img src="/public/images/logo.svg" alt="Logo" onerror="this.style.display='none'">
+      <a href="/dashboard" class="logo_item servers-logo-card">
+        <img src="/public/images/logo.png" alt="ProMcBot Logo" class="servers-logo-image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
         <span class="brand-name">ProMcBot</span>
       </a>
     </div>
