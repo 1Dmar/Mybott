@@ -186,7 +186,7 @@
 
     .guild-card-icon {
       position: absolute;
-      top: -30px;
+      bottom: -28px;
       left: 20px;
       width: 60px;
       height: 60px;
@@ -194,9 +194,9 @@
       border: 4px solid var(--surface);
       object-fit: cover;
       background: var(--surface-2);
-      z-index: 5;
+      z-index: 2;
       transition: var(--transition-fast);
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-sm);
     }
 
     .guild-card:hover .guild-card-icon {
@@ -664,9 +664,9 @@
             <div class="banner-bg" style="${bannerStyle}"></div>
             <div class="banner-overlay"></div>
             ${badgeHtml}
+            ${iconHtml}
           </div>
           <div class="guild-card-body">
-            ${iconHtml}
             <div class="guild-name" title="${guild.name}">${guild.name}</div>
             <div class="guild-id">${guild.id}</div>
             <div class="guild-meta">
