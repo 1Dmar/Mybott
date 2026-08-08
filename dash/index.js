@@ -25,7 +25,7 @@ const cookieParser = require('cookie-parser');
 const cors       = require('cors');
 const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
-const MongoStore = require('connect-mongo');
+const { MongoStore } = require('connect-mongo');
 
 // ── Models ──────────────────────────────────────────────────────
 const Blacklist      = require('../bot/Models/BlackList');
@@ -80,7 +80,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mybott",
+    mongoUrl: process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mybott",
     collectionName: 'sessions',
     ttl: 7 * 24 * 60 * 60 // 7 days
   }),

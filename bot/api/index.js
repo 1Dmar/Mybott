@@ -5,6 +5,21 @@ const ServerInfo = require('../Models/Server');
 const router = express.Router();
 
 // ══════════════════════════════════════════════════════════════
+//  Public Route: مسار ترحيبي لا يتطلب توثيق
+// ══════════════════════════════════════════════════════════════
+router.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'ProMcBot API is active. Documentation: https://promcbot.dev/docs',
+        endpoints: {
+            status: 'GET /bot/status',
+            player: 'GET /bot/player/:ign',
+            command: 'POST /bot/command'
+        }
+    });
+});
+
+// ══════════════════════════════════════════════════════════════
 //  Middleware: يشترط الـ headers التالية على كل endpoint:
 //    Authorization: Bearer <token-from-config>
 //    X-Premium-Key: <encrypted-premium-key>
