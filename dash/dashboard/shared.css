@@ -169,10 +169,17 @@ img {
 }
 
 .navbar .logo_item img {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
     object-fit: cover;
+    border: 2px solid var(--border);
+    transition: var(--transition-fast);
+}
+
+.navbar .logo_item img:hover {
+    transform: scale(1.05);
+    border-color: var(--primary);
 }
 
 .navbar .logo_item .brand-name {

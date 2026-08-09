@@ -176,7 +176,6 @@
     .guild-card-banner .banner-bg {
       position: absolute;
       inset: 0;
-      
       background-size: cover;
       background-position: center;
       transition: transform 0.4s ease;
@@ -188,17 +187,17 @@
 
     .guild-card-icon {
       position: absolute;
-      bottom: -28px;
+      top: 55px; /* Moved outside banner, adjusted top to overlap */
       left: 20px;
-      width: 60px;
-      height: 60px;
+      width: 64px;
+      height: 64px;
       border-radius: 16px;
       border: 4px solid var(--surface);
       object-fit: cover;
       background: var(--surface-2);
-      z-index: 2;
+      z-index: 5; /* Ensure it stays on top */
       transition: var(--transition-fast);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-md);
     }
 
     .guild-card:hover .guild-card-icon {
@@ -472,7 +471,7 @@
         <i class='bx bx-menu'></i>
       </div>
       <a href="/dashboard" class="logo_item servers-logo-card">
-        <img src="/public/images/logo.png" alt="ProMcBot Logo" class="servers-logo-image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="servers-logo-image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
         <span class="brand-name">ProMcBot</span>
       </a>
     </div>
@@ -697,8 +696,8 @@
             <div class="banner-bg" style="${bannerStyle}"></div>
             <div class="banner-overlay"></div>
             ${badgeHtml}
-            ${iconHtml}
           </div>
+          ${iconHtml}
           <div class="guild-card-body">
             <div class="guild-name" title="${guild.name}">${guild.name}</div>
             <div class="guild-id">${guild.id}</div>
