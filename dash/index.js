@@ -154,14 +154,8 @@ try {
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1220005260857311294";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G";
-let callbackHost = process.env.CALLBACK_URL || null;
-if (!callbackHost) {
-  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
-    callbackHost = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/auth/discord/callback`;
-  } else {
-    callbackHost = "https://promcbot.dev/auth/discord/callback";
-  }
-}
+// Ensure we use the custom domain for callbacks to avoid Railway redirection issues
+let callbackHost = process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback";
 
 passport.use(new DiscordStrategy(
   {
