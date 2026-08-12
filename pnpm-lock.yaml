@@ -37,7 +37,7 @@ importers:
         version: 1.1.0
       axios:
         specifier: ^1.11.0
-        version: 1.13.6
+        version: 1.13.6(debug@4.4.3)
       body-parser:
         specifier: ^1.20.3
         version: 1.20.4
@@ -45,11 +45,14 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       canvas:
-        specifier: ^3.2.0
-        version: 3.2.2
+        specifier: ^3.2.3
+        version: 3.2.3
       chart.js:
         specifier: ^4.5.0
         version: 4.5.1
+      connect-mongo:
+        specifier: ^6.0.0
+        version: 6.0.0(express-session@1.19.0)(mongodb@7.5.0(@aws-sdk/credential-providers@3.1014.0)(socks@2.8.7))
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -100,7 +103,7 @@ importers:
         version: 0.3.7
       jimp:
         specifier: ^0.22.12
-        version: 0.22.12
+        version: 0.22.12(debug@4.4.3)
       list:
         specifier: ^2.0.19
         version: 2.0.19
@@ -139,7 +142,7 @@ importers:
         version: 3.3.2
       node-vibrant:
         specifier: ^3.2.1-alpha.1
-        version: 3.2.1-alpha.1
+        version: 3.2.1-alpha.1(debug@4.4.3)
       npm:
         specifier: ^10.9.3
         version: 10.9.7
@@ -858,6 +861,9 @@ packages:
   '@kurkle/color@0.3.4':
     resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
+  '@mongodb-js/saslprep@1.4.13':
+    resolution: {integrity: sha512-E3Sv4eCYAlKYUTx8S3ioQcDUscOif+8zZ5OnW1IzJ+Tt+EO+ke8mn+Y3FX6N1H79picwbdOavVOb1jPi2EOyrg==}
+
   '@mongodb-js/saslprep@1.4.6':
     resolution: {integrity: sha512-y+x3H1xBZd38n10NZF/rEBlvDOOMQ6LKUTHqr8R9VkJ+mmQOYtJFxIlkkK8fZrtOiL6VixbOBWMbZGBdal3Z1g==}
 
@@ -1233,6 +1239,9 @@ packages:
   '@types/webidl-conversions@7.0.3':
     resolution: {integrity: sha512-CiJJvcRtIgzadHCYXw7dqEnMNRjhGZlYK05Mj9OyktqV8uVT8fD2BFOB7S1uwBE3Kj2Z+4UyPmFw/Ixgw/LAlA==}
 
+  '@types/whatwg-url@13.0.0':
+    resolution: {integrity: sha512-N8WXpbE6Wgri7KUSvrmQcqrMllKZ9uxkYWMt+mCSGwNc0Hsw9VQTW7ApqI4XNrx6/SaM2QQJCzMPDEXE058s+Q==}
+
   '@types/whatwg-url@8.2.2':
     resolution: {integrity: sha512-FtQu10RWgn3D9U4aazdwIE2yzphmTJREDqNdODHrbrZmmMqI0vMheC/6NE/J1Yveaj8H+ela+YwWTjq5PGmuhA==}
 
@@ -1325,6 +1334,9 @@ packages:
 
   array-flatten@1.1.1:
     resolution: {integrity: sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg==}
+
+  asn1.js@5.4.1:
+    resolution: {integrity: sha512-+I//4cYPccV8LdmBLiX8CYvf9Sp3vQsrqu2QNXRcrbiWvcx/UdlFiqUJJzxRQxgsZmvhXhn4cSKeSmoFjVdupA==}
 
   asn1@0.2.3:
     resolution: {integrity: sha512-6i37w/+EhlWlGUJff3T/Q8u1RGmP5wgbiwYnOnbOqvtrPxT63/sYFyP9RcpxtxGymtfA075IvmOnL7ycNOWl3w==}
@@ -1423,6 +1435,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
@@ -1432,6 +1445,9 @@ packages:
 
   bmp-js@0.1.0:
     resolution: {integrity: sha512-vHdS19CnY3hwiNdkaqk93DvjVLfbEcI8mys4UjuWrlX1haDmroo8o4xCzh4wD6DGV6HxRCyauwhHRqMTfERtjw==}
+
+  bn.js@4.12.5:
+    resolution: {integrity: sha512-3aRg6/JxfffFD+OlOjOFR3Vo79l39ooBTFucxx+MT3dhCtzn3EmiUPQo+6/OZuI2jbXi3YKgmiTFBgChQMwIRQ==}
 
   body-parser@1.20.4:
     resolution: {integrity: sha512-ZTgYYLMOXY9qKU/57FAo8F+HA2dGX7bqGc71txDRC1rS4frdFI5R7NhluHxH6M0YItAP0sHB4uqAOcYKxO6uGA==}
@@ -1450,6 +1466,10 @@ packages:
   bson@4.7.2:
     resolution: {integrity: sha512-Ry9wCtIZ5kGqkJoi6aD8KjxFZEx78guTQDnpXWiNthsxzrxAK/i8E6pCHAIZTbaEFWcOCvbecMukfK7XUvyLpQ==}
     engines: {node: '>=6.9.0'}
+
+  bson@7.3.1:
+    resolution: {integrity: sha512-h/C0qe6857pQhcSJHLfsR1uYGj98Ge3wKAD3Ed9KqH3wcVh+BM4Jq4xISD7vs9OPuT07n+q3QQVjslJ286j6ag==}
+    engines: {node: '>=20.19.0'}
 
   buffer-crc32@0.2.13:
     resolution: {integrity: sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==}
@@ -1495,8 +1515,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  canvas@3.2.2:
-    resolution: {integrity: sha512-duEt4h1HHu9sJZyVKfLRXR6tsKPY7cEELzxSRJkwddOXYvQT3P/+es98SV384JA0zMOZ5s+9gatnGfM6sL4Drg==}
+  canvas@3.2.3:
+    resolution: {integrity: sha512-PzE5nJZPz72YUAfo8oTp0u3fqqY7IzlTubneAihqDYAUcBk7ryeCmBbdJBEdaH0bptSOe2VT2Zwcb3UaFyaSWw==}
     engines: {node: ^18.12.0 || >= 20.9.0}
 
   caseless@0.12.0:
@@ -1564,6 +1584,13 @@ packages:
   commander@9.5.0:
     resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
     engines: {node: ^12.20.0 || >=14}
+
+  connect-mongo@6.0.0:
+    resolution: {integrity: sha512-mHxfnTiWk7ZtxmHdcrFBKlr7fCtgGoFpx/oe9jFW0yb2NinagsxEeuol78nUWMpnWyYK0nnuXMlU9wrgUjTE6g==}
+    engines: {node: '>=20.8.0'}
+    peerDependencies:
+      express-session: ^1.17.1
+      mongodb: '>=5.0.0'
 
   content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
@@ -2237,6 +2264,10 @@ packages:
   keypress@0.1.0:
     resolution: {integrity: sha512-x0yf9PL/nx9Nw9oLL8ZVErFAk85/lslwEP7Vz7s5SI1ODXZIgit3C5qyWjw4DxOuO/3Hb4866SQh28a1V1d+WA==}
 
+  kruptein@3.0.8:
+    resolution: {integrity: sha512-0CyalFA0Cjp3jnziMp0u1uLZW2/ouhQ0mEMfYlroBXNe86na1RwAuwBcdRAegeWZNMfQy/G5fN47g/Axjtqrfw==}
+    engines: {node: '>8'}
+
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
 
@@ -2364,6 +2395,9 @@ packages:
     resolution: {integrity: sha512-pQjXUcPj7fnUUt1xD23A6j/qdLoacrG7Y0gfbFaquiBeVokd7b1rr7f1yzm/4OQIHIi7PkG+dZR9XuSxff+cMQ==}
     engines: {node: '>=22'}
 
+  minimalistic-assert@1.0.1:
+    resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
+
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
@@ -2386,9 +2420,40 @@ packages:
   mongodb-connection-string-url@2.6.0:
     resolution: {integrity: sha512-WvTZlI9ab0QYtTYnuMLgobULWhokRjtC7db9LtcVfJ+Hsnyr5eo6ZtNAt3Ly24XZScGMelOcGtm7lSn0332tPQ==}
 
+  mongodb-connection-string-url@7.0.2:
+    resolution: {integrity: sha512-ZoS07RoFqpKYQwAk59qmrx8+jJHNHU30UjlU96QktiGn1ltvDr+vCznLX5DiUBLEpMAHatHNWV1nM/74ul66kA==}
+    engines: {node: '>=20.19.0'}
+
   mongodb@4.17.2:
     resolution: {integrity: sha512-mLV7SEiov2LHleRJPMPrK2PMyhXFZt2UQLC4VD4pnth3jMjYKHhtqfwwkkvS/NXuo/Fp3vbhaNcXrIDaLRb9Tg==}
     engines: {node: '>=12.9.0'}
+
+  mongodb@7.5.0:
+    resolution: {integrity: sha512-5FnrEDLnvp6ycUOGLNLLU33BfCx2qmp2mJjGPDwKLruYsVzXVSK5fsGpoDXvsXJwBfBsD7ebMRdawbDxC2814g==}
+    engines: {node: '>=20.19.0'}
+    peerDependencies:
+      '@aws-sdk/credential-providers': ^3.806.0
+      '@mongodb-js/zstd': ^7.0.0
+      gcp-metadata: ^7.0.1
+      kerberos: ^7.0.0
+      mongodb-client-encryption: ^7.2.0
+      snappy: ^7.3.2
+      socks: ^2.8.6
+    peerDependenciesMeta:
+      '@aws-sdk/credential-providers':
+        optional: true
+      '@mongodb-js/zstd':
+        optional: true
+      gcp-metadata:
+        optional: true
+      kerberos:
+        optional: true
+      mongodb-client-encryption:
+        optional: true
+      snappy:
+        optional: true
+      socks:
+        optional: true
 
   mongoose@6.13.9:
     resolution: {integrity: sha512-x8XpK0SEDJtAtMoOF2U9aGrGXN6kbu01TqhznGLnA4B1oPXNb4Lye0MgmfxF9J2Dva7wf49VOgClk2fuKQYGHw==}
@@ -3132,6 +3197,10 @@ packages:
     resolution: {integrity: sha512-l7FvfAHlcmulp8kr+flpQZmVwtu7nfRV7NZujtN0OqES8EL4O4e0qqzL0DC5gAvx/ZC/9lk6rhcUwYvkBnBnYA==}
     engines: {node: '>=12'}
 
+  tr46@5.1.1:
+    resolution: {integrity: sha512-hdF5ZgjTqgAntKkklYw0R03MG2x/bSzTtkxmIRw/sTNV8YXsCJ1tfLAX23lhxhHJlEf3CRCOCGGWw3vI3GaSPw==}
+    engines: {node: '>=18'}
+
   ts-mixer@6.0.4:
     resolution: {integrity: sha512-ufKpbmrugz5Aou4wcr5Wc1UUFWOLhq+Fm6qa6P0w0K5Qw2yhaUoiWszhCVuNQyNwrlGiscHOmqYoAox1PtvgjA==}
 
@@ -3226,11 +3295,12 @@ packages:
 
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
-    deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -3268,6 +3338,10 @@ packages:
   whatwg-url@11.0.0:
     resolution: {integrity: sha512-RKT8HExMpoYx4igMiVMY83lN6UeITKJlBQ+vR/8ZJ8OCdSiN3RwCq+9gH0+Xzj0+5IrM6i4j/6LuvzbZIQgEcQ==}
     engines: {node: '>=12'}
+
+  whatwg-url@14.2.0:
+    resolution: {integrity: sha512-De72GdQZzNTUBBChsXueQUnPKDkg/5A5zp7pFDuQAj5UFoENpiACU0wlCvzpAGnTkj++ihpKwKyYewn/XNUbKw==}
+    engines: {node: '>=18'}
 
   whatwg-url@5.0.0:
     resolution: {integrity: sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==}
@@ -4050,10 +4124,10 @@ snapshots:
   '@img/sharp-win32-x64@0.34.5':
     optional: true
 
-  '@jimp/bmp@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/bmp@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       '@jimp/utils': 0.16.13
       bmp-js: 0.1.0
 
@@ -4063,7 +4137,7 @@ snapshots:
       '@jimp/utils': 0.22.12
       bmp-js: 0.1.0
 
-  '@jimp/core@0.16.13':
+  '@jimp/core@0.16.13(debug@4.4.3)':
     dependencies:
       '@babel/runtime': 7.29.2
       '@jimp/utils': 0.16.13
@@ -4071,7 +4145,7 @@ snapshots:
       buffer: 5.7.1
       exif-parser: 0.1.12
       file-type: 16.5.4
-      load-bmfont: 1.4.2
+      load-bmfont: 1.4.2(debug@4.4.3)
       mkdirp: 0.5.6
       phin: 2.9.3
       pixelmatch: 4.0.2
@@ -4102,10 +4176,10 @@ snapshots:
       file-type: 16.5.4
       mime: 3.0.0
 
-  '@jimp/custom@0.16.13':
+  '@jimp/custom@0.16.13(debug@4.4.3)':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/core': 0.16.13
+      '@jimp/core': 0.16.13(debug@4.4.3)
     transitivePeerDependencies:
       - debug
 
@@ -4117,10 +4191,10 @@ snapshots:
 
   '@jimp/file-ops@1.6.0': {}
 
-  '@jimp/gif@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/gif@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       '@jimp/utils': 0.16.13
       gifwrap: 0.9.4
       omggif: 1.0.10
@@ -4132,10 +4206,10 @@ snapshots:
       gifwrap: 0.10.1
       omggif: 1.0.10
 
-  '@jimp/jpeg@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/jpeg@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       '@jimp/utils': 0.16.13
       jpeg-js: 0.4.4
 
@@ -4228,19 +4302,19 @@ snapshots:
       '@jimp/custom': 0.22.12
       '@jimp/utils': 0.22.12
 
-  '@jimp/plugin-print@0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-blit@0.22.12(@jimp/custom@0.22.12))':
+  '@jimp/plugin-print@0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-blit@0.22.12(@jimp/custom@0.22.12))(debug@4.4.3)':
     dependencies:
       '@jimp/custom': 0.22.12
       '@jimp/plugin-blit': 0.22.12(@jimp/custom@0.22.12)
       '@jimp/utils': 0.22.12
-      load-bmfont: 1.4.2
+      load-bmfont: 1.4.2(debug@4.4.3)
     transitivePeerDependencies:
       - debug
 
-  '@jimp/plugin-resize@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/plugin-resize@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       '@jimp/utils': 0.16.13
 
   '@jimp/plugin-resize@0.22.12(@jimp/custom@0.22.12)':
@@ -4276,7 +4350,7 @@ snapshots:
       '@jimp/plugin-resize': 0.22.12(@jimp/custom@0.22.12)
       '@jimp/utils': 0.22.12
 
-  '@jimp/plugins@0.22.12(@jimp/custom@0.22.12)':
+  '@jimp/plugins@0.22.12(@jimp/custom@0.22.12)(debug@4.4.3)':
     dependencies:
       '@jimp/custom': 0.22.12
       '@jimp/plugin-blit': 0.22.12(@jimp/custom@0.22.12)
@@ -4294,7 +4368,7 @@ snapshots:
       '@jimp/plugin-invert': 0.22.12(@jimp/custom@0.22.12)
       '@jimp/plugin-mask': 0.22.12(@jimp/custom@0.22.12)
       '@jimp/plugin-normalize': 0.22.12(@jimp/custom@0.22.12)
-      '@jimp/plugin-print': 0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-blit@0.22.12(@jimp/custom@0.22.12))
+      '@jimp/plugin-print': 0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-blit@0.22.12(@jimp/custom@0.22.12))(debug@4.4.3)
       '@jimp/plugin-resize': 0.22.12(@jimp/custom@0.22.12)
       '@jimp/plugin-rotate': 0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-blit@0.22.12(@jimp/custom@0.22.12))(@jimp/plugin-crop@0.22.12(@jimp/custom@0.22.12))(@jimp/plugin-resize@0.22.12(@jimp/custom@0.22.12))
       '@jimp/plugin-scale': 0.22.12(@jimp/custom@0.22.12)(@jimp/plugin-resize@0.22.12(@jimp/custom@0.22.12))
@@ -4304,10 +4378,10 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@jimp/png@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/png@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       '@jimp/utils': 0.16.13
       pngjs: 3.4.0
 
@@ -4317,10 +4391,10 @@ snapshots:
       '@jimp/utils': 0.22.12
       pngjs: 6.0.0
 
-  '@jimp/tiff@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/tiff@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/custom': 0.16.13
+      '@jimp/custom': 0.16.13(debug@4.4.3)
       utif: 2.0.1
 
   '@jimp/tiff@0.22.12(@jimp/custom@0.22.12)':
@@ -4328,15 +4402,15 @@ snapshots:
       '@jimp/custom': 0.22.12
       utif2: 4.1.0
 
-  '@jimp/types@0.16.13(@jimp/custom@0.16.13)':
+  '@jimp/types@0.16.13(@jimp/custom@0.16.13(debug@4.4.3))':
     dependencies:
       '@babel/runtime': 7.29.2
-      '@jimp/bmp': 0.16.13(@jimp/custom@0.16.13)
-      '@jimp/custom': 0.16.13
-      '@jimp/gif': 0.16.13(@jimp/custom@0.16.13)
-      '@jimp/jpeg': 0.16.13(@jimp/custom@0.16.13)
-      '@jimp/png': 0.16.13(@jimp/custom@0.16.13)
-      '@jimp/tiff': 0.16.13(@jimp/custom@0.16.13)
+      '@jimp/bmp': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
+      '@jimp/custom': 0.16.13(debug@4.4.3)
+      '@jimp/gif': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
+      '@jimp/jpeg': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
+      '@jimp/png': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
+      '@jimp/tiff': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
       timm: 1.7.1
 
   '@jimp/types@0.22.12(@jimp/custom@0.22.12)':
@@ -4384,6 +4458,10 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@kurkle/color@0.3.4': {}
+
+  '@mongodb-js/saslprep@1.4.13':
+    dependencies:
+      sparse-bitfield: 3.0.3
 
   '@mongodb-js/saslprep@1.4.6':
     dependencies:
@@ -4933,6 +5011,10 @@ snapshots:
 
   '@types/webidl-conversions@7.0.3': {}
 
+  '@types/whatwg-url@13.0.0':
+    dependencies:
+      '@types/webidl-conversions': 7.0.3
+
   '@types/whatwg-url@8.2.2':
     dependencies:
       '@types/node': 25.5.0
@@ -4972,11 +5054,11 @@ snapshots:
     dependencies:
       '@vibrant/image': 3.2.1-alpha.1
 
-  '@vibrant/image-node@3.2.1-alpha.1':
+  '@vibrant/image-node@3.2.1-alpha.1(debug@4.4.3)':
     dependencies:
-      '@jimp/custom': 0.16.13
-      '@jimp/plugin-resize': 0.16.13(@jimp/custom@0.16.13)
-      '@jimp/types': 0.16.13(@jimp/custom@0.16.13)
+      '@jimp/custom': 0.16.13(debug@4.4.3)
+      '@jimp/plugin-resize': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
+      '@jimp/types': 0.16.13(@jimp/custom@0.16.13(debug@4.4.3))
       '@vibrant/image': 3.2.1-alpha.1
     transitivePeerDependencies:
       - debug
@@ -5061,6 +5143,13 @@ snapshots:
 
   array-flatten@1.1.1: {}
 
+  asn1.js@5.4.1:
+    dependencies:
+      bn.js: 4.12.5
+      inherits: 2.0.4
+      minimalistic-assert: 1.0.1
+      safer-buffer: 2.1.2
+
   asn1@0.2.3: {}
 
   asn1@0.2.6:
@@ -5091,7 +5180,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  axios@1.13.6:
+  axios@1.13.6(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
       form-data: 4.0.5
@@ -5158,6 +5247,8 @@ snapshots:
 
   bmp-js@0.1.0: {}
 
+  bn.js@4.12.5: {}
+
   body-parser@1.20.4:
     dependencies:
       bytes: 3.1.2
@@ -5187,6 +5278,8 @@ snapshots:
   bson@4.7.2:
     dependencies:
       buffer: 5.7.1
+
+  bson@7.3.1: {}
 
   buffer-crc32@0.2.13: {}
 
@@ -5231,14 +5324,14 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  canvas@3.2.2:
+  canvas@3.2.3:
     dependencies:
       node-addon-api: 7.1.1
       prebuild-install: 7.1.3
 
   caseless@0.12.0: {}
 
-  centra@2.7.0:
+  centra@2.7.0(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
     transitivePeerDependencies:
@@ -5307,6 +5400,15 @@ snapshots:
   commander@2.20.3: {}
 
   commander@9.5.0: {}
+
+  connect-mongo@6.0.0(express-session@1.19.0)(mongodb@7.5.0(@aws-sdk/credential-providers@3.1014.0)(socks@2.8.7)):
+    dependencies:
+      debug: 4.4.3
+      express-session: 1.19.0
+      kruptein: 3.0.8
+      mongodb: 7.5.0(@aws-sdk/credential-providers@3.1014.0)(socks@2.8.7)
+    transitivePeerDependencies:
+      - supports-color
 
   content-disposition@0.5.4:
     dependencies:
@@ -6006,10 +6108,10 @@ snapshots:
 
   isstream@0.1.2: {}
 
-  jimp@0.22.12:
+  jimp@0.22.12(debug@4.4.3):
     dependencies:
       '@jimp/custom': 0.22.12
-      '@jimp/plugins': 0.22.12(@jimp/custom@0.22.12)
+      '@jimp/plugins': 0.22.12(@jimp/custom@0.22.12)(debug@4.4.3)
       '@jimp/types': 0.22.12(@jimp/custom@0.22.12)
       regenerator-runtime: 0.13.11
     transitivePeerDependencies:
@@ -6071,18 +6173,22 @@ snapshots:
 
   keypress@0.1.0: {}
 
+  kruptein@3.0.8:
+    dependencies:
+      asn1.js: 5.4.1
+
   lines-and-columns@1.2.4: {}
 
   list@2.0.19: {}
 
-  load-bmfont@1.4.2:
+  load-bmfont@1.4.2(debug@4.4.3):
     dependencies:
       buffer-equal: 0.0.1
       mime: 1.6.0
       parse-bmfont-ascii: 1.0.6
       parse-bmfont-binary: 1.0.6
       parse-bmfont-xml: 1.1.6
-      phin: 3.7.1
+      phin: 3.7.1(debug@4.4.3)
       xhr: 2.6.0
       xtend: 4.0.2
     transitivePeerDependencies:
@@ -6138,8 +6244,7 @@ snapshots:
 
   media-typer@0.3.0: {}
 
-  memory-pager@1.5.0:
-    optional: true
+  memory-pager@1.5.0: {}
 
   merge-descriptors@1.0.3: {}
 
@@ -6195,7 +6300,7 @@ snapshots:
       minecraft-data: 3.105.0
       minecraft-protocol: 1.64.0
       prismarine-biome: 1.3.0(minecraft-data@3.105.0)(prismarine-registry@1.11.0)
-      prismarine-block: 1.22.0
+      prismarine-block: 1.22.0(prismarine-registry@1.11.0)
       prismarine-chat: 1.12.0
       prismarine-chunk: 1.39.0(minecraft-data@3.105.0)
       prismarine-entity: 2.5.0
@@ -6213,6 +6318,8 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  minimalistic-assert@1.0.1: {}
 
   minimist@1.2.8: {}
 
@@ -6235,6 +6342,11 @@ snapshots:
       '@types/whatwg-url': 8.2.2
       whatwg-url: 11.0.0
 
+  mongodb-connection-string-url@7.0.2:
+    dependencies:
+      '@types/whatwg-url': 13.0.0
+      whatwg-url: 14.2.0
+
   mongodb@4.17.2:
     dependencies:
       bson: 4.7.2
@@ -6245,6 +6357,15 @@ snapshots:
       '@mongodb-js/saslprep': 1.4.6
     transitivePeerDependencies:
       - aws-crt
+
+  mongodb@7.5.0(@aws-sdk/credential-providers@3.1014.0)(socks@2.8.7):
+    dependencies:
+      '@mongodb-js/saslprep': 1.4.13
+      bson: 7.3.1
+      mongodb-connection-string-url: 7.0.2
+    optionalDependencies:
+      '@aws-sdk/credential-providers': 3.1014.0
+      socks: 2.8.7
 
   mongoose@6.13.9:
     dependencies:
@@ -6330,13 +6451,13 @@ snapshots:
     dependencies:
       asn1: 0.2.3
 
-  node-vibrant@3.2.1-alpha.1:
+  node-vibrant@3.2.1-alpha.1(debug@4.4.3):
     dependencies:
       '@types/node': 10.17.60
       '@vibrant/core': 3.2.1-alpha.1
       '@vibrant/generator-default': 3.2.1-alpha.1
       '@vibrant/image-browser': 3.2.1-alpha.1
-      '@vibrant/image-node': 3.2.1-alpha.1
+      '@vibrant/image-node': 3.2.1-alpha.1(debug@4.4.3)
       '@vibrant/quantizer-mmcq': 3.2.1-alpha.1
       url: 0.11.4
     transitivePeerDependencies:
@@ -6473,9 +6594,9 @@ snapshots:
 
   phin@2.9.3: {}
 
-  phin@3.7.1:
+  phin@3.7.1(debug@4.4.3):
     dependencies:
-      centra: 2.7.0
+      centra: 2.7.0(debug@4.4.3)
     transitivePeerDependencies:
       - debug
 
@@ -6535,7 +6656,7 @@ snapshots:
       minecraft-data: 3.105.0
       prismarine-registry: 1.11.0
 
-  prismarine-block@1.22.0:
+  prismarine-block@1.22.0(prismarine-registry@1.11.0):
     dependencies:
       minecraft-data: 3.105.0
       prismarine-biome: 1.3.0(minecraft-data@3.105.0)(prismarine-registry@1.11.0)
@@ -6543,6 +6664,8 @@ snapshots:
       prismarine-item: 1.17.0
       prismarine-nbt: 2.8.0
       prismarine-registry: 1.11.0
+    transitivePeerDependencies:
+      - prismarine-registry
 
   prismarine-chat@1.12.0:
     dependencies:
@@ -6553,7 +6676,7 @@ snapshots:
   prismarine-chunk@1.39.0(minecraft-data@3.105.0):
     dependencies:
       prismarine-biome: 1.3.0(minecraft-data@3.105.0)(prismarine-registry@1.11.0)
-      prismarine-block: 1.22.0
+      prismarine-block: 1.22.0(prismarine-registry@1.11.0)
       prismarine-nbt: 2.8.0
       prismarine-registry: 1.11.0
       smart-buffer: 4.2.0
@@ -6600,7 +6723,7 @@ snapshots:
   prismarine-registry@1.11.0:
     dependencies:
       minecraft-data: 3.105.0
-      prismarine-block: 1.22.0
+      prismarine-block: 1.22.0(prismarine-registry@1.11.0)
       prismarine-nbt: 2.8.0
 
   prismarine-windows@2.9.0:
@@ -6971,7 +7094,6 @@ snapshots:
   sparse-bitfield@3.0.3:
     dependencies:
       memory-pager: 1.5.0
-    optional: true
 
   sshpk@1.18.0:
     dependencies:
@@ -7106,6 +7228,10 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
+  tr46@5.1.1:
+    dependencies:
+      punycode: 2.3.1
+
   ts-mixer@6.0.4: {}
 
   tslib@2.8.1: {}
@@ -7228,6 +7354,11 @@ snapshots:
   whatwg-url@11.0.0:
     dependencies:
       tr46: 3.0.0
+      webidl-conversions: 7.0.0
+
+  whatwg-url@14.2.0:
+    dependencies:
+      tr46: 5.1.1
       webidl-conversions: 7.0.0
 
   whatwg-url@5.0.0:

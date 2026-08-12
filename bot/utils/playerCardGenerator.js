@@ -13,51 +13,89 @@ if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
  * جلب بيانات اللاعب من API السيرفر (Lobby) أو Mojang كخيار بديل
  */
 async function getPlayerData(ign, serverConfig = null) {
+    let data = {
+        ign: ign,
+        uuid: null,
+        isOnline: false,
+        isBanned: false,
+        customApi: false,
+        endpointOffline: false,
+        notFound: false,
+        neverJoinedServer: false,
+        isCracked: true,
+        firstPlayed: 0,
+        lastPlayed: 0,
+        endpointData: null,
+        skinUrl: `https://skins.mcstats.com/bust/${ign}`
+    };
+
     try {
+        // خيار أساسي: جلب البيانات الأساسية من Mojang للتأكد من حالة الحساب (أصلي/مكركة)
+        try {
+            const uuidResponse = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`, { timeout: 4000 });
+            if (uuidResponse.data && uuidResponse.data.id) {
+                data.uuid = uuidResponse.data.id;
+                data.ign = uuidResponse.data.name; 
+                data.isCracked = false; // حساب موجود في Mojang = أصلي
+                data.skinUrl = `https://skins.mcstats.com/bust/${data.ign}`;
+            }
+        } catch (mojangError) {
+            // تجاهل الخطأ، إذا فشل يعني الحساب غالباً مكركة
+        }
+
         // إذا كان السيرفر يحتوي على إعدادات الـ API (Token + Port)
         if (serverConfig && serverConfig.apiToken) {
             const serverIP = serverConfig.javaIP || serverConfig.bedrockIP;
-            const apiPort = serverConfig.apiPort || 8080; // المنفذ الثاني (Second Port)
+            const apiPort = serverConfig.apiPort || 8080;
             const protocol = "http"; 
             
             try {
+                // التأكد من وجود كلمة Bearer قبل التوكن لأن Postman يضيفها تلقائياً
+                const authHeader = serverConfig.apiToken.startsWith('Bearer ') 
+                    ? serverConfig.apiToken 
+                    : `Bearer ${serverConfig.apiToken}`;
+
                 // جلب معلومات اللاعب من Lobby السيرفر
                 const response = await axios.get(`${protocol}://${serverIP}:${apiPort}/player/${ign}`, {
-                    headers: { 'Authorization': serverConfig.apiToken },
+                    headers: { 
+                        'Authorization': authHeader,
+                        'X-Premium-Key': serverConfig.premiumKey || '' 
+                    },
                     timeout: 5000
                 });
 
                 if (response.data && response.data.success) {
-                    const data = response.data;
-                    return {
-                        uuid: data.uuid || null,
-                        ign: data.username || ign,
-                        isOnline: data.isOnline,
-                        balance: data.balance,
-                        level: data.level,
-                        isBanned: data.isBanned,
-                        customApi: true,
-                        skinUrl: data.uuid ? `https://visage.surgeplay.com/bust/512/${ign}` : null
-                    };
+                    const serverData = response.data;
+                    data.customApi = true;
+                    data.isOnline = serverData.isOnline;
+                    data.isBanned = serverData.isBanned;
+                    data.firstPlayed = serverData.firstPlayed || 0;
+                    data.lastPlayed = serverData.lastPlayed || 0;
+                    data.endpointData = serverData;
+                    
+                    // فحص ما إذا كان اللاعب لم يدخل السيرفر من قبل
+                    if (data.firstPlayed === 0 && data.lastPlayed === 0) {
+                        data.neverJoinedServer = true;
+                    }
+                    
+                    if (!data.uuid && serverData.uuid) {
+                        data.uuid = serverData.uuid;
+                    }
+                } else if (response.data && !response.data.success) {
+                    // اللاعب غير موجود في قاعدة البيانات
+                    data.customApi = true;
+                    data.notFound = true;
                 }
             } catch (apiError) {
                 console.warn(`Custom API failed for ${ign}:`, apiError.message);
+                data.endpointOffline = true;
             }
         }
 
-        // خيار بديل: جلب البيانات الأساسية من Mojang
-        const uuidResponse = await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`, { timeout: 5000 });
-        const uuid = uuidResponse.data.id;
-
-        return {
-            uuid,
-            ign: uuidResponse.data.name,
-            customApi: false,
-            skinUrl: `https://visage.surgeplay.com/bust/512/${uuid}`
-        };
+        return data;
     } catch (error) {
         console.error('Error fetching player data:', error.message);
-        return null;
+        return data;
     }
 }
 
@@ -86,14 +124,13 @@ async function loadFirstAvailableImage(urls) {
  * يبني قائمة روابط بديلة (Bust APIs) لنفس اللاعب بالترتيب
  */
 function buildSkinCandidates(playerData) {
-    const id = playerData.uuid || playerData.ign; // اليوزر نيم بيشتغل مع كل الـ APIs دي برضو
     const candidates = [];
     if (playerData.skinUrl) candidates.push(playerData.skinUrl);
-    candidates.push(`https://visage.surgeplay.com/bust/512/${id}`);
+    candidates.push(`https://skins.mcstats.com/bust/${playerData.ign}`);
     candidates.push(`https://visage.surgeplay.com/bust/512/${playerData.ign}`);
     candidates.push(`https://minotar.net/armor/bust/${playerData.ign}/512.png`);
     candidates.push(`https://mc-heads.net/body/${playerData.ign}/512`);
-    candidates.push(`https://visage.surgeplay.com/bust/512/MHF_Steve`); // fallback أخير مضمون يشتغل
+    candidates.push(`https://skins.mcstats.com/bust/Steve`); // fallback أخير مضمون يشتغل
     return candidates;
 }
 
@@ -387,16 +424,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     const ctx = canvas.getContext('2d');
 
     const playerData = await getPlayerData(ign, serverConfig);
-    if (!playerData) {
-        ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 40px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('اللاعب غير موجود', width / 2, height / 2);
-        return canvas.toBuffer();
-    }
-
+    
     // 1. الخلفية (Background)
     try {
         const bgUrl = serverConfig?.wallpaper || "https://i.ibb.co/TBVZycXV/2.png";
@@ -479,62 +507,152 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     ctx.shadowColor = 'rgba(212, 175, 55, 0.6)';
     ctx.shadowBlur = 15;
     ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 75px Arial';
+    
+    let fontSize = 75;
+    ctx.font = `bold ${fontSize}px Arial`;
+    let textWidth = ctx.measureText(playerData.ign).width;
+    
+    // تصغير الخط إذا كان الاسم طويلاً لكي لا يخرج من البطاقة (المساحة المتاحة حوالي 440 بكسل)
+    while (textWidth > 440 && fontSize > 30) {
+        fontSize -= 2;
+        ctx.font = `bold ${fontSize}px Arial`;
+        textWidth = ctx.measureText(playerData.ign).width;
+    }
+    
     ctx.fillText(playerData.ign, infoX, 140);
     ctx.restore();
 
     // حالة الاتصال (Status Badge)
-    const statusText = playerData.customApi ? (playerData.isOnline ? "ONLINE" : "OFFLINE") : "VERIFIED";
-    const statusColor = (playerData.customApi && !playerData.isOnline) ? "#FF4B2B" : "#00F260";
+    let statusText, statusColor, statusBgColor;
     
-    ctx.fillStyle = statusColor;
+    if (playerData.endpointOffline) {
+        statusText = "API OFFLINE";
+        statusColor = "#FFFFFF";
+        statusBgColor = "#FFA500"; // برتقالي
+    } else if (playerData.isBanned) {
+        statusText = "BANNED";
+        statusColor = "#FFFFFF";
+        statusBgColor = "#8B0000"; // أحمر غامق
+    } else if (playerData.notFound || playerData.neverJoinedServer) {
+        statusText = "NEVER JOINED";
+        statusColor = "#FFFFFF";
+        statusBgColor = "#808080"; // رمادي
+    } else {
+        if (playerData.isOnline) {
+            statusText = "ONLINE";
+            statusColor = "#000000";
+            statusBgColor = "#00F260";
+        } else {
+            statusText = "OFFLINE";
+            statusColor = "#FFFFFF";
+            statusBgColor = "#FF6B6B";
+        }
+    }
+    
+    ctx.fillStyle = statusBgColor;
     ctx.beginPath();
-    ctx.roundRect(infoX, 165, 140, 38, 12);
+    ctx.roundRect(infoX, 165, 150, 38, 12);
     ctx.fill();
     
-    ctx.fillStyle = '#000000';
-    ctx.font = 'bold 22px Arial';
+    ctx.fillStyle = statusColor;
+    ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(statusText, infoX + 70, 193);
+    ctx.fillText(statusText, infoX + 75, 192);
+    ctx.textAlign = 'left';
+
+    // Badge نوع الحساب (Microsoft / Cracked)
+    let accountTypeText, accountTypeColor, accountTypeBgColor;
+    
+    if (playerData.isCracked) {
+        accountTypeText = "CRACKED";
+        accountTypeColor = "#FFFFFF";
+        accountTypeBgColor = "#9C27B0"; // بنفسجي
+    } else {
+        accountTypeText = "MICROSOFT";
+        accountTypeColor = "#000000";
+        accountTypeBgColor = "#1E90FF"; // أزرق
+    }
+    
+    ctx.fillStyle = accountTypeBgColor;
+    ctx.beginPath();
+    ctx.roundRect(infoX + 170, 165, 150, 38, 12);
+    ctx.fill();
+    
+    ctx.fillStyle = accountTypeColor;
+    ctx.font = 'bold 20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(accountTypeText, infoX + 245, 192);
     ctx.textAlign = 'left';
 
     // 5. شبكة الإحصائيات (Stats Grid)
-    const statsY = 222; // رفعنا الفريمات لفوق شوية
-    const rowGap = 80;  // مسافة أقصر بين الفريمات
-    const stats = [
-        { label: "Level", value: playerData.level !== undefined ? `[${playerData.level}★]` : "N/A", icon: "star", color: "#00E5FF" },
-        { label: "Balance", value: playerData.balance !== undefined ? `$${playerData.balance.toLocaleString()}` : "N/A", icon: "coin", color: "#FFC107" },
-        { label: "Server", value: serverConfig?.serverName || "Lobby", icon: "globe", color: "#A18CD1" }
-    ];
+    const statsY = 230;
+    const rowGap = 75;
 
-    stats.forEach((stat, i) => {
-        const y = statsY + (i * rowGap);
-
-        // صندوق الإحصائية
+    function drawStatBox(label, value, icon, color, index) {
+        const y = statsY + (index * rowGap);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
         ctx.beginPath();
-        ctx.roundRect(infoX, y, 420, 70, 18);
+        ctx.roundRect(infoX, y, 420, 65, 18);
         ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.stroke();
 
-        // الأيقونة (مرسومة، مش إيموجي نص)
-        const iconCx = infoX + 42;
-        const iconCy = y + 35;
-        drawStatIcon(ctx, stat.icon, iconCx, iconCy, 16, stat.color);
-
-        // العنوان
-        ctx.font = '24px Arial';
+        drawStatIcon(ctx, icon, infoX + 42, y + 32, 16, color);
+        
+        ctx.font = '22px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillText(stat.label, infoX + 70, y + 43);
+        ctx.fillText(label, infoX + 70, y + 41);
 
-        // القيمة
-        ctx.font = 'bold 30px Arial';
-        ctx.fillStyle = stat.color;
+        // تقليل حجم الخط إذا كان النص طويلاً لمنع التداخل
+        if (value.length > 18) {
+            ctx.font = 'bold 18px Arial';
+        } else if (value.length > 14) {
+            ctx.font = 'bold 20px Arial';
+        } else if (value.length > 10) {
+            ctx.font = 'bold 22px Arial';
+        } else {
+            ctx.font = 'bold 24px Arial';
+        }
+        
+        ctx.fillStyle = color;
         ctx.textAlign = 'right';
-        ctx.fillText(stat.value, infoX + 400, y + 45);
+        ctx.fillText(value, infoX + 400, y + 42);
         ctx.textAlign = 'left';
-    });
+    }
+
+    if (!playerData.endpointOffline && !playerData.notFound && !playerData.neverJoinedServer) {
+        const formatDate = (timestamp) => {
+            if (!timestamp || timestamp === 0) return "Unknown";
+            const d = new Date(timestamp);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            let hours = d.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            
+            return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+        };
+
+        const stats = [
+            { label: "First Played", value: formatDate(playerData.firstPlayed), icon: "star", color: "#FFD700" },
+            { label: "Last Played", value: formatDate(playerData.lastPlayed), icon: "star", color: "#00F260" }
+        ];
+
+        if (playerData.isOnline) {
+            stats.push({ label: "Ping", value: `${playerData.endpointData?.ping || 0} ms`, icon: "globe", color: "#A18CD1" });
+        } else {
+            stats.push({ label: "Server", value: serverConfig?.serverName || "Lobby", icon: "globe", color: "#A18CD1" });
+        }
+
+        stats.forEach((stat, i) => drawStatBox(stat.label, stat.value, stat.icon, stat.color, i));
+    } else if (playerData.endpointOffline) {
+        drawStatBox("Server API", "OFFLINE", "globe", "#FFA500", 0);
+    } else {
+        drawStatBox("Server Data", "NO DATA", "star", "#808080", 0);
+    }
 
     // 6. التذييل (Footer)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';

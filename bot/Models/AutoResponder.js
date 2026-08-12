@@ -18,6 +18,7 @@ module.exports = model(
         replyType: {
         type: String,
           required: true,
+          default: 'text',
     },
         allowedRoles: {
         type: [String],

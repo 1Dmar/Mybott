@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modules - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
+        </div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
+            </div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <a href="/servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Modules</span>
+        </div>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-grid-alt'></i></div>
+            <div>
+                <h1 class="page-title">Modules</h1>
+                <p class="page-subtitle">Enable or disable bot features for your server.</p>
+            </div>
+        </div>
+
+        <div class="modules-grid" id="modulesGrid">
+            <!-- Dynamically populated -->
+        </div>
+    </main>
+
+    <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+            loadData();
+        });
+
+        async function loadData() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/modules`);
+                const data = await res.json();
+                if (data.success && data.modules) {
+                    renderModules(data.modules);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderModules(modules) {
+            const grid = document.getElementById('modulesGrid');
+            const configs = [
+                { key: 'autoResponder', title: 'Auto Responder', desc: 'Automatically reply to common phrases.', icon: 'bx-message-square-dots' },
+                { key: 'welcomeMessages', title: 'Welcome Messages', desc: 'Greet new members when they join.', icon: 'bx-user-plus' },
+                { key: 'moderation', title: 'Moderation', desc: 'Keep your server safe with automod.', icon: 'bx-shield-quarter' },
+                { key: 'logs', title: 'Server Logs', desc: 'Log server events securely.', icon: 'bx-book-content' },
+                { key: 'tickets', title: 'Tickets', desc: 'Support ticket system for users.', icon: 'bx-support' },
+                { key: 'serverStatus', title: 'Server Status', desc: 'Show Minecraft server status.', icon: 'bx-server' }
+            ];
+
+            grid.innerHTML = '';
+            configs.forEach(conf => {
+                const isEnabled = modules[conf.key];
+                
+                const card = document.createElement('div');
+                card.className = `module-card ${isEnabled ? 'active' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="module-card-icon">
+                        <i class='bx ${conf.icon}'></i>
+                    </div>
+                    <div class="module-card-body">
+                        <div class="module-card-title">${conf.title}</div>
+                        <div class="module-card-desc">${conf.desc}</div>
+                        <div class="module-card-toggle">
+                            <label class="module-switch">
+                                <input type="checkbox" id="mod_${conf.key}" ${isEnabled ? 'checked' : ''} onchange="toggleModule('${conf.key}', this.checked)">
+                                <span class="module-switch-slider"></span>
+                            </label>
+                            <span id="status_${conf.key}" class="${isEnabled ? 'on' : ''}">${isEnabled ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function toggleModule(key, state) {
+            // Optimistic update of UI
+            const card = document.getElementById(`mod_${key}`).closest('.module-card');
+            const statusText = document.getElementById(`status_${key}`);
+            if (state) {
+                card.classList.add('active');
+                statusText.classList.add('on');
+                statusText.textContent = 'Enabled';
+            } else {
+                card.classList.remove('active');
+                statusText.classList.remove('on');
+                statusText.textContent = 'Disabled';
+            }
+
+            // Make request
+            try {
+                // Get current state
+                const res = await fetch(`/api/server/${guildId}/modules`);
+                const data = await res.json();
+                const updatedModules = { ...data.modules, [key]: state };
+
+                const postRes = await fetch(`/api/server/${guildId}/modules`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedModules)
+                });
+                
+                if (!postRes.ok) throw new Error('Save failed');
+            } catch (err) {
+                console.error('Failed to save module', err);
+                Swal.fire('Error', 'Failed to save settings', 'error');
+                // Revert
+                loadData();
+            }
+        }
+    </script>
+</body>
+</html>

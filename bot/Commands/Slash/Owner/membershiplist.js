@@ -3,7 +3,11 @@ const moment = require("moment");
 
 module.exports = {
   name: "mslist",
+<<<<<<< HEAD
   description: "Show all Premium servers",
+=======
+  description: "Show all premium servers",
+>>>>>>> copilot/update-bot-design-and-translation-system
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",

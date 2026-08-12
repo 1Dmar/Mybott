@@ -20,7 +20,7 @@ module.exports = {
       });
 
       if (!codes.length) {
-        return interaction.reply("No unused codes available.", { ephemeral: true });
+        return interaction.reply("No unused premium codes available.", { ephemeral: true });
       }
 
       const codeList = codes.map((code, index) => {
@@ -45,7 +45,7 @@ module.exports = {
         embeds: [
           new EmbedBuilder()
             .setColor("Blurple")
-            .setTitle(`Available Unused Codes`)
+            .setTitle(`Available Unused Premium Codes`)
             .setDescription(`${codeList}`)
             .setFooter({ text: `To redeem, use !claim <code>` }),
         ],

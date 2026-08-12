@@ -5,6 +5,15 @@ const {
 } = require("discord.js");
 const GuildSettings = require("../../../Models/GuildSettings");
 
+const formatEmoji = (emoji) => {
+    if (!emoji) return "";
+    if (typeof emoji === 'string') return emoji;
+    if (emoji.id) {
+        return `<${emoji.animated ? "a" : ""}:emoji:${emoji.id}>`;
+    }
+    return "";
+};
+
 module.exports = {
     name: "automod-whitelist",
     description: "Manage whitelist (roles/channels/users)",
@@ -20,9 +29,9 @@ module.exports = {
             type: 3, // STRING
             required: true,
             choices: [
-                { name: `${client.emojis.USER} User`, value: "user" },
-                { name: `${client.emojis.TAG} Role`, value: "role" },
-                { name: `${client.emojis.TV} Channel`, value: "channel" }
+                { name: "👤 User", value: "user" },
+                { name: "🏷️ Role", value: "role" },
+                { name: "📺 Channel", value: "channel" }
             ]
         },
         {
@@ -50,7 +59,7 @@ module.exports = {
             let targetId, targetName;
 
             if (type === "channel") {
-                if (!channel) return interaction.reply({ content: `${client.emojis.ERROR} Please specify a channel.`, ephemeral: true });
+                if (!channel) return interaction.reply({ content: `${formatEmoji(client.emojis.ERROR)} Please specify a channel.`, ephemeral: true });
                 targetId = channel.id;
                 targetName = channel.name;
                 
@@ -58,14 +67,14 @@ module.exports = {
                 if (index > -1) {
                     settings.whitelist.channels.splice(index, 1);
                     await settings.save();
-                    return interaction.reply(`${client.emojis.SUCCESS} Removed channel **${targetName}** from whitelist.`);
+                    return interaction.reply(`${formatEmoji(client.emojis.SUCCESS)} Removed channel **${targetName}** from whitelist.`);
                 } else {
                     settings.whitelist.channels.push(targetId);
                     await settings.save();
-                    return interaction.reply(`${client.emojis.SUCCESS} Added channel **${targetName}** to whitelist.`);
+                    return interaction.reply(`${formatEmoji(client.emojis.SUCCESS)} Added channel **${targetName}** to whitelist.`);
                 }
             } else {
-                if (!target) return interaction.reply({ content: `${client.emojis.ERROR} Please specify a target.`, ephemeral: true });
+                if (!target) return interaction.reply({ content: `${formatEmoji(client.emojis.ERROR)} Please specify a target.`, ephemeral: true });
                 targetId = target.id;
                 targetName = target.name || target.user?.tag;
 
@@ -75,18 +84,18 @@ module.exports = {
                 if (index > -1) {
                     settings.whitelist[listType].splice(index, 1);
                     await settings.save();
-                    return interaction.reply(`${client.emojis.SUCCESS} Removed **${targetName}** from whitelist.`);
+                    return interaction.reply(`${formatEmoji(client.emojis.SUCCESS)} Removed **${targetName}** from whitelist.`);
                 } else {
                     settings.whitelist[listType].push(targetId);
                     await settings.save();
-                    return interaction.reply(`${client.emojis.SUCCESS} Added **${targetName}** to whitelist.`);
+                    return interaction.reply(`${formatEmoji(client.emojis.SUCCESS)} Added **${targetName}** to whitelist.`);
                 }
             }
 
         } catch (error) {
             console.error(error);
             await interaction.reply({
-                content: `${client.emojis.ERROR} An error occurred while updating whitelist.`,
+                content: `${formatEmoji(client.emojis.ERROR)} An error occurred while updating whitelist.`,
                 ephemeral: true
             });
         }

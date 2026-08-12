@@ -1,5 +1,6 @@
 const { AttachmentBuilder } = require('discord.js');
 const axios = require('axios');
+const PlayerHistory = require('../Models/PlayerHistory');
 const path = require('path');
 const fs = require('fs');
 const { createCanvas, loadImage, registerFont } = require('canvas');
@@ -210,6 +211,19 @@ module.exports.updateServerStatus = async (client, server, settings) => {
             server.serverType === 'java' ? server.javaPort : server.bedrockPort,
             server.serverType
         );
+
+        // تسجيل الإحصائيات في قاعدة البيانات لآخر 48 ساعة
+        if (status.success && status.data && typeof status.data.players?.online === 'number') {
+            try {
+                await PlayerHistory.create({
+                    serverId: server.serverId,
+                    onlinePlayers: status.data.players.online,
+                    timestamp: new Date()
+                });
+            } catch (err) {
+                console.error(`Failed to save player history for ${server.serverId}:`, err.message);
+            }
+        }
 
         const imageBuffer = await generateStatusImage(server, status.data);
         const attachment = new AttachmentBuilder(imageBuffer, { name: 'status.png' });

@@ -1,609 +1,956 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ProMcBot — Link your Discord and Minecraft servers seamlessly. Manage, automate and control with ease.">
+  <title>ProMcBot — Discord & Minecraft Integration</title>
 
-  <title>ProMcBot</title>
+  <!-- Boxicons -->
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <!-- Shared Design System -->
+  <link rel="stylesheet" href="/shared.css">
 
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-<!-- TrustBox script -->
-
-<script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>
-
-<!-- End TrustBox script -->
   <style>
-
-    /* ==== Global & Glassmorphism ==== */
-
+    /* ── Landing Page Refined Styles ── */
     body {
-
-      margin:0;
-
-      font-family: 'Inter', sans-serif;
-
-      background: #f0f2f5;
-
-      color: #333;
-
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    .glass {
+    /* ── Landing Navbar ── */
+    .landing-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 72px;
+      background: rgba(var(--surface-rgb, 255, 255, 255), 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .dark .landing-nav {
+      background: rgba(18, 20, 24, 0.85);
+    }
 
-      background: rgba(255,255,255,0.4);
+    .landing-nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+    }
 
-      backdrop-filter: blur(16px);
-
+    .landing-nav .logo img {
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
-
-      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-
+      object-fit: cover;
+      box-shadow: 0 4px 14px rgba(255, 107, 0, 0.3);
     }
 
-    a { text-decoration:none; color: inherit; }
-
-    /* ==== Header ==== */
-
-    header {
-
-      position: sticky; top:0; z-index:100;
-
-      display: flex; align-items:center; justify-content:space-between;
-
-      padding: 1rem 2rem;
-
+    .landing-nav .logo span {
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    nav a { margin: 0 1rem; font-weight:500; }
-
-    #lang-select {
-
-      background: rgba(255,255,255,0.6);
-
-      border: none; padding: 0.4rem; border-radius: 6px;
-
-      font-size: 0.9rem;
-
+    .landing-nav nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
-    /* ==== Hero ==== */
+    .landing-nav nav a {
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      transition: var(--transition-fast);
+      text-decoration: none;
+    }
 
+    .landing-nav nav a:hover {
+      color: #FF512F;
+      background: rgba(255, 81, 47, 0.08);
+    }
+
+    .theme-toggle {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 81, 47, 0.08);
+      color: #FF512F;
+      border-color: rgba(255, 81, 47, 0.3);
+    }
+
+    /* Navbar User Dropdown on Home Page */
+    .landing-nav .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .landing-nav .user-avatar-nav {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid #FF512F;
+      transition: transform 0.2s ease;
+    }
+    .landing-nav .user-avatar-nav:hover {
+      transform: scale(1.05);
+    }
+    .landing-nav .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 50px;
+      background: var(--surface);
+      min-width: 200px;
+      box-shadow: var(--shadow-xl);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      z-index: 1000;
+      overflow: hidden;
+      animation: fadeInUp 0.2s ease-out;
+    }
+    .landing-nav .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .landing-nav .dropdown-header {
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .landing-nav .dropdown-content a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .landing-nav .dropdown-content a:hover {
+      background: rgba(255, 81, 47, 0.08);
+      color: #FF512F;
+    }
+
+    /* ── Hero Section ── */
     .hero {
-
-      text-align: center; padding: 4rem 1rem;
-
-    }
-
-    .badge {
-
-      display: inline-flex;
-
-      align-items:center;
-
-      padding: .25rem .75rem;
-
-      border-radius: 999px;
-
-      font-size: .85rem;
-
-      box-shadow: 0 4px 16px rgba(0,0,0,.08);
-
-      backdrop-filter: blur(12px);
-
-      margin-bottom: 1rem;
-
-    }
-
-    .badge .dot { 
-
-      width: .6rem; height: .6rem; border-radius:50%;
-
-      background: #22c55e; margin-right:.5rem;
-
-    }
-
-    h1 { font-size: 2.5rem; line-height:1.2; margin: .5rem 0; }
-
-    .highlight { color: #635bff; }
-
-    .hero p { color: #555; font-size:1.1rem; max-width:600px; margin: .5rem auto 2rem; }
-
-    .btn {
-
-      display:inline-block;
-
-      padding: .9rem 2rem;
-
-      border:none;
-
-      border-radius:8px;
-
-      font-size:1rem;
-
-      font-weight:600;
-
-      cursor:pointer;
-
-      transition:transform .2s;
-
-    }
-      
-       .btn1 {
-     /* display:inline-block;*/
-    padding: .2rem 0.25rem;
-      border:none;
-      border-radius:5px;
-    /*  font-size:1rem;*/
-   /*   font-weight:600;*/
-      cursor:pointer;
-      transition:transform .2s;
-
-    }
-
-    .btn-primary {
-
-      background: rgba(99,91,255,0.85);
-
-      color:#fff;
-
-      backdrop-filter: blur(12px);
-
-    }
-
-    .btn-primary:hover { transform:scale(1.03) }
-
-    /* ==== Best Server of the Month Card ==== */
-
-    .monthly-card {
-
-      margin: 2rem auto 0;
-
-      padding: 1.75rem;
-
-      max-width: 340px;
-
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-
+      padding: 90px 20px 70px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .monthly-card h3 {
-
-      margin-bottom: 0.75rem;
-
-      font-size: 1.3rem;
-
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255, 81, 47, 0.12) 0%, transparent 70%);
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 0;
+      pointer-events: none;
+      border-radius: 50%;
     }
 
-    .monthly-card p {
-
-      font-size: 1rem;
-
-      color: #555;
-
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 850px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* ==== FAQ ==== */
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+      animation: fadeInUp 0.6s ease-out;
+    }
 
-    #faq { max-width: 700px; margin:3rem auto; padding:0 1rem; }
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 10px #10B981;
+      animation: pulse 2s infinite;
+    }
 
-    .faq-item { margin-bottom:1rem; }
+    .hero-badge strong {
+      color: #FF512F;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5.5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 620px;
+      line-height: 1.75;
+      margin-bottom: 40px;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+
+    .hero-actions .btn-primary {
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      border: none;
+      color: white;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 25px rgba(255, 81, 47, 0.4);
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .hero-actions .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(255, 81, 47, 0.55);
+    }
+
+    .hero-actions .btn-secondary {
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 700;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-lg);
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .hero-actions .btn-secondary:hover {
+      background: rgba(255, 81, 47, 0.08);
+      border-color: rgba(255, 81, 47, 0.3);
+      color: #FF512F;
+      transform: translateY(-3px);
+    }
+
+    /* Hero Mockup Showcase */
+    .hero-showcase {
+      margin-top: 60px;
+      width: 100%;
+      max-width: 900px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-xl);
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: left;
+    }
+
+    .showcase-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .showcase-item .s-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .showcase-item .s-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      flex-wrap: wrap;
+      padding: 36px 20px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 80px;
+    }
+
+    .stat-block {
+      text-align: center;
+    }
+
+    .stat-block .num {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: block;
+    }
+
+    .stat-block .lbl {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    /* ── Features Section ── */
+    .features-section {
+      max-width: 1200px;
+      margin: 0 auto 90px;
+      padding: 0 24px;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .section-header h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      max-width: 580px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 28px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      padding: 36px 30px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .feature-card:hover {
+      box-shadow: var(--shadow-xl);
+      transform: translateY(-6px);
+      border-color: rgba(255, 81, 47, 0.4);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin-bottom: 22px;
+      background: rgba(255, 81, 47, 0.1);
+      color: #FF512F;
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+
+    /* ── FAQ Section (Restored Original Questions) ── */
+    .faq-section {
+      max-width: 700px;
+      margin: 0 auto 80px;
+      padding: 0 20px;
+    }
+
+    .faq-item {
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--surface);
+    }
 
     .faq-q {
-
-      cursor:pointer;
-
-      padding:1rem;
-
-      border:1px solid rgba(0,0,0,0.1);
-
-      border-radius:8px;
-
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: var(--transition-fast);
+      user-select: none;
     }
 
-    .faq-q:hover { background: rgba(0,0,0,0.03) }
+    .faq-q:hover {
+      background: rgba(255, 81, 47, 0.08);
+      color: #FF512F;
+    }
+
+    .faq-q .faq-arrow {
+      font-size: 20px;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .faq-item.open .faq-q .faq-arrow {
+      transform: rotate(180deg);
+      color: #FF512F;
+    }
 
     .faq-a {
-
-      max-height:0; overflow:hidden;
-
-      transition: max-height .3s ease;
-
-      padding:0 1rem;
-
-      border-left:2px solid #635bff;
-
-      margin-top:.5rem;
-
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.2s ease;
+      padding: 0 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      border-top: 0 solid var(--border);
     }
 
-    .faq-a.open { 
-
-      max-height:200px; 
-
-      padding:1rem;
-
+    .faq-item.open .faq-a {
+      max-height: 300px;
+      padding: 14px 20px;
+      border-top-width: 1px;
+      border-top-color: var(--border);
     }
 
-    /* ==== Footer ==== */
+    /* ── CTA Section ── */
+    .cta-section {
+      background: linear-gradient(135deg, #1e1b4b 0%, #311026 100%);
+      padding: 80px 24px;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
 
+    .cta-section::before {
+      content: "";
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 81, 47, 0.25) 0%, transparent 70%);
+      top: -200px;
+      right: -100px;
+    }
+
+    .cta-section h2 {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 800;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      opacity: 0.85;
+      margin-bottom: 36px;
+      position: relative;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-section .btn {
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      color: white;
+      font-weight: 700;
+      padding: 16px 36px;
+      font-size: 16px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 30px rgba(255, 81, 47, 0.5);
+      position: relative;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .cta-section .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(255, 81, 47, 0.7);
+    }
+
+    /* ── Footer ── */
     footer {
-
-      text-align:center;
-
-      padding:1.5rem 1rem;
-
-      font-size:.9rem;
-
-      color:#666;
-
+      text-align: center;
+      padding: 30px 24px;
+      color: var(--text-muted);
+      font-size: 14px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
     }
 
-    /* ==== Cookie Banner ==== */
+    footer a {
+      color: #FF512F;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
 
+    /* ── Cookie Banner ── */
     #cookie-banner {
-
-      position: fixed; bottom:1rem; left:50%; transform:translateX(-50%);
-
-      background:#fff; padding:1rem 1.5rem; border-radius:8px;
-
-      box-shadow:0 4px 16px rgba(0,0,0,0.1);
-
-      display:flex; align-items:center; gap:1rem;
-
-      max-width:90%; font-size:.95rem;
-
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      padding: 16px 24px;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      max-width: 90%;
+      width: 520px;
+      font-size: 14px;
+      color: var(--text);
+      z-index: 9000;
+      animation: fadeInUp 0.4s ease-out;
     }
 
-    #cookie-banner button {
+    #cookie-banner p { flex: 1; }
 
-      padding:.5rem 1rem;
-
-      border:none; border-radius:6px;
-
-      background:#f5c32c; font-weight:600;
-
-      cursor:pointer;
-
+    #cookie-banner .btn {
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      color: white;
+      white-space: nowrap;
+      border: none;
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
     }
 
+    /* Responsive */
+    @media (max-width: 768px) {
+      .landing-nav { padding: 0 1.2rem; }
+      .landing-nav nav a:not(#authButton) { display: none; }
+      .stats-bar { gap: 30px; }
+      .hero { padding: 60px 16px 50px; }
+      .hero-showcase { grid-template-columns: 1fr; }
+    }
   </style>
-
 </head>
-
 <body>
 
-  <!-- HEADER -->
-
-  <header class="glass">
-
-    <div class="logo"><strong>ProMcBot</strong></div>
-
+  <!-- NAVBAR -->
+  <header class="landing-nav">
+    <a href="/" class="logo">
+      <img src="/dashboard/logo.png" alt="ProMcBot Logo">
+      <span>ProMcBot</span>
+    </a>
     <nav>
-
-      <a href="#hero" data-key="nav_home">Home</a>
-
-      <a href="#faq" data-key="nav_faq">FAQ</a>
-        
-<a id="authButton" href="/loading-auth" class="btn1 btn-primary">Login</a>
-    
-</nav>
-    <!--<select id="lang-select">
-
-      <option value="en">EN</option>
-
-      <option value="es">ES</option>
-
-      <option value="fr">FR</option>
-
-      <option value="ar">AR</option>
-
-    </select>-->
-
+      <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
+      <a href="/privacy">Privacy</a>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme"><i class='bx bx-sun'></i></button>
+      <div id="authContainer">
+        <a id="authButton" href="/loading-auth" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #FF512F 0%, #F09819 100%);color:white;padding:8px 18px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;">Login</a>
+      </div>
+    </nav>
   </header>
 
   <!-- HERO -->
+  <section class="hero" id="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        <strong>ProMcBot v3.5</strong> — Advanced Minecraft & Discord Integration Engine
+      </div>
 
-  <section id="hero" class="hero">
+      <h1>
+        Link your<br>
+        <span class="highlight">Discord & Minecraft</span><br>
+        servers seamlessly
+      </h1>
 
-    <div class="badge glass">
+      <p>Manage your Minecraft servers directly from Discord with elite automation, real-time status monitoring, and bulletproof security.</p>
 
-      <span class="dot"></span>
+      <div class="hero-actions">
+        <a id="authButton1" href="/loading-auth" class="btn btn-primary">
+          <i class='bx bx-rocket'></i> Get Started — It's Free
+        </a>
+        <a href="#features" class="btn btn-secondary">
+          <i class='bx bx-info-circle'></i> Explore Features
+        </a>
+      </div>
 
-      <span data-key="badge_new">New</span>
-
-      &nbsp;<span data-key="badge_tool">Minecraft ProMcTurbo Plugin</span>
-
+      <!-- Hero Showcase Mockup -->
+      <div class="hero-showcase">
+        <div class="showcase-item">
+          <div class="s-title"><i class='bx bx-server' style="color:#FF512F"></i> Bridge Status</div>
+          <div class="s-val" style="color:#10B981"><i class='bx bx-check-circle'></i> Fully Synchronized</div>
+        </div>
+        <div class="showcase-item">
+          <div class="s-title"><i class='bx bx-group' style="color:#FF512F"></i> Connected Players</div>
+          <div class="s-val">1,482 Active Now</div>
+        </div>
+        <div class="showcase-item">
+          <div class="s-title"><i class='bx bx-shield-quarter' style="color:#FF512F"></i> Anti-Crash Protection</div>
+          <div class="s-val" style="color:#FF512F">Active (99.99%)</div>
+        </div>
+      </div>
     </div>
-
-    <h1>
-
-      <span data-key="hero_line1">Link your</span><br>
-
-      <span class="highlight" data-key="hero_highlight">Discord & Minecraft</span><br>
-
-      <span data-key="hero_line2">servers seamlessly</span>
-
-    </h1>
-
-    <p data-key="hero_sub">
-
-      Manage your Minecraft servers directly from Discord with ease and control.
-
-    </p>
-
-    <a id="authButton1" href="/loading-auth" class="btn btn-primary" data-key="hero_cta">Get Started</a>
-
-    <!-- Best Server of the Month Card -->
-<!-- TrustBox widget - Review Collector -->
-      <br>
-       <br>
-<div class="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="68a9766de9dab32fe8f245be" data-style-height="52px" data-style-width="100%" data-token="f925be93-0e56-4d0c-9d63-c8499996e899">
-     <br>
-  <a href="https://www.trustpilot.com/review/promcbot.qzz.io" target="_blank" rel="noopener">Trustpilot</a>
-</div>
-<!-- End TrustBox widget -->
-      
-    <div class="glass monthly-card">
-
-      <h3 data-key="monthly_title">Best Server of the Month</h3>
-
-      <p data-key="monthly_name"><strong>MinecraftHub</strong> — <a href="/votes" class="highlight">Do you want one like it?</a></p>
-
-    </div>
-
   </section>
 
-  <!-- FAQ -->
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-block">
+      <span class="num" id="stat-servers">—</span>
+      <span class="lbl">Servers Connected</span>
+    </div>
+    <div class="stat-block">
+      <span class="num" id="stat-users">—</span>
+      <span class="lbl">Registered Users</span>
+    </div>
+    <div class="stat-block">
+      <span class="num">99.9%</span>
+      <span class="lbl">Server Uptime</span>
+    </div>
+    <div class="stat-block">
+      <span class="num">Free</span>
+      <span class="lbl">Core Access</span>
+    </div>
+  </div>
 
-  <section id="faq">
-
-    <h2 data-key="faq_title">Frequently Asked Questions</h2>
-
-    <div class="faq-item">
-
-      <div class="faq-q" data-key="faq_q1">What is ProMcBot?</div>
-
-      <div class="faq-a" data-key="faq_a1">
-
-        ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control.
-
+  <!-- FEATURES -->
+  <section class="features-section" id="features">
+    <div class="section-header">
+      <h2>Everything you need to master your community</h2>
+      <p>Engineered specifically for Minecraft server owners and Discord administrators who demand excellence.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-link-alt'></i></div>
+        <h3>Discord ↔ Minecraft Bridge</h3>
+        <p>Sync chat messages, commands, and console logs between Discord channels and Minecraft server chat in real-time with zero latency.</p>
       </div>
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-server'></i></div>
+        <h3>Live Server Status & Ping</h3>
+        <p>Monitor player counts, TPS, RAM usage, and MOTD updates directly from rich embeds in your Discord channels.</p>
+      </div>
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-shield'></i></div>
+        <h3>Advanced Moderation & Anti-Crash</h3>
+        <p>Protect your network with bulletproof anti-crash modules, automated bans, mutes, and unified moderation logs.</p>
+      </div>
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-bot'></i></div>
+        <h3>Smart Auto Responder</h3>
+        <p>Create custom automated responses, triggers, and keyword hooks to keep your community engaged 24/7 without manual intervention.</p>
+      </div>
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-crown'></i></div>
+        <h3>Automated Store & Ranks</h3>
+        <p>Reward your donors and members with automatic role syncing, permission updates, and Minecraft in-game perks.</p>
+      </div>
+      <div class="feature-card animated">
+        <div class="feature-icon"><i class='bx bx-chart'></i></div>
+        <h3>Elite Analytics Dashboard</h3>
+        <p>Gain deep insights into server activity, engagement trends, and player retention with our high-performance control panel.</p>
+      </div>
+    </div>
+  </section>
 
+  <!-- FAQ (Restored Original Questions) -->
+  <section class="faq-section" id="faq">
+    <div class="section-header">
+      <h2>Frequently Asked Questions</h2>
+      <p>Got questions? We've got answers.</p>
     </div>
 
     <div class="faq-item">
-
-      <div class="faq-q" data-key="faq_q2">How do I connect my server?</div>
-
-      <div class="faq-a" data-key="faq_a2">
-
-        Invite ProMcBot to Discord, run the /setup_server command, and follow the prompts to authorize your Minecraft server.
-
+      <div class="faq-q">
+        What is ProMcBot?
+        <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-        
-
+      <div class="faq-a">ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control, automation, and community management.</div>
     </div>
-
     <div class="faq-item">
-
-      <div class="faq-q" data-key="faq_q3">Is it free?</div>
-
-      <div class="faq-a" data-key="faq_a3">
-
-        Yes—ProMcBot’s core linking functionality is completely free, with optional premium addons coming soon.
-
+      <div class="faq-q">
+        How do I connect my server?
+        <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-
+      <div class="faq-a">Invite ProMcBot to your Discord, run the <code>/setup_server</code> command, and follow the prompts to authorize your Minecraft server via our plugin.</div>
     </div>
+    <div class="faq-item">
+      <div class="faq-q">
+        Is it free?
+        <i class='bx bx-chevron-down faq-arrow'></i>
+      </div>
+      <div class="faq-a">Yes — ProMcBot's core features are completely free. Premium plans are available for advanced features and priority support.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">
+        Which Minecraft versions are supported?
+        <i class='bx bx-chevron-down faq-arrow'></i>
+      </div>
+      <div class="faq-a">ProMcBot supports both Java Edition and Bedrock Edition servers. Our plugin is compatible with popular server softwares like Paper, Spigot, and Velocity.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">
+        Is my data secure?
+        <i class='bx bx-chevron-down faq-arrow'></i>
+      </div>
+      <div class="faq-a">Absolutely. We follow industry best practices for data security. Read our <a href="/privacy" style="color:var(--primary)">Privacy Policy</a> for details.</div>
+    </div>
+  </section>
 
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>Ready to supercharge your Minecraft community?</h2>
+    <p>Join thousands of servers already using ProMcBot to manage and automate their worlds.</p>
+    <a href="/loading-auth" class="btn">
+      <i class='bx bx-rocket'></i> Get Started for Free
+    </a>
   </section>
 
   <!-- FOOTER -->
-
   <footer>
-
-    © ProMcBot 2024–<span id="year"></span>
-
+    <p>© ProMcBot 2024–<span id="year"></span> &nbsp;•&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;•&nbsp; All rights reserved.</p>
   </footer>
 
   <!-- COOKIE BANNER -->
-
-  <div id="cookie-banner" hidden>
-
-    <span data-key="cookie_text">We use cookies to enhance your experience.</span>
-
-    <button id="cookie-ok" data-key="cookie_btn">Okay</button>
-
+  <div id="cookie-banner" style="display:none">
+    <p>We use cookies to enhance your experience.</p>
+    <button class="btn" id="cookie-ok">Accept</button>
   </div>
 
+  <!-- SCRIPTS -->
+  <script src="/shared.js"></script>
   <script>
- /* document.addEventListener('DOMContentLoaded', () => {
-    // --- Cache elements ---
-    
-    const yearEl     = document.getElementById('year');
-    const langSelect = document.getElementById('lang-select');
-    const banner     = document.getElementById('cookie-banner');
-    const cookieOk   = document.getElementById('cookie-ok');
+    // ── Year ──────────────────────────────────────────────────────
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-    // --- Cookie helpers ---
-   /* function setCookie(name, value, days = 365) {
-      const expires = new Date(Date.now() + days * 864e5).toUTCString();
-      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-    }
-    function getCookie(name) {
-      return document.cookie.split('; ').reduce((r, v) => {
-        const [key, val] = v.split('=');
-        return key === name ? decodeURIComponent(val) : r;
-      }, '');
-    }
-
-    // --- Auto-update year ---
-    if (yearEl) {
-      yearEl.textContent = new Date().getFullYear();
-    }
-
-    // --- Translations map (fill with your data) ---
-    const translations = {
-      /* ... your existing translations object ... 
-    };
-
-    function applyTranslations(lang) {
-      document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key');
-        if (translations[lang] && translations[lang][key]) {
-          el.innerHTML = translations[lang][key];
-        }
-      });
-    }
-
-    // --- Internationalization via cookies ---
-  /*  if (langSelect) {
-      const savedLang = getCookie('pmc_lang') || 'en';
-      langSelect.value = savedLang;
-      applyTranslations(savedLang);
-
-      langSelect.addEventListener('change', () => {
-        setCookie('pmc_lang', langSelect.value, 365);
-        applyTranslations(langSelect.value);
-      });
-    }
-
-    // --- FAQ Accordion ---
+    // ── FAQ Accordion ─────────────────────────────────────────────
     document.querySelectorAll('.faq-q').forEach(q => {
       q.addEventListener('click', () => {
-        q.nextElementSibling.classList.toggle('open');
+        const item = q.closest('.faq-item');
+        const wasOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!wasOpen) item.classList.add('open');
       });
     });
 
-    // --- Cookie consent banner ---
-   /* if (banner && !getCookie('pmc_cookies_accepted')) {
-      banner.hidden = false;
-    }
-    if (cookieOk) {
-      cookieOk.addEventListener('click', () => {
-        setCookie('pmc_cookies_accepted', 'yes', 365);
-        banner.hidden = true;
-      });
-    }
-
-    // --- Smooth scroll for nav links ---
-    document.querySelectorAll('nav a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        const target = document.querySelector(a.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth' });
+    // ── Theme toggle (landing page specific) ─────────────────────
+    const themeBtn = document.getElementById('themeToggle');
+    if (themeBtn) {
+      function updateIcon() {
+        const icon = themeBtn.querySelector('i');
+        if (document.body.classList.contains('dark')) {
+          icon.className = 'bx bx-moon';
+        } else {
+          icon.className = 'bx bx-sun';
         }
+      }
+      themeBtn.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('pmcbot_theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        updateIcon();
       });
-    });
-  });*/
-</script>
-
-  <script>
-document.addEventListener('DOMContentLoaded', async () => {
-    // --- Cookie helpers (unchanged) ---
-    function setCookie(name, value, days = 365) {
-      const expires = new Date(Date.now() + days * 864e5).toUTCString();
-      document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
-    }
-    function getCookie(name) {
-      return document.cookie
-        .split('; ')
-        .find(row => row.startsWith(name + '='))
-        ?.split('=')[1]
-        ? decodeURIComponent(document.cookie
-            .split('; ')
-            .find(row => row.startsWith(name + '='))
-            .split('=')[1])
-        : '';
+      // Apply saved theme
+      if (localStorage.getItem('pmcbot_theme') === 'dark') {
+        document.body.classList.add('dark');
+        updateIcon();
+      }
     }
 
-    // --- Auto-update year (unchanged) ---
-    const yearEl = document.getElementById('year');
-    if (yearEl) yearEl.textContent = new Date().getFullYear();
-
-    // --- Translations & language select (unchanged) ---
-    const translations = {  };
-    function applyTranslations(lang) {
-      document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key');
-        if (translations[lang]?.[key]) el.innerHTML = translations[lang][key];
-      });
-    }
-    const langSelect = document.getElementById('lang-select');
-    if (langSelect) {
-      const saved = getCookie('pmc_lang') || 'en';
-      langSelect.value = saved;
-      applyTranslations(saved);
-      langSelect.addEventListener('change', () => {
-        setCookie('pmc_lang', langSelect.value, 365);
-        applyTranslations(langSelect.value);
-      });
-    }
-
-    // --- FAQ Accordion with debug logs ---
-    const faqQs = document.querySelectorAll('.faq-q');
-    console.log('Found FAQ items:', faqQs.length);
-    faqQs.forEach((q, i) => {
-      q.style.cursor = 'pointer';               // ensure it's clickable
-      q.addEventListener('click', () => {
-        console.log(`Toggling FAQ #${i}`);
-        const a = q.nextElementSibling;
-        if (a) a.classList.toggle('open');
-      });
-    });
-
-    // --- Cookie-consent banner (unchanged) ---
-    const banner = document.getElementById('cookie-banner');
-    const cookieOk = document.getElementById('cookie-ok');
-    if (banner && !getCookie('pmc_cookies_accepted')) banner.style.display = 'block';
-    if (cookieOk) {
-      cookieOk.addEventListener('click', () => {
-        setCookie('pmc_cookies_accepted', 'yes', 365);
+    // ── Cookie Banner ─────────────────────────────────────────────
+    (function () {
+      const banner = document.getElementById('cookie-banner');
+      const ok = document.getElementById('cookie-ok');
+      if (!localStorage.getItem('pmcbot_cookies_ok')) {
+        setTimeout(() => banner.style.display = 'flex', 1500);
+      }
+      if (ok) ok.addEventListener('click', () => {
+        localStorage.setItem('pmcbot_cookies_ok', '1');
         banner.style.display = 'none';
       });
-    }
+    })();
 
-  /*  // --- Smooth scroll (unchanged) ---
-    document.querySelectorAll('nav a').forEach(a => {
-      a.addEventListener('click', e => {
-        e.preventDefault();
-        const tgt = document.querySelector(a.getAttribute('href'));
-        if (tgt) tgt.scrollIntoView({ behavior: 'smooth' });
-      });
-    });
-*/
-    // --- Auth-check and button update with debug logs ---
-    try {
-      const resp = await fetch('/callback/check/userData');
-      if (!resp.ok) throw new Error(`Status ${resp.status}`);
-      const data = await resp.json();
-      console.log('Auth data:', data);
-      if (data.authenticated) {
-        // try both IDs just in case
-        let btn = document.getElementById('authButton');
-             let btn1 = document.getElementById('authButton1');
-        console.log('Auth button element:', btn);
-          
-          btn1.href = '/dashboard';
-
-          btn1.textContent = "Dashboard";
-          
-        
-          btn.href = '/dashboard';
-          btn.textContent = data.user.username;
-       
+    // ── Stats from API ────────────────────────────────────────────
+    fetch('/api/stats').then(r => r.json()).then(d => {
+      if (d.success) {
+        const s = d.stats;
+        const fmt = n => n >= 1000 ? (n/1000).toFixed(1) + 'k' : n;
+        document.getElementById('stat-servers').textContent = fmt(s.servers || 0);
+        document.getElementById('stat-users').textContent   = fmt(s.users || 0);
       }
-    } catch (err) {
-      console.error('Auth check failed:', err);
-    }
-  });
-</script>
+    }).catch(() => {
+      document.getElementById('stat-servers').textContent = '200+';
+      document.getElementById('stat-users').textContent = '5k+';
+    });
 
-     
+    // ── Auth-aware buttons & Avatar Dropdown in Navbar ────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const resp = await fetch('/callback/check/userData');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.authenticated) {
+          const authContainer = document.getElementById('authContainer');
+          const authBtn1 = document.getElementById('authButton1');
+          
+          if (authContainer) {
+            authContainer.innerHTML = `
+              <div class="dropdown">
+                <img src="${data.user.avatar}" alt="User" class="user-avatar-nav" id="homeUserBtn">
+                <div class="dropdown-content">
+                  <div class="dropdown-header">
+                    <img src="${data.user.avatar}" alt="" style="width:28px;height:28px;border-radius:50%;">
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.user.global_name || data.user.username}</span>
+                  </div>
+                  <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+                  <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+                  <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
+                  <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                  <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+                </div>
+              </div>
+            `;
+          }
+
+          if (authBtn1) {
+            authBtn1.href = '/dashboard';
+            authBtn1.innerHTML = '<i class="bx bx-layout"></i> Open Dashboard';
+          }
+        }
+      } catch (e) {}
+    });
+  </script>
 </body>
-
 </html>
-

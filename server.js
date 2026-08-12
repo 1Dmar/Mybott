@@ -12,20 +12,18 @@ if (process.env.NODE_ENV !== 'production') {
 const express = require('express');
 const mainApp = express();
 
-// Middleware to handle custom domain and redirect from random Railway links
-mainApp.use((req, res, next) => {
-  const customDomain = process.env.CUSTOM_DOMAIN; // Example: bot.yourdomain.com
-  const host = req.get('host');
-  
-  // If a custom domain is set and the request is coming from a different host (like railway.app)
-  if (customDomain && host !== customDomain && !host.includes('localhost')) {
-    return res.redirect(301, `https://${customDomain}${req.originalUrl}`);
-  }
-  next();
-});
-
 // Trust proxy for Railway
 mainApp.set('trust proxy', 1);
+
+// Health check endpoint (required for Railway and Docker HEALTHCHECK)
+mainApp.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    bot: proMcBotClient ? (proMcBotClient.isReady ? proMcBotClient.isReady() : false) : false
+  });
+});
 
 // Centralized Bot Login Management
 const loginBot = async (clientInstance, token, name) => {
@@ -57,45 +55,70 @@ const MODDY_BOT_TOKEN = process.env.BOT1_TOKEN;
 // --- Bot Initialization --- 
 // Import the main bot client (ProMcBot) from bot/index.js
 let proMcBotClient = null;
-try {
-  proMcBotClient = require('./bot/index');
-  console.log('✅ ProMcBot module loaded.');
-} catch (err) {
-  console.error('❌ Failed to load ProMcBot module:', err.message);
-}
+const PORT = process.env.PORT || 8080;
 
 // Import the dashboard module, which contains Moddy Bot client
 let dashboardModule = null;
 let moddyBotClient = null;
-try {
-  dashboardModule = require('./dash/index');
-  if (dashboardModule && dashboardModule.app) {
-    // Determine the base URL for Railway
-    const domain = process.env.RAILWAY_PUBLIC_DOMAIN || `localhost:${PORT}`;
-    const protocol = process.env.RAILWAY_PUBLIC_DOMAIN ? 'https' : 'http';
-    process.env.CALLBACK_URL = `${protocol}://${domain}/auth/discord/callback`;
-    
-    mainApp.use('/', dashboardModule.app);
-    console.log(`✅ Dashboard module loaded. Callback URL set to: ${process.env.CALLBACK_URL}`);
+// If BOT_ONLY=true, skip loading the dashboard and API to run bot-only mode.
+if (process.env.BOT_ONLY !== 'true') {
+  try {
+    dashboardModule = require('./dash/index');
+    if (dashboardModule && dashboardModule.app) {
+      // Use the environment variable for CALLBACK_URL or default to relative path
+      // process.env.CALLBACK_URL = process.env.CALLBACK_URL || "/auth/discord/callback";
+      mainApp.use('/', dashboardModule.app);
+      console.log(`✅ Dashboard module loaded. Callback URL set to: ${process.env.CALLBACK_URL}`);
+    }
+  } catch (err) {
+    console.log('⚠️ Dashboard module not loaded or client1 not found:', err.message);
   }
-  if (dashboardModule && dashboardModule.client1) {
-    moddyBotClient = dashboardModule.client1;
-    console.log('✅ Moddy Bot client (client1 from dashboard) extracted.');
-  }
-} catch (err) {
-  console.log('⚠️ Dashboard module not loaded or client1 not found:', err.message);
+} else {
+  console.log('ℹ️ BOT_ONLY=true — skipping dashboard and HTTP routes (bot-only mode).');
 }
 
-// تشغيل السيرفر Express أولاً
-const PORT = process.env.PORT || 8080;
-const server = mainApp.listen(PORT, () => {
-  console.log(`✅ Main server running on port ${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}/dash`);
-  console.log(`🤖 Bot API: http://localhost:${PORT}/bot`);
+// Inject bot API
+if (process.env.BOT_ONLY !== 'true') {
+  try {
+    const botApi = require('./bot/api/index');
+    mainApp.use('/bot', express.json()); // Add json parsing for /bot
+    mainApp.use('/bot', botApi);
+    console.log('✅ Bot API module loaded.');
+  } catch (err) {
+    console.log('⚠️ Bot API module not loaded:', err.message);
+  }
+}
+
+// تشغيل السيرفر Express دائماً لتوفير نقطة /health لـ Railway
+let server = null;
+server = mainApp.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT} (Healthcheck active)`);
+  if (process.env.BOT_ONLY !== 'true') {
+    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`🤖 Bot API: http://localhost:${PORT}/bot`);
+  } else {
+    console.log('ℹ️ Bot-only mode: Dashboard and API routes are disabled.');
+  }
 });
 
 // --- Perform Bot Logins After Server Starts --- 
 (async () => {
+  // Initialize the bot (connect DB and load handlers) before attempting login
+  try {
+    const botModule = require('./bot/index');
+    if (typeof botModule.start === 'function') {
+      proMcBotClient = await botModule.start();
+      console.log('✅ ProMcBot initialized.');
+    } else if (botModule && botModule.user === null && botModule.options) {
+      // It's already a Client object?!
+      console.log('⚠️ require("./bot/index") returned a Client instance! Using it directly.');
+      proMcBotClient = botModule;
+    } else {
+      console.error('❌ ProMcBot initialization failed: botModule.start is not a function. Returned keys:', Object.keys(botModule));
+    }
+  } catch (err) {
+    console.error('❌ ProMcBot initialization failed:', err && err.message);
+  }
   // Login ProMcBot (Main Bot) - Strict check for BOT1_1_TOKEN
   if (proMcBotClient) {
     if (!MAIN_BOT_TOKEN) {
@@ -110,27 +133,30 @@ const server = mainApp.listen(PORT, () => {
     console.error('❌ ProMcBot client instance is not available.');
   }
 
-  // Login Moddy Bot
-  if (moddyBotClient) {
-    if (!MODDY_BOT_TOKEN) {
-      console.warn('⚠️ MODDY_BOT_TOKEN (BOT1_TOKEN) is missing. Moddy Bot will not start.');
-    } else {
-      const loggedIn = await loginBot(moddyBotClient, MODDY_BOT_TOKEN, "Moddy Bot");
-      if (!loggedIn) {
-        console.error('❌ Moddy Bot failed to log in. Check token and intents.');
-      }
-    }
-  } else {
-    console.warn('⚠️ Moddy Bot client instance is not available from dashboard exports.');
-  }
+  // NOTE: Moddy Bot login is disabled to prevent duplicate message handling
+  // The main bot (ProMcBot) will handle all command processing
+  // if (moddyBotClient) {
+  //   if (!MODDY_BOT_TOKEN) {
+  //     console.warn('⚠️ MODDY_BOT_TOKEN (BOT1_TOKEN) is missing. Moddy Bot will not start.');
+  //   } else {
+  //     const loggedIn = await loginBot(moddyBotClient, MODDY_BOT_TOKEN, "Moddy Bot");
+  //     if (!loggedIn) {
+  //       console.error('❌ Moddy Bot failed to log in. Check token and intents.');
+  //     }
+  //   }
+  // } else {
+  //   console.warn('⚠️ Moddy Bot client instance is not available from dashboard exports.');
+  // }
 })();
 
 // Handle process termination gracefully
 process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server and Discord clients.');
-  server.close(() => {
-    console.log('HTTP server closed.');
-  });
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed.');
+    });
+  }
   if (proMcBotClient && proMcBotClient.isReady()) {
     proMcBotClient.destroy();
     console.log('ProMcBot client destroyed.');
@@ -141,4 +167,16 @@ process.on('SIGINT', async () => {
   }
   // Give some time for connections to close before exiting
   setTimeout(() => process.exit(0), 1000);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: shutting down gracefully.');
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
 });

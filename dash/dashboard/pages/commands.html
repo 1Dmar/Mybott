@@ -4,16 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Discord Bot Dashboard</title>
-  <style>
-    /* public/styles.css */
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #1f2a35;
-      margin: 0;
-      padding: 0;
-        color:white;
-    }
 
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/shared.css">
+
+  <style>
     #dashboard {
       padding: 20px;
     }
@@ -174,7 +169,66 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 </head>
 <body>
-  <section id="dashboard">
+<nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="Logo" onerror="this.src='/public/images/logo.svg'">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">Select a server to start managing it</div>
+            </div>
+          </div>
+          <div class="dropdown-footer">Mark all as read</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+          <a href="/commands"><i class='bx bx-command'></i> Commands</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+<!-- SIDEBAR (auto-built by shared.js) -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span>Collapse</span>
+      </div>
+    </div>
+  </nav>
+  <main class="main-content" id="dashboard">
     <div class="controls">
       <input type="text" id="prefix" placeholder="COMING SOON" disabled/>
       <button id="save-prefix" disabled>Save</button>
@@ -182,7 +236,7 @@
     <div class="cards-container" id="cards-container">
       <!-- البطاقات ستُضاف هنا بواسطة JavaScript -->
     </div>
-  </section>
+  </main>
   <script>
     // public/scripts.js
     document.addEventListener('DOMContentLoaded', async () => {
@@ -190,12 +244,18 @@
       const prefixInput = document.getElementById('prefix');
       const savePrefixButton = document.getElementById('save-prefix');
 
-      const commands = await fetch('/api/commands')
+      let data = await fetch('/api/commands')
         .then(res => res.json())
         .catch(error => {
           console.error('Error fetching commands:', error);
-          return [];
+          return { success: false, commands: [] };
         });
+
+      let commands = data.success ? (data.commands || []) : [];
+
+      if (commands.length === 0) {
+        cardsContainer.innerHTML = '<p style="color:var(--text-secondary); width:100%; text-align:center;">No commands found.</p>';
+      }
 
       commands.forEach(command => {
         if (!command.type || !command.name) {
@@ -296,5 +356,6 @@
       }
     });
   </script>
+  <script src="/shared.js"></script>
 </body>
 </html>

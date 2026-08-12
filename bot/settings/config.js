@@ -1,7 +1,7 @@
 // Bot configuration - Fixed for Railway deployment
 // Only load dotenv in development environment
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
+  require('dotenv-flow').config();
 }
 
 module.exports = {

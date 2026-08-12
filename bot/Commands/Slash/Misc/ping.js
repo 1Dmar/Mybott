@@ -4,85 +4,60 @@ const {
   PermissionFlagsBits,
   EmbedBuilder,
   Client,
-} = require("discord.js");
+} = require('discord.js');
 
 module.exports = {
-  name: "ping",
-  description: "عرض سرعة استجابة البوت",
+  name: 'ping',
+  description: 'عرض سرعة استجابة البوت',
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
-  category: "Misc",
-  type1: "slash",
+  category: 'Misc',
+  type1: 'slash',
   type: ApplicationCommandType.ChatInput,
   /**
-   *
    * @param {Client} client
    * @param {CommandInteraction} interaction
    */
   run: async (client, interaction) => {
     const emoji = client.emojis;
     const guildId = interaction.guild?.id;
-    const wsPing = Math.max(0, Math.round(client.ws.ping));
+    const wsPing  = Math.max(0, Math.round(client.ws.ping));
     const apiPing = Math.max(0, Date.now() - interaction.createdTimestamp);
 
     const formatDuration = (ms) => {
-      if (!ms || Number.isNaN(ms)) return "0s";
+      if (!ms || Number.isNaN(ms)) return '0s';
       const totalSeconds = Math.floor(ms / 1000);
-      const days = Math.floor(totalSeconds / 86400);
-      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const days    = Math.floor(totalSeconds / 86400);
+      const hours   = Math.floor((totalSeconds % 86400) / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
       const parts = [];
-      if (days) parts.push(`${days}d`);
-      if (hours) parts.push(`${hours}h`);
+      if (days)    parts.push(`${days}d`);
+      if (hours)   parts.push(`${hours}h`);
       if (minutes) parts.push(`${minutes}m`);
-      if (!parts.length) parts.push(`${seconds}s`);
-      return parts.join(" ");
+      if (!parts.length) parts.push(`${Math.floor(totalSeconds % 60)}s`);
+      return parts.join(' ');
     };
 
-    let color = "#28d07f";
-    let statusKey = "PING_STATUS_EXCELLENT";
-    if (wsPing > 160) {
-      color = "#ffc54d";
-      statusKey = "PING_STATUS_GOOD";
-    }
-    if (wsPing > 260) {
-      color = "#ff914d";
-      statusKey = "PING_STATUS_STABLE";
-    }
-    if (wsPing > 420) {
-      color = "#ff5d5d";
-      statusKey = "PING_STATUS_POOR";
-    }
+    // Color & status based on ping
+    let color      = 0x10B981; // green
+    let statusLabel = '🟢 ممتاز';
+    let statusBar   = '██████████';
+    if (wsPing > 160) { color = 0xF59E0B; statusLabel = '🟡 جيد';    statusBar = '███████░░░'; }
+    if (wsPing > 260) { color = 0xF97316; statusLabel = '🟠 مقبول';  statusBar = '█████░░░░░'; }
+    if (wsPing > 420) { color = 0xEF4444; statusLabel = '🔴 ضعيف';   statusBar = '███░░░░░░░'; }
 
     const embed = new EmbedBuilder()
       .setColor(color)
       .setAuthor({
-        name: client.t(guildId, "PING_TITLE"),
+        name: client.t(guildId, 'PING_TITLE') || '📡 استجابة البوت',
         iconURL: client.user.displayAvatarURL(),
       })
-      .setDescription(client.t(guildId, "PING_SUBTITLE"))
+      .setTitle('⚡ نتائج Ping')
+      .setDescription(`\`\`\`\n${statusBar}  ${statusLabel}\n\`\`\``)
       .addFields(
-        {
-          name: `${emoji.ROCKET || "🚀"} ${client.t(guildId, "PING_WEBSOCKET")}`,
-          value: `\`${wsPing}ms\``,
-          inline: true,
-        },
-        {
-          name: `${emoji.LINK || "🔗"} ${client.t(guildId, "PING_API")}`,
-          value: `\`${apiPing}ms\``,
-          inline: true,
-        },
-        {
-          name: `${emoji.GEAR || "⚙️"} ${client.t(guildId, "PING_UPTIME")}`,
-          value: `\`${formatDuration(client.uptime)}\``,
-          inline: true,
-        },
-        {
-          name: `${emoji.SUCCESS || "✅"} ${client.t(guildId, "PING_STATUS")}`,
-          value: `**${client.t(guildId, statusKey)}**`,
-          inline: true,
-        }
+        { name: `${emoji.ROCKET || '🚀'} WebSocket`, value: `\`${wsPing}ms\``,              inline: true },
+        { name: `${emoji.LINK   || '🔗'} API`,       value: `\`${apiPing}ms\``,             inline: true },
+        { name: `${emoji.GEAR   || '⚙️'} Uptime`,    value: `\`${formatDuration(client.uptime)}\``, inline: true },
       )
       .setThumbnail(client.user.displayAvatarURL({ size: 128 }))
       .setFooter({

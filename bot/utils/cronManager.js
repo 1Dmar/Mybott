@@ -12,6 +12,12 @@ module.exports.scheduleCronJobs = async (client) => {
     return 0;
   }
 
+  const dbManager = require('./dbManager');
+  if (!dbManager.isConnected()) {
+    console.log('ℹ️ DB not connected — skipping scheduling cron jobs.');
+    return 0;
+  }
+
   try {
     const allSettings = await client.db.StatusBar.find();
     

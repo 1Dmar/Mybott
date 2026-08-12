@@ -1,463 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Archived Ticket Chat</title>
-
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-
-  <style>
-    :root {
-      --blue: #2563eb;
-      --blue-light: #dbeafe;
-      --gray-light: #f3f4f6;
-      --gray-medium: #e5e7eb;
-      --white: #ffffff;
-      --text-dark: #1e293b;
-      --text-muted: #6b7280;
-      --radius: 12px;
-      --shadow-light: rgba(0, 0, 0, 0.05);
-      --shadow-dropdown: rgba(0, 0, 0, 0.1);
-      --font: 'Inter', sans-serif;
-      --avatar-size: 40px;
-      --dropdown-bg: #ffffff;
-      --dropdown-radius: 8px;
-      --dropdown-item-hover: #f3f4f6;
-      --max-width-desktop: 900px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: var(--font);
-      background: var(--gray-light);
-      color: var(--text-dark);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* ------ Header ------ */
-    header {
-      background: var(--blue);
-      color: var(--white);
-      padding: 1rem 1.5rem;
-      box-shadow: 0 2px 4px var(--shadow-light);
-      font-size: 1.5rem;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    /* ------ Main Container ------ */
-    main {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .chat-window {
-      width: 100%;
-      max-width: var(--max-width-desktop);
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: 0 2px 8px var(--shadow-light);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* ------ Banner ------ */
-    .banner {
-      background: var(--blue-light);
-      color: var(--blue);
-      text-align: center;
-      padding: 0.75rem 1rem;
-      font-weight: 500;
-      border-bottom: 1px solid var(--gray-medium);
-    }
-
-    /* ------ Messages List ------ */
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .messages::-webkit-scrollbar {
-      width: 6px;
-    }
-    .messages::-webkit-scrollbar-thumb {
-      background-color: var(--gray-medium);
-      border-radius: 3px;
-    }
-    .messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    /* ------ Message Item ------ */
-    .message-item {
-      display: flex;
-      align-items: flex-start;
-      position: relative; /* for dropdown fallback */
-    }
-    .message-item.user {
-      flex-direction: row-reverse;
-    }
-
-    /* ------ Avatar ------ */
-    .avatar {
-      width: var(--avatar-size);
-      height: var(--avatar-size);
-      border-radius: 50%;
-      background-color: var(--gray-medium);
-      color: var(--white);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 1rem;
-      flex-shrink: 0;
-      cursor: pointer;
-      position: relative;
-    }
-    .message-item.user .avatar {
-      background-color: var(--blue);
-    }
-    .message-item.mod .avatar {
-      background-color: var(--text-muted);
-    }
-
-    /* If avatarUrl is available, show it as background image */
-    .avatar img {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    /* ------ Content Bubble ------ */
-    .bubble {
-      max-width: 75%;
-      background: var(--gray-light);
-      border-radius: var(--radius);
-      padding: 0.75rem 1rem;
-      margin: 0 0.75rem;
-      box-shadow: 0 1px 3px var(--shadow-light);
-      position: relative;
-    }
-    .message-item.user .bubble {
-      background: var(--blue-light);
-    }
-
-    /* ------ Username & ID Line ------ */
-    .meta {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      margin-bottom: 0.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .meta .username {
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .meta .userid {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    /* ------ Message Text ------ */
-    .message-text {
-      font-size: 1rem;
-      color: var(--text-dark);
-      word-break: break-word;
-    }
-
-    /* ------ Timestamp ------ */
-    .timestamp {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-align: right;
-      margin-top: 0.5rem;
-    }
-
-    /* ------ Dropdown Menu (fixed) ------ */
-    .dropdown {
-      position: fixed;
-      background: var(--dropdown-bg);
-      border-radius: var(--dropdown-radius);
-      box-shadow: 0 2px 8px var(--shadow-dropdown);
-      overflow: hidden;
-      display: none;
-      z-index: 1000;
-      min-width: 140px;
-    }
-    .dropdown.visible {
-      display: block;
-    }
-    .dropdown-item {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.875rem;
-      color: var(--text-dark);
-      cursor: pointer;
-      display: block;
-      text-decoration: none;
-    }
-    .dropdown-item:hover {
-      background: var(--dropdown-item-hover);
-    }
-
-    /* ------ Footer ------ */
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background: var(--white);
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      border-top: 1px solid var(--gray-medium);
-    }
-
-    /* ------ Responsive ------ */
-    @media (max-width: 768px) {
-      header {
-        font-size: 1.25rem;
-        padding: 0.75rem 1rem;
-      }
-      .chat-window {
-        max-width: 100%;
-      }
-      .bubble {
-        max-width: 100%;
-      }
-      .avatar {
-        width: 32px;
-        height: 32px;
-      }
-      .meta {
-        font-size: 0.8rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket System - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
+        </div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
+            </div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
+        </div>
+    </nav>
 
-  <header>
-    Archived Ticket <span id="ticket-id" style="font-weight: normal;"></span>
-  </header>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
 
-  <main>
-    <div class="chat-window">
-      <div class="banner">This ticket has been closed and archived</div>
-      <div class="messages" id="messages">
-        <!-- Messages will be inserted here -->
-      </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <a href="/servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Tickets</span>
+        </div>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-support'></i></div>
+            <div>
+                <h1 class="page-title">Ticket System</h1>
+                <p class="page-subtitle">Configure support tickets for your community.</p>
+            </div>
+        </div>
+
+        <div class="card animated">
+            <div class="card-header">
+                <div class="card-icon"><i class='bx bx-cog'></i></div>
+                <div>
+                    <h2 class="card-title">General Settings</h2>
+                    <p class="card-subtitle">Set up where users can create tickets.</p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Ticket Channel <span class="required">*</span></label>
+                    <select class="form-select-styled" id="channelId" onchange="markUnsaved()">
+                        <option value="">Select a channel</option>
+                        <!-- Channels injected here -->
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Enable Tickets</label>
+                    <label class="form-check" style="margin-top: 10px;">
+                        <div class="toggle">
+                            <input type="checkbox" id="enabled" onchange="markUnsaved()">
+                            <div class="toggle-slider"></div>
+                        </div>
+                        <span style="font-size: 13px;">Enable or disable the ticket system</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Save Bar -->
+    <div class="save-bar" id="saveBar">
+        <span class="save-bar-text">You have unsaved changes.</span>
+        <button class="btn btn-primary" onclick="saveSettings()" id="saveBtn"><i class='bx bx-save'></i> Save Changes</button>
     </div>
-  </main>
 
-  <footer>&copy; 2025 Support System</footer>
+    <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+        let hasUnsavedChanges = false;
 
-  <script>
-    const API_BASE = "http://194.15.36.95:9504/api";
+        document.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+            await loadChannels();
+            await loadConfig();
+        });
 
-    // Extract ticketId from path: "/tickets/:ticketId/messages"
-    function getTicketIdFromPath() {
-      const path = window.location.pathname; 
-      // Expected: "/tickets/ihazj_Tl/messages"
-      const parts = path.split('/').filter(Boolean);
-      // parts = ["tickets", "{ticketId}", "messages"]
-      if (parts.length >= 3 && parts[0] === 'tickets' && parts[2] === 'messages') {
-        return parts[1];
-      }
-      return null;
-    }
-
-    // Format ISO → "HH:MM AM/PM at DD MMM YYYY"
-    function formatDate(iso) {
-      const date = new Date(iso);
-      return date.toLocaleString('en-US', {
-        hour: 'numeric', minute: '2-digit',
-        day: '2-digit', month: 'short', year: 'numeric'
-      }).replace(',', ' at');
-    }
-
-    // Fetch user info (username and avatarUrl) from API
-    async function fetchUserInfo(userId) {
-      try {
-        const res = await fetch(`/api/u/${encodeURIComponent(userId)}`);
-        if (!res.ok) throw new Error('No user data');
-        return await res.json(); 
-        // Expect { username: "...", avatarUrl: "https://..." }
-      } catch {
-        return { username: `User_${userId.slice(-4)}`, avatarUrl: null };
-      }
-    }
-
-    // Render messages
-    async function renderMessages(messages) {
-      const container = document.getElementById('messages');
-      container.innerHTML = '';
-      messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-      // Pre-fetch user info for all unique userIds
-      const uniqueIds = [...new Set(messages.map(m => m.authorId))];
-      const userMap = {};
-      await Promise.all(uniqueIds.map(async id => {
-        userMap[id] = await fetchUserInfo(id);
-      }));
-
-      messages.forEach(msg => {
-        const userInfo = userMap[msg.authorId] || { username: 'Unknown', avatarUrl: null };
-
-        // Message wrapper
-        const item = document.createElement('div');
-        item.className = `message-item ${msg.direction === 'user' ? 'user' : 'mod'}`;
-
-         // const response = await fetch(`/api/u/${userId}`);
-
-           // const data = await response.json();
-        // Avatar
-        const avatar = document.createElement('div');
-        avatar.className = 'avatar';
-        if (userInfo.avatar) {
-          const img = document.createElement('img');
-          img.src = userInfo.avatar;
-          img.alt = userInfo.username;
-          avatar.appendChild(img);
-        } else {
-          avatar.textContent = userInfo.global_name.slice(0, 2).toUpperCase();
-        }
-
-        // Bubble
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-
-        // Meta (username and userId)
-        const meta = document.createElement('div');
-        meta.className = 'meta';
-
-        const uname = document.createElement('span');
-        uname.className = 'username';
-        uname.textContent = `${userInfo.global_name} (${userInfo.username})`;
-
-        const uidSpan = document.createElement('span');
-        uidSpan.className = 'userid';
-        uidSpan.textContent = `[${msg.direction === 'user' ? 'Member' : 'Moderator'}]`;
-
-        meta.appendChild(uname);
-        meta.appendChild(uidSpan);
-
-        // Message text
-        const text = document.createElement('div');
-        text.className = 'message-text';
-        text.textContent = msg.content;
-
-        // Timestamp
-        const time = document.createElement('div');
-        time.className = 'timestamp';
-        time.textContent = formatDate(msg.timestamp);
-
-        bubble.appendChild(meta);
-        bubble.appendChild(text);
-        bubble.appendChild(time);
-
-        // Dropdown menu
-        const dropdown = document.createElement('div');
-        dropdown.className = 'dropdown';
-        dropdown.innerHTML = `
-          <div class="dropdown-item" data-action="copy">Copy ID</div>
-          <div class="dropdown-item" data-action="report">Report</div>
-          <a href="/u/${msg.authorId}" class="dropdown-item" data-action="info">Info</a>
-        `;
-
-        // Toggle dropdown on avatar, username, or userId click
-        function toggleDropdown(event) {
-          event.stopPropagation();
-          document.querySelectorAll('.dropdown.visible').forEach(dd => {
-            if (dd !== dropdown) dd.classList.remove('visible');
-          });
-          const rect = event.currentTarget.getBoundingClientRect();
-          // Position dropdown just below the clicked element
-          dropdown.style.top = `${rect.bottom + 6}px`;
-          dropdown.style.left = `${rect.left}px`;
-          dropdown.classList.toggle('visible');
-        }
-
-        avatar.addEventListener('click', toggleDropdown);
-        uname.addEventListener('click', toggleDropdown);
-        uidSpan.addEventListener('click', toggleDropdown);
-
-        // Handle dropdown actions
-        dropdown.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const action = e.target.dataset.action;
-          if (action === 'copy') {
+        async function loadChannels() {
             try {
-              await navigator.clipboard.writeText(msg.authorId);
-              alert('User ID copied to clipboard');
-            } catch {
-              alert('Failed to copy');
+                const res = await fetch(`/api/server/${guildId}/channels`);
+                const data = await res.json();
+                const select = document.getElementById('channelId');
+                
+                let channels = [];
+                if (data.success && data.channels) {
+                    channels = data.channels;
+                } else if (Array.isArray(data)) {
+                    channels = data;
+                }
+
+                channels.forEach(ch => {
+                    if (ch.type === 0 || ch.type === 'GUILD_TEXT') { // Text channels
+                        const option = document.createElement('option');
+                        option.value = ch.id;
+                        option.textContent = `#${ch.name}`;
+                        select.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to load channels', error);
             }
-          } else if (action === 'report') {
-            window.location.href = `/report?user=${encodeURIComponent(msg.authorId)}`;
-          }
-          dropdown.classList.remove('visible');
-        });
+        }
 
-        // Close dropdown if clicked outside
-        document.addEventListener('click', () => {
-          dropdown.classList.remove('visible');
-        });
+        async function loadConfig() {
+            try {
+                        const res = await fetch(`/api/server/${guildId}/ticket-config`);
+                const data = await res.json();
+                
+                let ticketConfig = {};
+                if (data.success && data.ticket) {
+                    ticketConfig = data.ticket;
+                } else if (data.ticket) {
+                    ticketConfig = data.ticket;
+                }
+                
+                if (ticketConfig) {
+                    if (ticketConfig.channelId) document.getElementById('channelId').value = ticketConfig.channelId;
+                    if (ticketConfig.enabled !== undefined) document.getElementById('enabled').checked = ticketConfig.enabled;
+                }
+                
+                // reset save bar if any changes fired during load
+                document.getElementById('saveBar').classList.remove('visible');
+                hasUnsavedChanges = false;
+            } catch (error) {
+                console.error('Failed to load config', error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load ticket configuration.' });
+            }
+        }
 
-        item.appendChild(avatar);
-        item.appendChild(bubble);
-        item.appendChild(dropdown);
-        container.appendChild(item);
-      });
+        function markUnsaved() {
+            if (!hasUnsavedChanges) {
+                hasUnsavedChanges = true;
+                document.getElementById('saveBar').classList.add('visible');
+            }
+        }
 
-      // Scroll to bottom
-      container.scrollTop = container.scrollHeight;
-    }
+        async function saveSettings() {
+            const btn = document.getElementById('saveBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Saving...`;
+            btn.disabled = true;
 
-    // Load messages from API
-    async function loadMessages(ticketId) {
-      try {
-        const res = await fetch(`/api/tickets/${encodeURIComponent(ticketId)}/messages`);
-        if (!res.ok) throw new Error('Failed to fetch messages');
-        const data = await res.json();
-        await renderMessages(data);
-      } catch (e) {
-        console.error(e);
-        document.getElementById('messages').innerHTML =
-          `<p style="color:red; text-align:center; margin-top:1rem;">
-             Unable to load messages. Please try again later.
-           </p>`;
-      }
-    }
+            const channelId = document.getElementById('channelId').value;
+            const enabled = document.getElementById('enabled').checked;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const ticketId = getTicketIdFromPath();
-      if (ticketId) {
-        document.getElementById('ticket-id').textContent = `#${ticketId}`;
-        loadMessages(ticketId);
-      } else {
-        document.getElementById('ticket-id').textContent = '';
-        document.getElementById('messages').innerHTML =
-          `<p style="color:var(--text-muted); text-align:center; margin-top:1rem;">
-             No ticket ID detected in URL path.
-           </p>`;
-      }
-    });
-  </script>
+            try {
+                const res = await fetch(`/api/server/${guildId}/ticket-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channelId, enabled })
+                });
+
+                if (res.ok) {
+                    Swal.fire({ icon: 'success', title: 'Saved!', text: 'Ticket settings updated successfully.', timer: 1500, showConfirmButton: false });
+                    document.getElementById('saveBar').classList.remove('visible');
+                    hasUnsavedChanges = false;
+                } else {
+                    const data = await res.json();
+                    Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Failed to save settings' });
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Network error occurred' });
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>

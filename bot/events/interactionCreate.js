@@ -506,6 +506,15 @@ const interactionCreateEvent = {
                     
                     console.log(`Executing command: ${interaction.commandName}`);
                     await command.run(client, interaction);
+
+                    // Increment interactionsCount safely
+                    if (interaction.guild) {
+                        await Serverdb.updateOne(
+                            { serverId: interaction.guild.id },
+                            { $inc: { interactionsCount: 1 } },
+                            { upsert: true }
+                        ).catch(e => console.error("Failed to increment interactionsCount:", e));
+                    }
                 } catch (error) {
                     console.error(`Error executing ${interaction.commandName}:`, error);
                     
