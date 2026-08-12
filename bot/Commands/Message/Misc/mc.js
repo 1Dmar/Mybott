@@ -120,7 +120,7 @@ module.exports = {
         new ButtonBuilder()
           .setLabel("Official Website")
           .setStyle(ButtonStyle.Link)
-          .setURL("https://mybott-production-37d3.up.railway.app/")
+          .setURL("https://promcbot.dev/")
         .setDisabled(true)
       );
 
