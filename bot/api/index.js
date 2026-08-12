@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
     res.json({
         success: true,
-        message: 'ProMcBot API is active. Documentation: https://promcbot.dev/docs',
+        message: 'ProMcBot API is active. Documentation: /docs',
         endpoints: {
             status: 'GET /bot/status',
             player: 'GET /bot/player/:ign',

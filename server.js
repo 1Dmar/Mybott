@@ -65,10 +65,8 @@ if (process.env.BOT_ONLY !== 'true') {
   try {
     dashboardModule = require('./dash/index');
     if (dashboardModule && dashboardModule.app) {
-      // Prioritize custom domain promcbot.dev for production
-      const domain = "promcbot.dev";
-      const protocol = "https";
-      process.env.CALLBACK_URL = `${protocol}://${domain}/auth/discord/callback`;
+      // Use the environment variable for CALLBACK_URL or default to relative path
+      // process.env.CALLBACK_URL = process.env.CALLBACK_URL || "/auth/discord/callback";
       mainApp.use('/', dashboardModule.app);
       console.log(`✅ Dashboard module loaded. Callback URL set to: ${process.env.CALLBACK_URL}`);
     }

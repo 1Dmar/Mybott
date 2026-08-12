@@ -154,8 +154,8 @@ try {
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1220005260857311294";
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G";
-// Ensure we use the custom domain for callbacks to avoid Railway redirection issues
-let callbackHost = process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback";
+// Use the CALLBACK_URL from environment variables
+let callbackHost = process.env.CALLBACK_URL;
 
 passport.use(new DiscordStrategy(
   {
@@ -768,7 +768,7 @@ app.post('/api/email/send', isAdmin, async (req, res) => {
     const payload = {
       sender: {
         name: from_name || 'ProMcBot',
-        email: from_email || 'support@promcbot.dev'
+        email: from_email || 'support@railway.app'
       },
       to: [{ email: to, name: name || to }],
       subject: subject,
