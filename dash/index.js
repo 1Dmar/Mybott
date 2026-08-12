@@ -639,6 +639,36 @@ app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res
   }
 });
 
+// ── Minecraft Remote Console ──────────────────────────────────────────
+app.post('/api/server/:guildId/mc-console', isAuthenticated, async (req, res) => {
+  try {
+    const { command } = req.body;
+    const result = await client.remoteConsole.execute(req.params.guildId, command, req.user.username);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/server/:guildId/mc-logs', isAuthenticated, async (req, res) => {
+  try {
+    const logs = await client.remoteConsole.getLogs(req.params.guildId);
+    res.json({ success: true, logs });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Engagement & Leaderboard ──────────────────────────────────────────
+app.get('/api/server/:guildId/leaderboard', isAuthenticated, async (req, res) => {
+  try {
+    const leaderboard = await client.engagement.getLeaderboard(req.params.guildId);
+    res.json({ success: true, leaderboard });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Welcome configuration ─────────────────────────────────────────────
 app.get('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
   try {

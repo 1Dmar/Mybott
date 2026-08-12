@@ -90,6 +90,15 @@ async function initBot() {
   client.cooldowns = new Collection();
   client.userSettings = new Collection();
   client.events = 0;
+  
+  // Initialize New Advanced Systems
+  const LiveMonitoring = require('./systems/LiveMonitoring');
+  const RemoteConsole = require('./systems/RemoteConsole');
+  const Engagement = require('./systems/Engagement');
+  
+  client.liveMonitoring = new LiveMonitoring(client);
+  client.remoteConsole = new RemoteConsole(client);
+  client.engagement = new Engagement(client);
 
   // Load handlers
   const handlesFiles = ['event_handler','slash_handler','cmd_handler','membership_handler','blacklist_handler','bump_handler'];
