@@ -1,4 +1,4 @@
-// server.js - Fixed version with Healthcheck fix
+// server.js - Final fix for custom domain and Railway redirection
 // Load environment variables
 if (process.env.NODE_ENV !== 'production') {
   try {
@@ -6,16 +6,20 @@ if (process.env.NODE_ENV !== 'production') {
   } catch (e) {}
 }
 
-// --- Domain & OAuth Configuration ---
-const DOMAIN = "promcbot.dev";
-const PROTOCOL = "https";
-process.env.CALLBACK_URL = `${PROTOCOL}://${DOMAIN}/auth/discord/callback`;
-
 const express = require('express');
 const mainApp = express();
 
 // Trust proxy is essential for Railway to see the correct hostname/protocol
 mainApp.set('trust proxy', true);
+
+// --- Domain & OAuth Configuration ---
+// We use promcbot.dev as the primary domain.
+// Railway's PUBLIC_URL or RAILWAY_STATIC_URL might point to the .up.railway.app domain.
+const PRIMARY_DOMAIN = "promcbot.dev";
+const PROTOCOL = "https";
+
+// Set CALLBACK_URL globally for all modules
+process.env.CALLBACK_URL = `${PROTOCOL}://${PRIMARY_DOMAIN}/auth/discord/callback`;
 
 // 1. Health check endpoint MUST be first and NOT redirected
 mainApp.get('/health', (req, res) => {
@@ -26,16 +30,20 @@ mainApp.get('/health', (req, res) => {
   });
 });
 
-// 2. Middleware to prevent unwanted redirection to Railway domain
+// 2. Middleware to handle domain canonicalization
 mainApp.use((req, res, next) => {
-  const host = req.get('host') || '';
-  // Skip redirection for health check (just in case)
+  // Skip for health check
   if (req.path === '/health') return next();
+
+  const host = req.get('host') || '';
   
-  // If the request is coming from a railway.app domain, redirect it back to the custom domain
-  if (host.includes('railway.app')) {
-    return res.redirect(301, `${PROTOCOL}://${DOMAIN}${req.originalUrl}`);
+  // If the request is NOT coming from our primary domain, and it's a railway domain
+  // redirect it to the primary domain to maintain session and avoid cross-domain issues.
+  if (host.includes('railway.app') && !host.includes(PRIMARY_DOMAIN)) {
+    console.log(`[Redirect] Canonicalizing ${host}${req.originalUrl} to ${PRIMARY_DOMAIN}`);
+    return res.redirect(301, `${PROTOCOL}://${PRIMARY_DOMAIN}${req.originalUrl}`);
   }
+  
   next();
 });
 
@@ -63,7 +71,7 @@ if (process.env.BOT_ONLY !== 'true') {
     const dashboardModule = require('./dash/index');
     if (dashboardModule && dashboardModule.app) {
       mainApp.use('/', dashboardModule.app);
-      console.log(`✅ Dashboard module loaded. Domain: ${DOMAIN}`);
+      console.log(`✅ Dashboard module loaded. Primary Domain: ${PRIMARY_DOMAIN}`);
     }
   } catch (err) {
     console.log('⚠️ Dashboard module not loaded:', err.message);
