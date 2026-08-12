@@ -11,26 +11,16 @@ const { generatePremiumKey } = require("../../../utils/premiumCode");
 
 module.exports = {
   name: "claim",
-<<<<<<< HEAD
-  description: "Redeem premium codes",
-=======
   description: "Activate premium for your server using your API port + days",
->>>>>>> copilot/update-bot-design-and-translation-system
   userPermissions: PermissionFlagsBits.Administrator,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Misc",
   type: ApplicationCommandType.ChatInput,
   options: [
     {
-<<<<<<< HEAD
-      name: 'code',
-      description: 'The premium code to redeem',
-      type: 3, // String type
-=======
       name: 'days',
       description: 'Number of days for the premium subscription',
       type: 4, // Integer type
->>>>>>> copilot/update-bot-design-and-translation-system
       required: true,
     }
   ],
@@ -56,80 +46,6 @@ module.exports = {
       return interaction.editReply({
         content: `**❌ No API port configured for this server!**\nPlease set up your server first using the server setup, then try again.`,
       });
-<<<<<<< HEAD
-    } else if (server && server.ismembership) {
-      return interaction.reply({
-        content: `**> This server already has Premium enabled**`,
-        ephemeral: true,
-      });
-    } else {
-      const premiumCode = await Code.findOne({
-        code: code.toUpperCase(),
-      });
-
-      if (premiumCode) {
-        const expires = moment(premiumCode.expiresAt).format("dddd, MMMM Do YYYY HH:mm:ss");
-
-        if (!server) {
-          server = new Server({
-            Id: guildId,
-            ismembership: false,
-            membership: {
-              redeemedBy: [],
-              redeemedAt: null,
-              expiresAt: null,
-              plan: null,
-            },
-          });
-        }
-
-        server.ismembership = true;
-        server.membership.redeemedBy.push({
-          id: guildId,
-          tag: guildName,
-        });
-        server.membership.redeemedAt = Date.now();
-        server.membership.expiresAt = premiumCode.expiresAt;
-        server.membership.plan = premiumCode.plan;
-
-        await server.save().catch((error) => {
-          console.error(`Failed to save server: ${error}`);
-        });
-
-        premiumCode.used = true;
-        await premiumCode.save().catch((error) => {
-          console.error(`Failed to save premium code: ${error}`);
-        });
-
-        const targetRoom = await interaction.client.channels.fetch('1273517280747065427');
-        if (!targetRoom) return console.error('Invalid target room ID!');
-
-        const embed = new EmbedBuilder()
-          .setColor(0xefc75e)
-          .setTitle(`New code claimer has been saved from ${guildName}`)
-          .addFields(
-            { name: 'Server Id', value: `( ${guildId} )`, inline: true },
-            { name: 'Code', value: ` \`${code}\` `, inline: true },
-            { name: 'Plan', value: ` ${premiumCode.plan} `, inline: true },
-            { name: 'Redeem By', value: ` ${interaction.user.tag} `, inline: true },
-            { name: 'Redeem At', value: ` ${moment().format('dddd, MMMM Do YYYY HH:mm:ss') }`, inline: true },
-          )
-          .setTimestamp();
-
-        await targetRoom.send({ embeds: [embed] });
-
-        return interaction.reply({
-          content: `**You have successfully redeemed Premium!**\n\n\`Expires at: ${expires}\``,
-          ephemeral: true,
-        });
-      } else {
-        return interaction.reply({
-          content: `**The code is invalid. Please try again using a valid one!**`,
-          ephemeral: true,
-        });
-      }
-=======
->>>>>>> copilot/update-bot-design-and-translation-system
     }
 
     const apiPort = serverConfig.apiPort;
@@ -190,5 +106,3 @@ module.exports = {
     });
   },
 };
-
-

@@ -1,4 +1,4 @@
-// server.js - Fixed version
+// server.js - Fixed version with Healthcheck fix
 // Load environment variables
 if (process.env.NODE_ENV !== 'production') {
   try {
@@ -7,7 +7,6 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // --- Domain & OAuth Configuration ---
-// Set CALLBACK_URL BEFORE requiring any other modules to ensure they use the correct domain
 const DOMAIN = "promcbot.dev";
 const PROTOCOL = "https";
 process.env.CALLBACK_URL = `${PROTOCOL}://${DOMAIN}/auth/discord/callback`;
@@ -18,23 +17,26 @@ const mainApp = express();
 // Trust proxy is essential for Railway to see the correct hostname/protocol
 mainApp.set('trust proxy', true);
 
-// Middleware to prevent unwanted redirection to Railway domain
-mainApp.use((req, res, next) => {
-  const host = req.get('host') || '';
-  // If the request is coming from a railway.app domain, redirect it back to the custom domain
-  if (host.includes('railway.app')) {
-    return res.redirect(301, `${PROTOCOL}://${DOMAIN}${req.originalUrl}`);
-  }
-  next();
-});
-
-// Health check endpoint
+// 1. Health check endpoint MUST be first and NOT redirected
 mainApp.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
+});
+
+// 2. Middleware to prevent unwanted redirection to Railway domain
+mainApp.use((req, res, next) => {
+  const host = req.get('host') || '';
+  // Skip redirection for health check (just in case)
+  if (req.path === '/health') return next();
+  
+  // If the request is coming from a railway.app domain, redirect it back to the custom domain
+  if (host.includes('railway.app')) {
+    return res.redirect(301, `${PROTOCOL}://${DOMAIN}${req.originalUrl}`);
+  }
+  next();
 });
 
 // Centralized Bot Login Management

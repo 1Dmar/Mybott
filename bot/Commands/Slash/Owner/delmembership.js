@@ -3,11 +3,7 @@ const Server = require("../../../Models/User");
 
 module.exports = {
   name: "delmembership",
-<<<<<<< HEAD
   description: "Remove Premium from server",
-=======
-  description: "Remove premium from server",
->>>>>>> copilot/update-bot-design-and-translation-system
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
   category: "Owner",

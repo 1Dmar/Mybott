@@ -13,15 +13,9 @@ module.exports = {
   type1: "slash",
   options: [
     {
-<<<<<<< HEAD
-      name: 'plan',
-      description: 'The plan for the premium code (daily, weekly, monthly, yearly)',
-      type: 3, // String type
-=======
       name: 'port',
       description: 'The server port to bind this premium code to',
       type: 4, // Integer type
->>>>>>> copilot/update-bot-design-and-translation-system
       required: true,
     },
     {
@@ -35,33 +29,8 @@ module.exports = {
     const port = interaction.options.getInteger('port');
     const daysValid = interaction.options.getInteger('days');
 
-<<<<<<< HEAD
-    if (!plans.includes(plan)) {
-      return interaction.reply(`Available Plans: \n > \`${plans.join(", ")}\``);
-    }
-    if (plan === "daily") time = Date.now() + 86400000;
-    if (plan === "weekly") time = Date.now() + 86400000 * 7;
-    if (plan === "monthly") time = Date.now() + 86400000 * 30;
-    if (plan === "yearly") time = Date.now() + 86400000 * 365;
-
-    for (let i = 0; i < amount; i++) {
-      const codePremium = voucher_codes.generate({ pattern: "####-#####-###-####" });
-      const code = codePremium.toString().toUpperCase();
-      const find = await schema.findOne({ code: code });
-
-      if (!find) {
-        await schema.create({
-          code: code,
-          plan: plan,
-          expiresAt: time,
-        });
-        codes.push(`${code}`);
-      }
-    }
-=======
     const { generatePremiumKey } = require('../../../utils/premiumCode');
     const premiumCode = generatePremiumKey(port, daysValid);
->>>>>>> copilot/update-bot-design-and-translation-system
 
     return interaction.reply({
       embeds: [

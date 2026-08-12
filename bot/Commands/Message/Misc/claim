@@ -33,11 +33,7 @@ module.exports = {
     } else if (server && server.ismembership) {
       // If the server is already a membership server, we dont want to save that so we return it.
       return message.reply({
-<<<<<<< HEAD
-        content: `**> This server already has Premium enabled**`,
-=======
         content: `**> This server is already in premium mode**`,
->>>>>>> copilot/update-bot-design-and-translation-system
       });
     } else {
       // Check if the code is valid within the database
@@ -103,11 +99,7 @@ module.exports = {
         await targetRoom.send({ embeds: [embed] });
         // Send a success message once redeemed
         return message.reply({
-<<<<<<< HEAD
-          content: `**You have successfully redeemed Premium!**\n\n\`Expires at: ${expires}\``,
-=======
           content: `**You have successfully redeemed premium!**\n\n\`Expires at: ${expires}\``,
->>>>>>> copilot/update-bot-design-and-translation-system
         });
         
         // Error message if the code is not valid.
