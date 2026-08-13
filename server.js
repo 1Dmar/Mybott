@@ -1,4 +1,4 @@
-// server.js - Hardened fix for custom domain and Railway redirection
+// server.js - Final Hardened Fix for promcbot.dev
 if (process.env.NODE_ENV !== 'production') {
   try {
     require('dotenv-flow').config();
