@@ -87,12 +87,7 @@
     if (!menuContent) {
       menuContent = document.createElement('div');
       menuContent.className = 'menu_content';
-      const footer = sidebar.querySelector('.sidebar-footer');
-      if (footer) {
-        sidebar.insertBefore(menuContent, footer);
-      } else {
-        sidebar.appendChild(menuContent);
-      }
+      sidebar.insertBefore(menuContent, sidebar.querySelector('.sidebar-footer'));
     }
 
     const currentPath = window.location.pathname;
