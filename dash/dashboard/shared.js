@@ -87,7 +87,12 @@
     if (!menuContent) {
       menuContent = document.createElement('div');
       menuContent.className = 'menu_content';
-      sidebar.insertBefore(menuContent, sidebar.querySelector('.sidebar-footer'));
+      const footer = sidebar.querySelector('.sidebar-footer');
+      if (footer) {
+        sidebar.insertBefore(menuContent, footer);
+      } else {
+        sidebar.appendChild(menuContent);
+      }
     }
 
     const currentPath = window.location.pathname;
@@ -164,7 +169,17 @@
   // Toast System
   window.showToast = function (message, type = 'success') {
     console.log(`[Toast] ${type}: ${message}`);
-    // Implement visual toast if container exists
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerText = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+
+  window.copyToClipboard = function (text) {
+    navigator.clipboard.writeText(text).then(() => {
+      window.showToast('Copied to clipboard!');
+    });
   };
 
   document.addEventListener('DOMContentLoaded', init);

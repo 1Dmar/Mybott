@@ -24,7 +24,7 @@ const cookieParser = require('cookie-parser');
 const cors       = require('cors');
 const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
-const MongoStore = require('connect-mongo');
+const { MongoStore } = require('connect-mongo');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -133,6 +133,63 @@ app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedi
 
 app.get('/api/logout', (req, res) => {
   req.logout(() => res.redirect('/'));
+});
+
+// ── User API ──────────────────────────────────────────────────────
+app.get('/api/user/profile', isAuthenticated, (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: req.user.id,
+      username: req.user.username,
+      global_name: req.user.global_name || req.user.username,
+      avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
+      banner: null,
+      accent_color: req.user.accent_color || '#FF512F'
+    }
+  });
+});
+
+app.get('/api/user/sessions', isAuthenticated, (req, res) => {
+  res.json({ success: true, sessions: [{ id: 'current', current: true, ip: req.ip, device: 'Web Browser' }] });
+});
+
+app.get('/api/user/membership', isAuthenticated, async (req, res) => {
+  try {
+    const profile = await UserProfile.findOne({ userId: req.user.id });
+    const isPremium = !!(profile && profile.premiumUntil > Date.now());
+    res.json({ success: true, membership: { plan: isPremium ? 'premium' : 'free' } });
+  } catch (e) {
+    res.json({ success: true, membership: { plan: 'free' } });
+  }
+});
+
+// ── Guild API ─────────────────────────────────────────────────────
+app.get('/api/guilds', isAuthenticated, (req, res) => {
+  res.json({ success: true, guilds: req.user.guilds || [] });
+});
+
+app.get('/api/guilds/:guildId/settings', isAuthenticated, async (req, res) => {
+  try {
+    const settings = await GuildSettings.findOne({ guildId: req.params.guildId }) || { prefix: '!', language: 'en' };
+    res.json({ success: true, settings });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/guilds/:guildId/settings', isAuthenticated, async (req, res) => {
+  try {
+    const { prefix, language, mcIp } = req.body;
+    await GuildSettings.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { prefix, language, mcIp },
+      { upsert: true }
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 app.get('/callback/check/userData', (req, res) => {

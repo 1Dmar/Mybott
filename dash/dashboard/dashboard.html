@@ -3,759 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProMcBot — Elite User Profile & Dashboard</title>
+  <title>ProMcBot | Dashboard</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/dashboard/shared.css">
   <style>
-    /* ── Elite Profile Page Styles ── */
-    .profile-banner {
-      background: linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 40px;
-      margin-bottom: 28px;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow-xl);
-    }
-
-    .profile-banner::before {
-      content: "";
-      position: absolute;
-      width: 300px;
-      height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 81, 47, 0.25) 0%, transparent 70%);
-      top: -100px;
-      right: -60px;
-      pointer-events: none;
-    }
-
-    .profile-avatar-wrap {
-      position: relative;
-      flex-shrink: 0;
-    }
-
-    .profile-avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      border: 4px solid rgba(255, 255, 255, 0.2);
-      object-fit: cover;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    }
-
-    .online-dot {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: #10B981;
-      border: 4px solid #111827;
-      box-shadow: 0 0 12px #10B981;
-    }
-
-    .profile-info-header {
-      flex: 1;
-      z-index: 1;
-    }
-
-    .profile-info-header h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 6px;
-      letter-spacing: -0.5px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .profile-info-header .badge-elite {
-      font-size: 11px;
-      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .profile-info-header .uid {
-      font-size: 14px;
-      opacity: 0.8;
-      margin-bottom: 20px;
-      font-family: monospace;
-    }
-
-    .profile-stats {
-      display: flex;
-      gap: 36px;
-    }
-
-    .profile-stat {
-      text-align: left;
-    }
-
-    .profile-stat .val {
-      font-size: 24px;
-      font-weight: 800;
-      display: block;
-      color: #fff;
-    }
-
-    .profile-stat .lbl {
-      font-size: 12px;
-      opacity: 0.75;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
-    }
-
-    /* Grid Layout */
-    .profile-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 28px;
-    }
-
-    .info-row {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .info-field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .info-field-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--text-muted);
-    }
-
-    .info-field-value {
-      padding: 12px 16px;
-      background: var(--surface-2);
-      border-radius: var(--radius-md);
-      font-size: 14px;
-      color: var(--text);
-      word-break: break-all;
-      border: 1px solid var(--border);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    /* API card */
-    .api-section {
-      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      border-radius: var(--radius-xl);
-      padding: 32px;
-      color: white;
-      margin-bottom: 28px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow-xl);
-    }
-
-    .api-section::before {
-      content: "";
-      position: absolute;
-      width: 220px;
-      height: 220px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-      top: -70px;
-      right: -40px;
-    }
-
-    .api-section h3 {
-      font-size: 20px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .api-section p {
-      font-size: 14px;
-      opacity: 0.9;
-      margin-bottom: 20px;
-      max-width: 600px;
-      line-height: 1.6;
-    }
-
-    .api-key-row {
-      display: flex;
-      gap: 12px;
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: var(--radius-lg);
-      padding: 6px;
-      align-items: center;
-      margin-bottom: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .api-key-val {
-      flex: 1;
-      padding: 10px 14px;
-      font-family: monospace;
-      font-size: 14px;
-      color: #fff;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      letter-spacing: 0.5px;
-    }
-
-    .api-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .api-btn {
-      align-items: center;
-      gap: 8px;
-      padding: 10px 20px;
-      border-radius: var(--radius-md);
-      border: none;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      color: white;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(4px);
-      font-family: inherit;
-      display: inline-flex;
-    }
-
-    .api-btn:hover { background: rgba(255, 255, 255, 0.35); transform: translateY(-2px); }
-    .api-btn.copy  { background: #10B981; }
-    .api-btn.copy:hover { background: #059669; }
-    .api-btn.regen { background: #111827; color: white; }
-    .api-btn.regen:hover { background: #1f2937; }
-
-    .api-usage {
-      display: flex;
-      gap: 40px;
-      padding-top: 20px;
-      margin-top: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    .usage-item { text-align: left; }
-    .usage-val  { font-size: 24px; font-weight: 800; display: block; }
-    .usage-lbl  { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-
-    /* Banner Customization */
-    .banner-preview {
-      width: 100%;
-      height: 60px;
-      border-radius: var(--radius-md);
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-    }
-    
-    .session-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      background: var(--surface-2);
-      border-radius: var(--radius-md);
-      margin-bottom: 8px;
-      border: 1px solid var(--border);
-    }
-    
-    .session-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    
-    .session-device {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    
-    .session-meta {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    
-    .current-badge {
-      font-size: 10px;
-      background: #10B981;
-      color: white;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 8px;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .profile-banner   { flex-direction: column; text-align: center; padding: 24px; }
-      .profile-stats    { justify-content: center; flex-wrap: wrap; gap: 20px; }
-      .profile-stat     { text-align: center; }
-      .profile-grid     { grid-template-columns: 1fr; }
-      .api-usage        { flex-wrap: wrap; justify-content: space-around; gap: 20px; }
-      .api-key-row      { flex-direction: column; align-items: stretch; }
-    }
+    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--surface); padding: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 1rem; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 10px; background: rgba(88, 101, 242, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .stat-info h3 { font-size: 0.875rem; color: var(--text-muted); margin: 0; }
+    .stat-info p { font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--text); }
+    .profile-section { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 2rem; }
+    .profile-banner { height: 120px; background: linear-gradient(90deg, #5865f2, #7289da); position: relative; }
+    .profile-header { padding: 0 1.5rem 1.5rem; display: flex; align-items: flex-end; gap: 1.5rem; margin-top: -40px; position: relative; }
+    .profile-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--surface); background: var(--bg); }
+    .profile-info { padding-bottom: 10px; }
+    .profile-info h2 { margin: 0; font-size: 1.5rem; color: var(--text); }
+    .profile-info p { margin: 0; color: var(--text-muted); font-size: 0.875rem; }
+    .badge-premium { background: rgba(255, 171, 0, 0.1); color: #ffab00; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+    .section-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+    .session-list { list-style: none; padding: 0; margin: 0; }
+    .session-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border); }
+    .session-item:last-child { border-bottom: none; }
+    .session-meta { display: flex; align-items: center; gap: 1rem; }
+    .session-icon { font-size: 1.25rem; color: var(--text-muted); }
+    .session-details h4 { margin: 0; font-size: 0.9rem; color: var(--text); }
+    .session-details p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+    .current-badge { font-size: 0.7rem; background: #22c55e; color: #fff; padding: 1px 6px; border-radius: 4px; margin-left: 5px; }
+    .btn-revoke { color: #ef4444; background: none; border: none; font-size: 0.875rem; cursor: pointer; }
+    .api-section { background: var(--surface); padding: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-md); }
+    .api-key-box { background: var(--bg); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
+    .api-key-val { font-family: monospace; color: var(--text); }
+    .api-actions { display: flex; gap: 0.5rem; }
+    .icon-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; padding: 4px; border-radius: 4px; }
+    .icon-btn:hover { background: var(--border); color: var(--text); }
   </style>
 </head>
 <body>
-  <!-- ── NAVBAR ── -->
-  <nav class="navbar">
-    <div class="logo_item">
-      <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span class="brand-name">ProMcBot</span>
+  <!-- Sidebar -->
+  <nav class="sidebar close" id="sidebar">
+    <div class="logo_items flex">
+      <span class="nav_image"><img src="/dashboard/logo.png" alt="logo"></span>
+      <span class="logo_name">ProMcBot</span>
+      <i class="bx bx-lock-alt" id="lock-icon" title="Unlock Sidebar"></i>
+      <i class="bx bx-x" id="sidebar-close"></i>
     </div>
-
-    <div class="search_bar">
-      <input type="text" id="searchInput" placeholder="Search servers or settings..." />
-    </div>
-
-    <div class="navbar_content">
-      <!-- Notifications -->
-      <div class="dropdown">
-        <div class="nav-icon-btn" id="notificationBtn">
-          <i class='bx bx-bell'></i>
-          <span class="notification-badge">3</span>
-        </div>
-        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-user-plus'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Discord Synced</div>
-              <div class="notification-desc">Your profile session was successfully authenticated</div>
-              <div class="notification-time">Just now</div>
-            </div>
-          </div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-server'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Server Online</div>
-              <div class="notification-desc">Minecraft bridge connected with 0ms latency</div>
-              <div class="notification-time">10 minutes ago</div>
-            </div>
-          </div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-crown'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Elite Status</div>
-              <div class="notification-desc">Your dashboard profile is operating at peak performance</div>
-              <div class="notification-time">1 hour ago</div>
-            </div>
-          </div>
-          <div class="dropdown-footer">View All System Logs</div>
-        </div>
+    <div class="menu_container">
+      <div class="menu_content">
+        <!-- Sidebar items will be injected by shared.js -->
       </div>
-
-      <!-- Theme -->
-      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
-        <i class='bx bx-sun'></i>
-      </div>
-
-      <!-- User dropdown -->
-      <div class="dropdown">
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User" class="user-avatar" id="userBtn" data-user-avatar>
-        <div class="dropdown-content" id="userDropdown">
-          <div class="dropdown-header">
-            <img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px">
-            <span id="navUserName">User</span>
+      <div class="sidebar-footer">
+        <div class="sidebar_profile flex">
+          <span class="nav_image"><img src="" alt="avatar" data-user-avatar></span>
+          <div class="data_text">
+            <span class="name" data-user-name>User</span>
+            <span class="email" data-user-id>ID</span>
           </div>
-          <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
-          <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
-          <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
-          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
-  <nav class="sidebar" id="sidebar">
-    <div class="menu_content"></div>
-    <div class="sidebar-footer">
-      <div class="collapse-btn">
-        <i class='bx bx-chevron-left'></i>
-        <span>Collapse</span>
+  <!-- Navbar -->
+  <nav class="navbar flex">
+    <i class="bx bx-menu" id="sidebarToggle"></i>
+    <div class="navbar_content flex">
+      <i class="bx bx-sun" id="darkLight"></i>
+      <div class="user_profile_nav" id="userBtn">
+        <img src="" alt="avatar" data-user-avatar>
+        <span id="navUserName">User</span>
+        <i class="bx bx-chevron-down"></i>
+        <div class="dropdown-menu" id="userDropdown">
+          <a href="/dashboard"><i class="bx bx-user"></i> Profile</a>
+          <a href="/api/logout" class="logout-link"><i class="bx bx-log-out"></i> Logout</a>
+        </div>
       </div>
     </div>
   </nav>
 
-  <!-- ── MAIN CONTENT ── -->
-  <section class="main-content">
-
-    <!-- Profile Banner -->
-    <div class="profile-banner animated">
-      <div class="profile-avatar-wrap">
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="profile-avatar" data-user-avatar>
-        <div class="online-dot" title="Online & Connected"></div>
-      </div>
-      <div class="profile-info-header">
-        <h1><span data-user-name>Loading Profile...</span> <span class="badge-elite">Elite Admin</span></h1>
-        <div class="uid">Discord ID: <span data-user-id>—</span></div>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <span class="val" id="serverCount">0</span>
-            <span class="lbl">Connected Servers</span>
-          </div>
-          <div class="profile-stat">
-            <span class="val" id="planBadge">Free Elite</span>
-            <span class="lbl">Account Tier</span>
-          </div>
-          <div class="profile-stat">
-            <span class="val" style="color:#10B981">Secure</span>
-            <span class="lbl">OAuth Status</span>
-          </div>
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="profile-section">
+      <div class="profile-banner" id="userBanner"></div>
+      <div class="profile-header">
+        <img src="" alt="avatar" class="profile-avatar" id="userAvatar" data-user-avatar>
+        <div class="profile-info">
+          <h2><span data-user-name>User</span><span class="badge-premium" id="planBadge">Free</span></h2>
+          <p>@<span data-user-username>username</span> • <span data-user-id>ID</span></p>
         </div>
       </div>
     </div>
 
-    <!-- Profile Info Grid -->
-    <div class="profile-grid">
-      <!-- Personal Info -->
-      <div class="card animated">
-        <div class="card-header">
-          <div class="card-icon" style="background:rgba(255,81,47,0.12);color:#FF512F"><i class='bx bx-user-circle'></i></div>
-          <div>
-            <div class="card-title">Personal Information</div>
-            <div class="card-subtitle">Verified Discord account credentials</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-field">
-            <div class="info-field-label"><i class='bx bx-at'></i> Discord Username</div>
-            <div class="info-field-value" data-user-username>—</div>
-          </div>
-          <div class="info-field">
-            <div class="info-field-label"><i class='bx bx-id-card'></i> Global Display Name</div>
-            <div class="info-field-value" data-user-name>—</div>
-          </div>
-          <div class="info-field">
-            <div class="info-field-label"><i class='bx bx-envelope'></i> Email Address</div>
-            <div class="info-field-value" data-user-email>Verified via Discord OAuth</div>
-          </div>
-          <div class="info-field">
-            <div class="info-field-label"><i class='bx bx-shield-alt-2'></i> Session Security</div>
-            <div class="info-field-value"><span>TLS 1.3 Encrypted</span> <i class='bx bx-check-shield' style="color:#10B981;font-size:18px"></i></div>
-          </div>
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bx bx-server"></i></div>
+        <div class="stat-info">
+          <h3>Total Servers</h3>
+          <p id="serverCount">...</p>
         </div>
       </div>
-
-      <!-- Quick Links & Actions -->
-      <div class="card animated">
-        <div class="card-header">
-          <div class="card-icon" style="background:rgba(16,185,129,0.12);color:#10B981"><i class='bx bx-bolt-circle'></i></div>
-          <div>
-            <div class="card-title">Elite Quick Actions</div>
-            <div class="card-subtitle">Immediate control center shortcuts</div>
-          </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bx bx-time-five"></i></div>
+        <div class="stat-info">
+          <h3>Member Since</h3>
+          <p>Aug 2026</p>
         </div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <a href="/servers" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-server' style="font-size:18px;color:#FF512F"></i> Manage Connected Servers
-          </a>
-          <a href="/premium" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-crown' style="font-size:18px;color:#F09819"></i> Upgrade to Enterprise Premium
-          </a>
-          <a href="/commands" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-command' style="font-size:18px;color:#3b82f6"></i> Explore Bot Command Library
-          </a>
-          <a href="/invitebot" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;" target="_blank">
-            <i class='bx bx-cube-alt' style="font-size:18px;color:#10B981"></i> Invite ProMcBot to New Server
-          </a>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="bx bx-bolt-circle"></i></div>
+        <div class="stat-info">
+          <h3>Global Rank</h3>
+          <p>#1,204</p>
         </div>
       </div>
     </div>
 
-    <!-- Security & Sessions + Banner Customization -->
-    <div class="profile-grid">
-      <!-- Banner Customization -->
-      <div class="card animated">
-        <div class="card-header">
-          <div class="card-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class='bx bx-palette'></i></div>
-          <div>
-            <div class="card-title">تخصيص البنر (Banner Customization)</div>
-            <div class="card-subtitle">تغيير مظهر ملفك الشخصي للآخرين</div>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-field">
-            <div class="info-field-label">معاينة البنر</div>
-            <div id="bannerPreview" class="banner-preview" style="background: linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%);"></div>
-          </div>
-          <div class="info-field">
-            <div class="info-field-label">نوع البنر</div>
-            <select id="bannerType" class="info-field-value" style="width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border);">
-              <option value="color">تدرج لوني (Gradient)</option>
-              <option value="image">رابط صورة (Image URL)</option>
-            </select>
-          </div>
-          <div class="info-field" id="bannerValueContainer">
-            <div class="info-field-label">قيمة البنر (CSS Gradient or URL)</div>
-            <input type="text" id="bannerValue" class="info-field-value" style="width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border);" placeholder="linear-gradient(135deg, #1e1b4b 0%, #311026 50%)">
-          </div>
-          <button id="saveBannerBtn" class="btn btn-primary" style="margin-top:8px">حفظ التغييرات</button>
-        </div>
-      </div>
-
-      <!-- Security & Sessions -->
-      <div class="card animated">
-        <div class="card-header">
-          <div class="card-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class='bx bx-shield-quarter'></i></div>
-          <div>
-            <div class="card-title">إدارة الجلسات والأمان (Security & Sessions)</div>
-            <div class="card-subtitle">الأجهزة النشطة حالياً المرتبطة بحسابك</div>
-          </div>
-        </div>
-        <div id="sessionsList" style="margin-bottom:16px">
-          <div class="session-item">
-            <div class="session-info">
-              <span class="session-device">جاري التحميل...</span>
-            </div>
-          </div>
-        </div>
-        <button id="revokeOthersBtn" class="btn btn-secondary" style="width:100%;color:var(--danger);border-color:var(--danger)">تسجيل الخروج من جميع الأجهزة الأخرى</button>
-      </div>
-    </div>
-
-    <!-- API Key Section -->
-    <div class="api-section animated">
-      <h3><i class='bx bx-key'></i> ProMcBot Developer API Key & Integration</h3>
-      <p>Use your high-performance API key to connect external Minecraft plugins, custom webhooks, and automation pipelines directly to ProMcBot.</p>
-
-      <div class="api-key-row">
-        <div class="api-key-val" id="apiKeyVal">pmb_live_sk_89f7a4b2e1d0c39485761029384756bf</div>
-        <button class="api-btn" id="toggleKeyVis" title="Toggle visibility" style="background:rgba(0,0,0,0.3);padding:10px 14px;"><i class='bx bx-show' id="visIcon"></i></button>
-      </div>
-
-      <div class="api-actions">
-        <button class="api-btn copy" id="copyKey"><i class='bx bx-copy'></i> Copy API Key</button>
-        <button class="api-btn regen" id="regenKey"><i class='bx bx-refresh'></i> Generate New Key</button>
-      </div>
-
-      <div class="api-usage">
-        <div class="usage-item">
-          <span class="usage-val" id="reqCount">1,428</span>
-          <span class="usage-lbl">API Calls (24h)</span>
-        </div>
-        <div class="usage-item">
-          <span class="usage-val">99.98%</span>
-          <span class="usage-lbl">Success Rate</span>
-        </div>
-        <div class="usage-item">
-          <span class="usage-val">12ms</span>
-          <span class="usage-lbl">Avg Latency</span>
+    <div class="section-title"><i class="bx bx-key"></i> Developer API</div>
+    <div class="api-section">
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Use your API key to interact with ProMcBot programmatically. Keep this key secret!</p>
+      <div class="api-key-box">
+        <span class="api-key-val" id="apiKeyVal">pmb_live_sk_••••••••••••••••••••••••••••••••</span>
+        <div class="api-actions">
+          <button class="icon-btn" id="toggleKeyVis" title="Toggle Visibility"><i class="bx bx-show" id="visIcon"></i></button>
+          <button class="icon-btn" id="copyKey" title="Copy Key"><i class="bx bx-copy"></i></button>
+          <button class="icon-btn" id="regenKey" title="Regenerate Key"><i class="bx bx-refresh"></i></button>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="card" style="text-align:center;padding:20px">
-      <p style="font-size:13px;color:var(--text-secondary)">ProMcBot Elite Dashboard v3.5 &copy; <span id="year"></span> ProMcBot Engineering Team. All rights reserved.</p>
+    <div class="section-title" style="margin-top: 2rem;"><i class="bx bx-devices"></i> Active Sessions</div>
+    <div class="profile-section">
+      <ul class="session-list" id="sessionList">
+        <li class="session-item">Loading sessions...</li>
+      </ul>
     </div>
+  </main>
 
-  </section>
+  <footer class="footer">
+    <p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p>
+  </footer>
 
-  <!-- Scripts -->
-  <script src="/shared.js"></script>
+  <script src="/dashboard/shared.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const bannerPreview = document.getElementById('bannerPreview');
-      const bannerType = document.getElementById('bannerType');
-      const bannerValue = document.getElementById('bannerValue');
-      const saveBannerBtn = document.getElementById('saveBannerBtn');
-      const sessionsList = document.getElementById('sessionsList');
-      const revokeOthersBtn = document.getElementById('revokeOthersBtn');
-      const profileBanner = document.querySelector('.profile-banner');
-
-      // 1. Load Profile Data
+    document.addEventListener('DOMContentLoaded', () => {
       async function loadProfile() {
         try {
           const res = await fetch('/api/user/profile');
           const data = await res.json();
-          if (data.success && data.profile) {
-            const p = data.profile;
-            bannerType.value = p.bannerType || 'color';
-            bannerValue.value = p.banner || '';
-            updatePreview();
+          if (data.success) {
+            if (data.user.accent_color) {
+              document.getElementById('userBanner').style.background = data.user.accent_color;
+            }
           }
         } catch (e) { console.error('Failed to load profile', e); }
       }
 
-      function updatePreview() {
-        const val = bannerValue.value || 'linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%)';
-        const type = bannerType.value;
-        
-        if (type === 'image') {
-          bannerPreview.style.background = `url('${val}') center/cover no-repeat`;
-          profileBanner.style.background = `url('${val}') center/cover no-repeat`;
-        } else {
-          bannerPreview.style.background = val;
-          profileBanner.style.background = val;
-        }
-      }
-
-      bannerValue.addEventListener('input', updatePreview);
-      bannerType.addEventListener('change', updatePreview);
-
-      saveBannerBtn.addEventListener('click', async () => {
-        saveBannerBtn.disabled = true;
-        saveBannerBtn.innerText = 'جاري الحفظ...';
-        try {
-          const res = await fetch('/api/user/profile/banner', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              banner: bannerValue.value,
-              bannerType: bannerType.value
-            })
-          });
-          const data = await res.json();
-          if (data.success) {
-            window.showToast?.('تم حفظ البنر بنجاح!', 'success');
-          }
-        } catch (e) {
-          window.showToast?.('فشل حفظ البنر', 'error');
-        } finally {
-          saveBannerBtn.disabled = false;
-          saveBannerBtn.innerText = 'حفظ التغييرات';
-        }
-      });
-
-      // 2. Load Sessions
       async function loadSessions() {
         try {
           const res = await fetch('/api/user/sessions');
           const data = await res.json();
+          const list = document.getElementById('sessionList');
           if (data.success) {
-            sessionsList.innerHTML = '';
-            data.sessions.forEach(s => {
-              const item = document.createElement('div');
-              item.className = 'session-item';
-              item.innerHTML = `
-                <div class="session-info">
-                  <span class="session-device">
-                    متصفح نشط ${s.current ? '<span class="current-badge">هذا الجهاز</span>' : ''}
-                  </span>
-                  <span class="session-meta">آخر ظهور: ${new Date(s.lastAccess).toLocaleString()}</span>
+            list.innerHTML = data.sessions.map(s => `
+              <li class="session-item">
+                <div class="session-meta">
+                  <i class="bx bx-desktop session-icon"></i>
+                  <div class="session-details">
+                    <h4>${s.device} ${s.current ? '<span class="current-badge">Current</span>' : ''}</h4>
+                    <p>${s.ip} • Last active: Just now</p>
+                  </div>
                 </div>
-                ${!s.current ? `<button class="btn btn-secondary btn-sm revoke-btn" data-id="${s.id}" style="padding:4px 8px;font-size:12px;color:var(--danger)">إلغاء</button>` : ''}
-              `;
-              sessionsList.appendChild(item);
-            });
-
-            document.querySelectorAll('.revoke-btn').forEach(btn => {
-              btn.addEventListener('click', async () => {
-                const sid = btn.getAttribute('data-id');
-                if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج من هذا الجهاز؟')) {
-                  const res = await fetch('/api/user/sessions/revoke', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId: sid })
-                  });
-                  if ((await res.json()).success) {
-                    loadSessions();
-                    window.showToast?.('تم إلغاء الجلسة بنجاح', 'success');
-                  }
-                }
-              });
-            });
+                ${!s.current ? `<button class="btn-revoke" onclick="revokeSession('${s.id}')">Revoke</button>` : ''}
+              </li>
+            `).join('');
           }
         } catch (e) { console.error('Failed to load sessions', e); }
       }
 
-      revokeOthersBtn.addEventListener('click', async () => {
-        if (confirm('هل أنت متأكد من رغبتك في تسجيل الخروج من جميع الأجهزة الأخرى؟')) {
-          try {
-            const res = await fetch('/api/user/sessions/revoke-others', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-              loadSessions();
-              window.showToast?.(`تم إلغاء ${data.revokedCount} جلسة بنجاح`, 'success');
-            }
-          } catch (e) { window.showToast?.('فشل إلغاء الجلسات', 'error'); }
+      loadProfile();
+      loadSessions();
+
+      // UI Logic
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      // Load server count
+      fetch('/api/guilds').then(r => r.json()).then(d => {
+        if (d.success) document.getElementById('serverCount').textContent = d.guilds.length;
+      }).catch(() => { document.getElementById('serverCount').textContent = '0'; });
+
+      // Load membership plan
+      fetch('/api/user/membership').then(r => r.json()).then(d => {
+        if (d.success) {
+          document.getElementById('planBadge').textContent = 
+            d.membership.plan === 'premium' ? '⭐ Enterprise Pro' : 'Elite Free';
         }
       });
 
-      loadProfile();
-      loadSessions();
-    });
-  </script>
-</body>  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
+      // API Key Logic
+      let keyVisible = false;
+      const realKey = 'pmb_live_sk_89f7a4b2e1d0c39485761029384756bf';
+      document.getElementById('toggleKeyVis').addEventListener('click', function() {
+        keyVisible = !keyVisible;
+        const valEl = document.getElementById('apiKeyVal');
+        const iconEl = document.getElementById('visIcon');
+        valEl.textContent = keyVisible ? realKey : 'pmb_live_sk_••••••••••••••••••••••••••••••••';
+        iconEl.className = keyVisible ? 'bx bx-hide' : 'bx bx-show';
+      });
 
-    // Load server count
-    fetch('/api/guilds').then(r => r.json()).then(d => {
-      if (d.success) document.getElementById('serverCount').textContent = d.guilds.length;
-    }).catch(() => {
-      document.getElementById('serverCount').textContent = '4';
-    });
+      document.getElementById('copyKey').addEventListener('click', function() {
+        window.copyToClipboard(realKey);
+        const icon = this.querySelector('i');
+        icon.className = 'bx bx-check';
+        setTimeout(() => icon.className = 'bx bx-copy', 2000);
+      });
 
-    // Load membership plan
-    fetch('/api/user/membership').then(r => r.json()).then(d => {
-      if (d.success) {
-        document.getElementById('planBadge').textContent =
-          d.membership.plan === 'premium' ? '⭐ Enterprise Pro' : 'Elite Free';
-      }
-    }).catch(() => {
-      document.getElementById('planBadge').textContent = '⭐ Enterprise Pro';
-    });
-
-    // API Key toggle visibility
-    let keyVisible = true;
-    const realKey = 'pmb_live_sk_89f7a4b2e1d0c39485761029384756bf';
-    document.getElementById('toggleKeyVis').addEventListener('click', function() {
-      keyVisible = !keyVisible;
-      const valEl = document.getElementById('apiKeyVal');
-      const iconEl = document.getElementById('visIcon');
-      if (keyVisible) {
-        valEl.textContent = realKey;
-        iconEl.className = 'bx bx-show';
-      } else {
-        valEl.textContent = 'pmb_live_sk_••••••••••••••••••••••••••••••••';
-        iconEl.className = 'bx bx-hide';
-      }
-    });
-
-    // API Key copy
-    document.getElementById('copyKey').addEventListener('click', function() {
-      window.copyToClipboard(realKey, 'API Key');
-      const orig = this.innerHTML;
-      this.innerHTML = '<i class="bx bx-check"></i> Key Copied!';
-      setTimeout(() => this.innerHTML = orig, 2000);
-    });
-
-    // API Key regen
-    document.getElementById('regenKey').addEventListener('click', function() {
-      window.showToast('New secure API key generated successfully!', 'success');
-      const newKey = 'pmb_live_sk_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-      document.getElementById('apiKeyVal').textContent = newKey;
+      document.getElementById('regenKey').addEventListener('click', function() {
+        window.showToast('New secure API key generated successfully!', 'success');
+      });
     });
   </script>
 </body>
