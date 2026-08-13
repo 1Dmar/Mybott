@@ -61,7 +61,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "nfJ90bf5X2VnFsU8sLGgvZqcDA1Ce9A3",
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
+  store: new MongoStore({
     mongoUrl: process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mybott",
     collectionName: 'sessions',
     ttl: 7 * 24 * 60 * 60 // 7 days

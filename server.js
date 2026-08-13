@@ -51,13 +51,17 @@ if (process.env.BOT_ONLY !== 'true') {
     if (dashboardModule && dashboardModule.app) {
       // Mount dashboard
       mainApp.use('/', dashboardModule.app);
+      console.log('✅ Dashboard mounted successfully');
+    } else {
+      throw new Error('Dashboard app not found in module exports');
     }
     
     const botApi = require('./bot/api/index');
     mainApp.use('/bot', express.json());
     mainApp.use('/bot', botApi);
   } catch (err) {
-    console.warn('⚠️ Module load error:', err.message);
+    console.error('❌ CRITICAL ERROR: Dashboard failed to load:', err.stack || err.message);
+    process.exit(1); // Force exit so Railway shows deployment failure
   }
 }
 
