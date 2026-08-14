@@ -1776,7 +1776,7 @@
 
                 // Get server ID from URL or use a default
 
-                const serverId = window.location.pathname.split('/').pop() || 'default';
+                const serverId = (typeof window.getGuildIdFromPath === 'function' && window.getGuildIdFromPath()) || 'default';
 
                 
 

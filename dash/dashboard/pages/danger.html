@@ -168,7 +168,7 @@
 
     <script src="/shared.js"></script>
     <script>
-        const guildId = window.location.pathname.split('/')[2];
+        const guildId = (typeof window.getGuildIdFromPath === 'function' && window.getGuildIdFromPath()) || window.location.pathname.split('/')[2] || 'default';
 
         function showToast(message, type) {
             const toast = document.getElementById('toast');

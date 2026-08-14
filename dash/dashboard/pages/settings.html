@@ -759,7 +759,7 @@
     <script>
         // /servers/:guildId/settings -> parts = ['servers', guildId, 'settings']
         // Prefer the shared helper (works for any /servers/:id/... route), fall back to manual parse
-        let serverId = (typeof getGuildIdFromPath === 'function') ? (getGuildIdFromPath() || '') : '';
+        let serverId = (typeof window.getGuildIdFromPath === 'function') ? (window.getGuildIdFromPath() || '') : '';
         if (!serverId) {
             const pathParts = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
             serverId = (pathParts[2] && pathParts[2] !== 'settings') || pathParts[1] || pathParts[0] || "default-server-id";

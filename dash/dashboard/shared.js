@@ -43,6 +43,8 @@
     const match = window.location.pathname.match(/^\/servers\/(\d+)/);
     return match ? match[1] : null;
   }
+  // Expose for page scripts (IIFE-scoped by default)
+  window.getGuildIdFromPath = getGuildIdFromPath;
 
   // Nav config for each context
   const NAV_CONFIG = {
