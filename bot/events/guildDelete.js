@@ -11,6 +11,7 @@ const UpdateStatus = require('../Models/UpdateStatus');
 const WelcomeChannel = require('../Models/WelcomeChannel');
 const apiKey = require('../Models/apiKey');
 const bumpedServer = require('../Models/bumpedServer');
+const BotConfig = require('../Models/BotConfig');
 
 // مجموعة لتخزين المؤقتات (Timers)
 const leaveTimers = new Collection();
@@ -46,7 +47,8 @@ module.exports = {
                     { model: UpdateStatus, query: { guildId: guild.id } },
                     { model: WelcomeChannel, query: { guildId: guild.id } },
                     { model: apiKey, query: { guildId: guild.id } },
-                    { model: bumpedServer, query: { guildId: guild.id } }
+                    { model: bumpedServer, query: { guildId: guild.id } },
+                    { model: BotConfig, query: { guildId: guild.id } }
                 ];
 
                 for (const item of modelsToDelete) {

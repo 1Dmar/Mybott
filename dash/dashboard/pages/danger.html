@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Danger Zone</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/shared.css">
+    <style>
+        .danger-header h1 {
+            font-size: 1.8rem;
+            color: var(--text);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .danger-header h1 i { color: var(--danger); }
+        .danger-sub {
+            color: var(--text);
+            opacity: 0.75;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .danger-card {
+            background: var(--surface);
+            border: 1px solid var(--danger);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .danger-card .info { flex: 1; min-width: 240px; }
+        .danger-card h3 {
+            font-size: 1.15rem;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .danger-card p {
+            font-size: 0.9rem;
+            color: var(--text);
+            opacity: 0.75;
+        }
+        .btn-danger {
+            padding: 12px 22px;
+            border-radius: 10px;
+            border: none;
+            background: var(--danger);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-danger:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220,53,69,0.35);
+        }
+        .btn-danger:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        @media (max-width: 768px) {
+            .danger-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="mobile-toggle" id="sidebarToggle">
+                <i class='bx bx-menu'></i>
+            </div>
+            <a href="/dashboard" class="logo_item">
+                <img src="/dashboard/logo.png" alt="Logo" onerror="this.src='/public/images/logo.svg'">
+                <span class="brand-name">ProMcBot</span>
+            </a>
+        </div>
+        <div class="navbar_content">
+            <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+                <i class='bx bx-sun'></i>
+            </div>
+            <div class="dropdown">
+                <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header">
+                        <i class='bx bx-user'></i>
+                        <span id="navUserName">Loading...</span>
+                    </div>
+                    <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+                    <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+                    <a href="/commands"><i class='bx bx-command'></i> Commands</a>
+                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                    <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SIDEBAR (auto-built by shared.js) -->
+    <nav class="sidebar" id="sidebar">
+        <div class="menu_content"></div>
+        <div class="sidebar-footer">
+            <div class="collapse-btn">
+                <i class='bx bx-chevron-left'></i>
+                <span>Collapse</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <div class="danger-header">
+            <h1><i class='bx bx-error-circle'></i> Danger Zone</h1>
+            <p class="danger-sub">Actions in this area are destructive and cannot be undone. Proceed with caution.</p>
+        </div>
+
+        <div class="danger-card">
+            <div class="info">
+                <h3>Reset Server Configuration</h3>
+                <p>Delete all saved dashboard settings (profile, modules, welcome, auto-responder) and restore defaults. The bot stays in the server.</p>
+            </div>
+            <button class="btn-danger" id="resetBtn" onclick="resetConfig()">
+                <i class='bx bx-refresh'></i> Reset Configuration
+            </button>
+        </div>
+
+        <div class="danger-card">
+            <div class="info">
+                <h3>Delete All Bot Logs</h3>
+                <p>Permanently delete all moderation and activity logs for this server from the database.</p>
+            </div>
+            <button class="btn-danger" id="logsBtn" onclick="deleteLogs()">
+                <i class='bx bx-trash'></i> Delete Logs
+            </button>
+        </div>
+
+        <div class="danger-card">
+            <div class="info">
+                <h3>Remove Bot From Server</h3>
+                <p>Force the bot to leave this server. All settings will be deleted after the leave timer completes. You can re-invite the bot anytime.</p>
+            </div>
+            <button class="btn-danger" id="leaveBtn" onclick="leaveServer()">
+                <i class='bx bx-exit'></i> Leave Server
+            </button>
+        </div>
+    </section>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class='bx bx-check-circle'></i>
+        <span>Done</span>
+    </div>
+
+    <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            toast.querySelector('span').textContent = message;
+            if (type === 'success') {
+                icon.className = 'bx bx-check-circle';
+                icon.style.color = 'var(--success)';
+            } else {
+                icon.className = 'bx bx-error-circle';
+                icon.style.color = 'var(--danger)';
+            }
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function resetConfig() {
+            if (!confirm(`Are you sure? All dashboard settings for this server will be reset to defaults.\nServer ID: ${guildId}`)) return;
+            try {
+                const res = await fetch(`/api/server/${guildId}/danger/reset`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) showToast('Configuration reset to defaults', 'success');
+                else showToast(data.error || 'Reset failed', 'error');
+            } catch (err) {
+                showToast('Failed to reset', 'error');
+            }
+        }
+
+        async function deleteLogs() {
+            if (!confirm('Delete ALL logs for this server? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`/api/server/${guildId}/danger/logs`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) showToast(`Deleted ${data.deleted || 0} log entries`, 'success');
+                else showToast(data.error || 'Delete failed', 'error');
+            } catch (err) {
+                showToast('Failed to delete logs', 'error');
+            }
+        }
+
+        async function leaveServer() {
+            if (!confirm(`The bot will leave this server and your settings will be removed.\nServer ID: ${guildId}\nContinue?`)) return;
+            try {
+                const res = await fetch(`/api/server/${guildId}/danger/leave`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) showToast('Bot is leaving the server...', 'success');
+                else showToast(data.error || 'Leave failed', 'error');
+            } catch (err) {
+                showToast('Failed to leave', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

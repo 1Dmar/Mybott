@@ -392,9 +392,46 @@ const addFieldsToEmbed = (serverType, serverData, ip, port) => {
     }
 };
 
+const { shouldRunAutoResponder } = require('./dashboardModulesGate');
+
+/**
+ * AutoResponder — الربط الحقيقي مع الداشبورد.
+ * يقرأ الردود التلقائية من MongoDB (التي ينشئها المالك من صفحة الداشبورد)
+ * ويعمل فقط إذا كان المالك فعّل وحدة "Auto Responder" من الداشبورد.
+ */
+const handleAutoResponder = async (client, message) => {
+    if (!message.guild || message.author.bot) return;
+
+    // Module toggle from the dashboard (BotConfig.modules.autoResponder)
+    let responderAllowed = false;
+    try {
+        responderAllowed = await shouldRunAutoResponder(client, message.guild.id);
+    } catch (e) {
+        return;
+    }
+    if (!responderAllowed) return;
+
+    try {
+        const trigger = message.content.toLowerCase();
+        const responder = await AutoResponder.findOne({ guildId: message.guild.id, trigger });
+        if (!responder) return;
+
+        let reply = responder.response || '';
+        reply = reply.replace(/\{user\}/g, message.author.toString());
+        reply = reply.replace(/\{username\}/g, message.author.username);
+
+        await message.reply(reply).catch(() => message.channel.send(reply).catch(() => {}));
+    } catch (e) {
+        // AutoResponder must never break normal chat
+        console.error('[AutoResponder] Error:', e.message);
+    }
+};
+
 module.exports = {
     name: "messageCreate",
     async execute(message, client) {
+        // AutoResponder runs alongside prefix commands (dashboard linkage)
+        await handleAutoResponder(client, message);
         await handleMainMessage(client, message);
         await handleMcMessage(client, message);
     }

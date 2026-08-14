@@ -4,116 +4,830 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ProMcBot — My Servers</title>
+  <meta name="description" content="Manage your Discord servers with ProMcBot dashboard">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .servers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-      margin-top: 30px;
-    }
-    .server-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
+    /* ── Servers Page Specific ── */
+    .servers-hero {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      margin-bottom: 28px;
+      color: white;
+      position: relative;
       overflow: hidden;
-      transition: 0.3s;
+    }
+
+    .servers-hero::before {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+      top: -100px;
+      right: -80px;
+      pointer-events: none;
+    }
+
+    .servers-hero::after {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      bottom: -60px;
+      left: 60px;
+      pointer-events: none;
+    }
+
+    .servers-hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .servers-hero h1 {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .servers-hero p {
+      opacity: 0.85;
+      font-size: 14px;
+    }
+
+    .servers-hero .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+    }
+
+    /* Search + Filter Bar */
+    .servers-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .servers-search {
+      flex: 1;
+      min-width: 200px;
       position: relative;
     }
-    .server-card:hover { transform: translateY(-5px); border-color: #FF512F; box-shadow: var(--shadow-xl); }
-    .server-banner { height: 80px; background: linear-gradient(135deg, #1e1b4b 0%, #311026 100%); }
-    .server-icon {
-      width: 70px; height: 70px; border-radius: 18px; border: 4px solid var(--surface);
-      position: absolute; top: 45px; left: 20px; background: var(--surface-2); object-fit: cover;
+
+    .servers-search input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: var(--transition-fast);
     }
-    .server-info { padding: 45px 20px 20px; }
-    .server-name { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-    .server-id { font-size: 12px; color: var(--text-muted); font-family: monospace; margin-bottom: 16px; }
+
+    .servers-search input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .servers-search i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    .filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+      transition: var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .filter-btn.active,
+    .filter-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    /* Guild Cards Grid */
+    .servers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .guild-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      transition: var(--transition-base);
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+
+    .guild-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+      border-color: var(--primary);
+    }
+
+    .guild-card-banner {
+      height: 85px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .guild-card-banner .banner-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.4s ease;
+    }
+
+    .guild-card:hover .banner-bg {
+      transform: scale(1.05);
+    }
+
+    .guild-card-icon {
+      position: absolute;
+      top: 55px; /* Moved outside banner, adjusted top to overlap */
+      left: 20px;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      border: 4px solid var(--surface);
+      object-fit: cover;
+      background: var(--surface-2);
+      z-index: 5; /* Ensure it stays on top */
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-md);
+    }
+
+    .guild-card:hover .guild-card-icon {
+      border-color: var(--primary);
+    }
+
+    .guild-card-icon.icon-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .guild-badge {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      z-index: 2;
+    }
+
+    .guild-badge.bot-here {
+      background: rgba(34,197,94,0.9);
+      color: white;
+      backdrop-filter: blur(4px);
+    }
+
+    .guild-badge.bot-away {
+      background: rgba(107,114,128,0.9);
+      color: white;
+      backdrop-filter: blur(4px);
+    }
+
+    .guild-card-body {
+      padding: 38px 20px 20px;
+    }
+
+    .guild-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .guild-id {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      font-family: monospace;
+    }
+
+    .guild-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .guild-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .guild-meta-item i {
+      font-size: 14px;
+    }
+
+    .guild-card-actions {
+      display: flex;
+      gap: 8px;
+    }
+
     .btn-manage {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px; background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      color: white; border-radius: 10px; font-weight: 700; text-decoration: none; transition: 0.3s;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      background: var(--gradient-primary);
+      color: white;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      transition: var(--transition-fast);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
     }
+
+    .btn-manage:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+      color: white;
+    }
+
     .btn-invite {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px; background: var(--surface-2); color: var(--text);
-      border-radius: 10px; font-weight: 700; text-decoration: none; border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      font-size: 16px;
+      transition: var(--transition-fast);
+      text-decoration: none;
     }
-    .badge-bot {
-      position: absolute; top: 12px; right: 12px; padding: 4px 10px;
-      background: rgba(16, 185, 129, 0.9); color: white; border-radius: 20px;
-      font-size: 10px; font-weight: 800; text-transform: uppercase;
+
+    .btn-invite:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Empty / Loading states */
+    .servers-empty {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 32px;
+      text-align: center;
+    }
+
+    .servers-empty i {
+      font-size: 56px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .servers-empty h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .servers-empty p {
+      color: var(--text-secondary);
+      font-size: 13px;
+      max-width: 360px;
+    }
+
+    .servers-empty .btn-primary {
+      margin-top: 20px;
+    }
+
+    .skeleton-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .skeleton-banner {
+      height: 72px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    .skeleton-body {
+      padding: 32px 20px 20px;
+    }
+
+    .skeleton-line {
+      height: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    .skeleton-line.short { width: 60%; }
+    .skeleton-line.shorter { width: 40%; }
+
+    /* Section divider */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .section-header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .section-count {
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section-divider {
+      margin-bottom: 28px;
+    }
+
+    .servers-logo-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px 4px 4px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition-fast);
+    }
+
+    .servers-logo-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .servers-logo-image {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.65);
+    }
+
+    .servers-logo-card .brand-name {
+      -webkit-text-fill-color: initial;
+      background: none;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .servers-grid {
+        grid-template-columns: 1fr;
+      }
+      .servers-hero h1 { font-size: 20px; }
     }
   </style>
 </head>
-<body class="dark">
+<body>
+
+  <!-- ── NAVBAR ── -->
   <nav class="navbar">
-    <div class="logo_item">
-      <i class="bx bx-menu" id="sidebarToggle"></i>
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span class="brand-name">ProMcBot</span>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item servers-logo-card">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="servers-logo-image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
     </div>
+
     <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight"><i class='bx bx-sun'></i></div>
-      <img src="" class="user-avatar" data-user-avatar id="userBtn">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">Select a server to start managing it</div>
+            </div>
+          </div>
+          <div class="dropdown-footer">Mark all as read</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+          <a href="/commands"><i class='bx bx-command'></i> Commands</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
     </div>
   </nav>
 
-  <nav class="sidebar" id="sidebar"></nav>
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span>Collapse</span>
+      </div>
+    </div>
+  </nav>
 
-  <main class="main-content">
-    <div class="section-header">
-      <h1>My Servers</h1>
-      <p>Select a server to manage its Minecraft integration and Discord settings.</p>
+  <!-- ── MAIN CONTENT ── -->
+  <section class="main-content">
+
+    <!-- Hero -->
+    <div class="servers-hero animated">
+      <div class="servers-hero-content">
+        <h1><i class='bx bx-server' style="margin-right:8px;"></i>My Servers</h1>
+        <p>Select a server to manage it with ProMcBot</p>
+        <div class="hero-meta">
+          <div class="hero-stat">
+            <i class='bx bx-crown'></i>
+            <span id="heroAdminCount">0 Admin</span>
+          </div>
+          <div class="hero-stat">
+            <i class='bx bx-bot'></i>
+            <span id="heroBotCount">0 with Bot</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="servers-grid" id="serversGrid">
-      <!-- Servers will be loaded here -->
-      <div class="loading-state">Loading your servers...</div>
+    <!-- Toolbar -->
+    <div class="servers-toolbar animated">
+      <div class="servers-search">
+        <i class='bx bx-search'></i>
+        <input type="text" id="serverSearch" placeholder="Search servers..." autocomplete="off">
+      </div>
+      <button class="filter-btn active" id="filterAll" data-filter="all">
+        <i class='bx bx-list-ul'></i> All
+      </button>
+      <button class="filter-btn" id="filterBot" data-filter="bot">
+        <i class='bx bx-bot'></i> Bot Added
+      </button>
+      <button class="filter-btn" id="filterNoBot" data-filter="nobot">
+        <i class='bx bx-plus'></i> Add Bot
+      </button>
     </div>
-  </main>
 
-  <script src="/shared.js"></script>
+    <!-- With Bot Section -->
+    <div class="section-divider animated" id="sectionWithBot" style="display:none">
+      <div class="section-header">
+        <h2><i class='bx bx-bot' style="color:var(--success)"></i> Bot is Active</h2>
+        <span class="section-count" id="countWithBot">0</span>
+      </div>
+      <div class="servers-grid" id="gridWithBot"></div>
+    </div>
+
+    <!-- Without Bot Section -->
+    <div class="section-divider animated" id="sectionWithoutBot" style="display:none">
+      <div class="section-header">
+        <h2><i class='bx bx-plus-circle' style="color:var(--text-muted)"></i> Invite Bot</h2>
+        <span class="section-count" id="countWithoutBot">0</span>
+      </div>
+      <div class="servers-grid" id="gridWithoutBot"></div>
+    </div>
+
+    <!-- Skeleton loader -->
+    <div id="skeletonGrid" class="servers-grid">
+        <div class="skeleton-card animated">
+          <div class="skeleton-banner"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line" style="margin-top:20px;"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line shorter" style="margin-top:20px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-card animated">
+          <div class="skeleton-banner"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line" style="margin-top:20px;"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line shorter" style="margin-top:20px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-card animated">
+          <div class="skeleton-banner"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line" style="margin-top:20px;"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line shorter" style="margin-top:20px;"></div>
+          </div>
+        </div>
+        <div class="skeleton-card animated">
+          <div class="skeleton-banner"></div>
+          <div class="skeleton-body">
+            <div class="skeleton-line" style="margin-top:20px;"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line shorter" style="margin-top:20px;"></div>
+          </div>
+        </div>
+    </div>
+
+    <!-- Empty state (hidden by default) -->
+    <div class="servers-empty" id="serversEmpty" style="display:none">
+      <i class='bx bx-server'></i>
+      <h3>No servers found</h3>
+      <p>You don't have administrator access to any servers, or no servers match your search.</p>
+      <a href="/invitebot" class="btn btn-primary" style="margin-top:20px;text-decoration:none;">
+        <i class='bx bx-plus'></i> Invite ProMcBot
+      </a>
+    </div>
+
+  </section>
+
   <script>
+    // ─────────────────────────────────────────────
+    // Servers Page Logic
+    // ─────────────────────────────────────────────
+
+    const INVITE_URL = (clientId, guildId) =>
+      `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=8&scope=bot%20applications.commands&guild_id=${guildId}&disable_guild_select=true`;
+
+    const BOT_CLIENT_ID = '1220005260857311294'; // fallback; will be overridden
+
+    // Banner gradient palettes per index
+    const BANNER_GRADIENTS = [
+      'linear-gradient(135deg, #4070f4, #6a11cb)',
+      'linear-gradient(135deg, #11998e, #38ef7d)',
+      'linear-gradient(135deg, #f953c6, #b91d73)',
+      'linear-gradient(135deg, #f7971e, #ffd200)',
+      'linear-gradient(135deg, #12c2e9, #c471ed, #f64f59)',
+      'linear-gradient(135deg, #134e5e, #71b280)',
+      'linear-gradient(135deg, #ee0979, #ff6a00)',
+      'linear-gradient(135deg, #1a1a2e, #16213e)',
+      'linear-gradient(135deg, #3cb043, #1a6b00)',
+      'linear-gradient(135deg, #5865f2, #3441c7)',
+    ];
+
+    let allGuilds = [];
+    let activeFilter = 'all';
+
+    function createGuildCard(guild, index) {
+      const iconUrl = guild.icon
+        ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.${guild.icon.startsWith('a_') ? 'gif' : 'png'}?size=128`
+        : null;
+
+      const gradient = BANNER_GRADIENTS[index % BANNER_GRADIENTS.length];
+      const initial = (guild.name || 'S').charAt(0).toUpperCase();
+      const iconHtml = iconUrl
+        ? `<img class="guild-card-icon" src="${iconUrl}" alt="${guild.name}" onerror="this.outerHTML='<div class=\\'guild-card-icon icon-placeholder\\' style=\\'background:${gradient}\\'>${initial}</div>'">`
+        : `<div class="guild-card-icon icon-placeholder" style="background:${gradient}">${initial}</div>`;
+
+      const bannerStyle = iconUrl
+        ? `background-image: url('${iconUrl}'); background-size: cover; background-position: center; background-repeat: no-repeat;`
+        : `background: ${gradient};`;
+
+      const hasBot = !!guild.botPresent;
+      const badgeHtml = hasBot
+        ? `<div class="guild-badge bot-here"><i class='bx bx-check'></i> Bot Active</div>`
+        : `<div class="guild-badge bot-away"><i class='bx bx-plus'></i> Invite Bot</div>`;
+
+      const manageBtn = hasBot
+        ? `<a href="/servers/${guild.id}/overview" class="btn-manage" onclick="cacheGuildAndGo(event, '${guild.id}', '${guild.name.replace(/'/g, "\\'")}', '${iconUrl || ''}', '/servers/${guild.id}/overview')">
+             <i class='bx bx-cog'></i> Manage
+           </a>`
+        : `<a href="${INVITE_URL(BOT_CLIENT_ID, guild.id)}" target="_blank" class="btn-manage" style="background:var(--gradient-mc);">
+             <i class='bx bx-plus'></i> Add Bot
+           </a>`;
+
+      const memberCount = guild.approximate_member_count
+        ? `<div class="guild-meta-item"><i class='bx bx-group'></i> ${guild.approximate_member_count.toLocaleString()}</div>`
+        : '';
+
+      const guildName = guild.name || 'Server';
+      return `
+        <div class="guild-card animated" data-name="${guildName.toLowerCase()}" data-bot="${hasBot}">
+          <div class="guild-card-banner">
+            <div class="banner-bg" style="${bannerStyle}"></div>
+            <div class="banner-overlay"></div>
+            ${badgeHtml}
+          </div>
+          ${iconHtml}
+          <div class="guild-card-body">
+            <div class="guild-name" title="${guild.name}">${guild.name}</div>
+            <div class="guild-id">${guild.id}</div>
+            <div class="guild-meta">
+              ${memberCount}
+              <div class="guild-meta-item"><i class='bx bx-key'></i> Admin</div>
+            </div>
+            <div class="guild-card-actions">
+              ${manageBtn}
+              <a href="/invitebot" class="btn-invite" title="Invite Bot">
+                <i class='bx bx-link-external'></i>
+              </a>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function cacheGuildAndGo(e, guildId, guildName, iconUrl, href) {
+      e.preventDefault();
+      // Cache for smart sidebar
+      if (window.cacheGuildInfo) {
+        window.cacheGuildInfo({ id: guildId, name: guildName, iconUrl });
+      }
+      localStorage.setItem(`guild_name_${guildId}`, guildName);
+      if (iconUrl) localStorage.setItem(`guild_icon_${guildId}`, iconUrl);
+      window.location.href = href;
+    }
+
+    function renderGuilds(guilds) {
+      const withBot = guilds.filter(g => g.botPresent);
+      const withoutBot = guilds.filter(g => !g.botPresent);
+
+      document.getElementById('heroAdminCount').textContent = `${guilds.length} Admin`;
+      document.getElementById('heroBotCount').textContent = `${withBot.length} with Bot`;
+
+      const gridWith = document.getElementById('gridWithBot');
+      const gridWithout = document.getElementById('gridWithoutBot');
+      const secWith = document.getElementById('sectionWithBot');
+      const secWithout = document.getElementById('sectionWithoutBot');
+
+      // With bot
+      if (withBot.length > 0) {
+        document.getElementById('countWithBot').textContent = withBot.length;
+        gridWith.innerHTML = withBot.map((g, i) => createGuildCard(g, i)).join('');
+        secWith.style.display = 'block';
+      } else {
+        secWith.style.display = 'none';
+      }
+
+      // Without bot
+      if (withoutBot.length > 0) {
+        document.getElementById('countWithoutBot').textContent = withoutBot.length;
+        gridWithout.innerHTML = withoutBot.map((g, i) => createGuildCard(g, withBot.length + i)).join('');
+        secWithout.style.display = 'block';
+      } else {
+        secWithout.style.display = 'none';
+      }
+
+      document.getElementById('serversEmpty').style.display =
+        (withBot.length === 0 && withoutBot.length === 0) ? 'flex' : 'none';
+    }
+
+    function applyFilter(filter) {
+      activeFilter = filter;
+
+      // Update filter buttons
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+
+      // Filter guilds
+      let filtered = allGuilds;
+      if (filter === 'bot') filtered = allGuilds.filter(g => g.botPresent);
+      if (filter === 'nobot') filtered = allGuilds.filter(g => !g.botPresent);
+
+      const search = document.getElementById('serverSearch').value.toLowerCase().trim();
+      if (search) filtered = filtered.filter(g => g.name.toLowerCase().includes(search));
+
+      renderGuilds(filtered);
+    }
+
     async function loadServers() {
       try {
-        const res = await fetch('/callback/check/userData');
-        const data = await res.json();
-        if (!data.authenticated) return;
+        const resp = await fetch('/api/guilds');
+        if (!resp.ok) {
+          if (resp.status === 401) { window.location.href = '/'; return; }
+          throw new Error(`Server error: ${resp.status}`);
+        }
+        const data = await resp.json();
+        if (!data.success) throw new Error(data.error || 'Failed to load');
 
-        const grid = document.getElementById('serversGrid');
-        grid.innerHTML = '';
+        allGuilds = data.guilds || [];
 
-        data.user.guilds.forEach(guild => {
-          const hasBot = guild.botInGuild; // This depends on your backend logic
-          const icon = guild.icon 
-            ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
-            : `https://cdn.discordapp.com/embed/avatars/0.png`;
-          
-          const card = document.createElement('div');
-          card.className = 'server-card';
-          card.innerHTML = `
-            <div class="server-banner"></div>
-            <img src="${icon}" class="server-icon" alt="${guild.name}">
-            ${hasBot ? '<span class="badge-bot">Connected</span>' : ''}
-            <div class="server-info">
-              <div class="server-name">${guild.name}</div>
-              <div class="server-id">ID: ${guild.id}</div>
-              ${hasBot 
-                ? `<a href="/servers/${guild.id}/overview" class="btn-manage"><i class="bx bx-cog"></i> Manage</a>`
-                : `<a href="/invitebot" class="btn-invite"><i class="bx bx-plus"></i> Add Bot</a>`
-              }
-            </div>
-          `;
-          grid.appendChild(card);
-        });
-      } catch (e) {
-        console.error("Failed to load servers", e);
+        // Hide skeleton
+        document.getElementById('skeletonGrid').style.display = 'none';
+
+        if (allGuilds.length === 0) {
+          document.getElementById('serversEmpty').style.display = 'flex';
+          return;
+        }
+
+        renderGuilds(allGuilds);
+
+      } catch (err) {
+        console.error('[Servers] Error:', err);
+        document.getElementById('skeletonGrid').style.display = 'none';
+        document.getElementById('serversEmpty').style.display = 'flex';
+        if (window.showToast) window.showToast('Failed to load servers: ' + err.message, 'error');
       }
     }
-    
-    document.addEventListener('DOMContentLoaded', loadServers);
+
+    // ── Event Listeners ──
+    document.addEventListener('DOMContentLoaded', () => {
+      // Wait a tiny bit to ensure shared.js has initialized auth
+      setTimeout(() => {
+        loadServers();
+      }, 500);
+
+      // Filter buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+      });
+
+      // Search
+      let searchTimeout;
+      document.getElementById('serverSearch').addEventListener('input', e => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => applyFilter(activeFilter), 250);
+      });
+    });
   </script>
+  <script src="/shared.js"></script>
 </body>
 </html>

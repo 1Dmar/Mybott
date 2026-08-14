@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProMcBot - Server Members</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/shared.css">
+    <style>
+        .members-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .members-header h1 {
+            font-size: 1.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .members-header h1 i {
+            color: var(--primary);
+        }
+        .member-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 16px;
+            min-width: 260px;
+        }
+        .member-search input {
+            border: none;
+            background: transparent;
+            color: var(--text);
+            outline: none;
+            font-size: 0.95rem;
+            width: 100%;
+        }
+        .members-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .member-stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .member-stat-card .icon-wrap {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .member-stat-card .icon-wrap.blue   { background: rgba(64,112,244,0.12); color: var(--primary); }
+        .member-stat-card .icon-wrap.green  { background: rgba(40,167,69,0.12); color: var(--success); }
+        .member-stat-card .icon-wrap.orange { background: rgba(255,140,0,0.12); color: var(--primary); }
+        .member-stat-card h4 {
+            font-size: 0.85rem;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .member-stat-card .val {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .members-table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .members-table th {
+            text-align: left;
+            padding: 16px 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text);
+            background: rgba(64,112,244,0.06);
+            border-bottom: 1px solid var(--border);
+        }
+        .members-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: middle;
+        }
+        .members-table tr:last-child td {
+            border-bottom: none;
+        }
+        .member-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .member-info img {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .member-info .name {
+            font-weight: 600;
+        }
+        .member-info .id {
+            font-size: 0.8rem;
+            color: var(--text);
+            opacity: 0.7;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .role-badge.owner {
+            background: linear-gradient(90deg, #ffb347, #ffcc33);
+            color: #333;
+        }
+        .role-badge.admin {
+            background: rgba(220,53,69,0.12);
+            color: var(--danger);
+        }
+        .role-badge.mod {
+            background: rgba(64,112,244,0.12);
+            color: var(--primary);
+        }
+        .role-badge.member {
+            background: var(--border);
+            color: var(--text);
+        }
+        .bot-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(88,101,242,0.15);
+            color: #5865f2;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .loading-row td {
+            text-align: center;
+            padding: 40px;
+            color: var(--text);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text);
+        }
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.4;
+            display: block;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 768px) {
+            .members-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .member-search {
+                min-width: auto;
+            }
+            .members-table-wrap {
+                overflow-x: auto;
+            }
+            .members-table {
+                min-width: 640px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- navbar -->
+    <nav class="navbar">
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="mobile-toggle" id="sidebarToggle">
+                <i class='bx bx-menu'></i>
+            </div>
+            <a href="/dashboard" class="logo_item">
+                <img src="/dashboard/logo.png" alt="Logo" onerror="this.src='/public/images/logo.svg'">
+                <span class="brand-name">ProMcBot</span>
+            </a>
+        </div>
+        <div class="navbar_content">
+            <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+                <i class='bx bx-sun'></i>
+            </div>
+            <div class="dropdown">
+                <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header">
+                        <i class='bx bx-user'></i>
+                        <span id="navUserName">Loading...</span>
+                    </div>
+                    <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+                    <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+                    <a href="/commands"><i class='bx bx-command'></i> Commands</a>
+                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                    <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SIDEBAR (auto-built by shared.js) -->
+    <nav class="sidebar" id="sidebar">
+        <div class="menu_content"></div>
+        <div class="sidebar-footer">
+            <div class="collapse-btn">
+                <i class='bx bx-chevron-left'></i>
+                <span>Collapse</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <section class="main-content">
+        <div class="members-header">
+            <h1><i class='bx bx-group'></i> Server Members</h1>
+            <div class="member-search">
+                <i class='bx bx-search'></i>
+                <input type="text" id="memberSearch" placeholder="Search members...">
+            </div>
+        </div>
+
+        <div class="members-stats" id="membersStats">
+            <div class="member-stat-card">
+                <div class="icon-wrap blue"><i class='bx bx-user'></i></div>
+                <div>
+                    <h4>Total Members</h4>
+                    <div class="val" id="statTotal">—</div>
+                </div>
+            </div>
+            <div class="member-stat-card">
+                <div class="icon-wrap green"><i class='bx bx-user-check'></i></div>
+                <div>
+                    <h4>Admins</h4>
+                    <div class="val" id="statAdmins">—</div>
+                </div>
+            </div>
+            <div class="member-stat-card">
+                <div class="icon-wrap orange"><i class='bx bx-shield-alt-2'></i></div>
+                <div>
+                    <h4>Moderators</h4>
+                    <div class="val" id="statMods">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="members-table-wrap">
+            <table class="members-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody id="membersBody">
+                    <tr class="loading-row">
+                        <td colspan="4"><i class='bx bx-loader-alt bx-spin'></i> Loading members...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+        let allMembers = [];
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadMembers();
+            document.getElementById('memberSearch').addEventListener('input', renderMembers);
+        });
+
+        async function loadMembers() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/members`);
+                const data = await res.json();
+                allMembers = (data.success && Array.isArray(data.members)) ? data.members : [];
+                renderMembers();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('membersBody').innerHTML = `
+                    <tr class="loading-row"><td colspan="4">Failed to load members</td></tr>`;
+            }
+        }
+
+        function renderMembers() {
+            const query = document.getElementById('memberSearch').value.toLowerCase();
+            const filtered = allMembers.filter(m =>
+                (m.username || '').toLowerCase().includes(query) ||
+                (String(m.id) || '').includes(query)
+            );
+
+            // Stats
+            const total = allMembers.length;
+            const admins = allMembers.filter(m => m.role === 'admin' || m.role === 'owner').length;
+            const mods = allMembers.filter(m => m.role === 'mod').length;
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statAdmins').textContent = admins;
+            document.getElementById('statMods').textContent = mods;
+
+            const body = document.getElementById('membersBody');
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr class="loading-row"><td colspan="4">
+                    <div class="empty-state"><i class='bx bx-user-x'></i>No members found</div></td></tr>`;
+                return;
+            }
+            body.innerHTML = filtered.map(m => `
+                <tr>
+                    <td>
+                        <div class="member-info">
+                            <img src="${m.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="avatar"
+                                 onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                            <div>
+                                <div class="name">${escapeHtml(m.username || 'Unknown')}${m.bot ? '<span class="bot-tag">BOT</span>' : ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="role-badge ${m.role || 'member'}">${roleLabel(m.role)}</span></td>
+                    <td>${m.joinedAt ? new Date(m.joinedAt).toLocaleDateString() : '—'}</td>
+                    <td><code>${m.id || '—'}</code></td>
+                </tr>
+            `).join('');
+        }
+
+        function roleLabel(role) {
+            switch (role) {
+                case 'owner': return 'Owner';
+                case 'admin': return 'Admin';
+                case 'mod': return 'Moderator';
+                default: return 'Member';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+    </script>
+</body>
+</html>

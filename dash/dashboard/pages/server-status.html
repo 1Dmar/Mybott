@@ -39,28 +39,59 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const serverId = window.location.pathname.split('/').pop();
+            // guild id is the first path segment: /server-status?guild=ID or /server-status/:guildId
+            const url = new URL(window.location.href);
+            const guildId = url.searchParams.get('guild')
+                || window.location.pathname.replace(/^\/+|\/+$/g, '').split('/')[1]
+                || '';
             const serverCard = document.getElementById('serverCard');
-            
+
+            if (!guildId) {
+                serverCard.innerHTML = '<h2>No server selected</h2><p>Open this page from a server dashboard.</p>';
+                return;
+            }
+
             try {
-                const response = await axios.get(`/api/server/${serverId}`);
-                const server = response.data;
+                // Merge saved Minecraft server info with live bot status
+                const [infoRes, guildRes] = await Promise.all([
+                    axios.get(`/api/server/${guildId}/server-info`),
+                    axios.get(`/api/server/${guildId}/info`)
+                ]);
+                const info = infoRes.data.info || {};
+                const guild = guildRes.data.guild || {};
+
+                // Live ping via ServerStatus webhook model (if configured)
+                let live = { online: false, players: { online: 0, max: 0 }, version: null, motd: null };
+                try {
+                    const statusRes = await axios.get(`/api/server/${guildId}/minecraft-status`);
+                    const rows = statusRes.data.status || [];
+                    if (rows.length > 0 && rows[0].online !== undefined) {
+                        live.online = rows[0].online === true || rows[0].online === 'true';
+                        if (rows[0].players !== undefined) live.players = rows[0].players;
+                        if (rows[0].version !== undefined) live.version = rows[0].version;
+                        if (rows[0].motd !== undefined) live.motd = rows[0].motd;
+                    }
+                } catch (_) {}
+
+                const online = live.online || info.online || false;
+                const serverName = info.serverName || guild.name || 'Minecraft Server';
+                const icon = guild.icon;
 
                 serverCard.innerHTML = `
                     <div class="server-header">
-                        ${server.icon ? `<img src="${server.icon}" class="server-icon" alt="Server Icon">` : ''}
-                        <h2>${server.serverName}</h2>
-                        <p class="status-${server.online ? 'online' : 'offline'}">
-                            <i class='bx bx-${server.online ? 'check' : 'x'}-circle'></i>
-                            ${server.online ? 'Online' : 'Offline'}
+                        ${icon ? `<img src="${icon}" class="server-icon" alt="Server Icon">` : ''}
+                        <h2>${serverName}</h2>
+                        <p class="status-${online ? 'online' : 'offline'}">
+                            <i class='bx bx-${online ? 'check' : 'x'}-circle'></i>
+                            ${online ? 'Online' : 'Offline'}
                         </p>
                     </div>
                     <div class="server-details">
-                        <p><strong>IP:</strong> ${server.ip}:${server.port}</p>
-                        <p><strong>Type:</strong> ${server.type}</p>
-                        <p><strong>Players:</strong> ${server.players.online}/${server.players.max}</p>
-                        <p><strong>Version:</strong> ${server.version}</p>
-                        ${server.motd ? `<p><strong>MOTD:</strong> ${server.motd}</p>` : ''}
+                        <p><strong>IP:</strong> ${info.ip || 'Not configured'}${info.port ? ':' + info.port : ''}</p>
+                        <p><strong>Type:</strong> ${info.version || 'Java/Bedrock'}</p>
+                        <p><strong>Players:</strong> ${live.players.online || 0}/${live.players.max || 0}</p>
+                        ${live.version ? `<p><strong>Version:</strong> ${live.version}</p>` : ''}
+                        ${live.motd ? `<p><strong>MOTD:</strong> ${live.motd}</p>` : ''}
                     </div>
                 `;
             } catch (error) {
