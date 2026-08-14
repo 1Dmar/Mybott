@@ -33,6 +33,9 @@ const Ticket         = require('../bot/Models/Ticket');
 const BotConfig      = require('../bot/Models/BotConfig');
 const Message        = require('../bot/Models/Message');
 const User           = require('../bot/Models/apiKey');
+// Bridge to the bot's live cache: invalidate when the dashboard saves settings
+let DashboardBridge;
+try { DashboardBridge = new (require('../bot/systems/DashboardBridge'))(); } catch (e) { DashboardBridge = null; }
 const ServerStatus   = require('../bot/Models/ServerStatus');
 const Membership     = require('../bot/Models/User');
 const AutoResponder  = require('../bot/Models/AutoResponder');
@@ -361,9 +364,14 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
     // Add botPresent flag: check if bot client has this guild in its cache
     const enriched = guilds.map(g => {
       let botPresent = false;
+      let approximate_member_count = null;
       try {
         if (client && client.isReady && client.isReady()) {
           botPresent = client.guilds.cache.has(g.id);
+          if (botPresent) {
+            const cached = client.guilds.cache.get(g.id);
+            approximate_member_count = cached?.approximateMemberCount || cached?.memberCount || null;
+          }
         }
       } catch (_) {}
       return {
@@ -371,7 +379,8 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
         name: g.name,
         icon: g.icon || null,
         permissions: g.permissions,
-        botPresent
+        botPresent,
+        approximate_member_count
       };
     });
 
@@ -634,7 +643,7 @@ app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res
       { upsert: true, new: true }
     );
     res.json({ success: true, settings });
-    invalidateConfig(req.params.guildId);
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -657,7 +666,7 @@ app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     res.json({ success: true, welcome: config.welcome });
-    invalidateConfig(req.params.guildId);
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -681,7 +690,7 @@ app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res)
       { upsert: true, new: true }
     );
     res.json({ success: true, ticket: config.ticket });
-    invalidateConfig(req.params.guildId);
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -749,20 +758,33 @@ app.get('/api/server/:guildId/server-info', isAuthenticated, async (req, res) =>
 
 app.post('/api/server/:guildId/server-info', isAuthenticated, async (req, res) => {
   try {
+    const body = req.body || {};
+    const isBedrock = String(body.version || '').toLowerCase() === 'bedrock';
+    const setFields = {
+      serverId: req.params.guildId,
+      serverName: body.serverName || '',
+      online: body.online || false
+    };
+    // Save real Minecraft connection info in the fields the bot actually reads
+    if (isBedrock) {
+      setFields.bedrockIP = body.bedrockIP || body.ip || '';
+      setFields.bedrockPort = Number(body.bedrockPort || body.port) || 19132;
+      setFields.serverType = 'bedrock';
+      setFields.javaIP = ''; // clear unused fields
+      setFields.javaPort = 25565;
+    } else {
+      setFields.javaIP = body.javaIP || body.ip || '';
+      setFields.javaPort = Number(body.javaPort || body.port) || 25565;
+      setFields.serverType = body.serverType || 'java';
+      setFields.bedrockIP = '';
+      setFields.bedrockPort = 19132;
+    }
     const info = await ServerInfo.findOneAndUpdate(
       { serverId: req.params.guildId },
-      {
-        $set: {
-          serverId: req.params.guildId,
-          serverName: req.body.serverName || '',
-          ip: req.body.ip || '',
-          port: req.body.port || '',
-          version: req.body.version || '',
-          online: req.body.online || false
-        }
-      },
+      { $set: setFields },
       { upsert: true, new: true }
     );
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
     res.json({ success: true, info });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -777,7 +799,7 @@ app.post('/api/server/:guildId/danger/reset', isAuthenticated, async (req, res) 
       GuildSettings.deleteOne({ guildId: req.params.guildId }),
       WelcomeChannel.deleteOne({ guildId: req.params.guildId })
     ]);
-    invalidateConfig(req.params.guildId);
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
     res.json({ success: true, message: 'All server settings have been reset' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -818,7 +840,7 @@ app.post('/api/server/:guildId/danger/leave', isAuthenticated, async (req, res) 
       ServerInfo.deleteOne({ serverId: guildId }),
       ServerStatus.deleteMany({ guildId })
     ]);
-    invalidateConfig(guildId);
+    try { DashboardBridge?.invalidate(guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
     res.json({ success: true, left, message: left ? 'Bot left the server' : 'Settings cleared' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -291,10 +291,31 @@
       dropdown.id = 'notificationDropdown';
       dropdown.className = 'dropdown-content notification-dropdown';
       dropdown.innerHTML = '<div class="dropdown-header"><i class="bx bx-bell"></i> Notifications</div><div class="dropdown-content-body"></div>';
-      notificationBtn.parentElement?.appendChild(dropdown);
+      // Attach inside navbar (absolute positioning anchors to navbar) to avoid overlapping page content
+      const nav = document.querySelector('.navbar');
+      (nav || notificationBtn.parentElement)?.appendChild(dropdown);
     }
 
     return { badge, dropdown };
+  }
+
+  function ensureUserUi() {
+    const userBtn = document.getElementById('userBtn');
+    if (!userBtn) return null;
+    let userDropdown = document.getElementById('userDropdown');
+    if (!userDropdown) {
+      userDropdown = document.createElement('div');
+      userDropdown.id = 'userDropdown';
+      userDropdown.className = 'dropdown-content';
+      userDropdown.innerHTML = `
+        <div class="dropdown-header"><i class="bx bx-user"></i> <span>My Account</span></div>
+        <a href="/dashboard"><i class="bx bx-user-circle"></i> Profile</a>
+        <a href="/servers"><i class="bx bx-server"></i> My Servers</a>
+        <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class="bx bx-log-out"></i> Logout</a>`;
+      const nav = document.querySelector('.navbar');
+      (nav || userBtn.parentElement)?.appendChild(userDropdown);
+    }
+    return userDropdown;
   }
 
   function initDropdowns() {
@@ -302,7 +323,7 @@
     const notificationBtn = document.getElementById('notificationBtn');
     const notificationDropdown = notificationUi.dropdown;
     const userBtn = document.getElementById('userBtn');
-    const userDropdown = document.getElementById('userDropdown');
+    const userDropdown = ensureUserUi();
 
     function closeAll() {
       if (notificationDropdown) notificationDropdown.classList.remove('show');
@@ -328,6 +349,10 @@
     }
 
     document.addEventListener('click', closeAll);
+    // ESC closes dropdowns
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeAll();
+    });
   }
 
   // ============================================================
@@ -378,9 +403,13 @@
       if (!data.authenticated) return;
       const user = data.user;
 
-      // Populate avatar
+      // Populate avatar (API already returns full URL; fall back gracefully)
+      const avatarUrl = (user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http'))
+        ? user.avatar
+        : (user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : `https://cdn.discordapp.com/embed/avatars/0.png`);
       document.querySelectorAll('[data-user-avatar]').forEach(el => {
-        el.src = user.avatar || `https://cdn.discordapp.com/embed/avatars/0.png`;
+        el.src = avatarUrl;
+        el.onerror = () => { el.src = 'https://cdn.discordapp.com/embed/avatars/0.png'; };
       });
       document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = user.global_name || user.username || 'User'; });
       document.querySelectorAll('[data-user-username]').forEach(el => { el.textContent = user.username || ''; });

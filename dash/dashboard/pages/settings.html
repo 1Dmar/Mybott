@@ -757,10 +757,14 @@
     </div>
 
     <script>
-        // Server ID from URL
-        // Extract guild id: works on both /servers/:guildId/settings and /settings legacy routes
-        const pathParts = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
-        const serverId = (pathParts[1] && !pathParts[1].includes('.')) || pathParts[0] || "default-server-id";
+        // /servers/:guildId/settings -> parts = ['servers', guildId, 'settings']
+        // Prefer the shared helper (works for any /servers/:id/... route), fall back to manual parse
+        let serverId = (typeof getGuildIdFromPath === 'function') ? (getGuildIdFromPath() || '') : '';
+        if (!serverId) {
+            const pathParts = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+            serverId = (pathParts[2] && pathParts[2] !== 'settings') || pathParts[1] || pathParts[0] || "default-server-id";
+        }
+        serverId = serverId.split('.').shift(); // keep only the guild id (avoid file extensions)
         document.getElementById('serverId').textContent = serverId;
 
         // DOM Elements

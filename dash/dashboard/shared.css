@@ -154,7 +154,6 @@ img {
     padding: 0 24px;
     z-index: 1000;
     box-shadow: var(--shadow-sm);
-    border-bottom: 1px solid var(--border);
     transition: var(--transition-base);
 }
 
@@ -240,6 +239,7 @@ img {
     display: flex;
     align-items: center;
     gap: 8px;
+    position: relative;
 }
 
 .navbar_content .nav-icon-btn {
@@ -273,6 +273,27 @@ img {
     cursor: pointer;
     color: var(--text-secondary);
     transition: var(--transition-fast);
+    font-size: 20px;
+}
+
+/* Bare icon toggle in navbar (theme button) */
+.navbar_content #darkLight,
+.navbar_content > .bx {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+.navbar_content #darkLight:hover,
+.navbar_content > .bx:hover {
+    background: var(--primary-light);
+    color: var(--primary);
 }
 
 .nav_btn:hover {
@@ -308,10 +329,99 @@ img {
     border: 2px solid var(--border);
     transition: var(--transition-fast);
 }
-
 .navbar_content .user-avatar:hover {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Legacy navbar markup (profile_img / user_name used in page navbars) */
+.navbar .user_profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    cursor: pointer;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--radius-lg);
+    transition: var(--transition-fast);
+}
+.navbar .user_profile:hover {
+    background: var(--primary-light);
+}
+.navbar .profile_img {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+    transition: var(--transition-fast);
+}
+.navbar .user_profile:hover .profile_img {
+    border-color: var(--primary);
+}
+.navbar .user_name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* User dropdown (built by shared.js) */
+.user-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    background-color: var(--surface);
+    min-width: 220px;
+    box-shadow: var(--shadow-xl);
+    z-index: 1200;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s ease-out;
+    display: none;
+}
+.user-dropdown.show {
+    display: block;
+}
+
+/* Navbar mobile fixes */
+@media screen and (max-width: 768px) {
+    .navbar .user_name {
+        display: none;
+    }
+    .navbar .user_profile {
+        padding: 4px;
+    }
+    .navbar .profile_img {
+        width: 32px;
+        height: 32px;
+    }
+    .navbar .logo_item .logo_name {
+        font-size: 16px;
+    }
+}
+@media screen and (max-width: 480px) {
+    .navbar {
+        padding: 0 12px;
+        height: 60px;
+    }
+    :root {
+        --navbar-height: 60px;
+    }
+    .page-breadcrumb {
+        font-size: 11px;
+    }
+    .page-title-row {
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    .page-title {
+        font-size: 20px;
+    }
 }
 
 /* ============================================================
