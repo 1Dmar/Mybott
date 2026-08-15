@@ -1152,23 +1152,6 @@ app.get('/api/stats', async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 //  404 HANDLER
 // ════════════════════════════════════════════════════════════════════
-app.use((req, res) => {
-  const notFoundPage = path.join(dashDir, '404', 'index.html');
-  if (fs.existsSync(notFoundPage)) {
-    res.status(404).sendFile(notFoundPage);
-  } else {
-    res.status(404).json({ error: 'Not Found', path: req.path });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
-//  EXPORTS
-// ════════════════════════════════════════════════════════════════════
-module.exports.app    = app;
-module.exports.client  = client;
-module.exports.client1 = client1;
-
-// ════════════════════════════════════════════════════════════════════
 //  NOTIFICATION SYSTEM (Admin Panel)
 // ════════════════════════════════════════════════════════════════════
 
@@ -1310,5 +1293,20 @@ app.get('/api/admin/guild/:guildId/roles', isAuthenticated, async (req, res) => 
   }
 });
 
-// ── User inbox: notifications visible to the logged-in user ────────────────
-// (admin broadcasts are stored in Notification; users see their badge count)
+app.use((req, res) => {
+  const notFoundPage = path.join(dashDir, '404', 'index.html');
+  if (fs.existsSync(notFoundPage)) {
+    res.status(404).sendFile(notFoundPage);
+  } else {
+    res.status(404).json({ error: 'Not Found', path: req.path });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  EXPORTS
+// ════════════════════════════════════════════════════════════════════
+module.exports.app    = app;
+module.exports.client  = client;
+module.exports.client1 = client1;
+
+// ════════════════════════════════════════════════════════════════════
