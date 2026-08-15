@@ -847,7 +847,7 @@
                         version: data.serverType || 'java',
                         online: true
                     };
-                    const response = await fetch(`/api/server/${serverId}/server-info`, {
+                    const response = await fetch(`/api/server/${serverId}/mc-info`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),

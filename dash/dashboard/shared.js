@@ -99,6 +99,7 @@
           { href: `/servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'Auto Responder' },
           { href: `/servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
           { href: `/servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
+          { href: `/servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'MC Players' },
           { href: `/servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
         ]
       },

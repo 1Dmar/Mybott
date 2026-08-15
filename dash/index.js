@@ -44,6 +44,8 @@ const Language       = require('../bot/Models/Langs');
 const ApiKey         = require('../bot/Models/Api');
 const BumpedServer   = require('../bot/Models/bumpedServer');
 const ServerInfo     = require('../bot/Models/Server');
+const MinecraftConfig = require('../bot/Models/MinecraftConfig');
+const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Feature        = require('../bot/Models/Feature');
 const Command        = require('../bot/Models/Command');
@@ -325,6 +327,7 @@ app.get('/servers/:guildId/modules',        ...serveServerPage('modules.html'));
 app.get('/servers/:guildId/welcome',        ...serveServerPage('welcome.html'));
 app.get('/servers/:guildId/members',        ...serveServerPage('members.html'));
 app.get('/servers/:guildId/danger',         ...serveServerPage('danger.html'));
+app.get('/servers/:guildId/players',        ...serveServerPage('players.html'));
 
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -746,17 +749,30 @@ app.get('/api/server/:guildId/members', isAuthenticated, async (req, res) => {
   }
 });
 
-// ── Minecraft Server Info (ServerInfo model) ──────────────────────────
-app.get('/api/server/:guildId/server-info', isAuthenticated, async (req, res) => {
+// ════════════════════════════════════════════════════════════════════
+//  Minecraft Hub — mc-info, player lookup, live server status
+// ════════════════════════════════════════════════════════════════════
+
+// ── Minecraft Saved Info (ServerInfo model) — READ ──────────────────
+app.get('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
   try {
-    const info = await ServerInfo.findOne({ serverId: req.params.guildId }).lean();
-    res.json({ success: true, info: info || {} });
+    const [info, mcCfg] = await Promise.all([
+      ServerInfo.findOne({ serverId: req.params.guildId }).lean(),
+      MinecraftConfig.findOne({ guildId: req.params.guildId }).lean()
+    ]);
+    res.json({
+      success: true,
+      info: info || {},
+      // Expose connection status only (never the bearer token)
+      mcConfig: mcCfg ? { apiUrl: mcCfg.apiUrl, connected: true, updatedAt: mcCfg.updatedAt } : null
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/server/:guildId/server-info', isAuthenticated, async (req, res) => {
+// ── Minecraft Saved Info (ServerInfo model) — WRITE ─────────────────
+app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
   try {
     const body = req.body || {};
     const isBedrock = String(body.version || '').toLowerCase() === 'bedrock';
@@ -867,6 +883,57 @@ app.get('/api/server/:guildId/minecraft-status', isAuthenticated, async (req, re
     res.json({ success: true, status });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Minecraft Player Lookup (real data from the MC server API) ──────
+app.get('/api/server/:guildId/player/:username', isAuthenticated, async (req, res) => {
+  try {
+    const username = decodeURIComponent(req.params.username).trim();
+    if (!username || username.length > 16) {
+      return res.status(400).json({ success: false, error: 'INVALID_USERNAME' });
+    }
+    const data = await McApi.getPlayer(req.params.guildId, username);
+    const isOnline = Boolean(data && data.isOnline);
+    res.json({
+      success: true,
+      player: {
+        username: data.username || username,
+        uuid: data.uuid || null,
+        isOnline,
+        world: data.world || null,
+        ping: data.ping ?? null,
+        totalPlaytimeSeconds: data.totalPlaytimeSeconds || 0,
+        formattedPlaytime: data.formattedPlaytime || null,
+        sessionPlaytimeSeconds: data.sessionPlaytimeSeconds || 0,
+        accountType: data.accountType || null,
+        isBanned: Boolean(data.isBanned)
+      }
+    });
+  } catch (err) {
+    if (err && err.message === 'NO_MC_CONFIG') {
+      return res.status(404).json({ success: false, error: 'NO_MC_CONFIG', message: 'لم يتم ربط سيرفر ماين كرافت بعد' });
+    }
+    if (err && err.response && err.response.status === 404) {
+      return res.status(404).json({ success: false, error: 'NOT_IN_SERVER', message: 'اللاعب لم يدخل سيرفر ماين كرافت من قبل' });
+    }
+    if (err && err.response && err.response.status === 401) {
+      return res.status(401).json({ success: false, error: 'MC_AUTH_FAILED', message: 'خطأ في مصادقة سيرفر ماين كرافت' });
+    }
+    res.status(500).json({ success: false, error: err.message || 'MC_LOOKUP_FAILED' });
+  }
+});
+
+// ── Minecraft Live Server Status (/info from MC API) ────────────────
+app.get('/api/server/:guildId/mc-status-live', isAuthenticated, async (req, res) => {
+  try {
+    const data = await McApi.getServerInfo(req.params.guildId);
+    res.json({ success: true, status: data });
+  } catch (err) {
+    if (err && err.message === 'NO_MC_CONFIG') {
+      return res.status(404).json({ success: false, error: 'NO_MC_CONFIG', message: 'لم يتم ربط سيرفر ماين كرافت بعد' });
+    }
+    res.status(500).json({ success: false, error: err.message || 'MC_STATUS_FAILED' });
   }
 });
 
