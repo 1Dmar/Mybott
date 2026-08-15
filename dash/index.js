@@ -44,7 +44,7 @@ const Language       = require('../bot/Models/Langs');
 const ApiKey         = require('../bot/Models/Api');
 const BumpedServer   = require('../bot/Models/bumpedServer');
 const Notification   = require('../bot/Models/Notification');
-const { notifyUser, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications } = require('../bot/utils/notificationSender');
+const { notifyUser, notifyUserOnce, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications } = require('../bot/utils/notificationSender');
 const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const McApi          = require('../bot/utils/minecraftApi');
@@ -428,7 +428,7 @@ app.post('/api/server/:guildId/config', isAuthenticated, async (req, res) => {
             { upsert: true, new: true }
     );
     try {
-      notifyUser(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     res.json({ success: true, config });
@@ -625,7 +625,7 @@ app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     try {
-      notifyUser(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     res.json({ success: true, modules: config.modules });
@@ -652,7 +652,7 @@ app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res
       { upsert: true, new: true }
     );
     try {
-      notifyUser(req.user.id, { type: 'success', title: 'AutoMod settings saved', message: `Guild settings updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'AutoMod settings saved', message: `Guild settings updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
     } catch (_) {}
     res.json({ success: true, settings });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
@@ -677,7 +677,7 @@ app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
       { $set: { welcome: req.body } },
       { upsert: true, new: true }
     );
-    notifyUser(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, welcome: config.welcome });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -702,7 +702,7 @@ app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res)
       { $set: { ticket: req.body } },
       { upsert: true, new: true }
     );
-    notifyUser(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, ticket: config.ticket });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -812,7 +812,7 @@ app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
-    notifyUser(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, info });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -932,6 +932,9 @@ app.get('/api/server/:guildId/player/:username', isAuthenticated, async (req, re
     if (err && err.response && err.response.status === 401) {
       return res.status(401).json({ success: false, error: 'MC_AUTH_FAILED', message: 'خطأ في مصادقة سيرفر ماين كرافت' });
     }
+    if (err && err.response && err.response.status === 403) {
+      return res.status(403).json({ success: false, error: 'MC_PREMIUM_KEY_REQUIRED', message: 'Premium Key مطلوب من سيرفر الماين كرافت — أعد /mc-setup لتوليد مفتاح ProMcSecure' });
+    }
     res.status(500).json({ success: false, error: err.message || 'MC_LOOKUP_FAILED' });
   }
 });
@@ -944,6 +947,9 @@ app.get('/api/server/:guildId/mc-status-live', isAuthenticated, async (req, res)
   } catch (err) {
     if (err && err.message === 'NO_MC_CONFIG') {
       return res.status(404).json({ success: false, error: 'NO_MC_CONFIG', message: 'لم يتم ربط سيرفر ماين كرافت بعد' });
+    }
+    if (err && err.response && err.response.status === 403) {
+      return res.status(403).json({ success: false, error: 'MC_PREMIUM_KEY_REQUIRED', message: 'Premium Key مطلوب من سيرفر الماين كرافت — أعد /mc-setup لتوليد مفتاح ProMcSecure' });
     }
     res.status(500).json({ success: false, error: err.message || 'MC_STATUS_FAILED' });
   }

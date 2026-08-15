@@ -161,6 +161,17 @@
                             <i class='bx bx-link-alt'></i> Minecraft server is not linked yet.
                             Use <code>/mc-setup</code> in Discord to connect your Minecraft server first.
                         </p>`;
+                } else if (res.status === 403) {
+                    container.innerHTML = `
+                        <p style="color: var(--warning); padding: 10px;">
+                            <i class='bx bx-key'></i> A <strong>Premium Key</strong> is required by the Minecraft server (ProMcSecure).
+                            Re-run <code>/mc-setup</code> in Discord to generate a ProMcSecure key.
+                        </p>`;
+                } else if (res.status === 401) {
+                    container.innerHTML = `
+                        <p style="color: var(--danger); padding: 10px;">
+                            <i class='bx bx-error'></i> Authentication failed with the Minecraft server. Re-run <code>/mc-setup</code> in Discord.
+                        </p>`;
                 } else {
                     container.innerHTML = `<p style="color: var(--text-muted); padding: 10px;">Unable to reach the Minecraft server. Try again later.</p>`;
                 }
@@ -267,6 +278,8 @@
                         </div>`;
                 } else if (res.status === 401) {
                     body.innerHTML = `<p style="color: var(--danger); padding: 16px;">Authentication with the Minecraft server failed. Re-run <code>/mc-setup</code> in Discord.</p>`;
+                } else if (res.status === 403) {
+                    body.innerHTML = `<p style="color: var(--warning); padding: 16px;">A <strong>Premium Key</strong> is required by the Minecraft server (ProMcSecure). Re-run <code>/mc-setup</code> in Discord to generate a key.</p>`;
                 } else {
                     body.innerHTML = `<p style="color: var(--text-muted); padding: 16px;">Something went wrong: ${data.error || 'unknown error'}</p>`;
                 }

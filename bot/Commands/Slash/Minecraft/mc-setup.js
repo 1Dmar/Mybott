@@ -6,8 +6,12 @@ const {
 } = require('discord.js');
 const MinecraftConfig = require('../../../Models/MinecraftConfig');
 const axios = require('axios');
+const { customAlphabet } = require('nanoid');
 
 const C = { PRIMARY: 0x7C3AED, GOLD: 0xF59E0B, SUCCESS: 0x10B981, ERROR: 0xEF4444 };
+
+// ProMcSecure dynamic Premium Key system — auto-generate when none provided
+const genPremiumKey = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', 32);
 
 module.exports = {
   name: 'mc-setup',
@@ -42,7 +46,9 @@ module.exports = {
 
     const apiUrl = interaction.options.getString('api_url').replace(/\/+$/, '');
     const bearerToken = interaction.options.getString('bearer_token');
-    const premiumKey = interaction.options.getString('premium_key') || null;
+    const providedKey = interaction.options.getString('premium_key');
+    // Always have a Premium Key: use provided one or generate a fresh ProMcSecure key
+    const premiumKey = providedKey || genPremiumKey();
     const guildId = interaction.guild.id;
 
     // Show connecting embed
@@ -59,8 +65,7 @@ module.exports = {
 
       const response = await axios.get(`${apiUrl}/info`, { headers, timeout: 8000 });
       if (!response.data || response.data.success === false) throw new Error('Invalid API response');
-
-      // Save config per guild
+      // If the plugin accepts the key (403 not thrown above), persist it
       await MinecraftConfig.findOneAndUpdate(
         { guildId },
         { guildId, apiUrl, bearerToken, premiumKey, updatedAt: new Date() },
@@ -76,7 +81,7 @@ module.exports = {
           { name: '🌐 API URL', value: `\`${apiUrl}\``, inline: false },
           { name: '🎮 السيرفر', value: info.serverName || info.name || 'Minecraft Server', inline: true },
           { name: '👥 اللاعبين', value: `${info.onlinePlayers ?? '?'}/${info.maxPlayers ?? '?'}`, inline: true },
-          { name: '🔑 Premium Key', value: premiumKey ? '✅ مُفعَّل' : '❌ غير مُفعَّل', inline: true },
+          { name: '🔑 Premium Key', value: `\`${premiumKey}\` ${providedKey ? '(مُدخَل)' : '(ProMcSecure)'}`, inline: true },
         )
         .setFooter({ text: `تم الإعداد بواسطة ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
         .setTimestamp();

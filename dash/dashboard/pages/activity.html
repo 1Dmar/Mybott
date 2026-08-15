@@ -1788,9 +1788,14 @@
 
                 
 
-                if (data.activities && data.activities.length > 0) {
+                // Response shape is { success, activity: { serverId, activities } }
+                const activities = (data && data.activity && Array.isArray(data.activity.activities))
+                    ? data.activity.activities
+                    : (Array.isArray(data?.activities) ? data.activities : []);
 
-                    displayActivities(data.activities);
+                if (activities.length > 0) {
+
+                    displayActivities(activities);
 
                 } else {
 
@@ -1838,7 +1843,7 @@
 
                 
 
-                // Extract action details
+                // Extract action details — clean up raw JSON payloads into readable text
 
                 let actionText = activity.action;
 
@@ -1846,29 +1851,67 @@
 
                 
 
-                // Check if action contains JSON data
+                // Strip JSON payloads embedded in the action text (e.g. "UPDATED SETUP: {...}")
 
-                if (activity.action.startsWith('Updated setup:')) {
+                const jsonMatch = activity.action.match(/\{[\s\S]*\}$/);
+
+                if (jsonMatch) {
 
                     try {
 
-                        const jsonString = activity.action.replace('Updated setup: ', '');
+                        const setupData = JSON.parse(jsonMatch[0]);
 
-                        const setupData = JSON.parse(jsonString);
+                        actionText = activity.action.replace(jsonMatch[0], '').trim();
 
-                        actionText = 'Updated server setup';
+                        // Friendly label mapping for common system actions
 
-                        details = `Server: ${setupData.serverName} (${setupData.serverType})`;
+                        const clean = actionText.toLowerCase();
+
+                        if (clean.startsWith('updated setup') || clean.startsWith('setup updated')) {
+
+                            actionText = 'Server setup updated';
+
+                            details = `Server: ${setupData.serverName || '—'} (${setupData.serverType || setupData.version || '—'})`;
+
+                        } else if (clean.includes('mention')) {
+
+                            details = setupData.mention || setupData.mentionType || '';
+
+                        } else if (clean.includes('language')) {
+
+                            details = setupData.language || '';
+
+                        } else {
+
+                            // Fallback: list first-level values up to 3 entries
+
+                            const parts = Object.entries(setupData)
+
+                                .filter(([, v]) => v != null && v !== '')
+
+                                .slice(0, 3)
+
+                                .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`);
+
+                            if (parts.length) details = parts.join(' · ');
+
+                        }
 
                     } catch (e) {
 
-                        // If JSON parsing fails, use original text
+                        // If JSON parsing fails, keep the original action text
 
-                        details = activity.action.replace('Updated setup: ', '');
+                        actionText = activity.action.replace(jsonMatch[0], '').trim();
 
                     }
 
                 }
+
+                // Safety guard for empty text
+
+                if (!actionText) actionText = activity.action || 'Activity';
+
+                if (!activity.user) activity.user = 'System';
 
                 
 

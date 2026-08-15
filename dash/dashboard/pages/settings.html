@@ -566,7 +566,7 @@
                 <i class='bx bx-shield-x icon'></i>
                 <h3>Blacklist Status</h3>
                 <div class="value" id="blacklistStatus">Not Blacklisted</div>
-                <span id="blacklistStatusclean" class="tag" id="blacklistTag">Clean</span>
+                <span id="blacklistStatusclean" class="tag">Clean</span>
             </div>
             
             <div class="status-card">
@@ -711,39 +711,17 @@
         <div class="activity-container">
             <div class="activity-header">
                 <h2><i class='bx bx-history'></i> Recent Activity</h2>
-                <a class="btn" href="/${serverId}/activity" style="text-decoration: none">
+                <a class="btn" href="#" onclick="window.location.href='/my-servers/' + serverId + '/logs'; return false;" style="text-decoration: none" id="openLogsBtn">
                     <i class='bx bx-link'></i>Open
                 </a>
             </div>
             
             <div class="activity-list overlay" id="activityList">
                 <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class='bx bx-cog'></i>
-                    </div>
+                    <div class="activity-icon"><i class='bx bx-history'></i></div>
                     <div class="activity-content">
-                        <div class="activity-title">Updated server setup</div>
-                        <div class="activity-time">Today at 10:30 AM</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class='bx bx-globe'></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">Changed language to English</div>
-                        <div class="activity-time">Yesterday at 3:45 PM</div>
-                    </div>
-                </div>
-                
-                <div class="activity-item">
-                    <div class="activity-icon">
-                        <i class='bx bx-user'></i>
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-title">User permissions updated</div>
-                        <div class="activity-time">2 days ago at 8:12 AM</div>
+                        <div class="activity-title">No recent activity</div>
+                        <div class="activity-time">Real actions will appear here</div>
                     </div>
                 </div>
             </div>
@@ -776,7 +754,7 @@
         const toast = document.getElementById('toast');
         const blacklistBanner = document.getElementById('blacklistBanner');
         // Initialize the dashboard
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             // Set theme based on preference
             if (localStorage.getItem('theme') === 'dark') {
                 document.body.classList.add('dark');
@@ -791,7 +769,66 @@
             
             // Setup form submissions
             setupFormHandlers();
+
+            // Load saved values from MongoDB (roundtrip: what you save must reappear)
+            try {
+                const [infoRes, cfgRes, logsRes] = await Promise.all([
+                    fetch(`/api/server/${serverId}/mc-info`).then(r => r.ok ? r.json() : null),
+                    fetch(`/api/server/${serverId}`).then(r => r.ok ? r.json() : null),
+                    fetch(`/api/server/${serverId}/logs?limit=5`).then(r => r.ok ? r.json() : null)
+                ]);
+                if (infoRes?.success && infoRes.info) {
+                    const i = infoRes.info;
+                    if (i.serverName) document.getElementById('serverName').value = i.serverName;
+                    const st = (i.serverType || 'java').toLowerCase();
+                    serverTypeSelect.value = st === 'bedrock' ? 'bedrock' : 'java';
+                    updateEditionCards();
+                    if (i.javaIP) document.getElementById('javaIP').value = i.javaIP;
+                    if (i.javaPort) document.getElementById('javaPort').value = i.javaPort;
+                    if (i.bedrockIP) document.getElementById('bedrockIP').value = i.bedrockIP;
+                    if (i.bedrockPort) document.getElementById('bedrockPort').value = i.bedrockPort;
+                }
+                if (cfgRes?.success && cfgRes.config) {
+                    const c = cfgRes.config;
+                    if (typeof c.language === 'string') document.getElementById('language').value = c.language;
+                    const mention = c.welcome?.mention || c.mention || 'everyone';
+                    const mentionEl = document.getElementById('mention');
+                    if (mentionEl.querySelector(`option[value="${mention}"]`)) mentionEl.value = mention;
+                    if (typeof c.autoRestart === 'boolean') document.getElementById('autoRestart').checked = c.autoRestart;
+                    if (typeof c.advancedLogging === 'boolean') document.getElementById('advancedLogging').checked = c.advancedLogging;
+                    if (typeof c.customCommands === 'boolean') document.getElementById('customCommands').checked = c.customCommands;
+                }
+                // Replace fake static activity with real audit log
+                renderRealActivity(logsRes);
+            } catch (_) { /* never break the page */ }
+
+            // Fix the Open-logs link with the real guild id
+            const openLogsBtn = document.getElementById('openLogsBtn');
+            if (openLogsBtn) openLogsBtn.href = `/my-servers/${serverId}/logs`;
         });
+
+        function renderRealActivity(logsRes) {
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = '';
+            const logs = (logsRes?.success && Array.isArray(logsRes.logs)) ? logsRes.logs : [];
+            if (!logs.length) {
+                activityList.innerHTML = '<div class="activity-item"><div class="activity-content"><div class="activity-title">No recent activity</div><div class="activity-time">Actions will appear here as you manage this server</div></div></div>';
+                return;
+            }
+            logs.forEach(log => {
+                const when = new Date(log.createdAt);
+                activityList.insertAdjacentHTML('beforeend', `
+                    <div class="activity-item">
+                        <div class="activity-icon"><i class='bx bx-history'></i></div>
+                        <div class="activity-content">
+                            <div class="activity-title">${log.action || 'Activity'}</div>
+                            <div class="activity-desc"><strong>${log.user || 'System'}</strong>${log.reason ? ': ' + log.reason : ''}</div>
+                            <div class="activity-time">${when.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `);
+            });
+        }
 
         
         

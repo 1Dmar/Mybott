@@ -11,6 +11,37 @@ function notifyUser(recipientId, { type = 'info', title = '', message = '', crea
   }).catch(() => null);
 }
 
+/**
+ * Create a notification but avoid spam: if an identical personal notification
+ * (same recipientId + title) was already created within the last DEBOUNCE_MIN
+ * minutes, refresh its timestamp/message instead of creating a duplicate.
+ */
+const DEBOUNCE_MIN = 15;
+async function notifyUserOnce(recipientId, { type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, expiresInMs, debounceMin = DEBOUNCE_MIN } = {}) {
+  try {
+    const cutoff = new Date(Date.now() - debounceMin * 60 * 1000);
+    const existing = await Notification.findOne({
+      recipientId,
+      title,
+      createdAt: { $gte: cutoff }
+    }).sort({ createdAt: -1 }).lean();
+    const update = { message, type, createdByLabel };
+    if (actionUrl) update.actionUrl = actionUrl;
+    if (actionLabel) update.actionLabel = actionLabel;
+    if (existing) {
+      await Notification.findByIdAndUpdate(existing._id, { $set: update, read: false, createdAt: new Date() });
+      return { deduped: true, id: existing._id };
+    }
+    const doc = await Notification.create({
+      recipientId, type, title, message, createdByLabel, actionUrl, actionLabel,
+      expiresAt: expiresInMs ? new Date(Date.now() + expiresInMs) : undefined
+    });
+    return { deduped: false, id: doc?._id };
+  } catch (_) {
+    return null;
+  }
+}
+
 /** Announcement visible to every logged-in user. */
 function notifyEveryone({ type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, forAdmin = false, expiresInMs } = {}) {
   return Notification.create({
@@ -74,4 +105,4 @@ async function cleanupNotifications() {
   return expired.length;
 }
 
-module.exports = { notifyUser, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications };
+module.exports = { notifyUser, notifyUserOnce, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications };
