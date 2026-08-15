@@ -3,277 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProMcBot - EmbedBuilder</title>
-<style>body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f0f0;
-    color: #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-}
+    <title>Send Embed - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .embed-grid { display: grid; grid-template-columns: 1fr 380px; gap: 22px; align-items: start; }
+        @media (max-width: 1100px) { .embed-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 22px; box-shadow: var(--shadow-sm);
+        }
+        .card + .card { margin-top: 18px; }
+        .card h3 { margin: 0 0 14px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .form-row.single { grid-template-columns: 1fr; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        label.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+        input[type="text"], select, textarea {
+            width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--surface-2); color: var(--text); font-size: 14px; font-family: inherit;
+            transition: var(--transition-base);
+        }
+        textarea { resize: vertical; min-height: 90px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+        .field-row { display: grid; grid-template-columns: 1fr 2fr 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .field-row input { min-height: 38px; }
+        .btn-remove-field { width: 36px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--danger-light); color: var(--danger); cursor: pointer; font-size: 16px; }
+        .btn-add-field { background: none; border: 1px dashed var(--border); color: var(--text-secondary); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 13px; width: 100%; }
+        .btn-add-field:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-primary {
+            background: var(--gradient-primary); color: #fff; border: none; border-radius: 10px;
+            padding: 12px 24px; font-weight: 600; font-size: 14px; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; transition: var(--transition-base); margin-top: 16px;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(64,112,244,.4); }
+        .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 
-.container {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(10px);
-    width: 80%;
-    max-width: 800px;
-    box-sizing: border-box;
-    margin: 20px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #333;
-}
-
-form > div {
-    margin-bottom: 15px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    color: #333;
-}
-
-input, textarea, select, button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    background: rgba(255, 255, 255, 0.9);
-    color: #333;
-    resize: none;
-}
-
-#colorPicker {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
-}
-
-.color-circle {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid #fff;
-    transition: transform 0.2s;
-}
-
-.color-circle:hover {
-    transform: scale(1.1);
-}
-
-#embedPreview {
-    border: 1px solid #ccc;
-    padding: 20px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.5);
-    color: #fff;
-    margin-top: 20px;
-    backdrop-filter: blur(10px);
-}
-
-.field {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.field input, .field textarea {
-    flex: 1;
-    margin-right: 10px;
-}
-
-.field button {
-    flex-shrink: 0;
-}
-
-</style>
-      <link rel="stylesheet" href="/shared.css">
+        /* Discord preview */
+        .dc-preview { background: #313338; border-radius: 12px; padding: 16px; font-family: 'gg sans', 'Whitney', 'Inter', sans-serif; }
+        .dc-embed { background: #2b2d31; border-left: 4px solid var(--primary); border-radius: 4px; padding: 12px; }
+        .dc-embed-title { font-weight: 700; color: #00a8fc; font-size: 15px; margin-bottom: 8px; }
+        .dc-embed-desc { color: #dcddde; font-size: 13px; white-space: pre-wrap; }
+        .dc-embed-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+        .dc-embed-field-name { font-weight: 700; color: #e8eaf6; font-size: 13px; margin-top: 8px; }
+        .dc-embed-field-value { color: #dcddde; font-size: 13px; }
+        .dc-embed-footer { color: #949ba4; font-size: 11px; margin-top: 10px; }
+        .dc-author { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .dc-author img { width: 28px; height: 28px; border-radius: 50%; }
+        .dc-author-name { color: #fff; font-size: 13px; font-weight: 600; }
+        .dc-author-time { color: #949ba4; font-size: 11px; }
+    </style>
 </head>
 <body>
-   <div class="container">
-        <h1>Discord Embed Builder</h1>
-        <form id="embedForm">
-            <div>
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title">
-            </div>
-            <div>
-                <label for="description">Description:</label>
-                <textarea id="description" name="description"></textarea>
-            </div>
-            <div id="fieldsContainer">
-                <label>Fields:</label>
-                <button type="button" id="addField">Add Field</button>
-            </div>
-            <div>
-                <label for="color">Color:</label>
-                <div id="colorPicker">
-                    <div class="color-circle" data-color="#FF6666" style="background-color: #FF6666;"></div>
-                    <div class="color-circle" data-color="#66FF66" style="background-color: #66FF66;"></div>
-                    <div class="color-circle" data-color="#6666FF" style="background-color: #6666FF;"></div>
-                    <div class="color-circle" data-color="#FFFF66" style="background-color: #FFFF66;"></div>
-                    <div class="color-circle" data-color="#FF66FF" style="background-color: #FF66FF;"></div>
-                </div>
-                <input type="color" id="color" name="color">
-            </div>
-            <div>
-                <label for="author">Author:</label>
-                <input type="text" id="author" name="author">
-            </div>
-            <div>
-                <label for="footer">Footer:</label>
-                <input type="text" id="footer" name="footer">
-            </div>
-            <div>
-                <label for="content">Content:</label>
-                <textarea id="content" name="content"></textarea>
-            </div>
-            <div>
-                <label for="method">Send via:</label>
-                <select id="method" name="method">
-                    <option value="webhook">Webhook</option>
-                    <option value="bot" disabled>Bot (Disabled)</option>
-                </select>
-            </div>
-            <div id="webhookUrlContainer">
-                <label for="webhookURL">Webhook URL:</label>
-                <input type="text" id="webhookURL" name="webhookURL">
-            </div>
-            <button type="submit">Send Embed</button>
-        </form>
-        <div id="embedPreview">
-            <!-- Preview area -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
         </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn"><i class='bx bx-bell'></i></div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
+        </div>
+    </nav>
+
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-breadcrumb">
+            <span>Admin</span> <span class="sep">/</span> <span>Send Embed</span>
+        </div>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-message-square-detail'></i></div>
+            <div>
+                <h1 class="page-title">Send Embed</h1>
+                <p class="page-subtitle">Send a rich embed to any text channel in a server where the bot is present.</p>
+            </div>
+        </div>
+
+        <div class="embed-grid">
+            <div>
+                <div class="card">
+                    <h3><i class='bx bx-target-lock'></i> Destination</h3>
+                    <div class="form-row">
+                        <div>
+                            <label class="field-label">Server</label>
+                            <select id="guildSelect"><option value="">Loading…</option></select>
+                        </div>
+                        <div>
+                            <label class="field-label">Channel</label>
+                            <select id="channelSelect"><option value="">Select server first</option></select>
+                        </div>
+                    </div>
+                    <p id="destError" style="display:none;color:var(--danger);font-size:13px;margin-top:10px"></p>
+                </div>
+
+                <div class="card">
+                    <h3><i class='bx bx-message-square-detail'></i> Embed Content</h3>
+                    <div class="form-row single" style="margin-bottom:14px">
+                        <input type="text" id="embedTitle" placeholder="Embed title (max 256)" maxlength="256">
+                    </div>
+                    <div class="form-row single" style="margin-bottom:14px">
+                        <textarea id="embedDesc" placeholder="Description (max 4096)" maxlength="4096"></textarea>
+                    </div>
+                    <div class="form-row" style="margin-bottom:14px">
+                        <div>
+                            <label class="field-label">Color</label>
+                            <input type="text" id="embedColor" value="#4070f4">
+                        </div>
+                        <div>
+                            <label class="field-label">Image URL (optional)</label>
+                            <input type="text" id="embedImage" placeholder="https://…">
+                        </div>
+                    </div>
+                    <div class="form-row single">
+                        <div>
+                            <label class="field-label">Footer (optional)</label>
+                            <input type="text" id="embedFooter" placeholder="Footer text" maxlength="2048">
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top:20px"><i class='bx bx-grid-alt'></i> Fields</h3>
+                    <div id="fieldsList"></div>
+                    <button class="btn-add-field" id="addFieldBtn"><i class='bx bx-plus'></i> Add Field</button>
+                </div>
+
+                <button class="btn-primary" id="sendBtn"><i class='bx bx-send'></i> Send Embed</button>
+            </div>
+
+            <div class="card" style="position:sticky; top:80px">
+                <h3><i class='bx bx-show'></i> Discord Preview</h3>
+                <div class="dc-preview">
+                    <div class="dc-author">
+                        <img src="" data-user-avatar style="width:28px;height:28px;border-radius:50%">
+                        <span class="dc-author-name">ProMcBot</span>
+                        <span class="dc-author-time">Today</span>
+                    </div>
+                    <div class="dc-embed" id="dcEmbed">
+                        <div class="dc-embed-title" id="pvTitle"></div>
+                        <div class="dc-embed-desc" id="pvDesc"></div>
+                        <div id="pvFields"></div>
+                        <img class="dc-embed-img" id="pvImage" style="display:none">
+                        <div class="dc-embed-footer" id="pvFooter" style="display:none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/shared.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('embedForm');
-    const fieldsContainer = document.getElementById('fieldsContainer');
-    const addFieldButton = document.getElementById('addField');
-    const colorPicker = document.getElementById('colorPicker');
-    const colorInput = document.getElementById('color');
-    const methodSelect = document.getElementById('method');
-    const webhookUrlContainer = document.getElementById('webhookUrlContainer');
-    const embedPreview = document.getElementById('embedPreview');
+        let guildsCache = [];
 
-    addFieldButton.addEventListener('click', () => {
-        const fieldDiv = document.createElement('div');
-        fieldDiv.className = 'field';
+        async function loadGuilds() {
+            try {
+                const r = await fetch('/api/guilds', { credentials: 'same-origin' });
+                if (r.ok) {
+                    const data = await r.json();
+                    guildsCache = (data.guilds || []).filter(g => g.botPresent);
+                    document.getElementById('guildSelect').innerHTML =
+                        '<option value="">Choose server…</option>' +
+                        guildsCache.map(g => `<option value="${g.id}">${escapeHtml(g.name || g.id)}</option>`).join('');
+                }
+            } catch (e) { console.warn('loadGuilds failed', e); }
+        }
+        loadGuilds();
 
-        const fieldNameInput = document.createElement('input');
-        fieldNameInput.type = 'text';
-        fieldNameInput.placeholder = 'Field Name';
-
-        const fieldValueInput = document.createElement('textarea');
-        fieldValueInput.placeholder = 'Field Value';
-
-        const removeFieldButton = document.createElement('button');
-        removeFieldButton.type = 'button';
-        removeFieldButton.textContent = 'Remove';
-        removeFieldButton.addEventListener('click', () => {
-            fieldDiv.remove();
+        document.getElementById('guildSelect').addEventListener('change', async (e) => {
+            const sel = document.getElementById('channelSelect');
+            const err = document.getElementById('destError');
+            if (!e.target.value) { sel.innerHTML = '<option value="">Select server first</option>'; return; }
+            try {
+                const r = await fetch(`/api/admin/guild/${e.target.value}/channels`, { credentials: 'same-origin' });
+                const data = await r.json();
+                if (!r.ok || !data.success) {
+                    err.textContent = 'Unable to load channels: ' + (data.error || 'Bot may be offline');
+                    err.style.display = 'block';
+                    sel.innerHTML = '<option value="">Failed</option>';
+                    return;
+                }
+                err.style.display = 'none';
+                sel.innerHTML = '<option value="">Choose channel…</option>' +
+                    (data.channels || []).map(c => `<option value="${c.id}"># ${escapeHtml(c.name)}</option>`).join('');
+            } catch (e) { sel.innerHTML = '<option value="">Failed</option>'; }
         });
 
-        fieldDiv.appendChild(fieldNameInput);
-        fieldDiv.appendChild(fieldValueInput);
-        fieldDiv.appendChild(removeFieldButton);
-        fieldsContainer.appendChild(fieldDiv);
-    });
+        const fieldsList = document.getElementById('fieldsList');
+        document.getElementById('addFieldBtn').addEventListener('click', () => {
+            if (fieldsList.children.length >= 25) return;
+            const row = document.createElement('div');
+            row.className = 'field-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Field name" maxlength="256">
+                <input type="text" placeholder="Field value" maxlength="1024">
+                <button class="btn-remove-field" type="button"><i class='bx bx-x'></i></button>`;
+            row.querySelector('.btn-remove-field').addEventListener('click', () => row.remove());
+            fieldsList.appendChild(row);
+        });
 
-    colorPicker.addEventListener('click', (e) => {
-        if (e.target.classList.contains('color-circle')) {
-            colorInput.value = e.target.dataset.color;
-            updatePreview();
+        function escapeHtml(s) { return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function updatePreview() {
+            document.getElementById('pvTitle').textContent = document.getElementById('embedTitle').value || 'Title';
+            document.getElementById('pvDesc').textContent = document.getElementById('embedDesc').value || 'Description…';
+            const color = document.getElementById('embedColor').value || '#4070f4';
+            document.getElementById('dcEmbed').style.borderLeftColor = color;
+            const img = document.getElementById('embedImage').value;
+            const pvImg = document.getElementById('pvImage');
+            if (img && /^https?:\/\//.test(img)) { pvImg.src = img; pvImg.style.display = 'block'; }
+            else pvImg.style.display = 'none';
+            const footer = document.getElementById('embedFooter').value;
+            const pvFooter = document.getElementById('pvFooter');
+            if (footer) { pvFooter.textContent = footer; pvFooter.style.display = 'block'; }
+            else pvFooter.style.display = 'none';
+            document.getElementById('pvFields').innerHTML = Array.from(fieldsList.querySelectorAll('.field-row'))
+                .map(r => {
+                    const i = r.querySelectorAll('input');
+                    if (!i[1].value) return '';
+                    return `<div class="dc-embed-field-name">${escapeHtml(i[0].value)}</div><div class="dc-embed-field-value">${escapeHtml(i[1].value)}</div>`;
+                }).join('');
         }
-    });
-
-    colorInput.addEventListener('input', updatePreview);
-
-    methodSelect.addEventListener('change', () => {
-        if (methodSelect.value === 'webhook') {
-            webhookUrlContainer.style.display = 'block';
-        } else {
-            webhookUrlContainer.style.display = 'none';
-        }
+        ['embedTitle','embedDesc','embedColor','embedImage','embedFooter'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePreview);
+        });
         updatePreview();
-    });
 
-    form.addEventListener('input', updatePreview);
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const guildId = document.getElementById('guildSelect').value;
+            const channelId = document.getElementById('channelSelect').value;
+            if (!guildId || !channelId) return window.showToast('Choose a server and channel', 'warning');
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const fields = [];
-        document.querySelectorAll('.field').forEach(fieldDiv => {
-            const name = fieldDiv.querySelector('input').value;
-            const value = fieldDiv.querySelector('textarea').value;
-            if (name && value) {
-                fields.push({ name, value });
+            const payload = {
+                channelId,
+                guildId,
+                title: document.getElementById('embedTitle').value,
+                description: document.getElementById('embedDesc').value,
+                color: document.getElementById('embedColor').value || '#4070f4',
+                image: document.getElementById('embedImage').value.trim() || null,
+                footer: document.getElementById('embedFooter').value,
+                fields: Array.from(fieldsList.querySelectorAll('.field-row'))
+                    .map(r => {
+                        const i = r.querySelectorAll('input');
+                        return { name: i[0].value, value: i[1].value, inline: false };
+                    }).filter(f => f.value.trim())
+            };
+
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Sending…";
+            try {
+                const r = await fetch('/api/admin/sendembed', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin', body: JSON.stringify(payload)
+                });
+                const data = await r.json();
+                if (!r.ok || !data.success) throw new Error(data.error || 'Send failed');
+                window.showToast('Embed sent successfully!', 'success');
+            } catch (e) {
+                window.showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false; btn.innerHTML = "<i class='bx bx-send'></i> Send Embed";
             }
         });
-
-        const data = {
-            title: formData.get('title'),
-            description: formData.get('description'),
-            fields,
-            color: formData.get('color'),
-            author: formData.get('author'),
-            footer: formData.get('footer'),
-            content: formData.get('content'),
-            method: formData.get('method'),
-            webhookURL: formData.get('webhookURL')
-        };
-
-        try {
-            const response = await axios.post('/sendEmbed', data);
-            alert(response.data);
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred while sending the embed.');
-        }
-    });
-
-    function updatePreview() {
-        const title = document.getElementById('title').value;
-        const description = document.getElementById('description').value;
-        const color = colorInput.value;
-        const author = document.getElementById('author').value;
-        const footer = document.getElementById('footer').value;
-        const content = document.getElementById('content').value;
-        const method = methodSelect.value;
-
-        embedPreview.innerHTML = `
-            <div style="border-left: 5px solid ${color}; padding: 10px; margin-bottom: 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.9);">
-                <strong>${title}</strong>
-                <p>${description}</p>
-            </div>
-            ${fieldsContainer.querySelectorAll('.field').length ? `<div style="margin-bottom: 10px;">${Array.from(fieldsContainer.querySelectorAll('.field')).map(fieldDiv => `<p><strong>${fieldDiv.querySelector('input').value}</strong>: ${fieldDiv.querySelector('textarea').value}</p>`).join('')}</div>` : ''}
-            ${author ? `<p><strong>Author:</strong> ${author}</p>` : ''}
-            ${footer ? `<p><strong>Footer:</strong> ${footer}</p>` : ''}
-            <div style="color: #777; font-size: 12px;">
-                <p>Method: ${method}</p>
-                ${method === 'webhook' ? '<p>Webhook URL: ' + document.getElementById('webhookURL').value + '</p>' : ''}
-            </div>
-            <p>${content}</p>
-        `;
-    }
-
-    updatePreview();
-});
-   </script>
-<script src="/shared.js"></script>
+    </script>
 </body>
 </html>

@@ -43,6 +43,8 @@ const Mentions       = require('../bot/Models/Mentions');
 const Language       = require('../bot/Models/Langs');
 const ApiKey         = require('../bot/Models/Api');
 const BumpedServer   = require('../bot/Models/bumpedServer');
+const Notification   = require('../bot/Models/Notification');
+const { deliverNotification } = require('../bot/utils/notificationSender');
 const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const McApi          = require('../bot/utils/minecraftApi');
@@ -349,6 +351,7 @@ app.get('/admin/users',        isAdmin, (req, res) => res.sendFile(path.join(das
 app.get('/admin/invite',       isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'invite.html')));
 app.get('/admin/bugs',         isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'bugs.html')));
 app.get('/admin/sendembed',    isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'sendembed.html')));
+app.get('/admin/notifications', isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-notifications.html')));
 app.get('/admin/email',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-email.html')));
 app.get('/admin/stats',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-stats.html')));
 
@@ -973,13 +976,33 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
   }
 });
 
-// ── Admin: Send Embed ─────────────────────────────────────────────────
+// ── Admin: Send Embed (real send via bot client) ─────────────────────
 app.post('/api/admin/sendembed', isAdmin, async (req, res) => {
   try {
-    const { channelId, title, description, color, image } = req.body;
+    const { guildId, channelId, title, description, color, image, footer, fields } = req.body;
     if (!channelId) return res.status(400).json({ success: false, error: 'channelId required' });
-    res.json({ success: true, message: 'Embed sent (requires bot client connection)' });
+    if (!client || !client.isReady()) return res.status(503).json({ success: false, error: 'Bot offline' });
+    const channel = await client.channels.fetch(channelId).catch(() => null);
+    if (!channel) return res.status(404).json({ success: false, error: 'Channel not found' });
+    if (!channel.isTextBased() || !channel.isSendable())
+      return res.status(400).json({ success: false, error: 'Cannot send to this channel' });
+
+    const embed = new EmbedBuilder();
+    if (title) embed.setTitle(title.slice(0, 256));
+    if (description) embed.setDescription(description.slice(0, 4096));
+    if (color) embed.setColor(color.startsWith('#') ? color : '#' + color);
+    if (image && /^https?:\/\//.test(image)) embed.setImage(image);
+    if (footer) embed.setFooter({ text: String(footer).slice(0, 2048) });
+    if (Array.isArray(fields)) {
+      fields.slice(0, 25).forEach(f => {
+        if (f && f.value) embed.addFields({ name: String(f.name || '').slice(0, 256), value: String(f.value).slice(0, 1024), inline: !!f.inline });
+      });
+    }
+    await channel.send({ embeds: [embed] });
+    console.log(`[Admin] Embed sent to #${channel.name} in guild ${guildId || channel.guild?.id || '?'}`);
+    res.json({ success: true, message: 'Embed sent' });
   } catch (err) {
+    console.error('[Admin] sendembed error:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -1024,7 +1047,6 @@ app.post('/api/email/send', isAdmin, async (req, res) => {
   }
 });
 
-// ── Admin: Stats ──────────────────────────────────────────────────────
 app.get('/api/admin/stats', isAdmin, async (req, res) => {
   try {
     const [totalUsers, totalServers, totalTickets, totalLogs] = await Promise.all([
@@ -1167,3 +1189,195 @@ app.use((req, res) => {
 module.exports.app    = app;
 module.exports.client  = client;
 module.exports.client1 = client1;
+
+// ════════════════════════════════════════════════════════════════════
+//  NOTIFICATION SYSTEM (Admin Panel)
+// ════════════════════════════════════════════════════════════════════
+
+// ── Admin: Am I an admin? (client-side needs this) ───────────────────────
+app.get('/api/admin/me', isAuthenticated, (req, res) => {
+  const adminIds = (process.env.OWNER_ID || '804999528129363998').split(',');
+  res.json({ isAdmin: adminIds.includes(req.user.id), user: req.user.id });
+});
+
+
+// ── Notifications: list ────────────────────────────────────────────────────
+app.get('/api/admin/notifications', isAdmin, async (req, res) => {
+  try {
+    const notifications = await Notification.find({})
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+    res.json({ success: true, notifications });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Notifications: send (create + deliver or schedule) ─────────────────────
+app.post('/api/admin/notifications/send', isAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { targetType, targetUserId, targetGuildId, targetChannelId, targetRole,
+            title, description, color, imageUrl, footer, fields,
+            scheduledAt, repeat } = body;
+
+    const validTargets = ['user', 'channel', 'guild', 'broadcast', 'everyone'];
+    if (!validTargets.includes(targetType)) return res.status(400).json({ success: false, error: 'Invalid targetType' });
+    if (targetType === 'user' && !targetUserId) return res.status(400).json({ success: false, error: 'targetUserId required' });
+    if (targetType === 'channel' && (!targetGuildId || !targetChannelId)) return res.status(400).json({ success: false, error: 'guild + channel required' });
+    if (targetType === 'guild' && !targetGuildId) return res.status(400).json({ success: false, error: 'targetGuildId required' });
+
+    let parsedSchedule = null;
+    if (scheduledAt) {
+      parsedSchedule = new Date(scheduledAt);
+      if (isNaN(parsedSchedule.getTime())) return res.status(400).json({ success: false, error: 'Invalid scheduledAt date' });
+    }
+
+    const doc = await Notification.create({
+      sentBy: req.user.id,
+      sentByUsername: req.user.username || req.user.global_name || 'Admin',
+      targetType, targetUserId: targetUserId || null, targetGuildId: targetGuildId || null,
+      targetChannelId: targetChannelId || null, targetRole: targetRole || null,
+      title: (title || '').slice(0, 256),
+      description: (description || '').slice(0, 4096),
+      color: color || '#007bff',
+      imageUrl: imageUrl || null,
+      footer: (footer || '').slice(0, 2048),
+      fields: Array.isArray(fields) ? fields.slice(0, 25) : [],
+      scheduledAt: parsedSchedule,
+      repeat: ['once', 'hourly', 'daily', 'weekly'].includes(repeat) ? repeat : 'once',
+      status: parsedSchedule ? 'pending' : 'pending'
+    });
+
+    // Immediate delivery → queue deliver in background (don't block response)
+    if (!parsedSchedule || parsedSchedule.getTime() <= Date.now() + 1000) {
+      setImmediate(() => deliverNow(doc._id));
+    }
+
+    res.json({ success: true, notification: doc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Background delivery + stats persist
+async function deliverNow(docId) {
+  try {
+    const doc = await Notification.findById(docId);
+    if (!doc || doc.status === 'cancelled' || doc.status === 'sent') return;
+    const client = client1;
+    if (!client || !client.isReady()) { doc.status = 'failed'; doc.lastError = 'Bot not connected'; await doc.save(); return; }
+    const stats = await deliverNotification(client, doc);
+    doc.stats = stats;
+    doc.lastDeliveredAt = new Date();
+    if (stats.failed > 0 && stats.success === 0) doc.status = 'failed';
+    else doc.status = 'sent';
+    if (stats.lastError) doc.lastError = stats.lastError;
+    await doc.save();
+  } catch (err) {
+    console.error('[Notification] deliverNow error:', err.message);
+  }
+}
+
+// ── Scheduler: every 30s check pending scheduled notifications ─────────────
+setInterval(async () => {
+  try {
+    if (!client1 || !client1.isReady()) return;
+    const docs = await Notification.find({ status: 'pending', scheduledAt: { $lte: new Date() } });
+    for (const doc of docs) {
+      await deliverNow(doc._id);
+      // Repeats
+      if (doc.status === 'sent' && doc.repeat !== 'once') {
+        const repeat = doc.repeat;
+        let intervalMs = 24 * 3600 * 1000;
+        if (repeat === 'hourly') intervalMs = 3600 * 1000;
+        else if (repeat === 'daily') intervalMs = 24 * 3600 * 1000;
+        else if (repeat === 'weekly') intervalMs = 7 * 24 * 3600 * 1000;
+        await Notification.create({
+          sentBy: doc.sentBy, sentByUsername: doc.sentByUsername,
+          targetType: doc.targetType, targetUserId: doc.targetUserId, targetGuildId: doc.targetGuildId,
+          targetChannelId: doc.targetChannelId, targetRole: doc.targetRole,
+          title: doc.title, description: doc.description, color: doc.color,
+          imageUrl: doc.imageUrl, footer: doc.footer, fields: doc.fields,
+          scheduledAt: new Date(Date.now() + intervalMs), repeat, status: 'pending'
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[Notification] scheduler error:', err.message);
+  }
+}, 30000).unref();
+
+// ── Notifications: cancel / delete ─────────────────────────────────────────
+app.post('/api/admin/notifications/:id/cancel', isAdmin, async (req, res) => {
+  try {
+    const doc = await Notification.findById(req.params.id);
+    if (!doc) return res.status(404).json({ success: false, error: 'Not found' });
+    doc.status = 'cancelled';
+    await doc.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/admin/notifications/:id', isAdmin, async (req, res) => {
+  try {
+    await Notification.deleteOne({ _id: req.params.id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Notifications: guild roles & channels (for targeting) ──────────────────
+app.get('/api/admin/guild/:guildId/channels', isAuthenticated, async (req, res) => {
+  try {
+    if (!client || !client.isReady()) return res.status(503).json({ success: false, error: 'Bot offline' });
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) return res.status(404).json({ success: false, error: 'Guild not cached' });
+    const channels = await guild.channels.fetch({ cache: false }).catch(() => new Map());
+    const list = Array.from(channels.values())
+      .filter(c => c.type === 0)
+      .map(c => ({ id: c.id, name: c.name }));
+    res.json({ success: true, channels: list });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/admin/guild/:guildId/roles', isAuthenticated, async (req, res) => {
+  try {
+    if (!client || !client.isReady()) return res.status(503).json({ success: false, error: 'Bot offline' });
+    const guild = client.guilds.cache.get(req.params.guildId);
+    if (!guild) return res.status(404).json({ success: false, error: 'Guild not cached' });
+    const list = guild.roles.cache.map(r => ({ id: r.id, name: r.name, color: '#' + (r.color || 0).toString(16).padStart(6, '0') }));
+    res.json({ success: true, roles: list });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── User inbox: notifications visible to the logged-in user ────────────────
+// (admin broadcasts are stored in Notification; users see their badge count)
+app.get('/api/notifications/inbox', isAuthenticated, async (req, res) => {
+  try {
+    const recent = await Notification.find({ status: 'sent' })
+      .sort({ lastDeliveredAt: -1 })
+      .limit(10)
+      .lean();
+    res.json({ success: true, notifications: recent });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/notifications/unread', isAuthenticated, async (req, res) => {
+  try {
+    const count = await Notification.countDocuments({ status: 'sent' });
+    res.json({ success: true, unread: Math.min(count, 99) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});

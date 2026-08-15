@@ -147,7 +147,8 @@
               { href: '/admin/stats',     icon: 'bx-bar-chart-alt-2', text: 'Statistics', cls: 'admin-link' },
               { href: '/admin/users',     icon: 'bx-user-check',      text: 'Users', cls: 'admin-link' },
               { href: '/admin/email',     icon: 'bx-envelope',        text: 'Send Email', cls: 'admin-link' },
-              { href: '/admin/sendembed', icon: 'bx-message-square-dots', text: 'Send Embed', cls: 'admin-link' },
+{ href: '/admin/sendembed', icon: 'bx-message-square-dots', text: 'Send Embed', cls: 'admin-link' },
+              { href: '/admin/notifications', icon: 'bx-bell', text: 'Notifications', cls: 'admin-link' },
               { href: '/admin/bugs',      icon: 'bx-bug',             text: 'Bug Reports', cls: 'admin-link' },
             ]
           }
@@ -293,7 +294,7 @@
       dropdown = document.createElement('div');
       dropdown.id = 'notificationDropdown';
       dropdown.className = 'dropdown-content notification-dropdown';
-      dropdown.innerHTML = '<div class="dropdown-header"><i class="bx bx-bell"></i> Notifications</div><div class="dropdown-content-body"></div>';
+      dropdown.innerHTML = '<div class="dropdown-header"><i class="bx bx-bell"></i> Notifications</div><div class="dropdown-content-body">Loading...</div>';
       // Attach inside navbar (absolute positioning anchors to navbar) to avoid overlapping page content
       const nav = document.querySelector('.navbar');
       (nav || notificationBtn.parentElement)?.appendChild(dropdown);
@@ -461,29 +462,30 @@
 
     async function refreshNotifications() {
       try {
-        const res = await fetch('/api/notifications', { credentials: 'same-origin' });
-        if (!res.ok) {
+        const [unreadRes, inboxRes] = await Promise.all([
+          fetch('/api/notifications/unread', { credentials: 'same-origin' }),
+          fetch('/api/notifications/inbox', { credentials: 'same-origin' })
+        ]);
+        const unread = unreadRes.ok ? (await unreadRes.json()) : null;
+        const inbox = inboxRes.ok ? (await inboxRes.json()) : null;
+        if (!unread || !inbox || !inbox.success) {
           body.innerHTML = '<div class="notification-empty">Unable to load notifications right now.</div>';
           return;
         }
-        const data = await res.json();
-        if (!data.success) {
-          body.innerHTML = '<div class="notification-empty">No notifications available.</div>';
-          return;
-        }
 
-        const items = data.notifications || [];
-        badge.textContent = String(items.length);
-        badge.style.display = items.length > 0 ? 'inline-flex' : 'none';
+        const count = unread.unread || 0;
+        badge.textContent = String(count);
+        badge.style.display = count > 0 ? 'inline-flex' : 'none';
 
+        const items = inbox.notifications || [];
         body.innerHTML = items.length
           ? items.map(item => `
             <div class="notification-item">
-              <div class="notification-icon"><i class='bx ${item.icon || 'bx-info-circle'}'></i></div>
+              <div class="notification-icon" style="background:${item.color || 'var(--primary-light)'};color:${item.color || 'var(--primary)'}"><i class='bx bx-bell'></i></div>
               <div class="notification-content">
-                <div class="notification-title">${item.title}</div>
-                <div class="notification-desc">${item.description}</div>
-                <div class="notification-time">${item.time || 'Just now'}</div>
+                <div class="notification-title">${(item.title || 'Notification').replace(/</g,'&lt;')}</div>
+                <div class="notification-desc">${(item.description || '').replace(/</g,'&lt;').slice(0, 120)}</div>
+                <div class="notification-time">${item.lastDeliveredAt ? new Date(item.lastDeliveredAt).toLocaleString() : 'Just now'}</div>
               </div>
             </div>
           `).join('')
