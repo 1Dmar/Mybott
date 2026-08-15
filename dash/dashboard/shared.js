@@ -523,6 +523,25 @@
   }
 
   // ============================================================
+  // CONTENT PROTECTION (anti-copy / anti-scrape deterrent)
+  // ============================================================
+  try {
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+    document.addEventListener('dragstart', (e) => e.preventDefault());
+    document.addEventListener('keydown', (e) => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && e.key.toUpperCase() === 'U') ||
+        (e.metaKey && e.altKey && e.key.toUpperCase() === 'I')
+      ) {
+        e.preventDefault();
+      }
+    }, true);
+  } catch (e) {}
+
+  // ============================================================
   // GUILD DATA CACHING HELPER
   // ============================================================
   window.cacheGuildInfo = function(guild) {

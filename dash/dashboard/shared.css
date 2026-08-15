@@ -2044,3 +2044,10 @@ body.dark .alert-info    { color: #22d3ee; }
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Content Protection ───────────────────────────── */
+@media print { body { display: none !important; } }
+.sidebar, .main-content, .navbar, .dashboard-page, .card, .section {
+  -webkit-user-select: none;
+  user-select: none;
+}

@@ -49,6 +49,7 @@ const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
+const Activity       = require('../bot/Models/Activity');
 const Feature        = require('../bot/Models/Feature');
 const Command        = require('../bot/Models/Command');
 const GuildSettings  = require('../bot/Models/GuildSettings');
@@ -59,6 +60,14 @@ const UserProfile    = require('../bot/Models/UserProfile');
 const app = express();
 
 app.use(cors());
+
+// ── Security / anti-theft headers ──────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
@@ -292,6 +301,10 @@ app.get('/privacy', (req, res) => {
   res.sendFile(path.join(dashDir, 'pages', 'PrivacyPolicy.html'));
 });
 
+app.get('/terms', (req, res) => {
+  res.sendFile(path.join(dashDir, 'pages', 'Terms.html'));
+});
+
 app.get('/invitebot', (req, res) => {
   const clientId = DISCORD_CLIENT_ID;
   res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=8&scope=bot%20applications.commands`);
@@ -459,19 +472,37 @@ app.delete('/api/server/:guildId/autoresponder/:id', isAuthenticated, async (req
   }
 });
 
-// ── Logs ──────────────────────────────────────────────────────────────
+// ── Logs (Audit Log — real guild events from Activity model) ─────────────
 app.get('/api/server/:guildId/logs', isAuthenticated, async (req, res) => {
   try {
     const { page = 1, limit = 50, type } = req.query;
-    const query = { guildId: req.params.guildId };
-    if (type) query.type = type;
-    const logs = await Log.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit))
-      .lean();
-    const total = await Log.countDocuments(query);
+    const doc = await Activity.findOne({ serverId: req.params.guildId }).lean();
+    let activities = (doc?.activities || []).map(a => ({
+      action: a.action || 'Event',
+      user: a.user || 'Unknown',
+      reason: a.reason || '',
+      createdAt: a.timestamp || new Date()
+    }));
+    if (type) {
+      activities = activities.filter(a =>
+        (a.action || '').toLowerCase().includes(String(type).toLowerCase())
+      );
+    }
+    // newest first (newest entries are pushed at position 0)
+    activities.reverse();
+    const total = activities.length;
+    const start = (Number(page) - 1) * Number(limit);
+    const logs = activities.slice(start, start + Number(limit));
     res.json({ success: true, logs, total, page: Number(page) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// ── Log Channel Settings (separate from audit events: where logs go) ────
+app.get('/api/server/:guildId/log-channels', isAuthenticated, async (req, res) => {
+  try {
+    const doc = await Log.findOne({ serverId: req.params.guildId }).lean();
+    res.json({ success: true, settings: doc?.logs || [] });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
