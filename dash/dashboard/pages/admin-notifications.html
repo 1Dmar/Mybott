@@ -3,165 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications - ProMcBot</title>
+    <title>Notifications - Admin Panel - ProMcBot</title>
     <link rel="stylesheet" href="/shared.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* ── Tabs ─────────────────────────────────────────── */
-        .notif-tabs {
-            display: flex; gap: 10px; margin: 18px 0 22px; flex-wrap: wrap;
-        }
-        .notif-tab {
-            padding: 10px 22px; border-radius: 10px; font-weight: 600; font-size: 14px;
-            background: var(--surface-2); color: var(--text-secondary); cursor: pointer;
-            border: 1px solid var(--border); transition: var(--transition-base);
-            display: inline-flex; align-items: center; gap: 8px;
-        }
-        .notif-tab:hover { color: var(--text); border-color: var(--primary); }
-        .notif-tab.active {
-            background: var(--gradient-primary); color: #fff; border-color: transparent;
-            box-shadow: 0 4px 12px rgba(64, 112, 244, 0.35);
-        }
-        .notif-pane { display: none; }
-        .notif-pane.active { display: block; }
+        .notif-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 20px; }
+        @media (max-width: 1100px) { .notif-grid { grid-template-columns: 1fr; } }
 
-        /* ── Two column layout: composer + live preview ───── */
-        .compose-grid {
-            display: grid; grid-template-columns: 1fr 380px; gap: 22px; align-items: start;
-        }
-        @media (max-width: 1100px) { .compose-grid { grid-template-columns: 1fr; } }
+        .notif-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
+        .notif-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text-color); }
+        .notif-card h2 i { color: var(--primary-color); }
 
-        .card {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: 14px; padding: 22px; box-shadow: var(--shadow-sm);
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
+        .notif-input, .notif-select, .notif-textarea {
+            width: 100%; background: var(--input-bg, #0d1117); color: var(--text-color, #e6edf3);
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none;
+            transition: border-color 0.2s;
         }
-        .card h3 {
-            margin: 0 0 14px; font-size: 15px; font-weight: 600; color: var(--text);
-            display: flex; align-items: center; gap: 8px;
-        }
-        .card + .card { margin-top: 18px; }
+        .notif-input:focus, .notif-select:focus, .notif-textarea:focus { border-color: var(--primary-color); }
+        .notif-textarea { resize: vertical; min-height: 90px; font-family: inherit; }
+        .notif-select { appearance: auto; }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .form-row.single { grid-template-columns: 1fr; }
-        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .target-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .target-chip {
+            padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: 8px;
+            background: var(--input-bg, #0d1117); border: 1px solid var(--border-color); color: var(--text-secondary);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .target-chip.active { background: rgba(0, 123, 255, 0.15); border-color: var(--primary-color); color: var(--primary-color); }
 
-        label.field-label {
-            display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary);
-            text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
-        }
-        input[type="text"], input[type="datetime-local"], select, textarea {
-            width: 100%; padding: 10px 12px; border-radius: 10px;
-            border: 1px solid var(--border); background: var(--surface-2);
-            color: var(--text); font-size: 14px; font-family: inherit;
-            transition: var(--transition-base);
-        }
-        textarea { resize: vertical; min-height: 90px; }
-        input:focus, select:focus, textarea:focus {
-            outline: none; border-color: var(--primary);
-            box-shadow: 0 0 0 3px var(--primary-light);
-        }
+        .user-lookup { display: flex; gap: 8px; margin-top: 8px; }
+        .user-lookup input { flex: 1; }
 
-        /* Target cards */
-        .target-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
+        .notif-btn {
+            width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+            background: linear-gradient(135deg, #007bff, #fd7e14); color: #fff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
-        .target-card {
-            border: 2px solid var(--border); border-radius: 12px; padding: 12px 10px;
-            text-align: center; cursor: pointer; background: var(--surface-2);
-            transition: var(--transition-base);
-        }
-        .target-card i { font-size: 22px; color: var(--primary); display: block; margin-bottom: 6px; }
-        .target-card span { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; }
-        .target-card small { font-size: 10px; color: var(--text-muted); }
-        .target-card.selected {
-            border-color: var(--primary); background: var(--primary-light);
-        }
-        .target-card.selected i, .target-card.selected span { color: var(--primary); }
-        .target-detail { display: none; margin-top: 14px; }
-        .target-detail.show { display: block; }
+        .notif-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 123, 255, 0.35); }
 
-        /* Discord preview */
-        .dc-preview {
-            background: #313338; border-radius: 12px; padding: 16px;
-            font-family: 'gg sans', 'Whitney', 'Inter', sans-serif;
+        .hist-list { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; padding-right: 6px; }
+        .hist-item { border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; background: var(--input-bg, #0d1117); }
+        .hist-item.pinned { border-color: var(--primary-color); }
+        .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+        .hist-title { font-size: 13px; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 6px; }
+        .hist-title i.pin { color: var(--primary-color); }
+        .hist-meta { font-size: 11px; color: var(--text-secondary); }
+        .hist-body { font-size: 12px; color: var(--text-secondary); margin: 6px 0; white-space: pre-wrap; word-break: break-word; max-height: 60px; overflow: hidden; }
+        .hist-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .hist-btn {
+            background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px;
+            font-size: 11px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
         }
-        .dc-embed {
-            background: #2b2d31; border-left: 4px solid var(--primary);
-            border-radius: 4px; padding: 12px; margin-top: 8px;
-        }
-        .dc-embed-title { font-weight: 700; color: #00a8fc; font-size: 15px; margin-bottom: 8px; }
-        .dc-embed-desc { color: #dcddde; font-size: 13px; white-space: pre-wrap; }
-        .dc-embed-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
-        .dc-embed-field-name { font-weight: 700; color: #e8eaf6; font-size: 13px; margin-top: 8px; }
-        .dc-embed-field-value { color: #dcddde; font-size: 13px; }
-        .dc-embed-footer { color: #949ba4; font-size: 11px; margin-top: 10px; }
-        .dc-author { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .dc-author img { width: 28px; height: 28px; border-radius: 50%; }
-        .dc-author-name { color: #fff; font-size: 13px; font-weight: 600; }
-        .dc-author-time { color: #949ba4; font-size: 11px; }
-
-        /* Fields builder */
-        .field-row { display: grid; grid-template-columns: 1fr 2fr 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
-        .field-row input { min-height: 38px; }
-        .btn-remove-field {
-            width: 36px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
-            background: var(--danger-light); color: var(--danger); cursor: pointer; font-size: 16px;
-        }
-        .btn-add-field {
-            background: none; border: 1px dashed var(--border); color: var(--text-secondary);
-            border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 13px; width: 100%;
-        }
-        .btn-add-field:hover { border-color: var(--primary); color: var(--primary); }
-
-        .btn-primary {
-            background: var(--gradient-primary); color: #fff; border: none; border-radius: 10px;
-            padding: 12px 24px; font-weight: 600; font-size: 14px; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px; transition: var(--transition-base);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(64,112,244,.4); }
-        .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
-        .btn-ghost {
-            background: transparent; color: var(--text-secondary); border: 1px solid var(--border);
-            border-radius: 10px; padding: 12px 20px; font-weight: 600; font-size: 14px; cursor: pointer;
-        }
-        .btn-ghost:hover { color: var(--text); border-color: var(--primary); }
-
-        .send-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
-
-        /* History table */
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th {
-            text-align: left; color: var(--text-secondary); font-weight: 600; font-size: 11px;
-            text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; border-bottom: 1px solid var(--border);
-        }
-        .history-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
-        .history-table tr:last-child td { border-bottom: none; }
-        .badge-status {
-            display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;
-            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
-        }
-        .badge-pending { background: var(--warning-light); color: var(--warning); }
-        .badge-sent     { background: var(--success-light); color: var(--success); }
-        .badge-failed   { background: var(--danger-light); color: var(--danger); }
-        .badge-cancelled{ background: rgba(107,114,128,.12); color: var(--text-secondary); }
-        .badge-target {
-            display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px;
-            font-size: 11px; font-weight: 600; background: var(--primary-light); color: var(--primary);
-        }
-        .icon-btn {
-            background: none; border: none; cursor: pointer; font-size: 16px; padding: 6px; border-radius: 8px;
-            transition: var(--transition-base);
-        }
-        .icon-btn.delete { color: var(--text-muted); }
-        .icon-btn.delete:hover { color: var(--danger); background: var(--danger-light); }
-        .icon-btn.cancel { color: var(--text-muted); }
-        .icon-btn.cancel:hover { color: var(--warning); background: var(--warning-light); }
-        .table-wrap { overflow-x: auto; }
-        .empty-state {
-            text-align: center; padding: 44px 20px; color: var(--text-muted);
-        }
-        .empty-state i { font-size: 40px; display: block; margin-bottom: 12px; opacity: .6; }
+        .hist-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        .hist-btn.danger:hover { border-color: #dc3545; color: #dc3545; }
+        .empty-hist { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px 0; }
     </style>
 </head>
 <body>
@@ -197,169 +94,63 @@
             <div class="page-title-icon"><i class='bx bx-bell'></i></div>
             <div>
                 <h1 class="page-title">Notification Center</h1>
-                <p class="page-subtitle">Send Discord notifications to one user, a server, or everyone — with live preview, scheduling, and full delivery tracking.</p>
+                <p class="page-subtitle">Send in-app notifications to dashboard users and control announcements.</p>
             </div>
         </div>
 
-        <div class="notif-tabs">
-            <div class="notif-tab active" data-tab="compose"><i class='bx bx-send'></i> Compose</div>
-            <div class="notif-tab" data-tab="history"><i class='bx bx-history'></i> History</div>
-        </div>
+        <div class="notif-grid">
+            <!-- Compose -->
+            <div class="notif-card">
+                <h2><i class='bx bx-send'></i> Compose Notification</h2>
 
-        <!-- ════ COMPOSE PANE ════ -->
-        <div class="notif-pane active" id="pane-compose">
-            <div class="compose-grid">
-                <!-- Left: form -->
-                <div>
-                    <!-- Target -->
-                    <div class="card">
-                        <h3><i class='bx bx-target-lock'></i> Who should receive this?</h3>
-                        <div class="target-grid" id="targetGrid">
-                            <div class="target-card selected" data-type="broadcast"><i class='bx bx-broadcast'></i><span>Broadcast</span><small>All servers</small></div>
-                            <div class="target-card" data-type="everyone"><i class='bx bx-user-voice'></i><span>Everyone</span><small>DM all users</small></div>
-                            <div class="target-card" data-type="guild"><i class='bx bx-server'></i><span>One Server</span><small>Announce there</small></div>
-                            <div class="target-card" data-type="channel"><i class='bx bx-hash'></i><span>One Channel</span><small>Specific text channel</small></div>
-                            <div class="target-card" data-type="user"><i class='bx bx-user'></i><span>One User</span><small>Direct message</small></div>
-                        </div>
-
-                        <div class="target-detail show" id="detail-user">
-                            <label class="field-label">Discord User ID</label>
-                            <input type="text" id="targetUserId" placeholder="e.g. 804999528129363998">
-                        </div>
-                        <div class="target-detail" id="detail-channel">
-                            <div class="form-row">
-                                <div>
-                                    <label class="field-label">Server</label>
-                                    <select id="targetGuildSelect"><option value="">Loading…</option></select>
-                                </div>
-                                <div>
-                                    <label class="field-label">Channel</label>
-                                    <select id="targetChannelSelect"><option value="">Select server first</option></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="target-detail" id="detail-guild">
-                            <div class="form-row">
-                                <div>
-                                    <label class="field-label">Server</label>
-                                    <select id="targetGuildSelect2"><option value="">Loading…</option></select>
-                                </div>
-                                <div>
-                                    <label class="field-label">Ping role (optional)</label>
-                                    <select id="targetRoleSelect"><option value="">None (pings everyone)</option></select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="target-detail" id="detail-broadcast">
-                            <div class="form-row single">
-                                <div>
-                                    <label class="field-label">Ping role on every server (optional)</label>
-                                    <input type="text" id="broadcastRole" placeholder="Role ID — leave empty to ping everyone">
-                                </div>
-                            </div>
-                        </div>
+                <div class="form-group">
+                    <label>Audience</label>
+                    <div class="target-row" id="targetRow">
+                        <span class="target-chip active" data-target="everyone"><i class='bx bx-world'></i> Everyone</span>
+                        <span class="target-chip" data-target="admin-only"><i class='bx bx-shield'></i> Admins Only</span>
+                        <span class="target-chip" data-target="user"><i class='bx bx-user'></i> Specific User</span>
                     </div>
-
-                    <!-- Embed -->
-                    <div class="card">
-                        <h3><i class='bx bx-message-square-detail'></i> Embed Content</h3>
-                        <div class="form-row single" style="margin-bottom:14px">
-                            <input type="text" id="embedTitle" placeholder="Embed title (max 256 chars)" maxlength="256">
-                        </div>
-                        <div class="form-row single" style="margin-bottom:14px">
-                            <textarea id="embedDesc" placeholder="Description — supports basic text (max 4096 chars)" maxlength="4096"></textarea>
-                        </div>
-                        <div class="form-row" style="margin-bottom:14px">
-                            <div>
-                                <label class="field-label">Color</label>
-                                <input type="text" id="embedColor" value="#4070f4" placeholder="#4070f4">
-                            </div>
-                            <div>
-                                <label class="field-label">Image URL (optional)</label>
-                                <input type="text" id="embedImage" placeholder="https://…">
-                            </div>
-                        </div>
-                        <div class="form-row single">
-                            <div>
-                                <label class="field-label">Footer text (optional)</label>
-                                <input type="text" id="embedFooter" placeholder="Footer message" maxlength="2048">
-                            </div>
-                        </div>
-
-                        <h3 style="margin-top:20px"><i class='bx bx-grid-alt'></i> Extra Fields</h3>
-                        <div id="fieldsList"></div>
-                        <button class="btn-add-field" id="addFieldBtn"><i class='bx bx-plus'></i> Add Field</button>
-                    </div>
-
-                    <!-- Schedule -->
-                    <div class="card">
-                        <h3><i class='bx bx-time-five'></i> Scheduling</h3>
-                        <div class="form-row">
-                            <div>
-                                <label class="field-label">Send time</label>
-                                <select id="scheduleMode">
-                                    <option value="now">Send immediately</option>
-                                    <option value="later">Schedule for later</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="field-label">Date &amp; Time</label>
-                                <input type="datetime-local" id="scheduleAt">
-                            </div>
-                        </div>
-                        <div style="margin-top:14px">
-                            <label class="field-label">Repeat</label>
-                            <select id="repeatMode">
-                                <option value="once">Once only</option>
-                                <option value="hourly">Every hour</option>
-                                <option value="daily">Every day</option>
-                                <option value="weekly">Every week</option>
-                            </select>
-                        </div>
-                        <div class="send-actions">
-                            <button class="btn-primary" id="sendBtn"><i class='bx bx-send'></i> Send Notification</button>
-                        </div>
+                    <div class="user-lookup" id="userLookup" style="display: none;">
+                        <input class="notif-input" id="targetUserId" placeholder="Discord User ID (e.g. 804999528129363998)">
                     </div>
                 </div>
 
-                <!-- Right: live preview -->
-                <div class="card" style="position:sticky; top:80px">
-                    <h3><i class='bx bx-show'></i> Discord Preview</h3>
-                    <div class="dc-preview">
-                        <div class="dc-author">
-                            <img src="" data-user-avatar style="width:28px;height:28px;border-radius:50%">
-                            <span class="dc-author-name">ProMcBot</span>
-                            <span class="dc-author-time">Today</span>
-                        </div>
-                        <div class="dc-embed" id="dcEmbed">
-                            <div class="dc-embed-title" id="pvTitle"></div>
-                            <div class="dc-embed-desc" id="pvDesc"></div>
-                            <div id="pvFields"></div>
-                            <img class="dc-embed-img" id="pvImage" style="display:none">
-                            <div class="dc-embed-footer" id="pvFooter" style="display:none"></div>
-                        </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input class="notif-input" id="notifTitle" placeholder="e.g. Big update coming this weekend!" maxlength="256">
+                </div>
+
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea class="notif-textarea" id="notifMessage" placeholder="Write your announcement here..." maxlength="4000"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Action link (optional)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input class="notif-input" id="notifUrl" placeholder="https://..." style="flex: 2;">
+                        <input class="notif-input" id="notifUrlLabel" placeholder="Button text" maxlength="40" style="flex: 1;">
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label>Type</label>
+                    <select class="notif-select" id="notifType">
+                        <option value="info">ℹ️ Info</option>
+                        <option value="success">✅ Success</option>
+                        <option value="warning">⚠️ Warning</option>
+                        <option value="error">❌ Error</option>
+                    </select>
+                </div>
+
+                <button class="notif-btn" id="sendBtn" type="button"><i class='bx bx-send'></i>&nbsp; Send Notification</button>
             </div>
-        </div>
 
-        <!-- ════ HISTORY PANE ════ -->
-        <div class="notif-pane" id="pane-history">
-            <div class="card">
-                <h3><i class='bx bx-history'></i> Sent Notifications</h3>
-                <div class="table-wrap">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th><th>Target</th><th>Delivered</th><th>Status</th><th>Scheduled</th><th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyBody"></tbody>
-                    </table>
-                </div>
-                <div class="empty-state" id="historyEmpty">
-                    <i class='bx bx-notification-off'></i>
-                    No notifications sent yet.
+            <!-- History -->
+            <div class="notif-card">
+                <h2><i class='bx bx-history'></i> Notification History</h2>
+                <div class="hist-list" id="histList">
+                    <div class="empty-hist">Loading history...</div>
                 </div>
             </div>
         </div>
@@ -367,241 +158,104 @@
 
     <script src="/shared.js"></script>
     <script>
-        const API = '/api/admin/notifications';
-        let targetType = 'broadcast';
-        let guildsCache = [];
+        let currentTarget = 'everyone';
 
-        // ── Tabs ─────────────────────────────────────────────
-        document.querySelectorAll('.notif-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.notif-pane').forEach(p => p.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById('pane-' + tab.dataset.tab).classList.add('active');
-                if (tab.dataset.tab === 'history') loadHistory();
-            });
+        document.getElementById('targetRow').addEventListener('click', (e) => {
+            const chip = e.target.closest('.target-chip');
+            if (!chip) return;
+            document.querySelectorAll('.target-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentTarget = chip.dataset.target;
+            document.getElementById('userLookup').style.display = currentTarget === 'user' ? 'flex' : 'none';
         });
 
-        // ── Target selection ─────────────────────────────────
-        document.querySelectorAll('.target-card').forEach(card => {
-            card.addEventListener('click', () => {
-                document.querySelectorAll('.target-card').forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                targetType = card.dataset.type;
-                document.querySelectorAll('.target-detail').forEach(d => d.classList.remove('show'));
-                const d = document.getElementById('detail-' + targetType);
-                if (d) d.classList.add('show');
-                if (targetType === 'guild' || targetType === 'channel') loadGuilds();
-            });
-        });
+        document.getElementById('sendBtn').addEventListener('click', sendNotification);
 
-        // ── Guilds / channels / roles ────────────────────────
-        async function loadGuilds() {
-            try {
-                if (!guildsCache.length) {
-                    const guildsResp = await fetch('/api/guilds', { credentials: 'same-origin' });
-                    if (guildsResp.ok) {
-                        const gdata = await guildsResp.json();
-                        guildsCache = (gdata.guilds || []).filter(g => g.botPresent);
-                    }
-                }
-                const opts = guildsCache.map(g => `<option value="${g.id}">${g.name || g.id}</option>`).join('');
-                document.getElementById('targetGuildSelect').innerHTML = '<option value="">Choose server…</option>' + opts;
-                document.getElementById('targetGuildSelect2').innerHTML = '<option value="">Choose server…</option>' + opts;
-            } catch (e) { console.warn('loadGuilds failed', e); }
-        }
+        async function sendNotification() {
+            const title = document.getElementById('notifTitle').value.trim();
+            const message = document.getElementById('notifMessage').value.trim();
+            if (!title || !message) return window.showToast ? window.showToast('Please fill in title and message', 'error') : alert('Title and message are required');
 
-        document.getElementById('targetGuildSelect').addEventListener('change', async (e) => {
-            await loadChannelOptions(e.target.value, document.getElementById('targetChannelSelect'));
-        });
-        document.getElementById('targetGuildSelect2').addEventListener('change', async (e) => {
-            await loadRoleOptions(e.target.value, document.getElementById('targetRoleSelect'));
-        });
-
-        async function loadChannelOptions(guildId, selectEl) {
-            if (!guildId) { selectEl.innerHTML = '<option value="">Select server first</option>'; return; }
-            try {
-                const r = await fetch(`/api/admin/guild/${guildId}/channels`, { credentials: 'same-origin' });
-                const data = await r.json();
-                const channels = (data.channels || []).map(c => `<option value="${c.id}"># ${c.name}</option>`).join('');
-                selectEl.innerHTML = '<option value="">Choose channel…</option>' + channels;
-            } catch (e) { selectEl.innerHTML = '<option value="">Failed to load</option>'; }
-        }
-
-        async function loadRoleOptions(guildId, selectEl) {
-            if (!guildId) { selectEl.innerHTML = '<option value="">None</option>'; return; }
-            try {
-                const r = await fetch(`/api/admin/guild/${guildId}/roles`, { credentials: 'same-origin' });
-                const data = await r.json();
-                const roles = (data.roles || []).filter(x => x.name !== '@everyone')
-                    .map(x => `<option value="${x.id}">@ ${x.name}</option>`).join('');
-                selectEl.innerHTML = '<option value="">None (pings everyone)</option>' + roles;
-            } catch (e) { selectEl.innerHTML = '<option value="">Failed to load</option>'; }
-        }
-
-        // ── Fields builder ───────────────────────────────────
-        const fieldsList = document.getElementById('fieldsList');
-        document.getElementById('addFieldBtn').addEventListener('click', () => {
-            if (fieldsList.children.length >= 25) return window.showToast('Max 25 fields', 'warning');
-            const row = document.createElement('div');
-            row.className = 'field-row';
-            row.innerHTML = `
-                <input type="text" placeholder="Field name" maxlength="256">
-                <input type="text" placeholder="Field value" maxlength="1024">
-                <button class="btn-remove-field" type="button"><i class='bx bx-x'></i></button>`;
-            row.querySelector('.btn-remove-field').addEventListener('click', () => row.remove());
-            fieldsList.appendChild(row);
-        });
-
-        function collectFields() {
-            return Array.from(fieldsList.querySelectorAll('.field-row')).map(r => {
-                const inputs = r.querySelectorAll('input');
-                return { name: inputs[0].value, value: inputs[1].value, inline: false };
-            }).filter(f => f.value.trim());
-        }
-
-        // ── Live preview ─────────────────────────────────────
-        function updatePreview() {
-            document.getElementById('pvTitle').textContent = document.getElementById('embedTitle').value || 'Title';
-            document.getElementById('pvDesc').textContent = document.getElementById('embedDesc').value || 'Description…';
-            const color = document.getElementById('embedColor').value || '#4070f4';
-            document.getElementById('dcEmbed').style.borderLeftColor = color;
-            const img = document.getElementById('embedImage').value;
-            const pvImg = document.getElementById('pvImage');
-            if (img && /^https?:\/\//.test(img)) { pvImg.src = img; pvImg.style.display = 'block'; }
-            else { pvImg.style.display = 'none'; }
-            const footer = document.getElementById('embedFooter').value;
-            const pvFooter = document.getElementById('pvFooter');
-            if (footer) { pvFooter.textContent = footer; pvFooter.style.display = 'block'; }
-            else { pvFooter.style.display = 'none'; }
-            const fieldsDiv = document.getElementById('pvFields');
-            fieldsDiv.innerHTML = collectFields().map(f =>
-                `<div class="dc-embed-field-name">${escapeHtml(f.name)}</div><div class="dc-embed-field-value">${escapeHtml(f.value)}</div>`
-            ).join('');
-        }
-        function escapeHtml(s) { return String(s).replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-        ['embedTitle','embedDesc','embedColor','embedImage','embedFooter'].forEach(id => {
-            document.getElementById(id).addEventListener('input', updatePreview);
-        });
-        updatePreview();
-
-        // ── Send ─────────────────────────────────────────────
-        document.getElementById('sendBtn').addEventListener('click', async () => {
-            const payload = {
-                targetType,
-                targetUserId: document.getElementById('targetUserId').value.trim() || null,
-                targetGuildId: null,
-                targetChannelId: null,
-                targetRole: null,
-                title: document.getElementById('embedTitle').value,
-                description: document.getElementById('embedDesc').value,
-                color: document.getElementById('embedColor').value || '#4070f4',
-                imageUrl: document.getElementById('embedImage').value.trim() || null,
-                footer: document.getElementById('embedFooter').value,
-                fields: collectFields(),
-                repeat: document.getElementById('repeatMode').value,
-                scheduledAt: null
-            };
-            const mode = document.getElementById('scheduleMode').value;
-            if (mode === 'later') {
-                const at = document.getElementById('scheduleAt').value;
-                if (!at) return window.showToast('Pick a date & time', 'warning');
-                payload.scheduledAt = new Date(at).toISOString();
+            const payload = { title, message, type: document.getElementById('notifType').value };
+            if (currentTarget === 'user') {
+                const uid = document.getElementById('targetUserId').value.trim();
+                if (!/^\d{15,22}$/.test(uid)) return window.showToast ? window.showToast('Enter a valid Discord User ID', 'error') : alert('Enter a valid Discord User ID');
+                payload.recipientId = uid;
+            } else if (currentTarget === 'admin-only') {
+                payload.forAdmin = true;
             }
-
-            if (targetType === 'user' && !payload.targetUserId) return window.showToast('Enter a Discord user ID', 'warning');
-            if (targetType === 'guild') {
-                const g = document.getElementById('targetGuildSelect2').value;
-                if (!g) return window.showToast('Choose a server', 'warning');
-                payload.targetGuildId = g;
-                payload.targetRole = document.getElementById('targetRoleSelect').value || null;
-            }
-            if (targetType === 'channel') {
-                const g = document.getElementById('targetGuildSelect').value;
-                const c = document.getElementById('targetChannelSelect').value;
-                if (!g || !c) return window.showToast('Choose server + channel', 'warning');
-                payload.targetGuildId = g;
-                payload.targetChannelId = c;
-            }
-            if (targetType === 'broadcast') payload.targetRole = document.getElementById('broadcastRole').value.trim() || null;
+            const url = document.getElementById('notifUrl').value.trim();
+            const label = document.getElementById('notifUrlLabel').value.trim();
+            if (url) { payload.actionUrl = url; payload.actionLabel = label || 'Open'; }
 
             const btn = document.getElementById('sendBtn');
-            btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Sending…";
+            btn.disabled = true;
             try {
-                const r = await fetch(API + '/send', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json', credentials: 'include' },
+                const res = await fetch('/api/admin/notifications/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(payload)
                 });
-                const data = await r.json();
-                if (!r.ok || !data.success) throw new Error(data.error || 'Send failed');
-                window.showToast('Notification queued — check History for delivery status', 'success');
-                document.getElementById('pane-history').classList.add('active');
-                document.getElementById('pane-compose').classList.remove('active');
-                document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
-                document.querySelector('.notif-tab[data-tab="history"]').classList.add('active');
-                loadHistory();
-            } catch (e) {
-                window.showToast(e.message, 'error');
+                const data = await res.json();
+                if (data.success) {
+                    window.showToast ? window.showToast('Notification sent successfully', 'success') : alert('Sent!');
+                    document.getElementById('notifTitle').value = '';
+                    document.getElementById('notifMessage').value = '';
+                    loadHistory();
+                } else {
+                    window.showToast ? window.showToast(data.error || 'Failed to send', 'error') : alert(data.error || 'Failed');
+                }
+            } catch (err) {
+                window.showToast ? window.showToast('Network error', 'error') : alert('Network error');
             } finally {
-                btn.disabled = false; btn.innerHTML = "<i class='bx bx-send'></i> Send Notification";
-            }
-        });
-
-        // ── History ──────────────────────────────────────────
-        async function loadHistory() {
-            const tbody = document.getElementById('historyBody');
-            const empty = document.getElementById('historyEmpty');
-            try {
-                const r = await fetch(API, { credentials: 'same-origin' });
-                const data = await r.json();
-                const list = data.notifications || [];
-                if (!list.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-                empty.style.display = 'none';
-                tbody.innerHTML = list.map(n => {
-                    const targetLabel = {
-                        user: `User ${n.targetUserId || ''}`,
-                        channel: `Channel ${n.targetChannelId || ''}`,
-                        guild: `Server ${n.targetGuildId || ''}`,
-                        broadcast: 'All servers',
-                        everyone: 'All users (DM)'
-                    }[n.targetType] || n.targetType;
-                    const date = n.scheduledAt ? new Date(n.scheduledAt).toLocaleString() : 'Immediate';
-                    const statusCls = 'badge-' + n.status;
-                    const delivered = n.lastDeliveredAt ? `${n.stats.success}/${n.stats.total} OK` : '—';
-                    const actions = (n.status === 'pending')
-                        ? `<button class="icon-btn cancel" title="Cancel" onclick="cancelNotif('${n._id}')"><i class='bx bx-x-circle'></i></button>`
-                        : '';
-                    return `<tr>
-                        <td><strong>${escapeHtml(n.title || 'Untitled')}</strong>${n.sentByUsername ? `<br><small style="color:var(--text-muted)">by ${escapeHtml(n.sentByUsername)}</small>` : ''}</td>
-                        <td><span class="badge-target">${escapeHtml(targetLabel)}</span></td>
-                        <td>${delivered}</td>
-                        <td><span class="badge-status ${statusCls}">${n.status}</span></td>
-                        <td>${date}${n.repeat !== 'once' ? ` <small>(${n.repeat})</small>` : ''}</td>
-                        <td>${actions} <button class="icon-btn delete" title="Delete" onclick="deleteNotif('${n._id}')"><i class='bx bx-trash'></i></button></td>
-                    </tr>`;
-                }).join('');
-            } catch (e) {
-                tbody.innerHTML = ''; empty.style.display = 'block';
+                btn.disabled = false;
             }
         }
 
-        window.cancelNotif = async function (id) {
-            const c = await Swal.fire({ title: 'Cancel this notification?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Yes, cancel' });
-            if (!c.isConfirmed) return;
-            const r = await fetch(`${API}/${id}/cancel`, { method: 'POST', credentials: 'same-origin' });
-            const data = await r.json();
-            if (r.ok && data.success) { window.showToast('Cancelled', 'success'); loadHistory(); }
-            else window.showToast(data.error || 'Failed', 'error');
+        async function loadHistory() {
+            const list = document.getElementById('histList');
+            try {
+                const res = await fetch('/api/admin/notifications', { credentials: 'same-origin' });
+                const data = await res.json();
+                const items = (data.notifications || []);
+                if (!items.length) { list.innerHTML = '<div class="empty-hist">No notifications sent yet.</div>'; return; }
+                list.innerHTML = items.map(n => `
+                    <div class="hist-item ${n.pinned ? 'pinned' : ''}">
+                        <div class="hist-head">
+                            <div class="hist-title"><i class='bx ${typeIcon(n.type)}'></i> ${esc(n.title)}${n.pinned ? '<i class="bx bx-pin pin"></i>' : ''}</div>
+                            <div class="hist-meta">${esc(n.createdByLabel || 'Admin')} • ${new Date(n.createdAt).toLocaleString()}</div>
+                        </div>
+                        <div class="hist-body">${esc(n.message)}</div>
+                        <div class="hist-actions">
+                            <button class="hist-btn" onclick="togglePin('${n._id}')">${n.pinned ? 'Unpin' : 'Pin'}</button>
+                            <button class="hist-btn danger" onclick="deleteNotif('${n._id}')"><i class='bx bx-trash'></i> Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                list.innerHTML = '<div class="empty-hist">Failed to load history.</div>';
+            }
+        }
+
+        function typeIcon(t) {
+            return { info: 'bx-info-circle', success: 'bx-check-circle', warning: 'bx-error', error: 'bx-x-circle' }[t] || 'bx-bell';
+        }
+        function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        window.togglePin = async function(id) {
+            await fetch(`/api/admin/notifications/${id}/pin`, { method: 'POST', credentials: 'same-origin' });
+            loadHistory();
+        };
+        window.deleteNotif = async function(id) {
+            const confirmed = window.Swal ? await Swal.fire({ title: 'Delete this notification?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'Delete' }) : confirm('Delete this notification?');
+            if (!(window.Swal ? confirmed.isConfirmed : confirmed)) return;
+            await fetch(`/api/admin/notifications/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+            loadHistory();
+            window.showToast ? window.showToast('Deleted', 'success') : null;
         };
 
-        window.deleteNotif = async function (id) {
-            const c = await Swal.fire({ title: 'Delete this record?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Delete' });
-            if (!c.isConfirmed) return;
-            const r = await fetch(`${API}/${id}`, { method: 'DELETE', credentials: 'same-origin' });
-            const data = await r.json();
-            if (r.ok && data.success) { window.showToast('Deleted', 'success'); loadHistory(); }
-            else window.showToast(data.error || 'Failed', 'error');
-        };
+        document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
 </html>

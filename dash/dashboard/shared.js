@@ -450,7 +450,7 @@
   };
 
   // ============================================================
-  // REAL-TIME DASHBOARD NOTIFICATIONS
+  // REAL-TIME IN-APP NOTIFICATIONS (navbar bell inbox)
   // ============================================================
   async function initNotifications() {
     const ui = ensureNotificationUi();
@@ -459,6 +459,25 @@
     if (!badge || !dropdown) return;
 
     const body = dropdown.querySelector('.dropdown-content-body') || dropdown;
+    // header row (title + mark all read) rendered before items
+    const headerWrap = dropdown.querySelector('.notification-header') || (() => {
+      const h = document.createElement('div');
+      h.className = 'notification-header';
+      h.innerHTML = `<span class="notification-header-title">Notifications</span><button type="button" class="notification-mark-all" title="Mark all as read"><i class='bx bx-check-double'></i></button>`;
+      dropdown.insertBefore(h, body);
+      h.querySelector('.notification-mark-all').addEventListener('click', async () => {
+        try {
+          await fetch('/api/notifications/read-all', { method: 'POST', credentials: 'same-origin' });
+          await refreshNotifications();
+          window.showToast && window.showToast('All notifications marked as read', 'success');
+        } catch (_) {}
+      });
+      return h;
+    })();
+
+    function typeIcon(t) {
+      return { info: 'bx-info-circle', success: 'bx-check-circle', warning: 'bx-error', error: 'bx-x-circle' }[t] || 'bx-bell';
+    }
 
     async function refreshNotifications() {
       try {
@@ -480,16 +499,19 @@
         const items = inbox.notifications || [];
         body.innerHTML = items.length
           ? items.map(item => `
-            <div class="notification-item">
-              <div class="notification-icon" style="background:${item.color || 'var(--primary-light)'};color:${item.color || 'var(--primary)'}"><i class='bx bx-bell'></i></div>
+            <div class="notification-item ${item.read ? '' : 'notification-unread'}" data-id="${item._id}">
+              <div class="notification-icon"><i class='bx ${typeIcon(item.type)}'></i></div>
               <div class="notification-content">
-                <div class="notification-title">${(item.title || 'Notification').replace(/</g,'&lt;')}</div>
-                <div class="notification-desc">${(item.description || '').replace(/</g,'&lt;').slice(0, 120)}</div>
-                <div class="notification-time">${item.lastDeliveredAt ? new Date(item.lastDeliveredAt).toLocaleString() : 'Just now'}</div>
+                <div class="notification-title">${(item.title || 'Notification').replace(/</g,'&lt;')}${item.pinned ? ' <i class="bx bx-pin"></i>' : ''}</div>
+                <div class="notification-desc">${(item.message || '').replace(/</g,'&lt;').slice(0, 140)}</div>
+                <div class="notification-time">${item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</div>
+                ${item.actionUrl ? `<a class="notification-action" href="${item.actionUrl.replace(/"/g,'')}" target="_blank" rel="noopener">${(item.actionLabel || 'Open').replace(/</g,'&lt;')}</a>` : ''}
               </div>
             </div>
           `).join('')
           : '<div class="notification-empty">No new notifications.</div>';
+
+        body.querySelectorAll('.notification-item').forEach(el => el.classList.add(el.classList.contains('notification-unread') ? 'notification-unread' : 'notification-read'));
       } catch (err) {
         console.warn('[PMC] Notification refresh failed:', err.message);
         body.innerHTML = '<div class="notification-empty">No new notifications.</div>';
@@ -497,7 +519,7 @@
     }
 
     await refreshNotifications();
-    setInterval(refreshNotifications, 25000);
+    setInterval(refreshNotifications, 30000);
   }
 
   // ============================================================

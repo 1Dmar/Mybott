@@ -44,7 +44,7 @@ const Language       = require('../bot/Models/Langs');
 const ApiKey         = require('../bot/Models/Api');
 const BumpedServer   = require('../bot/Models/bumpedServer');
 const Notification   = require('../bot/Models/Notification');
-const { deliverNotification } = require('../bot/utils/notificationSender');
+const { notifyUser, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications } = require('../bot/utils/notificationSender');
 const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const McApi          = require('../bot/utils/minecraftApi');
@@ -412,14 +412,17 @@ app.post('/api/server/:guildId/config', isAuthenticated, async (req, res) => {
     const config = await BotConfig.findOneAndUpdate(
       { guildId: req.params.guildId },
       { $set: req.body },
-      { upsert: true, new: true }
+            { upsert: true, new: true }
     );
+    try {
+      notifyUser(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    } catch (_) {}
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     res.json({ success: true, config });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
 // ── Auto Responder ────────────────────────────────────────────────────
 app.get('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) => {
   try {
@@ -549,41 +552,6 @@ app.get('/api/server/:guildId/channels', isAuthenticated, async (req, res) => {
   }
 });
 
-app.get('/api/notifications', isAuthenticated, async (req, res) => {
-  try {
-    const guildId = req.query.guildId || null;
-    const notifications = [];
-    if (guildId) {
-      const recentLogs = await Log.find({ guildId }).sort({ createdAt: -1 }).limit(3).lean();
-      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
-        recentLogs.forEach(log => {
-          const title = log.action || 'Server Activity';
-          const description = log.reason || (log.message || 'Recent server event');
-          notifications.push({
-            title,
-            description: description.toString().slice(0, 120),
-            time: log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : 'Just now',
-            icon: 'bx-history'
-          });
-        });
-      }
-    }
-
-    if (notifications.length === 0) {
-      notifications.push({
-        title: 'Welcome to ProMcBot!',
-        description: 'Your dashboard is connected and ready.',
-        time: 'Just now',
-        icon: 'bx-bell'
-      });
-    }
-
-    res.json({ success: true, notifications });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // ── Overview Stats ────────────────────────────────────────────────────
 app.get('/api/server/:guildId/overview', isAuthenticated, async (req, res) => {
   try {
@@ -625,6 +593,10 @@ app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
       { $set: { modules: req.body } },
       { upsert: true, new: true }
     );
+    try {
+      notifyUser(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    } catch (_) {}
+    try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     res.json({ success: true, modules: config.modules });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -648,6 +620,9 @@ app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res
       { $set: req.body },
       { upsert: true, new: true }
     );
+    try {
+      notifyUser(req.user.id, { type: 'success', title: 'AutoMod settings saved', message: `Guild settings updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    } catch (_) {}
     res.json({ success: true, settings });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -671,6 +646,7 @@ app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
       { $set: { welcome: req.body } },
       { upsert: true, new: true }
     );
+    notifyUser(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, welcome: config.welcome });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -695,6 +671,7 @@ app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res)
       { $set: { ticket: req.body } },
       { upsert: true, new: true }
     );
+    notifyUser(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, ticket: config.ticket });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -804,6 +781,7 @@ app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+    notifyUser(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, info });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1201,11 +1179,15 @@ app.get('/api/admin/me', isAuthenticated, (req, res) => {
 });
 
 
-// ── Notifications: list ────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+// ── In-app Notifications (dashboard navbar bell inbox) ─────────────────
+// Users see notifications INSIDE the dashboard. NOT Discord messages. ──
+
+// Admin: list all created announcements
 app.get('/api/admin/notifications', isAdmin, async (req, res) => {
   try {
-    const notifications = await Notification.find({})
-      .sort({ createdAt: -1 })
+    const notifications = await Notification.find({ createdBy: { $ne: null } })
+      .sort({ pinned: -1, createdAt: -1 })
       .limit(200)
       .lean();
     res.json({ success: true, notifications });
@@ -1214,109 +1196,36 @@ app.get('/api/admin/notifications', isAdmin, async (req, res) => {
   }
 });
 
-// ── Notifications: send (create + deliver or schedule) ─────────────────────
+// Admin: create an in-app announcement (everyone / specific user / admin-only)
 app.post('/api/admin/notifications/send', isAdmin, async (req, res) => {
   try {
-    const body = req.body || {};
-    const { targetType, targetUserId, targetGuildId, targetChannelId, targetRole,
-            title, description, color, imageUrl, footer, fields,
-            scheduledAt, repeat } = body;
-
-    const validTargets = ['user', 'channel', 'guild', 'broadcast', 'everyone'];
-    if (!validTargets.includes(targetType)) return res.status(400).json({ success: false, error: 'Invalid targetType' });
-    if (targetType === 'user' && !targetUserId) return res.status(400).json({ success: false, error: 'targetUserId required' });
-    if (targetType === 'channel' && (!targetGuildId || !targetChannelId)) return res.status(400).json({ success: false, error: 'guild + channel required' });
-    if (targetType === 'guild' && !targetGuildId) return res.status(400).json({ success: false, error: 'targetGuildId required' });
-
-    let parsedSchedule = null;
-    if (scheduledAt) {
-      parsedSchedule = new Date(scheduledAt);
-      if (isNaN(parsedSchedule.getTime())) return res.status(400).json({ success: false, error: 'Invalid scheduledAt date' });
-    }
-
+    const { recipientId, forAdmin, type, title, message, actionUrl, actionLabel } = req.body || {};
+    if (!title || !message) return res.status(400).json({ success: false, error: 'title + message required' });
     const doc = await Notification.create({
-      sentBy: req.user.id,
-      sentByUsername: req.user.username || req.user.global_name || 'Admin',
-      targetType, targetUserId: targetUserId || null, targetGuildId: targetGuildId || null,
-      targetChannelId: targetChannelId || null, targetRole: targetRole || null,
-      title: (title || '').slice(0, 256),
-      description: (description || '').slice(0, 4096),
-      color: color || '#007bff',
-      imageUrl: imageUrl || null,
-      footer: (footer || '').slice(0, 2048),
-      fields: Array.isArray(fields) ? fields.slice(0, 25) : [],
-      scheduledAt: parsedSchedule,
-      repeat: ['once', 'hourly', 'daily', 'weekly'].includes(repeat) ? repeat : 'once',
-      status: parsedSchedule ? 'pending' : 'pending'
+      recipientId: recipientId || null,
+      forAdmin: !!forAdmin,
+      createdBy: req.user.id,
+      createdByLabel: req.user.username || req.user.global_name || 'Admin',
+      type: ['info', 'success', 'warning', 'error'].includes(type) ? type : 'info',
+      title: String(title).slice(0, 256),
+      message: String(message).slice(0, 4000),
+      actionUrl: actionUrl || null,
+      actionLabel: actionLabel || null
     });
-
-    // Immediate delivery → queue deliver in background (don't block response)
-    if (!parsedSchedule || parsedSchedule.getTime() <= Date.now() + 1000) {
-      setImmediate(() => deliverNow(doc._id));
-    }
-
     res.json({ success: true, notification: doc });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Background delivery + stats persist
-async function deliverNow(docId) {
-  try {
-    const doc = await Notification.findById(docId);
-    if (!doc || doc.status === 'cancelled' || doc.status === 'sent') return;
-    const client = client1;
-    if (!client || !client.isReady()) { doc.status = 'failed'; doc.lastError = 'Bot not connected'; await doc.save(); return; }
-    const stats = await deliverNotification(client, doc);
-    doc.stats = stats;
-    doc.lastDeliveredAt = new Date();
-    if (stats.failed > 0 && stats.success === 0) doc.status = 'failed';
-    else doc.status = 'sent';
-    if (stats.lastError) doc.lastError = stats.lastError;
-    await doc.save();
-  } catch (err) {
-    console.error('[Notification] deliverNow error:', err.message);
-  }
-}
-
-// ── Scheduler: every 30s check pending scheduled notifications ─────────────
-setInterval(async () => {
-  try {
-    if (!client1 || !client1.isReady()) return;
-    const docs = await Notification.find({ status: 'pending', scheduledAt: { $lte: new Date() } });
-    for (const doc of docs) {
-      await deliverNow(doc._id);
-      // Repeats
-      if (doc.status === 'sent' && doc.repeat !== 'once') {
-        const repeat = doc.repeat;
-        let intervalMs = 24 * 3600 * 1000;
-        if (repeat === 'hourly') intervalMs = 3600 * 1000;
-        else if (repeat === 'daily') intervalMs = 24 * 3600 * 1000;
-        else if (repeat === 'weekly') intervalMs = 7 * 24 * 3600 * 1000;
-        await Notification.create({
-          sentBy: doc.sentBy, sentByUsername: doc.sentByUsername,
-          targetType: doc.targetType, targetUserId: doc.targetUserId, targetGuildId: doc.targetGuildId,
-          targetChannelId: doc.targetChannelId, targetRole: doc.targetRole,
-          title: doc.title, description: doc.description, color: doc.color,
-          imageUrl: doc.imageUrl, footer: doc.footer, fields: doc.fields,
-          scheduledAt: new Date(Date.now() + intervalMs), repeat, status: 'pending'
-        });
-      }
-    }
-  } catch (err) {
-    console.error('[Notification] scheduler error:', err.message);
-  }
-}, 30000).unref();
-
-// ── Notifications: cancel / delete ─────────────────────────────────────────
-app.post('/api/admin/notifications/:id/cancel', isAdmin, async (req, res) => {
+// Admin: toggle pin / delete
+app.post('/api/admin/notifications/:id/pin', isAdmin, async (req, res) => {
   try {
     const doc = await Notification.findById(req.params.id);
     if (!doc) return res.status(404).json({ success: false, error: 'Not found' });
-    doc.status = 'cancelled';
+    doc.pinned = !doc.pinned;
     await doc.save();
-    res.json({ success: true });
+    res.json({ success: true, pinned: doc.pinned });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -1330,6 +1239,48 @@ app.delete('/api/admin/notifications/:id', isAdmin, async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// User inbox: personal + everyone (admin sees forAdmin too)
+app.get('/api/notifications/inbox', isAuthenticated, async (req, res) => {
+  try {
+    const adminIds = (process.env.OWNER_ID || '804999528129363998').split(',');
+    const inbox = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id) });
+    res.json({ success: true, ...inbox });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/notifications/unread', isAuthenticated, async (req, res) => {
+  try {
+    const adminIds = (process.env.OWNER_ID || '804999528129363998').split(',');
+    const { unread } = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id) });
+    res.json({ success: true, unread: Math.min(unread, 99) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/notifications/read', isAuthenticated, async (req, res) => {
+  try {
+    const ok = await markRead((req.body || {}).id, req.user.id);
+    res.json({ success: ok });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/notifications/read-all', isAuthenticated, async (req, res) => {
+  try {
+    await markAllRead(req.user.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Periodic cleanup: remove expired/old read notifications
+setInterval(() => cleanupNotifications().then(n => n && console.log(`[Notifications] cleaned ${n} old items`)).catch(() => {}), 3600000).unref();
 
 // ── Notifications: guild roles & channels (for targeting) ──────────────────
 app.get('/api/admin/guild/:guildId/channels', isAuthenticated, async (req, res) => {
@@ -1361,23 +1312,3 @@ app.get('/api/admin/guild/:guildId/roles', isAuthenticated, async (req, res) => 
 
 // ── User inbox: notifications visible to the logged-in user ────────────────
 // (admin broadcasts are stored in Notification; users see their badge count)
-app.get('/api/notifications/inbox', isAuthenticated, async (req, res) => {
-  try {
-    const recent = await Notification.find({ status: 'sent' })
-      .sort({ lastDeliveredAt: -1 })
-      .limit(10)
-      .lean();
-    res.json({ success: true, notifications: recent });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/api/notifications/unread', isAuthenticated, async (req, res) => {
-  try {
-    const count = await Notification.countDocuments({ status: 'sent' });
-    res.json({ success: true, unread: Math.min(count, 99) });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});

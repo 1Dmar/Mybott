@@ -507,6 +507,23 @@ img {
     background-color: var(--primary-light);
 }
 
+.notification-unread {
+    background: rgba(255, 140, 0, 0.05);
+    border-left: 3px solid var(--primary);
+}
+
+.notification-unread .notification-title {
+    color: var(--text);
+}
+
+.notification-read .notification-title {
+    opacity: 0.75;
+}
+
+.notification-read {
+    opacity: 0.8;
+}
+
 .notification-empty {
     padding: 14px 16px;
     color: var(--text-secondary);
@@ -550,6 +567,48 @@ img {
     font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.notification-header-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.notification-mark-all {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: var(--transition-fast);
+}
+
+.notification-mark-all:hover {
+    background: var(--primary-light);
+}
+
+.notification-action {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.notification-action:hover {
+    text-decoration: underline;
 }
 
 .dropdown-footer {
