@@ -303,7 +303,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
   res.sendFile(path.join(dashDir, 'dashboard.html'));
 });
 
-app.get('/servers', isAuthenticated, (req, res) => {
+app.get('/my-servers', isAuthenticated, (req, res) => {
   res.sendFile(path.join(dashDir, 'pages', 'servers.html'));
 });
 
@@ -314,20 +314,20 @@ function serveServerPage(filename) {
   }];
 }
 
-app.get('/servers/:guildId/overview',       ...serveServerPage('overview.html'));
-app.get('/servers/:guildId/settings',       ...serveServerPage('settings.html'));
-app.get('/servers/:guildId/moderation',     ...serveServerPage('moderation.html'));
-app.get('/servers/:guildId/roles',          ...serveServerPage('roles.html'));
-app.get('/servers/:guildId/logs',           ...serveServerPage('logs.html'));
-app.get('/servers/:guildId/auto-responder', ...serveServerPage('auto_responder.html'));
-app.get('/servers/:guildId/premium',        ...serveServerPage('premium.html'));
-app.get('/servers/:guildId/configuration',  ...serveServerPage('configuration.html'));
-app.get('/servers/:guildId/ticket',         ...serveServerPage('ticket.html'));
-app.get('/servers/:guildId/modules',        ...serveServerPage('modules.html'));
-app.get('/servers/:guildId/welcome',        ...serveServerPage('welcome.html'));
-app.get('/servers/:guildId/members',        ...serveServerPage('members.html'));
-app.get('/servers/:guildId/danger',         ...serveServerPage('danger.html'));
-app.get('/servers/:guildId/players',        ...serveServerPage('players.html'));
+app.get('/my-servers/:guildId/overview',       ...serveServerPage('overview.html'));
+app.get('/my-servers/:guildId/settings',       ...serveServerPage('settings.html'));
+app.get('/my-servers/:guildId/moderation',     ...serveServerPage('moderation.html'));
+app.get('/my-servers/:guildId/roles',          ...serveServerPage('roles.html'));
+app.get('/my-servers/:guildId/logs',           ...serveServerPage('logs.html'));
+app.get('/my-servers/:guildId/auto-responder', ...serveServerPage('auto_responder.html'));
+app.get('/my-servers/:guildId/premium',        ...serveServerPage('premium.html'));
+app.get('/my-servers/:guildId/configuration',  ...serveServerPage('configuration.html'));
+app.get('/my-servers/:guildId/ticket',         ...serveServerPage('ticket.html'));
+app.get('/my-servers/:guildId/modules',        ...serveServerPage('modules.html'));
+app.get('/my-servers/:guildId/welcome',        ...serveServerPage('welcome.html'));
+app.get('/my-servers/:guildId/members',        ...serveServerPage('members.html'));
+app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html'));
+app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
 
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));

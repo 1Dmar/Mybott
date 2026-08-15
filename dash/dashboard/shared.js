@@ -38,9 +38,9 @@
   // Detects current route and builds sidebar links dynamically
   // ============================================================
 
-  // Parse guild ID from URL like /servers/123456/overview
+  // Parse guild ID from URL like /my-servers/123456/overview
   function getGuildIdFromPath() {
-    const match = window.location.pathname.match(/^\/servers\/(\d+)/);
+    const match = window.location.pathname.match(/^\/my-servers\/(\d+)/);
     return match ? match[1] : null;
   }
   // Expose for page scripts (IIFE-scoped by default)
@@ -54,7 +54,7 @@
         label: 'My Space',
         items: [
           { href: '/dashboard', icon: 'bx-user', text: 'Profile' },
-          { href: '/servers', icon: 'bx-server', text: 'My Servers' },
+          { href: '/my-servers', icon: 'bx-server', text: 'My Servers' },
           { href: '/premium', icon: 'bx-crown', text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
           { href: '/commands', icon: 'bx-command', text: 'Commands' },
         ]
@@ -80,41 +80,41 @@
       {
         label: 'Server',
         items: [
-          { href: `/servers/${guildId}/overview`,       icon: 'bx-home-alt',    text: 'Overview' },
-          { href: `/servers/${guildId}/configuration`,  icon: 'bx-slider',      text: 'Configuration' },
-          { href: `/servers/${guildId}/modules`,        icon: 'bx-extension',   text: 'Modules' },
+          { href: `/my-servers/${guildId}/overview`,       icon: 'bx-home-alt',    text: 'Overview' },
+          { href: `/my-servers/${guildId}/configuration`,  icon: 'bx-slider',      text: 'Configuration' },
+          { href: `/my-servers/${guildId}/modules`,        icon: 'bx-extension',   text: 'Modules' },
         ]
       },
       {
         label: 'Moderation',
         items: [
-          { href: `/servers/${guildId}/moderation`,    icon: 'bx-shield',      text: 'Moderation' },
-          { href: `/servers/${guildId}/roles`,          icon: 'bx-group',       text: 'Roles' },
-          { href: `/servers/${guildId}/logs`,           icon: 'bx-list-ul',     text: 'Logs' },
+          { href: `/my-servers/${guildId}/moderation`,    icon: 'bx-shield',      text: 'Moderation' },
+          { href: `/my-servers/${guildId}/roles`,          icon: 'bx-group',       text: 'Roles' },
+          { href: `/my-servers/${guildId}/logs`,           icon: 'bx-list-ul',     text: 'Logs' },
         ]
       },
       {
         label: 'Features',
         items: [
-          { href: `/servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'Auto Responder' },
-          { href: `/servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
-          { href: `/servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
-          { href: `/servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'MC Players' },
-          { href: `/servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
+          { href: `/my-servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'Auto Responder' },
+          { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
+          { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
+          { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'MC Players' },
+          { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
         ]
       },
       {
         label: 'Management',
         items: [
-          { href: `/servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'Members' },
-          { href: `/servers/${guildId}/premium`,        icon: 'bx-crown',       text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
-          { href: `/servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'Danger Zone', cls: 'danger-link' },
+          { href: `/my-servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'Members' },
+          { href: `/my-servers/${guildId}/premium`,        icon: 'bx-crown',       text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
+          { href: `/my-servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'Danger Zone', cls: 'danger-link' },
         ]
       },
       {
         label: 'Navigation',
         items: [
-          { href: '/servers',      icon: 'bx-arrow-back', text: 'Back to Servers' },
+          { href: '/my-servers',      icon: 'bx-arrow-back', text: 'Back to Servers' },
           { href: '/api/logout',   icon: 'bx-log-out',    text: 'Logout', cls: 'logout-link' },
         ]
       }
@@ -188,7 +188,7 @@
     sections.forEach(section => {
       html += `<ul class="menu_items"><div class="menu_title"><span>${section.label}</span></div>`;
       section.items.forEach(item => {
-        const isActive = currentPath === item.href || (item.href !== '/servers' && currentPath.startsWith(item.href));
+        const isActive = currentPath === item.href || (item.href !== '/my-servers' && currentPath.startsWith(item.href));
         const activeClass = isActive ? ' active' : '';
         const extraClass = item.cls ? ` ${item.cls}` : '';
         const tagHtml = item.tag ? `<span class="tag ${item.tag.cls}">${item.tag.text}</span>` : '';
@@ -313,7 +313,7 @@
       userDropdown.innerHTML = `
         <div class="dropdown-header"><i class="bx bx-user"></i> <span>My Account</span></div>
         <a href="/dashboard"><i class="bx bx-user-circle"></i> Profile</a>
-        <a href="/servers"><i class="bx bx-server"></i> My Servers</a>
+        <a href="/my-servers"><i class="bx bx-server"></i> My Servers</a>
         <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class="bx bx-log-out"></i> Logout</a>`;
       const nav = document.querySelector('.navbar');
       (nav || userBtn.parentElement)?.appendChild(userDropdown);

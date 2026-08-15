@@ -39,7 +39,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Overview</span>
+            <a href="/my-servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Overview</span>
         </div>
         
         <div class="server-page-header">
@@ -114,7 +114,7 @@
                     <h2 class="card-title">Minecraft Server</h2>
                     <p class="card-subtitle">Server connection info saved for this Discord server</p>
                 </div>
-                <a href="/servers/1/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> Player Lookup</a>
+                <a href="/my-servers/1/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> Player Lookup</a>
             </div>
             <div class="stat-cards" id="mcInfoContainer">
                 <p style="color: var(--text-muted); padding: 10px;">Loading Minecraft info...</p>
@@ -146,7 +146,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const lnk = document.getElementById('mcPlayersLink');
-            if (lnk) lnk.href = `/servers/${guildId}/players`;
+            if (lnk) lnk.href = `/my-servers/${guildId}/players`;
         });
 
         async function loadData() {
