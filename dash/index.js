@@ -243,6 +243,8 @@ function isAdmin(req, res, next) {
 
 // ── Static Files ─────────────────────────────────────────────────────
 const dashDir = path.join(__dirname, 'dashboard');
+// Public assets (used by public pages like home.html) — no auth required
+app.get('/dashboard/logo.png', (req, res) => res.sendFile(path.join(dashDir, 'logo.png'), { maxAge: '30d' }));
 // Serve dashboard assets only to authenticated users (fixes unauthenticated file exposure)
 app.use('/dashboard', isAuthenticated, express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
@@ -254,10 +256,11 @@ app.get('/shared.js',  (req, res) => res.sendFile(path.join(dashDir, 'shared.js'
 // ── Content Security Policy ─────────────────────────────────────────
 app.use((req, res, next) => {
   res.setHeader('Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.discordapp.com; " +
-    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
-    "img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; " +
-    "connect-src 'self' https:; frame-ancestors 'none'");
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://cdn.discordapp.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
+    "img-src 'self' data: https://cdn.discordapp.com https://mc-heads.net https://lh3.googleusercontent.com https://media.tenor.com; " +
+    "font-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
+    "connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';");
   next();
 });
 
@@ -1353,6 +1356,30 @@ app.post('/api/notifications/read-all', isAuthenticated, async (req, res) => {
 
 // Periodic cleanup: remove expired/old read notifications
 setInterval(() => cleanupNotifications().then(n => n && console.log(`[Notifications] cleaned ${n} old items`)).catch(() => {}), 3600000).unref();
+
+// ── Bug reports (server-side webhook, no token exposure in HTML) ───────────
+app.post('/api/bugs/submit', isAuthenticated, async (req, res) => {
+  try {
+    const { embeds, content } = req.body || {};
+    if (!Array.isArray(embeds) || !embeds.length) return res.status(400).json({ success: false, error: 'Missing embeds' });
+    const sanitized = embeds.slice(0, 3).map(e => ({
+      title: String(e.title || '').slice(0, 200),
+      color: Number.isFinite(e.color) ? e.color : 0x5865F2,
+      fields: (Array.isArray(e.fields) ? e.fields : []).slice(0, 10).map(f => ({
+        name: String(f.name || '').slice(0, 100),
+        value: String(f.value || '').slice(0, 500),
+        inline: !!f.inline
+      })),
+      footer: e.footer ? { text: String(e.footer.text || '').slice(0, 100) } : undefined,
+      timestamp: e.timestamp || undefined
+    }));
+    const webhookClientLocal = webhookClient || new WebhookClient({ id: process.env.BUG_WEBHOOK_ID, token: process.env.BUG_WEBHOOK_TOKEN });
+    await webhookClientLocal.send({ embeds: sanitized, content: String(content || '').slice(0, 500) }).catch(() => {});
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // ── Notifications: guild roles & channels (for targeting) ──────────────────
 app.get('/api/admin/guild/:guildId/channels', isAuthenticated, async (req, res) => {
