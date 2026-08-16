@@ -25,6 +25,9 @@ COPY . .
 # Set environment
 ENV NODE_ENV=production
 
+# Fail fast: validate critical JS files at build time
+RUN node -c server.js && node -c dash/index.js && node -c dash/utils/security.js && node -c bot/index.js && node -c bot/utils/auditLogger.js && node -c bot/utils/notificationSender.js && node -c bot/events/auditLogger.js && node -c bot/Commands/Slash/Minecraft/mc-setup.js && echo "All syntax checks passed"
+
 # Railway provides PORT automatically — expose it
 EXPOSE 8080
 
