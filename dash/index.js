@@ -23,6 +23,9 @@ const session    = require('express-session');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors       = require('cors');
+const rateLimit  = require('express-rate-limit');
+const { verifyGuildAccess, escapeHtml, isValidObjectId, pick } = require('./utils/security');
+const { logActivity } = require('../bot/utils/auditLogger');
 const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoStore } = require('connect-mongo');
@@ -59,14 +62,21 @@ const UserProfile    = require('../bot/Models/UserProfile');
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
 
-app.use(cors());
-
-// ── Security / anti-theft headers ──────────────────────────────
+// ── Security / anti-theft headers + hardening ──────────────────────
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('X-XSS-Protection', '0');
   next();
 });
+
+// ── Rate limiting (anti brute-force / anti flood) ──────────────────
+app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 120, message: { success: false, error: 'Too many requests, please slow down' } }));
+
+// Strict CORS — only our own domain (was open to everyone)
+app.use(cors({ origin: process.env.CORS_ORIGIN || 'https://promcbot.dev', credentials: true }));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -92,7 +102,7 @@ app.use(async (req, res, next) => {
 
 // ── Session ───────────────────────────────────────────────────────
 app.use(session({
-  secret: process.env.SESSION_SECRET || "nfJ90bf5X2VnFsU8sLGgvZqcDA1Ce9A3",
+  secret: process.env.SESSION_SECRET || nanoid(48),
   resave: false,
   saveUninitialized: false,
   store: new MongoStore({
@@ -157,19 +167,23 @@ if (BOT2_TOKEN) {
 
 // ── Webhook ────────────────────────────────────────────────────────
 let webhookClient = null;
-try {
-  webhookClient = new WebhookClient({
-    id: process.env.WEBHOOK_ID || '1322151531260284979',
-    token: process.env.WEBHOOK_TOKEN || 'FsQoCxU3C782YYS0SRKNTPKRi8NIgm1hT_JfliwHcgZ4q5M7t586HRArJD9PsnEbszjp'
-  });
-} catch (e) {
-  console.warn('⚠️ Webhook client init failed:', e.message);
+if (process.env.WEBHOOK_ID && process.env.WEBHOOK_TOKEN) {
+  try {
+    webhookClient = new WebhookClient({ id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN });
+  } catch (e) {
+    console.warn('⚠️ Webhook client init failed:', e.message);
+  }
+} else {
+  console.warn('⚠️ WEBHOOK_ID/WEBHOOK_TOKEN not set — webhook logging disabled');
 }
 
 
 // ── Passport / Discord OAuth ────────────────────────────────────────
-const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || "1220005260857311294";
-const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || "KWAY2Bw_eJ4ZVHWDwgoJ3ZRVPAqv9o7G";
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {
+  console.error('❌ DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET are required in production — set them in Railway env');
+}
 // Ensure we use the custom domain for callbacks to avoid Railway redirection issues
 let callbackHost = process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback";
 
@@ -229,12 +243,23 @@ function isAdmin(req, res, next) {
 
 // ── Static Files ─────────────────────────────────────────────────────
 const dashDir = path.join(__dirname, 'dashboard');
-app.use('/dashboard', express.static(dashDir));
+// Serve dashboard assets only to authenticated users (fixes unauthenticated file exposure)
+app.use('/dashboard', isAuthenticated, express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
-// Serve shared CSS/JS
+// Serve shared CSS/JS (public assets only)
 app.get('/shared.css', (req, res) => res.sendFile(path.join(dashDir, 'shared.css')));
 app.get('/shared.js',  (req, res) => res.sendFile(path.join(dashDir, 'shared.js')));
+
+// ── Content Security Policy ─────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.discordapp.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+    "img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; " +
+    "connect-src 'self' https:; frame-ancestors 'none'");
+  next();
+});
 
 // ════════════════════════════════════════════════════════════════════
 //  AUTH ROUTES
@@ -307,7 +332,12 @@ app.get('/terms', (req, res) => {
 
 app.get('/invitebot', (req, res) => {
   const clientId = DISCORD_CLIENT_ID;
-  res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=8&scope=bot%20applications.commands`);
+  // Specific least-privilege permissions instead of Administrator (8):
+  // ManageGuild(0x20)+ManageChannels(0x10)+ManageMessages(0x2000)+ManageRoles(0x10000000)
+  // +SendMessages(0x800)+EmbedLinks(0x40000)+AttachFiles(0x80000)+ReadHistory(0x10000)
+  // +BanMembers(0x4)+KickMembers(0x2)+ManageThreads(0x100000000000)+ViewChannel(0x400)+AddReactions(0x40)
+  const perms = 274878362688;
+  res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=${perms}&scope=bot%20applications.commands`);
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -322,9 +352,9 @@ app.get('/my-servers', isAuthenticated, (req, res) => {
   res.sendFile(path.join(dashDir, 'pages', 'servers.html'));
 });
 
-// Server-specific pages (require guildId param)
+// Server-specific pages (require guildId param + guild membership check)
 function serveServerPage(filename) {
-  return [isAuthenticated, (req, res) => {
+  return [isAuthenticated, verifyGuildAccess, (req, res) => {
     res.sendFile(path.join(dashDir, 'pages', filename));
   }];
 }
@@ -345,6 +375,7 @@ app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html')
 app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
 
 // ── Legacy / direct page routes (backward compatibility) ─────────────
+// Note: these routes lack guildId, so access relies on isAuthenticated only
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
 app.get('/settings',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'settings.html')));
 app.get('/moderation',     isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'moderation.html')));
@@ -410,7 +441,7 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
 });
 
 // ── Get server config ─────────────────────────────────────────────────
-app.get('/api/server/:guildId', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
     res.json({ success: true, config: config || {} });
@@ -419,25 +450,32 @@ app.get('/api/server/:guildId', isAuthenticated, async (req, res) => {
   }
 });
 
+// Allowed config fields (mass assignment protection)
+const BOTCONFIG_FIELDS = [
+  'nickname', 'description', 'language', 'mention', 'autoRestart', 'advancedLogging',
+  'customCommands', 'premiumTier', 'welcome', 'ticket', 'modules', 'logChannelId'
+];
+
 // ── Update server config ──────────────────────────────────────────────
-app.post('/api/server/:guildId/config', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/config', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOneAndUpdate(
       { guildId: req.params.guildId },
-      { $set: req.body },
+      { $set: pick(req.body, BOTCONFIG_FIELDS) },
             { upsert: true, new: true }
     );
     try {
       notifyUserOnce(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated bot configuration' }); } catch (_) {}
     res.json({ success: true, config });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 // ── Auto Responder ────────────────────────────────────────────────────
-app.get('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/autoresponder', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const items = await AutoResponder.find({ guildId: req.params.guildId }).lean();
     res.json({ success: true, items });
@@ -446,15 +484,15 @@ app.get('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) 
   }
 });
 
-app.post('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/autoresponder', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const payload = {
       guildId: req.params.guildId,
-      trigger: req.body.trigger,
-      response: req.body.response,
+      trigger: String(req.body.trigger || '').slice(0, 500),
+      response: String(req.body.response || '').slice(0, 2000),
       replyType: req.body.replyType || 'text',
-      allowedRoles: req.body.allowedRoles || [],
-      disallowedRoles: req.body.disallowedRoles || [],
+      allowedRoles: Array.isArray(req.body.allowedRoles) ? req.body.allowedRoles.filter(id => isValidObjectId(id)).slice(0, 50) : [],
+      disallowedRoles: Array.isArray(req.body.disallowedRoles) ? req.body.disallowedRoles.filter(id => isValidObjectId(id)).slice(0, 50) : [],
     };
     const item = await AutoResponder.create(payload);
     res.json({ success: true, item });
@@ -463,8 +501,12 @@ app.post('/api/server/:guildId/autoresponder', isAuthenticated, async (req, res)
   }
 });
 
-app.delete('/api/server/:guildId/autoresponder/:id', isAuthenticated, async (req, res) => {
+app.delete('/api/server/:guildId/autoresponder/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ success: false, error: 'INVALID_ID' });
+    // Ensure the responder belongs to the same guild (cross-guild delete protection)
+    const target = await AutoResponder.findOne({ _id: req.params.id, guildId: req.params.guildId }).lean();
+    if (!target) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
     await AutoResponder.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {
@@ -473,14 +515,16 @@ app.delete('/api/server/:guildId/autoresponder/:id', isAuthenticated, async (req
 });
 
 // ── Logs (Audit Log — real guild events from Activity model) ─────────────
-app.get('/api/server/:guildId/logs', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/logs', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
-    const { page = 1, limit = 50, type } = req.query;
+    const page = Math.min(Math.max(1, Number(req.query.page) || 1), 100);
+    const limit = Math.min(Math.max(1, Number(req.query.limit) || 50), 100);
+    const type = req.query.type;
     const doc = await Activity.findOne({ serverId: req.params.guildId }).lean();
     let activities = (doc?.activities || []).map(a => ({
-      action: a.action || 'Event',
-      user: a.user || 'Unknown',
-      reason: a.reason || '',
+      action: escapeHtml(a.action || 'Event'),
+      user: escapeHtml(a.user || 'Unknown'),
+      reason: escapeHtml(a.reason || ''),
       createdAt: a.timestamp || new Date()
     }));
     if (type) {
@@ -499,7 +543,7 @@ app.get('/api/server/:guildId/logs', isAuthenticated, async (req, res) => {
   }
 });
 // ── Log Channel Settings (separate from audit events: where logs go) ────
-app.get('/api/server/:guildId/log-channels', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/log-channels', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const doc = await Log.findOne({ serverId: req.params.guildId }).lean();
     res.json({ success: true, settings: doc?.logs || [] });
@@ -509,7 +553,7 @@ app.get('/api/server/:guildId/log-channels', isAuthenticated, async (req, res) =
 });
 
 // ── Guild Info (from bot cache) ───────────────────────────────────────
-app.get('/api/server/:guildId/info', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/info', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     let guildInfo = { id: guildId, name: null, icon: null, memberCount: null, botPresent: false };
@@ -532,7 +576,7 @@ app.get('/api/server/:guildId/info', isAuthenticated, async (req, res) => {
 });
 
 // ── Roles (from bot cache) ────────────────────────────────────────────
-app.get('/api/server/:guildId/roles', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/roles', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     let roles = [];
@@ -558,7 +602,7 @@ app.get('/api/server/:guildId/roles', isAuthenticated, async (req, res) => {
 });
 
 // ── Channels (from bot cache) ─────────────────────────────────────────
-app.get('/api/server/:guildId/channels', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/channels', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     let channels = [];
@@ -584,7 +628,7 @@ app.get('/api/server/:guildId/channels', isAuthenticated, async (req, res) => {
 });
 
 // ── Overview Stats ────────────────────────────────────────────────────
-app.get('/api/server/:guildId/overview', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/overview', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     const config = await BotConfig.findOne({ guildId }).lean() || {};
@@ -608,7 +652,7 @@ app.get('/api/server/:guildId/overview', isAuthenticated, async (req, res) => {
 });
 
 // ── Modules (per-guild toggle) ────────────────────────────────────────
-app.get('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/modules', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
     res.json({ success: true, modules: config?.modules || {} });
@@ -617,7 +661,7 @@ app.get('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/modules', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOneAndUpdate(
       { guildId: req.params.guildId },
@@ -628,6 +672,7 @@ app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
       notifyUserOnce(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: `Dashboard toggled modules: ${Object.keys(req.body || {}).slice(0, 5).join(', ') || 'none'}` }); } catch (_) {}
     res.json({ success: true, modules: config.modules });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -635,7 +680,7 @@ app.post('/api/server/:guildId/modules', isAuthenticated, async (req, res) => {
 });
 
 // ── GuildSettings (automod config) ───────────────────────────────────
-app.get('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/guild-settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const settings = await GuildSettings.getSettings(req.params.guildId);
     res.json({ success: true, settings });
@@ -644,7 +689,7 @@ app.get('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res)
   }
 });
 
-app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/guild-settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const settings = await GuildSettings.findOneAndUpdate(
       { guildId: req.params.guildId },
@@ -656,12 +701,13 @@ app.post('/api/server/:guildId/guild-settings', isAuthenticated, async (req, res
     } catch (_) {}
     res.json({ success: true, settings });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated AutoMod settings' }); } catch (_) {}
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 // ── Welcome configuration ─────────────────────────────────────────────
-app.get('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/welcome', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
     res.json({ success: true, welcome: config?.welcome || {} });
@@ -670,7 +716,7 @@ app.get('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/welcome', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOneAndUpdate(
       { guildId: req.params.guildId },
@@ -678,6 +724,7 @@ app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     notifyUserOnce(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated welcome settings' }); } catch (_) {}
     res.json({ success: true, welcome: config.welcome });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -686,7 +733,7 @@ app.post('/api/server/:guildId/welcome', isAuthenticated, async (req, res) => {
 });
 
 // ── Ticket configuration ──────────────────────────────────────────────
-app.get('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/ticket-config', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
     res.json({ success: true, ticket: config?.ticket || {} });
@@ -695,7 +742,7 @@ app.get('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res) 
   }
 });
 
-app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/ticket-config', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOneAndUpdate(
       { guildId: req.params.guildId },
@@ -703,6 +750,7 @@ app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res)
       { upsert: true, new: true }
     );
     notifyUserOnce(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated ticket settings' }); } catch (_) {}
     res.json({ success: true, ticket: config.ticket });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
   } catch (err) {
@@ -711,7 +759,7 @@ app.post('/api/server/:guildId/ticket-config', isAuthenticated, async (req, res)
 });
 
 // ── Blacklist ─────────────────────────────────────────────────────────
-app.get('/api/server/:guildId/blacklist', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/blacklist', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const list = await Blacklist.find({ guildId: req.params.guildId }).lean();
     res.json({ success: true, list });
@@ -721,7 +769,7 @@ app.get('/api/server/:guildId/blacklist', isAuthenticated, async (req, res) => {
 });
 
 // ── Members (from bot cache) ──────────────────────────────────────────
-app.get('/api/server/:guildId/members', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/members', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     let members = [];
@@ -765,7 +813,7 @@ app.get('/api/server/:guildId/members', isAuthenticated, async (req, res) => {
 // ════════════════════════════════════════════════════════════════════
 
 // ── Minecraft Saved Info (ServerInfo model) — READ ──────────────────
-app.get('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/mc-info', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const [info, mcCfg] = await Promise.all([
       ServerInfo.findOne({ serverId: req.params.guildId }).lean(),
@@ -783,7 +831,7 @@ app.get('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
 });
 
 // ── Minecraft Saved Info (ServerInfo model) — WRITE ─────────────────
-app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/mc-info', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const body = req.body || {};
     const isBedrock = String(body.version || '').toLowerCase() === 'bedrock';
@@ -812,6 +860,7 @@ app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
       { upsert: true, new: true }
     );
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: `Dashboard saved Minecraft server info (${setFields.serverName || setFields.serverType})` }); } catch (_) {}
     notifyUserOnce(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard' }).catch(() => {});
     res.json({ success: true, info });
   } catch (err) {
@@ -820,30 +869,31 @@ app.post('/api/server/:guildId/mc-info', isAuthenticated, async (req, res) => {
 });
 
 // ── Danger Zone ───────────────────────────────────────────────────────
-app.post('/api/server/:guildId/danger/reset', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/danger/reset', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const [cfg] = await Promise.all([
       BotConfig.deleteOne({ guildId: req.params.guildId }),
       GuildSettings.deleteOne({ guildId: req.params.guildId }),
       WelcomeChannel.deleteOne({ guildId: req.params.guildId })
     ]);
-    try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+        try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard reset ALL server settings (Danger Zone)' }); } catch (_) {}
     res.json({ success: true, message: 'All server settings have been reset' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
-
-app.post('/api/server/:guildId/danger/logs', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/danger/logs', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     await Log.deleteMany({ guildId: req.params.guildId });
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard deleted all log-channel settings' }); } catch (_) {}
     res.json({ success: true, message: 'All logs have been deleted' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-app.post('/api/server/:guildId/danger/leave', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/danger/leave', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const { guildId } = req.params;
     let left = false;
@@ -869,6 +919,7 @@ app.post('/api/server/:guildId/danger/leave', isAuthenticated, async (req, res) 
       ServerStatus.deleteMany({ guildId })
     ]);
     try { DashboardBridge?.invalidate(guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
+    try { logActivity(guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard removed bot from server (Danger Zone — leave)' }); } catch (_) {}
     res.json({ success: true, left, message: left ? 'Bot left the server' : 'Settings cleared' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -876,7 +927,7 @@ app.post('/api/server/:guildId/danger/leave', isAuthenticated, async (req, res) 
 });
 
 // ── Activity Feed ─────────────────────────────────────────────────────
-app.get('/api/activity/:serverId', isAuthenticated, async (req, res) => {
+app.get('/api/activity/:serverId', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     // Activity model documents are keyed by the Discord guild id
     const activity = await require('../bot/Models/Activity')
@@ -889,7 +940,7 @@ app.get('/api/activity/:serverId', isAuthenticated, async (req, res) => {
 });
 
 // ── Server Status (Minecraft) ─────────────────────────────────────────
-app.get('/api/server/:guildId/minecraft-status', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/minecraft-status', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const status = await ServerStatus.find({ guildId: req.params.guildId }).lean();
     res.json({ success: true, status });
@@ -899,7 +950,7 @@ app.get('/api/server/:guildId/minecraft-status', isAuthenticated, async (req, re
 });
 
 // ── Minecraft Player Lookup (real data from the MC server API) ──────
-app.get('/api/server/:guildId/player/:username', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/player/:username', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const username = decodeURIComponent(req.params.username).trim();
     if (!username || username.length > 16) {
@@ -940,7 +991,7 @@ app.get('/api/server/:guildId/player/:username', isAuthenticated, async (req, re
 });
 
 // ── Minecraft Live Server Status (/info from MC API) ────────────────
-app.get('/api/server/:guildId/mc-status-live', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/mc-status-live', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const data = await McApi.getServerInfo(req.params.guildId);
     res.json({ success: true, status: data });
@@ -1227,11 +1278,12 @@ app.post('/api/admin/notifications/send', isAdmin, async (req, res) => {
       createdBy: req.user.id,
       createdByLabel: req.user.username || req.user.global_name || 'Admin',
       type: ['info', 'success', 'warning', 'error'].includes(type) ? type : 'info',
-      title: String(title).slice(0, 256),
-      message: String(message).slice(0, 4000),
+      title: escapeHtml(String(title).slice(0, 256)),
+      message: escapeHtml(String(message).slice(0, 4000)),
       actionUrl: actionUrl || null,
       actionLabel: actionLabel || null
     });
+    try { logActivity('admin', { user: `${req.user.username} (Admin)`, action: `Dashboard sent announcement: ${String(title).slice(0, 80)}` }); } catch (_) {}
     res.json({ success: true, notification: doc });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

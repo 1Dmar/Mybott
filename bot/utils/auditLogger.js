@@ -13,8 +13,10 @@ const MAX_ENTRIES = 500;
 
 async function logActivity(serverId, entry) {
   if (!serverId || !entry || !entry.action) return;
-  entry.user = String(entry.user || 'System');
-  entry.reason = entry.reason ? String(entry.reason).slice(0, 500) : undefined;
+  entry.user = String(entry.user || 'System').slice(0, 80);
+  // Cap length and strip dangerous characters (stored-XSS mitigation)
+  entry.action = String(entry.action).slice(0, 220).replace(/[<>]/g, '');
+  entry.reason = entry.reason ? String(entry.reason).slice(0, 500).replace(/[<>]/g, '') : undefined;
   try {
     await Activity.findOneAndUpdate(
       { serverId: String(serverId) },
