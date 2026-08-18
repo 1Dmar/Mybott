@@ -6,12 +6,12 @@
     <title data-i18n="pg.settings">Server Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/shared.css?v=8">
-    <script src="/i18n.js?v=6"></script>
+    <link rel="stylesheet" href="/shared.css?v=9">
+    <script src="/i18n.js?v=9"></script>
 </head>
 <body>
-    <!-- ── NAVBAR ── -->
-    <nav class="navbar">
+    <!-- NAVBAR -->
+  <nav class="navbar">
         <div class="logo_item">
             <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
             <span class="logo_text">ProMcBot</span>
@@ -206,7 +206,7 @@
         async function load() {
             try {
                 const [cfg, mc, logs] = await Promise.all([
-                    fetch(`${API}/config`).then(r => r.ok ? r.json() : null),
+                    fetch(`${API}`).then(r => r.ok ? r.json() : null),
                     fetch(`${API}/mc-info`).then(r => r.ok ? r.json() : null),
                     fetch(`${API}/logs?limit=5`).then(r => r.ok ? r.json() : null).catch(() => null)
                 ]);
@@ -278,7 +278,7 @@
             const addr = (document.getElementById('javaIPInput').value.trim() + ':' + document.getElementById('javaPortInput').value.trim()).replace(/:+$/, '');
             if (!addr) { showToast('Enter a Java address first', 'error'); return; }
             showToast('Testing connection...', 'info');
-            const r = await fetch(`/api/mc/${encodeURIComponent(addr)}`);
+            const r = await fetch(`https://api.mcsrvstat.us/3/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(8000) });
             const d = await r.json();
             if (d.online) showToast('Server is ONLINE ✓', 'success');
             else showToast('Server is offline or unreachable', 'error');
@@ -291,6 +291,6 @@
 
         load();
     </script>
-    <script src="/shared.js?v=6"></script>
+    <script src="/shared.js?v=9"></script>
 </body>
 </html>

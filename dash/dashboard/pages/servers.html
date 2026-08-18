@@ -6,7 +6,7 @@
   <title>ProMcBot — My Servers</title>
   <meta name="description" content="Manage your Discord servers with ProMcBot dashboard">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/shared.css?v=8">
+  <link rel="stylesheet" href="/shared.css?v=9">
   <style>
     /* ── Servers Page Specific ── */
     .servers-hero {
@@ -244,6 +244,23 @@
     .guild-card-body {
       padding: 38px 20px 20px;
     }
+    /* ── Linked data chips (real MongoDB status) ── */
+    .guild-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+    .guild-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(255, 120, 60, 0.12); color: #FF9A64;
+      border: 1px solid rgba(255, 120, 60, 0.3);
+    }
+    .guild-chip-mc {
+      background: rgba(34, 197, 94, 0.12); color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    .guild-chip-muted {
+      background: rgba(255, 255, 255, 0.05); color: #7b8794;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
 
     .guild-name {
       font-size: 15px;
@@ -464,10 +481,7 @@
 </head>
 <body>
 
-  <!-- ── NAVBAR ── -->
-    <!-- ── NAVBAR ── -->
-    <!-- ── NAVBAR ── -->
-    <!-- ── NAVBAR ── -->
+  <!-- NAVBAR -->
   <nav class="navbar">
     <div style="display:flex;align-items:center;gap:14px;">
       <div class="mobile-toggle" id="sidebarToggle">
@@ -672,9 +686,18 @@
         : `background: ${gradient};`;
 
       const hasBot = !!guild.botPresent;
+      const linked = guild.linked || {};
       const badgeHtml = hasBot
         ? `<div class="guild-badge bot-here"><i class='bx bx-check'></i> Bot Active</div>`
         : `<div class="guild-badge bot-away"><i class='bx bx-plus'></i> Invite Bot</div>`;
+      // Real linked-status chips (from MongoDB)
+      const linkChips = [];
+      if (linked.botConfigured) linkChips.push(`<span class="guild-chip" title="Bot setup saved in database"><i class='bx bx-cog'></i> Configured</span>`);
+      if (linked.mcServerInfo) linkChips.push(`<span class="guild-chip guild-chip-mc" title="Minecraft server info saved"><i class='bx bx-server'></i> MC Server</span>`);
+      if (linked.mcSetup) linkChips.push(`<span class="guild-chip guild-chip-mc" title="Minecraft server connected via bot"><i class='bx bx-link'></i> MC Setup</span>`);
+      const chipsHtml = linkChips.length
+        ? `<div class="guild-chips">${linkChips.join('')}</div>`
+        : (hasBot ? `<div class="guild-chips"><span class="guild-chip guild-chip-muted" title="No linked data yet — setup your server from the dashboard">Not linked yet</span></div>` : '');
 
       const manageBtn = hasBot
         ? `<a href="/my-servers/${guild.id}/overview" class="btn-manage" onclick="cacheGuildAndGo(event, '${guild.id}', '${guild.name.replace(/'/g, "\\'")}', '${iconUrl || ''}', '/servers/${guild.id}/overview')">
@@ -704,6 +727,7 @@
               ${memberCount}
               <div class="guild-meta-item"><i class='bx bx-key'></i> Admin</div>
             </div>
+            ${chipsHtml}
             <div class="guild-card-actions">
               ${manageBtn}
               <a href="/invitebot" class="btn-invite" title="Invite Bot">
@@ -779,7 +803,7 @@
 
     async function loadServers() {
       try {
-        const resp = await fetch('/api/guilds');
+        const resp = await fetch('/api/servers-linked');
         if (!resp.ok) {
           if (resp.status === 401) { window.location.href = '/'; return; }
           throw new Error(`Server error: ${resp.status}`);
@@ -827,7 +851,7 @@
       });
     });
   </script>
-  <script src="/i18n.js?v=6"></script>
-  <script src="/shared.js?v=6"></script>
+  <script src="/i18n.js?v=9"></script>
+  <script src="/shared.js?v=9"></script>
 </body>
 </html>

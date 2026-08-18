@@ -370,9 +370,6 @@ app.get('/invitebot', (req, res) => {
 //  PROTECTED DASHBOARD PAGES
 // ════════════════════════════════════════════════════════════════════
 
-app.get('/docs', (req, res) => {
-  res.sendFile(path.join(dashDir, 'docs.html'));
-});
 
 app.get('/dashboard', isAuthenticated, (req, res) => {
   res.sendFile(path.join(dashDir, 'dashboard.html'));
@@ -415,7 +412,6 @@ app.get('/premium',        isAuthenticated, (req, res) => res.sendFile(path.join
 app.get('/configuration',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'configuration.html')));
 app.get('/ticket',         isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ticket.html')));
 app.get('/activity',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'activity.html')));
-app.get('/commands',       (req, res) => res.sendFile(path.join(dashDir, 'commands.html')));
 app.get('/server-status',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ServerStatus.html')));
 
 // Real service status endpoint (bot + dashboard + API health)
@@ -484,13 +480,70 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
   }
 });
 
+// ── Server Discovery (real): Discord guilds + MongoDB linked data ───────────
+// Shows guilds the user administers, enriched with REAL database data:
+// BotConfig (bot setup), Server model (MC server info), MinecraftConfig,
+// and live status from the real bot client.
+app.get('/api/servers-linked', isAuthenticated, async (req, res) => {
+  try {
+    const guilds = (req.user.guilds || []).filter(g => {
+      const perms = BigInt(g.permissions || 0);
+      return (perms & BigInt(0x8)) === BigInt(0x8); // ADMINISTRATOR
+    });
+    const botClient = global.__botClient
+      || (Array.isArray(global.__dashClients) ? global.__dashClients.find(c => c && c.token) : null)
+      || client;
+    const enriched = [];
+    for (const g of guilds) {
+      // 1) Discord reality
+      let botPresent = false;
+      let memberCount = null;
+      try {
+        if (botClient && typeof botClient.isReady === 'function' && botClient.isReady() && botClient.guilds.cache.has(g.id)) {
+          botPresent = true;
+          const cached = botClient.guilds.cache.get(g.id);
+          memberCount = cached?.approximateMemberCount || cached?.memberCount || null;
+        }
+      } catch (_) {}
+      // 2) MongoDB reality: BotConfig (bot setup in DB)
+      let botConfig = null;
+      try { botConfig = await BotConfig.findOne({ guildId: g.id }).lean(); } catch (_) {}
+      // 3) Minecraft server info saved by owners (Server model)
+      let mcServer = null;
+      try { mcServer = await (require('../bot/Models/Server')).findOne({ serverId: g.id }).lean(); } catch (_) {}
+      // 4) Minecraft setup command config (MinecraftConfig model)
+      let mcSetup = null;
+      try { mcSetup = await (require('../bot/Models/MinecraftConfig')).findOne({ guildId: g.id }).lean(); } catch (_) {}
+      enriched.push({
+        id: g.id,
+        name: g.name,
+        icon: g.icon || null,
+        permissions: g.permissions,
+        botPresent,
+        approximate_member_count: memberCount,
+        // real linked data flags
+        linked: {
+          botConfigured: !!botConfig,            // BotConfig exists in DB
+          mcServerInfo: !!mcServer,              // owner saved MC server info
+          mcSetup: !!(mcSetup && mcSetup.apiUrl), // MC server API connected via bot
+          config: botConfig || null,             // safe lean copy
+          mcServer: mcServer || null,
+          mcSetup: mcSetup || null
+        }
+      });
+    }
+    res.json({ success: true, guilds: enriched });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 // ── Get server config ─────────────────────────────────────────────────
 app.get('/api/server/:guildId', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
     let botPresent = false;
     try {
-      const real = global.__botClient || (global.__dashClients && global.__dashClients.bot) || null;
+      const real = global.__botClient || (Array.isArray(global.__dashClients) ? global.__dashClients.find(c => c && c.token) : null) || null;
       if (real && real.guilds && real.guilds.cache) {
         botPresent = !!real.guilds.cache.get(req.params.guildId);
       }
@@ -1160,26 +1213,6 @@ app.post('/api/u/:userId/follow', isAuthenticated, async (req, res) => {
 });
 
 
-app.get('/mc-lookup', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'mc-lookup.html')));
-
-// ── Public tools: MC Server Lookup ────────────────────────────────────
-// Free public tool: any Minecraft address (player.mcsrv.net, hypixel.net:25565, ...)
-// Proxy to mcsrvstat.us so we never expose the third-party API directly
-app.get('/api/mc/:addr', async (req, res) => {
-  try {
-    const addr = decodeURIComponent(req.params.addr).trim();
-    if (!addr || addr.length > 120) return res.status(400).json({ ok: false, error: 'Invalid address' });
-    const r = await fetch(`https://api.mcsrvstat.us/3/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) return res.status(400).json({ ok: false, error: 'Lookup failed' });
-    const data = await r.json();
-    // mcsrvstat.us returns {ok: true/false}; pass data through minus the internal ok flag
-    const { ok, ...rest } = data;
-    if (!ok) return res.json({ ok: false, error: 'SERVER_NOT_FOUND', ...rest });
-    res.json({ ok: true, ...rest });
-  } catch (err) {
-    res.status(502).json({ ok: false, error: 'Status service unavailable' });
-  }
-});
 
 // ── Minecraft Live Server Status (/info from MC API) ────────────────
 app.get('/api/server/:guildId/mc-status-live', [isAuthenticated, verifyGuildAccess], async (req, res) => {
