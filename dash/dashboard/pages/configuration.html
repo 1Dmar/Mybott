@@ -169,10 +169,10 @@
 
         async function loadData() {
             try {
-                const response = await fetch(`/api/server/${guildId}/config`);
+                const response = await fetch(`/api/server/${guildId}`);
                 const data = await response.json();
                 
-                if (data.success && data.config) {
+                if (data.success) {
                     originalConfig = {
                         nickname: data.config.nickname || '',
                         description: data.config.description || ''
