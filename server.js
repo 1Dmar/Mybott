@@ -22,6 +22,23 @@ mainApp.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', domain: req.get('host') });
 });
 
+// 1b. Safe environment diagnostics (public, no secrets exposed)
+mainApp.get('/api/env-check', (req, res) => {
+  const checks = {
+    nodeEnv: process.env.NODE_ENV || 'development',
+    ownerIdsSet: !!(process.env.OWNER_ID && process.env.OWNER_ID.trim()),
+    ownerIds: (process.env.OWNER_ID || '').split(',').filter(Boolean),
+    mongoSet: !!(process.env.MONGO_URL || process.env.MONGO_URI),
+    discordOAuthSet: !!(process.env.DISCORD_CLIENT_ID && process.env.DISCORD_CLIENT_SECRET),
+    callbackHost: process.env.CALLBACK_URL || '',
+    corsOrigin: process.env.CORS_ORIGIN || '',
+    railwayDomain: process.env.RAILWAY_PUBLIC_DOMAIN || '',
+    deployTime: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+  };
+  res.status(200).json(checks);
+});
+
 // 2. Strict Domain Canonicalization Middleware
 mainApp.use((req, res, next) => {
   // Never redirect health checks
