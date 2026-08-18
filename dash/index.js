@@ -392,6 +392,20 @@ app.get('/activity',       isAuthenticated, (req, res) => res.sendFile(path.join
 app.get('/commands',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'commands.html')));
 app.get('/server-status',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ServerStatus.html')));
 
+// Real service status endpoint (bot + dashboard + API health)
+app.get('/api/status', isAuthenticated, (req, res) => {
+  res.json({
+    success: true,
+    timestamp: Date.now(),
+    services: [
+      { name: 'ProMcBot',        id: 'promcbot',  status: (client && client.isReady())  ? 'running' : 'offline' },
+      { name: 'Dashboard Server', id: 'dashboard', status: 'running' },
+      { name: 'API Server',      id: 'api-server', status: 'running' },
+      { name: 'Secondary Bot',   id: 'secondary', status: (client1 && client1.isReady()) ? 'running' : 'offline' }
+    ]
+  });
+});
+
 // ── Admin pages ─────────────────────────────────────────────────────
 app.get('/admin',              isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-overview.html')));
 app.get('/admin/users',        isAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'users.html')));

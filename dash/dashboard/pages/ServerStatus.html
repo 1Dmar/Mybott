@@ -1,214 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProMcBot - Status</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Material+Icons');
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
-
-        body {
-            background: hsl(210, 90%, 1%);
-            color: hsl(210, 95%, 93%);
-            font-family: "Quicksand", sans-serif;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 640px;
-            margin: auto;
-            padding: 20px;
-        }
-
-        .header {
-            font-size: 22px;
-            padding: 12px;
-            background: hsla(210, 90%, 1%, 88%);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 10px 10px hsl(210, 90%, 1%);
-        }
-
-        .title-main {
-            font-size: 48px;
-            margin: 50px 0 20px;
-            color: hsl(210, 95%, 88%);
-        }
-
-        button {
-            background: hsl(210, 15%, 10%);
-            color: white;
-            padding: 14px;
-            font-size: 16px;
-            border: none;
-            border-radius: 24px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background: hsl(210, 10%, 15%);
-        }
-
-        .list {
-            padding: 6px;
-            border-radius: 24px;
-            margin: 20px 0;
-        }
-
-        .list .item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px;
-            border-radius: 20px;
-            background: hsl(210, 14%, 7%);
-            margin-bottom: 10px;
-        }
-
-        .list i {
-            font-size: 24px;
-            color: white;
-            padding: 10px;
-            border-radius: 12px;
-        }
-
-        .status-text {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .online { color: green; }
-        .offline { color: red; }
-        .maintenance { color: yellow; }
-
-        /* NEW: status bar styles */
-        .bar-status {
-            margin-top: 8px;
-            width: 100%;
-            height: 8px;
-            border-radius: 8px;
-            background: gray;
-            transition: background 0.3s;
-        }
-
-        .bar-online {
-            background: #28a745;
-        }
-
-        .bar-maintenance {
-            background: #fd7e14;
-        }
-
-        .bar-offline {
-            background: #dc3545;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProMcBot — Server Status</title>
+  <meta name="description" content="ProMcBot services status monitor">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
+  <style>
+    .status-hero {
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .status-hero::before {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+      top: -90px;
+      right: -70px;
+      pointer-events: none;
+    }
+    .status-hero-content { position: relative; z-index: 1; }
+    .status-hero h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .status-hero p { opacity: 0.85; font-size: 14px; }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .status-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .status-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .status-icon.online { background: rgba(16,185,129,0.12); color: #10B981; }
+    .status-icon.offline { background: rgba(239,68,68,0.12); color: #EF4444; }
+    .status-icon.checking { background: rgba(107,114,128,0.12); color: #6B7280; }
+    .status-info { flex: 1; min-width: 0; }
+    .status-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+    .status-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+    .status-text.online { color: #10B981; font-weight: 700; }
+    .status-text.offline { color: #EF4444; font-weight: 700; }
+    .status-bar { height: 6px; border-radius: 6px; background: rgba(107,114,128,0.15); overflow: hidden; }
+    .status-bar > span { display: block; height: 100%; border-radius: 6px; transition: width 0.4s ease, background 0.3s ease; }
+    .bar-online { background: #10B981; }
+    .bar-offline { background: #EF4444; }
+
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .refresh-bar button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .refresh-bar button:hover { opacity: 0.9; }
+    .last-check { font-variant-numeric: tabular-nums; }
+  </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1>Main Screen</h1>
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
-
-        <div class="title-main">Status</div>
-        <p>Device Name</p>
-
-        <button onclick="fetchServerStatus()">Refresh</button>
-
-        <div class="list">
-            <div class="item">
-                <i class="material-icons">cloud</i>
-                <div>
-                    <div class="name">ProMcBot</div>
-                    <div class="status-text" id="promcbot-status">Checking...</div>
-                    <div class="bar-status" id="promcbot-bar"></div>
-                </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">You have no new notifications.</div>
             </div>
-
-            <div class="item">
-                <i class="material-icons">dashboard</i>
-                <div>
-                    <div class="name">Dashboard Server</div>
-                    <div class="status-text" id="dashboard-status">Checking...</div>
-                    <div class="bar-status" id="dashboard-bar"></div>
-                </div>
-            </div>
-
-            <div class="item">
-                <i class="material-icons">api</i>
-                <div>
-                    <div class="name">API Server</div>
-                    <div class="status-text" id="api-server-status">Checking...</div>
-                    <div class="bar-status" id="api-server-bar"></div>
-                </div>
-            </div>
+          </div>
+          <div class="dropdown-footer">Notifications</div>
         </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span>Collapse</span>
+      </div>
+    </div>
+  </nav>
+  <!-- ── MAIN CONTENT ── -->
+  <section class="main-content">
+
+    <div class="status-hero">
+      <div class="status-hero-content">
+        <h1>Service Status</h1>
+        <p>Real-time health of ProMcBot services — auto-refreshes every 10 seconds</p>
+      </div>
     </div>
 
-    <script>
-        async function fetchServerStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const servers = await response.json();
+    <div class="status-grid" id="statusGrid">
+      <div class="status-card">
+        <div class="status-icon checking"><i class='bx bx-cloud'></i></div>
+        <div class="status-info">
+          <div class="status-name">ProMcBot</div>
+          <div class="status-text" id="promcbot-status">Checking...</div>
+          <div class="status-bar"><span id="promcbot-bar" style="width:0%"></span></div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon checking"><i class='bx bx-desktop'></i></div>
+        <div class="status-info">
+          <div class="status-name">Dashboard Server</div>
+          <div class="status-text" id="dashboard-status">Checking...</div>
+          <div class="status-bar"><span id="dashboard-bar" style="width:0%"></span></div>
+        </div>
+      </div>
+      <div class="status-card">
+        <div class="status-icon checking"><i class='bx bx-code-alt'></i></div>
+        <div class="status-info">
+          <div class="status-name">API Server</div>
+          <div class="status-text" id="api-server-status">Checking...</div>
+          <div class="status-bar"><span id="api-server-bar" style="width:0%"></span></div>
+        </div>
+      </div>
+    </div>
 
-                servers.forEach(server => {
-                    const id = server.name.toLowerCase().replace(/ /g, '-');
-                    const statusElement = document.getElementById(`${id}-status`);
-                    const barElement = document.getElementById(`${id}-bar`);
+    <div class="refresh-bar">
+      <span class="last-check" id="lastCheck">Last check: —</span>
+      <button onclick="fetchServerStatus()"><i class='bx bx-refresh'></i> Refresh Now</button>
+    </div>
 
-                    if (!statusElement || !barElement) return;
+  </section>
 
-                    statusElement.classList.remove("online", "maintenance", "offline");
-                    barElement.classList.remove("bar-online", "bar-maintenance", "bar-offline");
+  <script>
+    async function fetchServerStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) throw new Error('status ' + response.status);
+        const d = await response.json();
+        const servers = d.services || [];
 
-                    if (server.status === "running") {
-                        statusElement.innerHTML = "Online";
-                        statusElement.classList.add("online");
-                        barElement.classList.add("bar-online");
-                    } else if (server.status === "starting") {
-                        statusElement.innerHTML = "Online";
-                        statusElement.classList.add("online");
-                        barElement.classList.add("bar-online");
-                    } else {
-                        statusElement.innerHTML = "Offline";
-                        statusElement.classList.add("offline");
-                        barElement.classList.add("bar-offline");
-                    }
-                });
-            } catch (error) {
-                console.error("Error fetching server status:", error);
-            }
-        }
+        servers.forEach(server => {
+          const id = server.id;
+          const statusEl = document.getElementById(`${id}-status`);
+          const barEl = document.getElementById(`${id}-bar`);
+          if (!statusEl || !barEl) return;
 
-        window.onload = function () {
-            fetchServerStatus();
-            setInterval(fetchServerStatus, 10000);
-        };
-        window.onload = function () {
-  // Load last known status
-  document.querySelectorAll('.bar-status').forEach(bar => {
-    const id = bar.id.replace('-bar', '');
-    const lastStatus = localStorage.getItem(id);
-    if (lastStatus) {
-      bar.classList.add(`bar-${lastStatus}`);
-      const statusText = document.getElementById(`${id}-status`);
-      if (statusText) {
-        statusText.innerText = lastStatus.charAt(0).toUpperCase() + lastStatus.slice(1);
-        statusText.classList.add(lastStatus);
+          const iconEl = statusEl.closest('.status-card').querySelector('.status-icon');
+          const isUp = (server.status === 'running' || server.status === 'starting');
+
+          statusEl.className = 'status-text' + (isUp ? ' online' : ' offline');
+          statusEl.textContent = isUp ? 'Online' : 'Offline';
+
+          iconEl.className = 'status-icon ' + (isUp ? 'online' : 'offline');
+          iconEl.innerHTML = isUp
+            ? "<i class='bx bx-check-circle'></i>"
+            : "<i class='bx bx-x-circle'></i>";
+
+          barEl.className = isUp ? 'bar-online' : 'bar-offline';
+          barEl.style.width = isUp ? '100%' : '0%';
+
+          localStorage.setItem(id, isUp ? 'online' : 'offline');
+        });
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        document.getElementById('lastCheck').textContent =
+          'Last check: ' + now.getFullYear() + '/' + pad(now.getMonth() + 1) + '/' + pad(now.getDate())
+          + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+      } catch (error) {
+        console.error('Error fetching server status:', error);
       }
     }
-  });
 
-  fetchServerStatus();
-  setInterval(fetchServerStatus, 10000);
-};
+    window.addEventListener('load', function () {
+      fetchServerStatus();
+      setInterval(fetchServerStatus, 10000);
+    });
+  </script>
 
-    </script>
-
-<script src="/shared.js"></script>
+  <script src="/shared.js"></script>
 </body>
 </html>

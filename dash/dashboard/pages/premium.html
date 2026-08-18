@@ -519,17 +519,19 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
+      <!-- ── NAVBAR ── -->
+    <!-- ── NAVBAR ── -->
+    <!-- ── NAVBAR ── -->
+  <nav class="navbar">
     <div style="display:flex;align-items:center;gap:14px;">
       <div class="mobile-toggle" id="sidebarToggle">
         <i class='bx bx-menu'></i>
       </div>
       <a href="/dashboard" class="logo_item">
-        <img src="/dashboard/logo.png" alt="Logo" onerror="this.src='/public/images/logo.svg'">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
         <span class="brand-name">ProMcBot</span>
       </a>
     </div>
-
     <div class="navbar_content">
       <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
         <i class='bx bx-sun'></i>
@@ -545,10 +547,10 @@
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
               <div class="notification-title">Welcome to ProMcBot!</div>
-              <div class="notification-desc">Select a server to start managing it</div>
+              <div class="notification-desc">You have no new notifications.</div>
             </div>
           </div>
-          <div class="dropdown-footer">Mark all as read</div>
+          <div class="dropdown-footer">Notifications</div>
         </div>
       </div>
       <div class="dropdown">
@@ -561,15 +563,13 @@
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
-          <a href="/commands"><i class='bx bx-command'></i> Commands</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
   </nav>
-
-<!-- SIDEBAR (auto-built by shared.js) -->
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
   <nav class="sidebar" id="sidebar">
     <div class="menu_content"></div>
     <div class="sidebar-footer">
@@ -579,8 +579,8 @@
       </div>
     </div>
   </nav>
-
-    <!-- Main Content -->
+  <!-- ── MAIN CONTENT ── -->
+<!-- Main Content -->
     <section class="main-content">
         <!-- Header -->
         <div class="premium-header">

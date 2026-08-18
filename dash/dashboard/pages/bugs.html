@@ -1,356 +1,266 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Bug Report</title>
-
-  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-
-  <style>
-
-    body {
-
-      margin: 0;
-
-      padding: 0;
-
-      font-family: 'Segoe UI', sans-serif;
-
-      background: linear-gradient(145deg, #1e1f25, #282a36);
-
-      color: #f1f1f1;
-
-      display: flex;
-
-      justify-content: center;
-
-      align-items: center;
-
-      min-height: 100vh;
-
-    }
-
-    .card {
-
-      background: rgba(40, 42, 54, 0.9);
-
-      backdrop-filter: blur(12px);
-
-      border-radius: 20px;
-
-      box-shadow: 0 0 25px rgba(0,0,0,0.3);
-
-      padding: 2rem;
-
-      max-width: 500px;
-
-      width: 100%;
-
-    }
-
-    .card h2 {
-
-      margin-bottom: 1rem;
-
-      color: #fff;
-
-      font-size: 1.8rem;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 0.5rem;
-
-    }
-
-    label {
-
-      display: block;
-
-      margin-top: 1.2rem;
-
-      margin-bottom: 0.4rem;
-
-      font-weight: 500;
-
-    }
-
-    select, textarea, input[type="email"] {
-
-      width: 100%;
-
-      padding: 0.7rem;
-
-      border: none;
-
-      border-radius: 10px;
-
-      font-size: 1rem;
-
-      background: #2c2e3a;
-
-      color: #fff;
-
-      outline: none;
-
-    }
-
-    textarea {
-
-      min-height: 100px;
-
-      resize: vertical;
-
-    }
-
-    button {
-
-      margin-top: 1.5rem;
-
-      padding: 0.8rem 1.5rem;
-
-      background: #5865F2;
-
-      color: #fff;
-
-      border: none;
-
-      border-radius: 10px;
-
-      font-size: 1rem;
-
-      font-weight: bold;
-
-      cursor: pointer;
-
-      transition: background 0.2s ease;
-
-    }
-
-    button:hover {
-
-      background: #4752c4;
-
-    }
-
-    .bx {
-
-      vertical-align: middle;
-
-    }
-
-  </style>
-
+  <title>ProMcBot — Bug Report</title>
+  <meta name="description" content="Report a bug to the ProMcBot team">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
+  <style>
+    .bug-wrap { max-width: 640px; }
+    .bug-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+    }
+    .bug-card h2 {
+      font-size: 19px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .bug-card h2 i { color: var(--warning); font-size: 22px; }
+    .bug-card .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+    .bug-card label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+    .bug-card .field { margin-bottom: 18px; }
+    .bug-card select, .bug-card input[type="email"], .bug-card textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .bug-card select:focus, .bug-card input:focus, .bug-card textarea:focus {
+      border-color: var(--primary);
+    }
+    .bug-card textarea { min-height: 120px; resize: vertical; }
+    .bug-submit {
+      background: var(--gradient-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .bug-submit:hover { opacity: 0.9; }
+    .bug-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+    .bug-feedback {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .bug-feedback.ok { display: block; background: rgba(16,185,129,0.12); color: #10B981; border: 1px solid rgba(16,185,129,0.3); }
+    .bug-feedback.err { display: block; background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid rgba(239,68,68,0.3); }
+  </style>
 </head>
-
 <body>
 
-  <div class="card">
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">You have no new notifications.</div>
+            </div>
+          </div>
+          <div class="dropdown-footer">Notifications</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span>Collapse</span>
+      </div>
+    </div>
+  </nav>
+  <!-- ── MAIN CONTENT ── -->
+  <section class="main-content">
 
-    <h2><i class='bx bx-bug'></i> Report a Bug</h2>
+    <div class="page-header">
+      <div>
+        <h1 style="font-size:21px;font-weight:700;margin:0">Bug Report</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--text-secondary)">Found an issue? Tell us — the admin team gets notified instantly.</p>
+      </div>
+    </div>
 
-    <form id="bugForm">
+    <div class="bug-wrap">
+      <div class="bug-card">
+        <h2><i class='bx bx-bug'></i> Report a Bug</h2>
+        <div class="subtitle">Select the affected service and page, then describe the problem.</div>
 
-      <label for="service"><i class='bx bx-cog'></i> Affected Service</label>
+        <form id="bugForm">
+          <div class="field">
+            <label for="service"><i class='bx bx-cog'></i> Affected Service</label>
+            <select id="service" name="service" required>
+              <option value="">Select service</option>
+              <option value="api">API</option>
+              <option value="bot">Bot</option>
+              <option value="dashboard">Dashboard</option>
+            </select>
+          </div>
 
-      <select id="service" name="service" required>
+          <div class="field">
+            <label for="page"><i class='bx bx-file-find'></i> Page Affected</label>
+            <select id="page" name="page" required>
+              <option value="">Select page</option>
+            </select>
+          </div>
 
-        <option value="">Select service</option>
+          <div class="field">
+            <label for="email"><i class='bx bx-envelope'></i> Reporter Email (optional)</label>
+            <input type="email" name="email" placeholder="you@example.com">
+          </div>
 
-        <option value="api">API</option>
+          <div class="field">
+            <label for="message"><i class='bx bx-message-dots'></i> Describe the Bug</label>
+            <textarea name="message" placeholder="What went wrong? What did you expect to happen?" required></textarea>
+          </div>
 
-        <option value="bot">Bot</option>
+          <button type="submit" class="bug-submit" id="bugSubmitBtn"><i class='bx bx-send'></i> Submit Report</button>
+          <div class="bug-feedback" id="bugFeedback"></div>
+        </form>
+      </div>
+    </div>
 
-        <option value="dashboard">Dashboard</option>
-
-      </select>
-
-      <label for="page"><i class='bx bx-file-find'></i> Page Affected</label>
-
-      <select id="page" name="page" required>
-
-        <option value="">Select page</option>
-
-      </select>
-
-      <label for="email"><i class='bx bx-envelope'></i> Email (optional)</label>
-
-      <input type="email" name="email" value=${email} disabled>
-
-      <label for="message"><i class='bx bx-message-dots'></i> Describe the Bug</label>
-
-      <textarea name="message" placeholder="What went wrong?" required></textarea>
-
-      <button type="submit"><i class='bx bx-send'></i> Submit</button>
-
-    </form>
-
-  </div>
+  </section>
 
   <script>
-
     const serviceSelect = document.getElementById('service');
-
     const pageSelect = document.getElementById('page');
-
     const pages = {
-
-      api: ['Auth Endpoint', 'User Data Endpoint', 'Rate Limiting'],
-
-      bot: ['Command Handling', 'Event System', 'Permissions'],
-
-      dashboard: ['Login Page', 'Settings Page', 'Analytics']
-
+      api: ['Auth Endpoint', 'User Data Endpoint', 'Rate Limiting', 'Server Endpoints'],
+      bot: ['Command Handling', 'Event System', 'Permissions', 'Moderation'],
+      dashboard: ['Login Page', 'Settings Page', 'My Servers', 'Modules']
     };
 
     serviceSelect.addEventListener('change', () => {
-
       const selected = serviceSelect.value;
-
       pageSelect.innerHTML = '<option value="">Select page</option>';
-
       if (pages[selected]) {
-
         pages[selected].forEach(page => {
-
           const opt = document.createElement('option');
-
           opt.value = page;
-
           opt.textContent = page;
-
           pageSelect.appendChild(opt);
-
         });
-
       }
-
     });
 
     document.getElementById('bugForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('bugSubmitBtn');
+      const feedback = document.getElementById('bugFeedback');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      feedback.className = 'bug-feedback';
 
-    e.preventDefault();
-
-    const data = {
-
+      const data = {
         service: serviceSelect.value,
-
         page: pageSelect.value,
-
         email: e.target.email.value || 'Not provided',
-
         message: e.target.message.value
+      };
 
-    };
-
-    const embed = {
-
-        title: "🐛 New Bug Report",
-
-        color: 0x5865F2,
-
-        fields: [
-
-            {
-
-                name: "Affected Service",
-
-                value: data.service,
-
-                inline: true
-
-            },
-
-            {
-
-                name: "Page Affected",
-
-                value: data.page,
-
-                inline: true
-
-            },
-
-            {
-
-                name: "Reporter Email",
-
-                value: data.email,
-
-                inline: true
-
-            },
-
-            {
-
-                name: "Bug Description",
-
-                value: data.message
-
-            }
-
-        ],
-
-        timestamp: new Date().toISOString(),
-
-        footer: {
-
-            text: "Bug Report System"
-
-        }
-
-    };
-
-    try {
-
+      try {
         const response = await fetch('/api/bugs/submit', {
-
-            method: 'POST',
-
-            headers: { 'Content-Type': 'application/json' },
-
-            body: JSON.stringify({
-
-                embeds: [embed],
-
-                content: `📥 New bug report submitted!`
-
-            })
-
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: "🐛 New Bug Report",
+              color: 0x5865F2,
+              fields: [
+                { name: "Affected Service", value: data.service, inline: true },
+                { name: "Page Affected", value: data.page, inline: true },
+                { name: "Reporter Email", value: data.email, inline: true },
+                { name: "Bug Description", value: data.message }
+              ],
+              timestamp: new Date().toISOString(),
+              footer: { text: "Bug Report System" }
+            }],
+            content: '📥 New bug report submitted!'
+          })
         });
 
         if (!response.ok) throw new Error('Failed to submit report');
-
-        
-
-        alert('Bug report sent successfully!');
-
+        feedback.textContent = '✅ Bug report sent successfully! Thanks for helping us improve.';
+        feedback.className = 'bug-feedback ok';
         e.target.reset();
-
-        pageSelect.innerHTML = '<option value="">Select page</option>'; // Reset page select
-
-    } catch (error) {
-
-        console.error('Error:', error);
-
-        alert('Error submitting report. Please try again.');
-
-    }
-
-});
-
+        pageSelect.innerHTML = '<option value="">Select page</option>';
+      } catch (error) {
+        feedback.textContent = '❌ Something went wrong. Please try again later.';
+        feedback.className = 'bug-feedback err';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "<i class='bx bx-send'></i> Submit Report";
+      }
+    });
   </script>
 
-<script src="/shared.js"></script>
+  <script src="/shared.js"></script>
 </body>
-
 </html>
-

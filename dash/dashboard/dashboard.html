@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProMcBot — Elite User Profile & Dashboard</title>
+  <title>ProMcBot — My Profile</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <style>
@@ -76,14 +76,18 @@
       gap: 12px;
     }
 
-    .profile-info-header .badge-elite {
+    .profile-info-header .badge-verified {
       font-size: 11px;
-      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      background: rgba(16,185,129,0.15);
+      color: #10B981;
       padding: 4px 12px;
       border-radius: 999px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .profile-info-header .uid {
@@ -325,77 +329,56 @@
 </head>
 <body>
   <!-- ── NAVBAR ── -->
+    <!-- ── NAVBAR ── -->
+    <!-- ── NAVBAR ── -->
+    <!-- ── NAVBAR ── -->
   <nav class="navbar">
-    <div class="logo_item">
-      <i class="bx bx-menu mobile-toggle" id="sidebarToggle"></i>
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span class="brand-name">ProMcBot</span>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
     </div>
-
-    <div class="search_bar">
-      <input type="text" id="searchInput" placeholder="Search servers or settings..." />
-    </div>
-
     <div class="navbar_content">
-      <!-- Notifications -->
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
       <div class="dropdown">
-        <div class="nav-icon-btn" id="notificationBtn">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
           <i class='bx bx-bell'></i>
-          <span class="notification-badge">3</span>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
         <div class="dropdown-content notification-dropdown" id="notificationDropdown">
           <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
           <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-user-plus'></i></div>
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title">Discord Synced</div>
-              <div class="notification-desc">Your profile session was successfully authenticated</div>
-              <div class="notification-time">Just now</div>
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">You have no new notifications.</div>
             </div>
           </div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-server'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Server Online</div>
-              <div class="notification-desc">Minecraft bridge connected with 0ms latency</div>
-              <div class="notification-time">10 minutes ago</div>
-            </div>
-          </div>
-          <div class="notification-item">
-            <div class="notification-icon"><i class='bx bx-crown'></i></div>
-            <div class="notification-content">
-              <div class="notification-title">Elite Status</div>
-              <div class="notification-desc">Your dashboard profile is operating at peak performance</div>
-              <div class="notification-time">1 hour ago</div>
-            </div>
-          </div>
-          <div class="dropdown-footer">View All System Logs</div>
+          <div class="dropdown-footer">Notifications</div>
         </div>
       </div>
-
-      <!-- Theme -->
-      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
-        <i class='bx bx-sun'></i>
-      </div>
-
-      <!-- User dropdown -->
       <div class="dropdown">
-        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User" class="user-avatar" id="userBtn" data-user-avatar>
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
-            <img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px">
-            <span id="navUserName">User</span>
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
           </div>
-          <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
-          <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
           <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
   </nav>
-
   <!-- ── SIDEBAR (auto-built by shared.js) ── -->
   <nav class="sidebar" id="sidebar">
     <div class="menu_content"></div>
@@ -406,7 +389,6 @@
       </div>
     </div>
   </nav>
-
   <!-- ── MAIN CONTENT ── -->
   <section class="main-content">
 
@@ -417,7 +399,7 @@
         <div class="online-dot" title="Online & Connected"></div>
       </div>
       <div class="profile-info-header">
-        <h1><span data-user-name>Loading Profile...</span> <span class="badge-elite">Elite Admin</span></h1>
+        <h1><span data-user-name>Loading Profile...</span> <span class="badge-verified"><i class='bx bx-badge-check'></i> Verified</span></h1>
         <div class="uid">Discord ID: <span data-user-id>—</span></div>
         <div class="profile-stats">
           <div class="profile-stat">
@@ -425,8 +407,8 @@
             <span class="lbl">Connected Servers</span>
           </div>
           <div class="profile-stat">
-            <span class="val" id="planBadge">Free Elite</span>
-            <span class="lbl">Account Tier</span>
+            <span class="val" id="planBadge" style="color:#10B981">Verified</span>
+            <span class="lbl">Account Status</span>
           </div>
           <div class="profile-stat">
             <span class="val" style="color:#10B981">Secure</span>
@@ -472,7 +454,7 @@
         <div class="card-header">
           <div class="card-icon" style="background:rgba(16,185,129,0.12);color:#10B981"><i class='bx bx-bolt-circle'></i></div>
           <div>
-            <div class="card-title">Elite Quick Actions</div>
+            <div class="card-title">Quick Actions</div>
             <div class="card-subtitle">Immediate control center shortcuts</div>
           </div>
         </div>
@@ -480,11 +462,8 @@
           <a href="/my-servers" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
             <i class='bx bx-server' style="font-size:18px;color:#FF512F"></i> Manage Connected Servers
           </a>
-          <a href="/premium" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-crown' style="font-size:18px;color:#F09819"></i> Upgrade to Enterprise Premium
-          </a>
-          <a href="/commands" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-command' style="font-size:18px;color:#3b82f6"></i> Explore Bot Command Library
+          <a href="/server-status" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
+            <i class='bx bx-pulse' style="font-size:18px;color:#3b82f6"></i> Service & Server Status
           </a>
           <a href="/invitebot" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;" target="_blank">
             <i class='bx bx-cube-alt' style="font-size:18px;color:#10B981"></i> Invite ProMcBot to New Server
@@ -577,7 +556,7 @@
 
     <!-- Footer -->
     <div class="card" style="text-align:center;padding:20px">
-      <p style="font-size:13px;color:var(--text-secondary)">ProMcBot Elite Dashboard v3.5 &copy; <span id="year"></span> ProMcBot Engineering Team. All rights reserved.</p>
+      <p style="font-size:13px;color:var(--text-secondary)">ProMcBot Dashboard &copy; <span id="year"></span> ProMcBot Engineering Team. All rights reserved.</p>
     </div>
 
   </section>
@@ -721,10 +700,10 @@
     fetch('/api/user/membership').then(r => r.json()).then(d => {
       if (d.success) {
         document.getElementById('planBadge').textContent =
-          d.membership.plan === 'premium' ? '⭐ Enterprise Pro' : 'Elite Free';
+          d.membership.plan === 'premium' ? 'Premium' : 'Verified';
       }
     }).catch(() => {
-      document.getElementById('planBadge').textContent = '⭐ Enterprise Pro';
+      document.getElementById('planBadge').textContent = 'Verified';
     });
 
     // API Key toggle visibility

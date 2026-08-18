@@ -55,16 +55,6 @@
         items: [
           { href: '/dashboard', icon: 'bx-user', text: 'Profile' },
           { href: '/my-servers', icon: 'bx-server', text: 'My Servers' },
-          { href: '/premium', icon: 'bx-crown', text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
-          { href: '/commands', icon: 'bx-command', text: 'Commands' },
-        ]
-      },
-      {
-        label: 'Explore',
-        items: [
-          { href: '/invitebot', icon: 'bx-plus-circle', text: 'Invite Bot' },
-          { href: '/activity', icon: 'bx-pulse', text: 'Activity' },
-          { href: '/server-status', icon: 'bx-broadcast', text: 'Server Status' },
         ]
       },
       {
@@ -107,7 +97,6 @@
         label: 'Management',
         items: [
           { href: `/my-servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'Members' },
-          { href: `/my-servers/${guildId}/premium`,        icon: 'bx-crown',       text: 'Premium', tag: { text: 'Pro', cls: 'tag-pro' } },
           { href: `/my-servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'Danger Zone', cls: 'danger-link' },
         ]
       },
