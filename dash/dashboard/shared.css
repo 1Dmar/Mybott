@@ -1,7 +1,7 @@
 /*
  * ProMcBot Dashboard - Shared Stylesheet
  * Unified design system for all dashboard pages
- * Version: 4.0
+ * Version: 5.0
  */
 
 /* ============================================================
@@ -43,14 +43,14 @@
     --gradient-night:    linear-gradient(135deg, #FF512F, #F09819, #4070f4);
 
     /* ── PREMIUM DARK MODE (DEFAULT) — midnight glass ── */
-    --bg:              #05070d;
-    --bg-2:            #0a0f1c;
-    --surface:         rgba(255, 255, 255, 0.04);
-    --surface-2:       rgba(255, 255, 255, 0.07);
-    --border:          rgba(255, 255, 255, 0.08);
+    --bg:              #030409;
+    --bg-2:            #070a15;
+    --surface:         rgba(255, 255, 255, 0.05);
+    --surface-2:       rgba(255, 255, 255, 0.08);
+    --border:          rgba(255, 255, 255, 0.07);
     --border-hi:       rgba(255, 120, 60, 0.35);
-    --text:            #e9edf5;
-    --text-secondary:  #93a3bd;
+    --text:            #eef1f8;
+    --text-secondary:  #98a6bf;
     --text-muted:      #5d6b82;
     --glow-orange:     rgba(255, 107, 47, 0.55);
     --glow-blue:       rgba(64, 112, 244, 0.35);
@@ -185,8 +185,8 @@ body::after {
     position: fixed;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(1200px 600px at 15% -10%, var(--glow-orange) 0%, transparent 60%),
-                radial-gradient(1000px 500px at 85% 10%, var(--glow-blue) 0%, transparent 65%);
+    background: radial-gradient(1400px 700px at 12% -12%, var(--glow-orange) 0%, transparent 62%),
+                radial-gradient(1100px 560px at 88% 8%, var(--glow-blue) 0%, transparent 66%);
     opacity: 0.4;
     pointer-events: none;
 }
@@ -933,6 +933,13 @@ img {
     color: var(--text);
     margin-bottom: 4px;
 }
+.page-header h1, .server-page-name, h1.gradient-text {
+    background: linear-gradient(135deg, #FF6A47 0%, #FFB065 55%, #F09819 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+}
 
 .page-header p {
     color: var(--text-secondary);
@@ -963,14 +970,16 @@ img {
 .card {
     background: var(--surface);
     border-radius: var(--radius-lg);
-    padding: 24px;
+    padding: 28px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     transition: var(--transition-base);
+    backdrop-filter: blur(6px);
 }
-
 .card:hover {
     box-shadow: var(--shadow-md);
+    border-color: rgba(255, 120, 60, 0.28);
+    transform: translateY(-2px);
 }
 
 .card-header {

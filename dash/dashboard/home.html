@@ -617,7 +617,51 @@
       .hero { padding: 70px 16px 50px; }
       .hero-showcase { grid-template-columns: 1fr; }
     }
-  </style>
+  
+    /* ── Free tools section ── */
+    .tools-section { max-width: 1200px; margin: 0 auto 90px; padding: 0 24px; }
+    .tools-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    @media (max-width: 900px) { .tools-grid { grid-template-columns: 1fr; } }
+    .tool-card {
+      position: relative; display: flex; flex-direction: column; gap: 10px;
+      padding: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      color: var(--text);
+      transition: var(--transition-base);
+      overflow: hidden;
+    }
+    .tool-card::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(500px 200px at 50% -20%, rgba(255, 81, 47, 0.18), transparent 70%);
+      opacity: 0; transition: var(--transition-base);
+      pointer-events: none;
+    }
+    .tool-card:hover {
+      border-color: rgba(255, 120, 60, 0.35);
+      transform: translateY(-4px);
+      box-shadow: 0 14px 40px rgba(255, 81, 47, 0.18);
+    }
+    .tool-card:hover::before { opacity: 1; }
+    .tool-icon {
+      width: 52px; height: 52px; border-radius: var(--radius-md);
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #FF9A64;
+    }
+    .tool-card h3 { margin: 0; font-size: 19px; font-weight: 700; }
+    .tool-card p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+    .tool-arrow { margin-top: 6px; font-size: 20px; color: #FF9A64; }
+    .hero-badge-tag {
+      background: linear-gradient(135deg, #FF512F, #F09819);
+      color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+      padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    }
+    @media (max-width: 700px) { .hero-badge-tag { display: none; } }
+</style>
 </head>
 <body>
 
@@ -641,7 +685,8 @@
     </a>
     <nav>
       <a href="/mc-lookup" data-i18n="home.mc_lookup">MC Lookup</a>
-      <a href="/servers-directory" data-i18n="home.directory">Directory</a>
+      
+      <a href="/commands" data-i18n="home.commands">Commands</a>
       <a href="/docs" data-i18n="home.docs">Docs</a>
       <a href="#features" data-i18n="home.features">Features</a>
       <a href="#faq">FAQ</a>
@@ -662,9 +707,10 @@
   <section class="hero" id="hero">
     <div class="hero-glow"></div>
     <div class="hero-content">
-      <div class="hero-badge">
+      <div class="hero-badge" style="gap:10px;">
         <span class="dot"></span>
-        <strong>ProMcBot v3.5</strong> — <span data-i18n="home.badge">Advanced Minecraft & Discord Integration Engine</span>
+        <strong>ProMcBot v3.5</strong> — <span data-i18n="home.badge">Advanced Minecraft &amp; Discord Integration Engine</span>
+        <span class="hero-badge-tag" data-i18n="home.badge_free">Free Forever · No Card Required</span>
       </div>
 
       <h1 data-i18n="home.hero_title_h1">
@@ -759,6 +805,34 @@
         <h3 data-i18n="home.f6_title">Elite Analytics Dashboard</h3>
         <p data-i18n="home.f6_desc">Gain deep insights into server activity, engagement trends, and player retention with our high-performance control panel.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- FREE TOOLS -->
+  <section class="tools-section" id="tools">
+    <div class="section-header">
+      <h2 data-i18n="home.tools_title">Free Tools for Every Player</h2>
+      <p data-i18n="home.tools_sub">Powerful Minecraft tools — completely free, no login required.</p>
+    </div>
+    <div class="tools-grid">
+      <a href="/mc-lookup" class="tool-card">
+        <div class="tool-icon"><i class='bx bx-search-alt'></i></div>
+        <h3 data-i18n="home.tools_t1">MC Server Lookup</h3>
+        <p data-i18n="home.tools_d1">Check any Minecraft server status, player count, ping and version in one click.</p>
+        <span class="tool-arrow"><i class='bx bx-right-arrow-alt'></i></span>
+      </a>
+      <a href="/commands" class="tool-card">
+        <div class="tool-icon"><i class='bx bx-terminal'></i></div>
+        <h3 data-i18n="home.tools_t2">Commands Library</h3>
+        <p data-i18n="home.tools_d2">Full list of bot commands with examples — search, copy, and master ProMcBot.</p>
+        <span class="tool-arrow"><i class='bx bx-right-arrow-alt'></i></span>
+      </a>
+      <a href="/docs" class="tool-card">
+        <div class="tool-icon"><i class='bx bx-book-open'></i></div>
+        <h3 data-i18n="home.tools_t3">Documentation</h3>
+        <p data-i18n="home.tools_d3">Complete setup guides, command references and FAQ in three languages.</p>
+        <span class="tool-arrow"><i class='bx bx-right-arrow-alt'></i></span>
+      </a>
     </div>
   </section>
 

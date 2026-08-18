@@ -41,15 +41,6 @@ mainApp.get('/api/env-check', async (req, res) => {
     const mongoose = require('mongoose');
     if (mongoose.connection.readyState === 1) {
       checks.mongoConnected = true;
-      try {
-        const WebsiteSettings = mongoose.model('website-settings');
-        checks.websiteCount = await WebsiteSettings.countDocuments({});
-        checks.websiteEnabled = await WebsiteSettings.countDocuments({ enabled: true });
-        if (req.query.guildId) {
-          const s = await WebsiteSettings.findOne({ guildId: String(req.query.guildId) }).lean();
-          checks.websiteForGuild = s ? { enabled: s.enabled, siteName: s.siteName, updatedAt: s.updatedAt } : null;
-        }
-      } catch (e) { checks.websiteError = e.message; }
     } else {
       checks.mongoConnected = false;
       checks.mongoReadyState = mongoose.connection.readyState;

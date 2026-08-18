@@ -87,7 +87,6 @@
           { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'sb.tickets' },
           { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'sb.welcome' },
           { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players' },
-          { href: `/my-servers/${guildId}/website`,        icon: 'bx-globe',       text: 'sb.website' },
           { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'sb.settings' },
         ]
       },

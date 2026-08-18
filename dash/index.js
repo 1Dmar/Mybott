@@ -59,7 +59,6 @@ const GuildSettings  = require('../bot/Models/GuildSettings');
 const WelcomeChannel = require('../bot/Models/WelcomeChannel');
 const UserProfile    = require('../bot/Models/UserProfile');
 const UserFollow     = require('../bot/Models/UserFollow');
-const WebsiteSettings = require('../bot/Models/WebsiteSettings');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -404,7 +403,6 @@ app.get('/my-servers/:guildId/welcome',        ...serveServerPage('welcome.html'
 app.get('/my-servers/:guildId/members',        ...serveServerPage('members.html'));
 app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html'));
 app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
-app.get('/my-servers/:guildId/website',        ...serveServerPage('website.html'));
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 // Note: these routes lack guildId, so access relies on isAuthenticated only
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -417,7 +415,7 @@ app.get('/premium',        isAuthenticated, (req, res) => res.sendFile(path.join
 app.get('/configuration',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'configuration.html')));
 app.get('/ticket',         isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ticket.html')));
 app.get('/activity',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'activity.html')));
-app.get('/commands',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'commands.html')));
+app.get('/commands',       (req, res) => res.sendFile(path.join(dashDir, 'commands.html')));
 app.get('/server-status',  isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'ServerStatus.html')));
 
 // Real service status endpoint (bot + dashboard + API health)
@@ -1045,147 +1043,6 @@ app.get('/api/server/:guildId/player/:username', [isAuthenticated, verifyGuildAc
 });
 
 // ════════════════════════════════════════════════════════════════════
-//  SERVER WEBSITE BUILDER (MC server public websites)
-// ════════════════════════════════════════════════════════════════════
-// Website settings — read (dashboard editor)
-const WEBSITE_FIELDS = [
-  'siteName', 'siteDescription', 'tagline', 'heroTitle', 'heroSubtitle',
-  'javaIP', 'javaPort', 'bedrockIP', 'bedrockPort', 'serverType', 'copyIP',
-  'logoUrl', 'accentColor', 'template', 'enabled', 'sections',
-  'socials', 'leaderboard', 'news', 'customDomain', 'customSubdomain'
-];
-app.get('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
-    res.json({ success: true, settings: settings || null });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-// Website settings — write (dashboard editor)
-app.post('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const sanitized = pick(req.body || {}, WEBSITE_FIELDS);
-    if (sanitized.news && Array.isArray(sanitized.news)) {
-      sanitized.news = sanitized.news
-        .filter(n => n && typeof n === 'object')
-        .map(n => ({
-          title: String(n.title || '').slice(0, 200),
-          body: String(n.body || '').slice(0, 2000),
-          tag: String(n.tag || 'Update').slice(0, 40),
-          date: n.date ? new Date(n.date) : new Date(),
-        }))
-        .slice(0, 20);
-    }
-    if (sanitized.sections && typeof sanitized.sections === 'object') {
-      sanitized.sections = pick(sanitized.sections, ['showLeaderboard', 'showPlayers', 'showNews', 'showDiscord']);
-    }
-    if (sanitized.socials && typeof sanitized.socials === 'object') {
-      sanitized.socials = pick(sanitized.socials, ['discord', 'twitter', 'youtube', 'tiktok']);
-    }
-    if (sanitized.leaderboard && typeof sanitized.leaderboard === 'object') {
-      sanitized.leaderboard = pick(sanitized.leaderboard, ['title', 'metric', 'label']);
-    }
-    sanitized.updatedAt = new Date();
-    // Auto-enable: publishing a website means the owner wants it live
-    if (sanitized.enabled === undefined || sanitized.enabled === null || sanitized.enabled === false) {
-      sanitized.enabled = true;
-    }
-    const settings = await WebsiteSettings.findOneAndUpdate(
-      { guildId: req.params.guildId },
-      { $set: sanitized },
-      { upsert: true, new: true }
-    );
-    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated server website' }); } catch (_) {}
-    notifyUserOnce(req.user.id, { type: 'success', title: 'Website saved', message: `Your server website at /site/${req.params.guildId} was updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
-    res.json({ success: true, settings });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-// Custom (sub)domain → guildId resolver (used by /site/:guildId AND custom-domain hosts)
-async function _resolveSiteByHost(host) {
-  try {
-    const hostName = (host || '').toLowerCase().replace(/^www\./, '').split(':')[0];
-    if (!hostName) return null;
-    // Exact customDomain match, e.g. play.myserver.com
-    const byDomain = await WebsiteSettings.findOne({ enabled: true, customDomain: hostName }).lean();
-    if (byDomain) return byDomain.guildId;
-    // Wildcard subdomain match, e.g. mysite.promcbot.dev
-    const sub = process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev';
-    if (hostName.endsWith('.' + sub)) {
-      const subLabel = hostName.slice(0, hostName.length - sub.length - 1);
-      const bySub = await WebsiteSettings.findOne({ enabled: true, customSubdomain: subLabel }).lean();
-      if (bySub) return bySub.guildId;
-    }
-    return null;
-  } catch (_) { return null; }
-}
-
-// Public website (no auth needed — open for everyone)
-// Wildcard host handler: any request that arrives on a custom domain
-// (pointed to this Railway service) is served as that site's public page.
-app.use(async (req, res, next) => {
-  const host = (req.hostname || '').toLowerCase().replace(/^www\./, '');
-  if (!host || host === 'localhost' || host === '127.0.0.1') return next();
-  if (host === (process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev') || host.endsWith('.' + (process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev'))) return next();
-  const guildId = await _resolveSiteByHost(host);
-  if (!guildId) return next();
-  try {
-    const settings = await WebsiteSettings.findOne({ guildId }).lean();
-    if (!settings || !settings.enabled) return res.status(404).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
-    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-src 'self'; frame-ancestors 'self';");
-    res.sendFile(path.join(dashDir, 'pages', 'site-view.html'));
-  } catch (_) { next(); }
-});
-
-app.get('/site/:guildId', async (req, res) => {
-  try {
-    let settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
-    if (!settings || !settings.enabled) {
-      return res.status(404).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
-    }
-    if (settings.customDomain) {
-      res.setHeader('Link', `<https://${settings.customDomain}/site/${settings.guildId}>; rel="canonical"`);
-    }
-    // Public pages get a safe, site-scoped CSP (the site owns its own styles/scripts)
-    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-src 'self'; frame-ancestors 'self';");
-    res.sendFile(path.join(dashDir, 'pages', 'site-view.html'));
-  } catch (err) {
-    res.status(500).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
-  }
-});
-// Public site settings (read-only snapshot for the public page) — also supports the
-// default site URL so custom-domain sites can fetch their data from /api/site/default/settings
-app.get('/api/site/:id/settings', async (req, res) => {
-  try {
-    let guildId = req.params.id;
-    if (guildId === 'default') {
-      const resolved = await _resolveSiteByHost(req.hostname);
-      if (!resolved) return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
-      guildId = resolved;
-    }
-    const settings = await WebsiteSettings.findOne({ guildId }).lean();
-    if (!settings || !settings.enabled) {
-      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
-    }
-    // Strip internal fields — public page only needs display data
-    const safe = {
-      siteName: settings.siteName, tagline: settings.tagline,
-      heroTitle: settings.heroTitle, heroSubtitle: settings.heroSubtitle,
-      copyIP: settings.copyIP, javaIP: settings.javaIP, javaPort: settings.javaPort,
-      bedrockIP: settings.bedrockIP, bedrockPort: settings.bedrockPort,
-      serverType: settings.serverType, logoUrl: settings.logoUrl,
-      accentColor: settings.accentColor, template: settings.template,
-      sections: settings.sections, leaderboard: settings.leaderboard,
-      socials: settings.socials, news: settings.news,
-    };
-    res.json({ success: true, settings: safe });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-// ════════════════════════════════════════════════════════════════════
 //  PUBLIC USER PROFILES /u/:userId + Follow system
 // ════════════════════════════════════════════════════════════════════
 
@@ -1302,39 +1159,12 @@ app.post('/api/u/:userId/follow', isAuthenticated, async (req, res) => {
   }
 });
 
-// Public leaderboard data (live from ProMcSecure API — open so the public site can fetch it)
-app.get('/api/site/:id/leaderboard', async (req, res) => {
-  try {
-    let guildId = req.params.id;
-    if (guildId === 'default') {
-      const resolved = await _resolveSiteByHost(req.hostname);
-      if (!resolved) return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
-      guildId = resolved;
-    }
-    const settings = await WebsiteSettings.findOne({ guildId }).lean();
-    if (!settings || !settings.enabled) {
-      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
-    }
-    let lb = [];
-    try {
-      const data = await McApi.getLeaderboard(req.params.guildId);
-      if (Array.isArray(data)) lb = data;
-      else if (data && Array.isArray(data.players)) lb = data.players;
-      else if (data && Array.isArray(data.leaderboard)) lb = data.leaderboard;
-    } catch (_) { /* no MC API config → show empty leaderboard */ }
-    const metric = (settings.leaderboard && settings.leaderboard.metric) || 'elo';
-    const sorted = lb.slice().sort((a, b) => (Number(b[metric]) || 0) - (Number(a[metric]) || 0)).slice(0, 50);
-    res.json({ success: true, metric, leaderboard: sorted, label: (settings.leaderboard && settings.leaderboard.label) || 'ELO' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
-// ── Public tools: MC Server Lookup + Servers Directory ────────────────
 app.get('/mc-lookup', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'mc-lookup.html')));
-app.get('/servers-directory', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers-directory.html')));
 
-// Free public MC server status check (proxy to mcsrvstat.us — no client-side CORS)
+// ── Public tools: MC Server Lookup ────────────────────────────────────
+// Free public tool: any Minecraft address (player.mcsrv.net, hypixel.net:25565, ...)
+// Proxy to mcsrvstat.us so we never expose the third-party API directly
 app.get('/api/mc/:addr', async (req, res) => {
   try {
     const addr = decodeURIComponent(req.params.addr).trim();
@@ -1342,24 +1172,12 @@ app.get('/api/mc/:addr', async (req, res) => {
     const r = await fetch(`https://api.mcsrvstat.us/3/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(8000) });
     if (!r.ok) return res.status(400).json({ ok: false, error: 'Lookup failed' });
     const data = await r.json();
-    // mcsrvstat.us returns {ok: true/false}; we pass data through minus the internal ok flag
+    // mcsrvstat.us returns {ok: true/false}; pass data through minus the internal ok flag
     const { ok, ...rest } = data;
     if (!ok) return res.json({ ok: false, error: 'SERVER_NOT_FOUND', ...rest });
     res.json({ ok: true, ...rest });
   } catch (err) {
     res.status(502).json({ ok: false, error: 'Status service unavailable' });
-  }
-});
-
-// Public servers directory: all enabled published websites
-app.get('/api/directory', async (req, res) => {
-  try {
-    const servers = await WebsiteSettings.find({ enabled: true })
-      .select('guildId siteName tagline siteDescription javaIP javaPort copyIP accentColor logoUrl updatedAt')
-      .sort({ updatedAt: -1 }).limit(200).lean();
-    res.json({ success: true, count: servers.length, servers });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
   }
 });
 

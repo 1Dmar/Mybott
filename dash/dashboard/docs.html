@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ProMcBot Documentation — Learn how to link Discord & Minecraft, build server websites, and use free tools.">
+  <meta name="description" content="ProMcBot Documentation — Learn how to link Discord & Minecraft and use free ProMcBot tools.">
   <title>ProMcBot — Documentation</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -238,7 +238,7 @@
     <nav>
       <a href="/" data-i18n="nav.home">Home</a>
       <a href="/mc-lookup" data-i18n="home.mc_lookup">MC Lookup</a>
-      <a href="/servers-directory" data-i18n="home.directory">Directory</a>
+      
       <a href="/docs" class="active" data-i18n="home.docs">Docs</a>
       <a href="/loading-auth" data-i18n="nav.login">Login</a>
       <select class="lang-select-home" style="background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);border-radius:var(--radius-md);padding:7px 10px;font-size:13px;cursor:pointer;" onchange="window.__pmc_i18n && window.__pmc_i18n.setLanguage(this.value)">
@@ -258,7 +258,6 @@
       <a href="#bot" data-i18n="docs.toc_bot">Inviting the Bot</a>
       <a href="#commands" data-i18n="docs.toc_cmds">Commands</a>
       <a href="#dashboard" data-i18n="docs.toc_dash">Dashboard</a>
-      <a href="#website" data-i18n="docs.toc_web">Website Builder</a>
       <a href="#profiles" data-i18n="docs.toc_prof">Public Profiles</a>
       <a href="#tools" data-i18n="docs.toc_tools">Free Tools</a>
       <a href="#faq" data-i18n="docs.toc_faq">FAQ</a>
@@ -269,7 +268,7 @@
 
       <div class="doc-section" id="start">
         <h2><i class='bx bx-rocket'></i> <span data-i18n="docs.start_title">Getting Started</span></h2>
-        <p data-i18n="docs.start_desc">ProMcBot links your Discord server with your Minecraft server in one place. One dashboard controls everything: moderation, welcome messages, player stats, auto-responders, tickets — and a full public website for your Minecraft server.</p>
+        <p data-i18n="docs.start_desc">ProMcBot links your Discord server with your Minecraft server in one place. One dashboard controls everything: moderation, welcome messages, player stats, auto-responders, and tickets.</p>
         <div class="docs-card">
           <h3><span class="step-num">1</span> <span data-i18n="docs.start_s1_title">Add the bot to your Discord server</span></h3>
           <p data-i18n="docs.start_s1_desc">Use the invite link and grant Administrator (or Manage Server) permissions so ProMcBot can protect your server and read statistics.</p>
@@ -280,7 +279,7 @@
         </div>
         <div class="docs-card">
           <h3><span class="step-num">3</span> <span data-i18n="docs.start_s3_title">Connect your Minecraft server</span></h3>
-          <p data-i18n="docs.start_s3_desc">Open <strong>Website → Minecraft Info</strong>, enter your server IP and port, and press Save. The dashboard checks the server instantly.</p>
+          <p data-i18n="docs.start_s3_desc">Open use the <code class="inline">/mc-setup</code> command in Discord (or Configuration in the dashboard), enter your server IP and port, and press Save. The dashboard checks the server instantly.</p>
         </div>
       </div>
 
@@ -310,23 +309,10 @@
 
       <div class="doc-section" id="dashboard">
         <h2><i class='bx bx-grid-alt'></i> <span data-i18n="docs.dash_title">Dashboard</span></h2>
-        <p data-i18n="docs.dash_desc">Visit <code class="inline">/my-servers</code> after login. Every server card shows whether the bot is active and how many members it has. Inside each server you get: <strong>Overview</strong>, <strong>Configuration</strong>, <strong>Modules</strong>, <strong>Moderation</strong>, <strong>Roles</strong>, <strong>Logs</strong>, <strong>Auto Responder</strong>, <strong>Tickets</strong>, <strong>Welcome</strong>, <strong>MC Players</strong>, <strong>Website</strong>, and <strong>Settings</strong>.</p>
+        <p data-i18n="docs.dash_desc">Visit <code class="inline">/my-servers</code> after login. Every server card shows whether the bot is active and how many members it has. Inside each server you get: <strong>Overview</strong>, <strong>Configuration</strong>, <strong>Modules</strong>, <strong>Moderation</strong>, <strong>Roles</strong>, <strong>Logs</strong>, <strong>Auto Responder</strong>, <strong>Tickets</strong>, <strong>Welcome</strong>, <strong>MC Players</strong>, and <strong>Settings</strong>.</p>
         <div class="docs-card">
           <h3><i class='bx bxs-bell'></i> <span data-i18n="docs.dash_notif_title">Notifications</span></h3>
           <p data-i18n="docs.dash_notif_desc">All events — saves, actions, warnings — arrive in the notification bell at the top right of the dashboard. You can also send custom notifications to specific members or everyone from the admin panel.</p>
-        </div>
-      </div>
-
-      <div class="doc-section" id="website">
-        <h2><i class='bx bx-globe'></i> <span data-i18n="docs.web_title">Website Builder</span></h2>
-        <p data-i18n="docs.web_desc">Create a complete public website for your Minecraft server — free. Go to your server → <strong>Website</strong>, fill the form, and press <strong>Save</strong>. Your site goes live instantly at <code class="inline">/site/&lt;server-id&gt;</code>.</p>
-        <div class="docs-card">
-          <h3><i class='bx bxs-palette'></i> <span data-i18n="docs.web_tabs_title">Sections</span></h3>
-          <p data-i18n="docs.web_tabs_desc">General (name, tagline, banner title), Minecraft Info (Java/Bedrock IP, templates), Branding (logo, accent color), Templates, Sections (leaderboard, players list, news, Discord widget), News, Socials, Custom Domain &amp; Subdomain, and a Live Preview.</p>
-        </div>
-        <div class="docs-card">
-          <h3><i class='bx bxs-check-shield'></i> <span data-i18n="docs.web_save_title">Important: press Save</span></h3>
-          <p data-i18n="docs.web_save_desc">Changes are kept in the editor until you press Save. A red bar appears at the bottom saying "You have unsaved changes" — that is your button. Pressing Save publishes the site and turns the status badge to LIVE.</p>
         </div>
       </div>
 
@@ -341,21 +327,16 @@
           <h3><i class='bx bx-search-alt'></i> <span data-i18n="docs.tools_lookup_title">MC Server Lookup</span></h3>
           <p data-i18n="docs.tools_lookup_desc">Enter any Minecraft server address at <a href="/mc-lookup" style="color:#FF9A64">promcbot.dev/mc-lookup</a> — players, version, MOTD, latency, favicon. No login required.</p>
         </div>
-        <div class="docs-card">
-          <h3><i class='bx bx-list-ul'></i> <span data-i18n="docs.tools_dir_title">Servers Directory</span></h3>
-          <p data-i18n="docs.tools_dir_desc">Browse all published Minecraft server websites at <a href="/servers-directory" style="color:#FF9A64">promcbot.dev/servers-directory</a>. Your website appears here automatically when you publish it.</p>
-        </div>
-      </div>
 
       <div class="doc-section" id="faq">
         <h2><i class='bx bx-help-circle'></i> <span data-i18n="docs.faq_title">FAQ</span></h2>
         <div class="docs-card">
           <h3 data-i18n="docs.faq1_q">Why do I see "Not published yet"?</h3>
-          <p data-i18n="docs.faq1_a">It means the Website form is not saved yet. Fill in at least the site name and press Save — your website becomes live immediately.</p>
+          <p data-i18n="docs.faq1_a">It means your Minecraft server is not linked yet. Use /mc-setup in Discord and press Save.</p>
         </div>
         <div class="docs-card">
           <h3 data-i18n="docs.faq2_q">Can I use my own domain?</h3>
-          <p data-i18n="docs.faq2_a">Yes. Open Website → Domain and add your Custom Domain or Subdomain, then press Save.</p>
+          <p data-i18n="docs.faq2_a">Yes — free tools like MC Lookup and the docs at promcbot.dev are open to everyone.</p>
         </div>
         <div class="docs-card">
           <h3 data-i18n="docs.faq3_q">What languages are supported?</h3>
@@ -363,7 +344,7 @@
         </div>
         <div class="docs-card">
           <h3 data-i18n="docs.faq4_q">Is the bot free?</h3>
-          <p data-i18n="docs.faq4_a">Yes — all core features, the website builder, and the public tools are free for every server owner.</p>
+          <p data-i18n="docs.faq4_a">Yes — all core features and public tools are free for every server owner.</p>
         </div>
       </div>
 
@@ -374,7 +355,7 @@
     <div class="foot-links">
       <a href="/" data-i18n="nav.home">Home</a>
       <a href="/mc-lookup" data-i18n="home.mc_lookup">MC Lookup</a>
-      <a href="/servers-directory" data-i18n="home.directory">Directory</a>
+      
       <a href="/privacy">Privacy</a>
     </div>
     <div>© <span id="year"></span> ProMcBot — <span data-i18n="docs.footer_tag">Discord × Minecraft, one platform.</span></div>
@@ -394,18 +375,18 @@
     }
     const DICT = {
       en: {
-        'nav.home': 'Home', 'nav.login': 'Login', 'home.mc_lookup': 'MC Lookup', 'home.directory': 'Directory', 'home.docs': 'Docs',
+        'nav.home': 'Home', 'nav.login': 'Login', 'home.mc_lookup': 'MC Lookup', 'home.docs': 'Docs',
         'docs.toc': 'Table of Contents', 'docs.toc_start': 'Getting Started', 'docs.toc_bot': 'Inviting the Bot',
-        'docs.toc_cmds': 'Commands', 'docs.toc_dash': 'Dashboard', 'docs.toc_web': 'Website Builder',
+        'docs.toc_cmds': 'Commands', 'docs.toc_dash': 'Dashboard',
         'docs.toc_prof': 'Public Profiles', 'docs.toc_tools': 'Free Tools', 'docs.toc_faq': 'FAQ',
         'docs.start_title': 'Getting Started',
-        'docs.start_desc': 'ProMcBot links your Discord server with your Minecraft server in one place. One dashboard controls everything: moderation, welcome messages, player stats, auto-responders, tickets — and a full public website for your Minecraft server.',
+        'docs.start_desc': 'ProMcBot links your Discord server with your Minecraft server in one place. One dashboard controls everything: moderation, welcome messages, player stats, auto-responders, and tickets.',
         'docs.start_s1_title': 'Add the bot to your Discord server',
         'docs.start_s1_desc': 'Use the invite link and grant Administrator (or Manage Server) permissions so ProMcBot can protect your server and read statistics.',
         'docs.start_s2_title': 'Sign in to the dashboard',
         'docs.start_s2_desc': 'Click Login, authorize with Discord, and your servers appear automatically. You only see servers where you have Administrator.',
         'docs.start_s3_title': 'Connect your Minecraft server',
-        'docs.start_s3_desc': 'Open Website → Minecraft Info, enter your server IP and port, and press Save. The dashboard checks the server instantly.',
+        'docs.start_s3_desc': 'Use the /mc-setup command in Discord (or Configuration), enter your server IP and port, and press Save. The dashboard checks the server instantly.',
         'docs.bot_title': 'Inviting the Bot',
         'docs.bot_desc': 'Invite ProMcBot with the link below. The bot works instantly — no extra setup required.',
         'docs.bot_perms': 'Required permissions: Administrator (recommended) or Manage Server + Manage Messages + Embed Links.',
@@ -415,37 +396,29 @@
         'docs.cmds_server': 'Show live Minecraft server info: players online, version, MOTD, latency, and server type (Java / Bedrock / Geyser).',
         'docs.cmds_lookup': 'Look up a player that joined this server before — join history, first seen, last seen. Players that never joined are marked clearly.',
         'docs.dash_title': 'Dashboard',
-        'docs.dash_desc': 'Visit /my-servers after login. Every server card shows whether the bot is active and how many members it has. Inside each server you get: Overview, Configuration, Modules, Moderation, Roles, Logs, Auto Responder, Tickets, Welcome, MC Players, Website, and Settings.',
+        'docs.dash_desc': 'Visit /my-servers after login. Every server card shows whether the bot is active and how many members it has. Inside each server you get: Overview, Configuration, Modules, Moderation, Roles, Logs, Auto Responder, Tickets, Welcome, MC Players, and Settings.',
         'docs.dash_notif_title': 'Notifications',
         'docs.dash_notif_desc': 'All events — saves, actions, warnings — arrive in the notification bell at the top right of the dashboard. You can also send custom notifications to specific members or everyone from the admin panel.',
-        'docs.web_title': 'Website Builder',
-        'docs.web_desc': 'Create a complete public website for your Minecraft server — free. Go to your server → Website, fill the form, and press Save. Your site goes live instantly at /site/<server-id>.',
-        'docs.web_tabs_title': 'Sections',
-        'docs.web_tabs_desc': 'General (name, tagline, banner title), Minecraft Info (Java/Bedrock IP, templates), Branding (logo, accent color), Templates, Sections (leaderboard, players list, news, Discord widget), News, Socials, Custom Domain & Subdomain, and a Live Preview.',
-        'docs.web_save_title': 'Important: press Save',
-        'docs.web_save_desc': 'Changes are kept in the editor until you press Save. A red bar appears at the bottom saying "You have unsaved changes" — that is your button. Pressing Save publishes the site and turns the status badge to LIVE.',
         'docs.prof_title': 'Public Profiles',
         'docs.prof_desc': 'Every user gets a public profile at /u/<discord-user-id> — avatar, banner, join date, followers and following. When a new user first enters the dashboard, they automatically follow the bot owner. You can follow or unfollow anyone anytime.',
         'docs.tools_title': 'Free Tools',
         'docs.tools_lookup_title': 'MC Server Lookup',
         'docs.tools_lookup_desc': 'Enter any Minecraft server address at promcbot.dev/mc-lookup — players, version, MOTD, latency, favicon. No login required.',
-        'docs.tools_dir_title': 'Servers Directory',
-        'docs.tools_dir_desc': 'Browse all published Minecraft server websites at promcbot.dev/servers-directory. Your website appears here automatically when you publish it.',
         'docs.faq_title': 'FAQ',
         'docs.faq1_q': 'Why do I see "Not published yet"?',
-        'docs.faq1_a': 'It means the Website form is not saved yet. Fill in at least the site name and press Save — your website becomes live immediately.',
+        'docs.faq1_a': 'It means your Minecraft server is not linked yet. Use /mc-setup in Discord and press Save.',
         'docs.faq2_q': 'Can I use my own domain?',
-        'docs.faq2_a': 'Yes. Open Website → Domain and add your Custom Domain or Subdomain, then press Save.',
+        'docs.faq2_a': 'Yes — free tools like MC Lookup and the docs at promcbot.dev are open to everyone.',
         'docs.faq3_q': 'What languages are supported?',
         'docs.faq3_a': 'English (default), Arabic (full RTL), and Spanish. Your choice is saved in a cookie and works on every page.',
         'docs.faq4_q': 'Is the bot free?',
-        'docs.faq4_a': 'Yes — all core features, the website builder, and the public tools are free for every server owner.',
+        'docs.faq4_a': 'Yes — all core features and public tools are free for every server owner.',
         'docs.footer_tag': 'Discord × Minecraft, one platform.'
       },
       ar: {
-        'nav.home': 'الرئيسية', 'nav.login': 'تسجيل الدخول', 'home.mc_lookup': 'فحص سيرفرات MC', 'home.directory': 'دليل السيرفرات', 'home.docs': 'الوثائق',
+        'nav.home': 'الرئيسية', 'nav.login': 'تسجيل الدخول', 'home.mc_lookup': 'فحص سيرفرات MC', 'home.docs': 'الوثائق',
         'docs.toc': 'فهرس المحتويات', 'docs.toc_start': 'البداية', 'docs.toc_bot': 'دعوة البوت',
-        'docs.toc_cmds': 'الأوامر', 'docs.toc_dash': 'لوحة التحكم', 'docs.toc_web': 'منشئ المواقع',
+        'docs.toc_cmds': 'الأوامر', 'docs.toc_dash': 'لوحة التحكم',
         'docs.toc_prof': 'الملفات العامة', 'docs.toc_tools': 'أدوات مجانية', 'docs.toc_faq': 'أسئلة شائعة',
         'docs.start_title': 'البداية',
         'docs.start_desc': 'ProMcBot يربط سيرفر ديسكوردك بسيرفر ماين كرافت في مكان واحد. لوحة تحكم واحدة تتحكم بكل شيء: الإشراف، رسائل الترحيب، إحصائيات اللاعبين، الرد التلقائي، التذاكر — وموقع عام كامل لسيرفر ماين كرافت.',
@@ -454,7 +427,7 @@
         'docs.start_s2_title': 'سجّل الدخول إلى لوحة التحكم',
         'docs.start_s2_desc': 'اضغط تسجيل الدخول ثم وافق بحساب ديسكورد، وستظهر سيرفراتك تلقائيًا. لا ترى إلا السيرفرات التي تملك فيها صلاحية الأدمن.',
         'docs.start_s3_title': 'اربط سيرفر ماين كرافت',
-        'docs.start_s3_desc': 'افتح Website ← Minecraft Info، أدخل الآي بي والبورت، ثم اضغط Save. اللوحة تفحص السيرفر فورًا.',
+        'docs.start_s3_desc': 'استخدم أمر /mc-setup في ديسكورد، أدخل الآي بي والبورت، ثم اضغط Save. اللوحة تفحص السيرفر فورًا.',
         'docs.bot_title': 'دعوة البوت',
         'docs.bot_desc': 'ادعُ ProMcBot بالرابط أدناه. البوت يعمل فورًا دون أي إعدادات إضافية.',
         'docs.bot_perms': 'الصلاحيات المطلوبة: Administrator (موصى به) أو Manage Server + Manage Messages + Embed Links.',
@@ -467,34 +440,26 @@
         'docs.dash_desc': 'ادخل /my-servers بعد تسجيل الدخول. كل بطاقة سيرفر تظهر حالة البوت وعدد الأعضاء. داخل كل سيرفر تجد: نظرة عامة، الإعدادات، الوحدات، الإشراف، الرتب، السجلات، الرد التلقائي، التذاكر، الترحيب، لاعبي MC، الموقع، والإعدادات.',
         'docs.dash_notif_title': 'الإشعارات',
         'docs.dash_notif_desc': 'كل الأحداث — الحفظ، الإجراءات، التحذيرات — تصل إلى جرس الإشعارات أعلى يمين اللوحة. يمكنك أيضًا إرسال إشعارات مخصصة لأعضاء محددين أو للجميع من لوحة الإدارة.',
-        'docs.web_title': 'منشئ المواقع',
-        'docs.web_desc': 'أنشئ موقعًا عامًا كاملًا لسيرفر ماين كرافت — مجانًا. اذهب إلى سيرفرك ← Website، املأ النموذج، واضغط Save. موقعك يصبح مباشرًا فورًا على /site/<server-id>.',
-        'docs.web_tabs_title': 'الأقسام',
-        'docs.web_tabs_desc': 'عام (الاسم، الشعار النصي، عنوان البانر)، معلومات ماين كرافت (آي بي Java/Bedrock، قوالب)، الهوية (الشعار، لون التمييز)، القوالب، الأقسام (لوحة المتصدرين، قائمة اللاعبين، الأخبار، ويدجت ديسكورد)، الأخبار، التواصل الاجتماعي، النطاق المخصص والنطاق الفرعي، ومعاينة حية.',
-        'docs.web_save_title': 'مهم: اضغط Save',
-        'docs.web_save_desc': 'تبقى التغييرات داخل المحرر حتى تضغط Save. يظهر شريط أحمر أسفل الشاشة يقول "لديك تغييرات غير محفوظة" — هذا زر الحفظ. الضغط عليه ينشر الموقع ويحول الحالة إلى LIVE.',
         'docs.prof_title': 'الملفات العامة',
         'docs.prof_desc': 'كل مستخدم يحصل على ملف عام على /u/<discord-user-id> — الصورة، البانر، تاريخ الانضمام، المتابعون والمتابَعون. عندما يدخل مستخدم جديد اللوحة أول مرة يتابع مالك البوت تلقائيًا. يمكنك متابعة أو إلغاء متابعة أي شخص في أي وقت.',
         'docs.tools_title': 'أدوات مجانية',
         'docs.tools_lookup_title': 'فحص سيرفر ماين كرافت',
         'docs.tools_lookup_desc': 'أدخل أي آي بي سيرفر ماين كرافت في promcbot.dev/mc-lookup — اللاعبين، الإصدار، MOTD، زمن الاستجابة، الأيقونة. بدون تسجيل دخول.',
-        'docs.tools_dir_title': 'دليل السيرفرات',
-        'docs.tools_dir_desc': 'تصفح كل مواقع سيرفرات ماين كرافت المنشورة في promcbot.dev/servers-directory. موقعك يظهر هنا تلقائيًا عند نشره.',
         'docs.faq_title': 'أسئلة شائعة',
         'docs.faq1_q': 'لماذا أرى "Not published yet"؟',
-        'docs.faq1_a': 'يعني أن نموذج الموقع لم يُحفظ بعد. املأ اسم الموقع على الأقل واضغط Save — موقعك يصبح مباشرًا فورًا.',
+        'docs.faq1_a': 'يعني أن سيرفر ماين كرافت غير مربوط بعد. استخدم /mc-setup في ديسكورد واضغط حفظ.',
         'docs.faq2_q': 'هل أستطيع استخدام دومين خاص؟',
-        'docs.faq2_a': 'نعم. افتح Website ← Domain وأضف النطاق المخصص أو النطاق الفرعي، ثم اضغط Save.',
+        'docs.faq2_a': 'نعم — الأدوات العامة مثل MC Lookup والوثائق متاحة للجميع.',
         'docs.faq3_q': 'ما اللغات المدعومة؟',
         'docs.faq3_a': 'الإنجليزية (الافتراضية)، العربية (RTL كامل)، والإسبانية. اختيارك يُحفظ في كوكي ويعمل على كل الصفحات.',
         'docs.faq4_q': 'هل البوت مجاني؟',
-        'docs.faq4_a': 'نعم — كل الميزات الأساسية ومنشئ المواقع والأدوات العامة مجانية لكل أصحاب السيرفرات.',
+        'docs.faq4_a': 'نعم — كل الميزات الأساسية والأدوات العامة مجانية لكل أصحاب السيرفرات.',
         'docs.footer_tag': 'ديسكورد × ماين كرافت، منصة واحدة.'
       },
       es: {
-        'nav.home': 'Inicio', 'nav.login': 'Iniciar sesión', 'home.mc_lookup': 'MC Lookup', 'home.directory': 'Directorio', 'home.docs': 'Docs',
+        'nav.home': 'Inicio', 'nav.login': 'Iniciar sesión', 'home.mc_lookup': 'MC Lookup', 'home.docs': 'Docs',
         'docs.toc': 'Índice', 'docs.toc_start': 'Primeros pasos', 'docs.toc_bot': 'Invitar al bot',
-        'docs.toc_cmds': 'Comandos', 'docs.toc_dash': 'Panel de control', 'docs.toc_web': 'Constructor de sitios',
+        'docs.toc_cmds': 'Comandos', 'docs.toc_dash': 'Panel de control',
         'docs.toc_prof': 'Perfiles públicos', 'docs.toc_tools': 'Herramientas gratuitas', 'docs.toc_faq': 'FAQ',
         'docs.start_title': 'Primeros pasos',
         'docs.start_desc': 'ProMcBot conecta tu servidor de Discord con tu servidor de Minecraft en un solo lugar. Un panel controla todo: moderación, mensajes de bienvenida, estadísticas de jugadores, respuestas automáticas, tickets — y un sitio web público completo para tu servidor de Minecraft.',
@@ -503,7 +468,7 @@
         'docs.start_s2_title': 'Inicia sesión en el panel',
         'docs.start_s2_desc': 'Haz clic en Login, autoriza con Discord, y tus servidores aparecerán automáticamente. Solo verás servidores donde tengas Administrator.',
         'docs.start_s3_title': 'Conecta tu servidor de Minecraft',
-        'docs.start_s3_desc': 'Abre Website → Minecraft Info, introduce la IP y el puerto, y pulsa Save. El panel comprueba el servidor al instante.',
+        'docs.start_s3_desc': 'Usa el comando /mc-setup en Discord (o Configuración), introduce la IP y el puerto, y pulsa Save. El panel comprueba el servidor al instante.',
         'docs.bot_title': 'Invitar al bot',
         'docs.bot_desc': 'Invita a ProMcBot con el enlace de abajo. El bot funciona al instante, sin configuración adicional.',
         'docs.bot_perms': 'Permisos requeridos: Administrator (recomendado) o Manage Server + Manage Messages + Embed Links.',
@@ -513,27 +478,19 @@
         'docs.cmds_server': 'Muestra información en vivo del servidor de Minecraft: jugadores, versión, MOTD, latencia y tipo (Java / Bedrock / Geyser).',
         'docs.cmds_lookup': 'Busca un jugador que haya entrado a este servidor antes — historial de conexiones, primera y última vez visto. Los que nunca entraron se marcan claramente.',
         'docs.dash_title': 'Panel de control',
-        'docs.dash_desc': 'Visita /my-servers tras iniciar sesión. Cada tarjeta muestra si el bot está activo y cuántos miembros tiene. Dentro de cada servidor tienes: Overview, Configuration, Modules, Moderation, Roles, Logs, Auto Responder, Tickets, Welcome, MC Players, Website y Settings.',
+        'docs.dash_desc': 'Visita /my-servers tras iniciar sesión. Cada tarjeta muestra si el bot está activo y cuántos miembros tiene. Dentro de cada servidor tienes: Overview, Configuration, Modules, Moderation, Roles, Logs, Auto Responder, Tickets, Welcome, MC Players y Settings.',
         'docs.dash_notif_title': 'Notificaciones',
         'docs.dash_notif_desc': 'Todos los eventos — guardados, acciones, advertencias — llegan a la campana de notificaciones arriba a la derecha. También puedes enviar notificaciones personalizadas a miembros específicos o a todos desde el panel de administración.',
-        'docs.web_title': 'Constructor de sitios',
-        'docs.web_desc': 'Crea un sitio web público completo para tu servidor de Minecraft — gratis. Ve a tu servidor → Website, rellena el formulario y pulsa Save. Tu sitio se publica al instante en /site/<server-id>.',
-        'docs.web_tabs_title': 'Secciones',
-        'docs.web_tabs_desc': 'General (nombre, tagline, título del banner), Minecraft Info (IP Java/Bedrock, plantillas), Branding (logo, color), Templates, Sections (leaderboard, lista de jugadores, noticias, widget de Discord), News, Socials, Custom Domain & Subdomain, y Live Preview.',
-        'docs.web_save_title': 'Importante: pulsa Save',
-        'docs.web_save_desc': 'Los cambios se mantienen en el editor hasta que pulses Save. Aparece una barra roja abajo que dice "You have unsaved changes" — ese es tu botón. Al pulsarlo se publica el sitio y el estado cambia a LIVE.',
         'docs.prof_title': 'Perfiles públicos',
         'docs.prof_desc': 'Cada usuario obtiene un perfil público en /u/<discord-user-id> — avatar, banner, fecha de registro, seguidores y seguidos. Cuando un usuario nuevo entra al panel por primera vez, sigue automáticamente al dueño del bot. Puedes seguir o dejar de seguir a cualquiera en cualquier momento.',
         'docs.tools_title': 'Herramientas gratuitas',
         'docs.tools_lookup_title': 'MC Server Lookup',
         'docs.tools_lookup_desc': 'Introduce cualquier dirección de servidor de Minecraft en promcbot.dev/mc-lookup — jugadores, versión, MOTD, latencia, favicon. Sin iniciar sesión.',
-        'docs.tools_dir_title': 'Directorio de servidores',
-        'docs.tools_dir_desc': 'Explora todos los sitios web de servidores de Minecraft publicados en promcbot.dev/servers-directory. Tu sitio aparece aquí automáticamente al publicarlo.',
         'docs.faq_title': 'FAQ',
         'docs.faq1_q': '¿Por qué veo "Not published yet"?',
-        'docs.faq1_a': 'Significa que el formulario del sitio aún no se ha guardado. Rellena al menos el nombre del sitio y pulsa Save — tu sitio se publica al instante.',
+        'docs.faq1_a': 'Significa que tu servidor de Minecraft aún no está vinculado. Usa /mc-setup en Discord y pulsa Save.',
         'docs.faq2_q': '¿Puedo usar mi propio dominio?',
-        'docs.faq2_a': 'Sí. Abre Website → Domain y añade tu Custom Domain o Subdomain, luego pulsa Save.',
+        'docs.faq2_a': 'Sí — las herramientas gratuitas como MC Lookup y la documentación están abiertas a todos.',
         'docs.faq3_q': '¿Qué idiomas hay disponibles?',
         'docs.faq3_a': 'Inglés (por defecto), árabe (RTL completo) y español. Tu elección se guarda en una cookie y funciona en todas las páginas.',
         'docs.faq4_q': '¿Es gratis el bot?',
