@@ -54,7 +54,19 @@ module.exports = model(
         tag: { type: String, default: 'Update' },
       },
     ],
+    // Custom domain & subdomain support
+    customSubdomain: { type: String, default: '', trim: true },
+    customDomain: { type: String, default: '', trim: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   })
 );
+
+// Fast indexes for public site resolution (host-matching)
+try {
+  const W = require('mongoose').model('website-settings');
+  W.schema.index({ guildId: 1 });
+  W.schema.index({ customDomain: 1 });
+  W.schema.index({ customSubdomain: 1 });
+  W.syncIndexes().catch(() => {});
+} catch (_) {}

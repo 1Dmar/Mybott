@@ -23,7 +23,7 @@ mainApp.get('/health', (req, res) => {
 });
 
 // 1b. Safe environment diagnostics (public, no secrets exposed)
-mainApp.get('/api/env-check', (req, res) => {
+mainApp.get('/api/env-check', async (req, res) => {
   const checks = {
     nodeEnv: process.env.NODE_ENV || 'development',
     ownerIdsSet: !!(process.env.OWNER_ID && process.env.OWNER_ID.trim()),
@@ -36,6 +36,27 @@ mainApp.get('/api/env-check', (req, res) => {
     deployTime: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
   };
+  // Live DB connectivity probe (real diagnosis, not just env var presence)
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      checks.mongoConnected = true;
+      try {
+        const WebsiteSettings = mongoose.model('website-settings');
+        checks.websiteCount = await WebsiteSettings.countDocuments({});
+        checks.websiteEnabled = await WebsiteSettings.countDocuments({ enabled: true });
+        if (req.query.guildId) {
+          const s = await WebsiteSettings.findOne({ guildId: String(req.query.guildId) }).lean();
+          checks.websiteForGuild = s ? { enabled: s.enabled, siteName: s.siteName, updatedAt: s.updatedAt } : null;
+        }
+      } catch (e) { checks.websiteError = e.message; }
+    } else {
+      checks.mongoConnected = false;
+      checks.mongoReadyState = mongoose.connection.readyState;
+    }
+  } catch (e) {
+    checks.dbProbeError = e.message;
+  }
   res.status(200).json(checks);
 });
 
