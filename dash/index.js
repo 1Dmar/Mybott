@@ -371,6 +371,10 @@ app.get('/invitebot', (req, res) => {
 //  PROTECTED DASHBOARD PAGES
 // ════════════════════════════════════════════════════════════════════
 
+app.get('/docs', (req, res) => {
+  res.sendFile(path.join(dashDir, 'docs.html'));
+});
+
 app.get('/dashboard', isAuthenticated, (req, res) => {
   res.sendFile(path.join(dashDir, 'dashboard.html'));
 });
@@ -452,15 +456,16 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
       return (perms & BigInt(0x8)) === BigInt(0x8); // ADMINISTRATOR
     });
 
-    // Add botPresent flag: check if bot client has this guild in its cache
+    // Add botPresent flag: check if the REAL bot client (global.__botClient) has this guild
+    const botClient = global.__botClient || (Array.isArray(global.__dashClients) ? global.__dashClients.find(c => c && c.token) : null) || client;
     const enriched = guilds.map(g => {
       let botPresent = false;
       let approximate_member_count = null;
       try {
-        if (client && client.isReady && client.isReady()) {
-          botPresent = client.guilds.cache.has(g.id);
+        if (botClient && typeof botClient.isReady === 'function' && botClient.isReady()) {
+          botPresent = botClient.guilds.cache.has(g.id);
           if (botPresent) {
-            const cached = client.guilds.cache.get(g.id);
+            const cached = botClient.guilds.cache.get(g.id);
             approximate_member_count = cached?.approximateMemberCount || cached?.memberCount || null;
           }
         }
@@ -485,7 +490,14 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
 app.get('/api/server/:guildId', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const config = await BotConfig.findOne({ guildId: req.params.guildId }).lean();
-    res.json({ success: true, config: config || {} });
+    let botPresent = false;
+    try {
+      const real = global.__botClient || (global.__dashClients && global.__dashClients.bot) || null;
+      if (real && real.guilds && real.guilds.cache) {
+        botPresent = !!real.guilds.cache.get(req.params.guildId);
+      }
+    } catch (_) {}
+    res.json({ success: true, config: config || {}, botPresent });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -678,11 +690,12 @@ app.get('/api/server/:guildId/overview', [isAuthenticated, verifyGuildAccess], a
     const recentLogs = await Log.find({ guildId }).sort({ createdAt: -1 }).limit(10).lean();
     let guildInfo = { memberCount: null, botPresent: false };
     try {
-      const botClients = [client, client1];
+      const realBot = global.__botClient || null;
+      const botClients = realBot ? [realBot, ...[client, client1].filter(Boolean)] : [client, client1];
       for (const bc of botClients) {
         if (bc && bc.isReady && bc.isReady()) {
           const g = bc.guilds.cache.get(guildId);
-          if (g) { guildInfo = { memberCount: g.memberCount, botPresent: true }; break; }
+          if (g) { guildInfo = { memberCount: g.approximateMemberCount ?? g.memberCount, botPresent: true }; break; }
         }
       }
     } catch (_) {}

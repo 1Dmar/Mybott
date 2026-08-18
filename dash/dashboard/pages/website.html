@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Server Website - ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css">
+    <link rel="stylesheet" href="/shared.css?v=5">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -384,8 +384,8 @@
         <button class="btn btn-primary" onclick="saveWebsite()" data-i18n="pg.save_changes"><button>
     </div>
 
-    <script src="/i18n.js"></script>
-  <script src="/shared.js"></script>
+    <script src="/i18n.js?v=5"></script>
+  <script src="/shared.js?v=5"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
 
@@ -550,7 +550,7 @@
         function markDirty() {
             try {
                 const cur = JSON.stringify({ settings: currentSettings() });
-                document.getElementById('saveBar').classList.toggle('show', cur !== original);
+                document.getElementById('saveBar').classList.toggle('visible', cur !== original);
             } catch (_) {}
         }
 
@@ -565,7 +565,7 @@
                 if (!data.success) throw new Error(data.error || 'Save failed');
                 const saved = data.settings || currentSettings();
                 original = JSON.stringify({ settings: saved });
-                document.getElementById('saveBar').classList.remove('show');
+                document.getElementById('saveBar').classList.remove('visible');
                 updateSiteBadge(Boolean(saved.enabled), 'Saved');
                 const cur = currentSettings();
                 const pubUrl = cur.customDomain ? `https://${cur.customDomain}` : (cur.customSubdomain ? `https://${cur.customSubdomain}.promcbot.dev` : `https://promcbot.dev/site/${guildId}`);

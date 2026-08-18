@@ -114,6 +114,10 @@ async function initBot() {
   process.on('uncaughtException', (error) => console.error('❌ Unhandled Exception:', error));
   process.on('unhandledRejection', (reason, promise) => console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason));
 
+  // Expose the real bot client to the dashboard for server discovery & checks
+  global.__botClient = client;
+  global.__dashClients = [client];
+
   return client;
 }
 

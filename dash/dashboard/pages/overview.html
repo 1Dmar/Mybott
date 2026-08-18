@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview - ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css">
+    <link rel="stylesheet" href="/shared.css?v=5">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -33,15 +33,15 @@
           <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
         <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title" data-i18n="not.title"><span></div>
+          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title"><span></div>
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"><div>
+              <div class="notification-desc" data-i18n="not.empty"><div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"><div>
         </div>
       </div>
       <div class="dropdown">
@@ -52,10 +52,10 @@
             <i class='bx bx-user'></i>
             <span id="navUserName" data-i18n="pg.loading"><span>
           </div>
-          <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="not.my_profile" data-i18n="not.my_profile"><span></a>
-          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="not.my_servers" data-i18n="not.my_servers"><span></a>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="not.my_profile"><span></a>
+          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="not.my_servers"><span></a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="not.logout" data-i18n="not.logout"><span></a>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="not.logout"><span></a>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse" data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"><span>
       </div>
     </div>
   </nav>
@@ -75,7 +75,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers" data-i18n="not.servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="not.overview" data-i18n="not.overview"><span>
+            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="not.overview"><span>
         </div>
         
         <div class="server-page-header">
@@ -97,14 +97,14 @@
                 <div class="stat-card-icon blue"><i class='bx bx-group'></i></div>
                 <div>
                     <div class="stat-card-value" id="statMembers">0</div>
-                    <div class="stat-card-label" data-i18n="not.members" data-i18n="not.members"><div>
+                    <div class="stat-card-label" data-i18n="not.members"></div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-icon green"><i class='bx bx-list-ul'></i></div>
                 <div>
                     <div class="stat-card-value" id="statLogs">0</div>
-                    <div class="stat-card-label" data-i18n="not.logs" data-i18n="not.logs"><div>
+                    <div class="stat-card-label" data-i18n="not.logs"></div>
                 </div>
             </div>
             <div class="stat-card">
@@ -120,7 +120,7 @@
             <div class="card-header">
                 <div class="card-icon"><i class='bx bx-history'></i></div>
                 <div>
-                    <h2 class="card-title" data-i18n="not.recent_activity" data-i18n="not.recent_activity"><h2>
+                    <h2 class="card-title" data-i18n="not.recent_activity"></h2>
                     <p class="card-subtitle" data-i18n="not.recent_activity_sub">Latest logs for this server</p>
                 </div>
             </div>
@@ -133,7 +133,7 @@
             <div class="card-header">
                 <div class="card-icon"><i class='bx bx-grid-alt'></i></div>
                 <div>
-                    <h2 class="card-title" data-i18n="not.modules" data-i18n="not.modules"><h2>
+                    <h2 class="card-title" data-i18n="not.modules"></h2>
                     <p class="card-subtitle" data-i18n="not.modules_sub">Active features on this server</p>
                 </div>
             </div>
@@ -147,10 +147,10 @@
             <div class="card-header">
                 <div class="card-icon orange"><i class='bx bx-game'></i></div>
                 <div>
-                    <h2 class="card-title" data-i18n="not.mc_server">Minecraft Server</h2>
+                    <h2X class="card-title" data-i18n="not.mc_server">Minecraft Server</h2>
                     <p class="card-subtitle" data-i18n="not.mc_server_sub">Server connection info saved for this Discord server</p>
                 </div>
-                <a href="/my-servers/1/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> <span data-i18n="not.player_lookup">Player Lookup</span></a>
+                <a href="/my-servers/${guildId}/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> <span data-i18n="not.player_lookup">Player Lookup</span></a>
             </div>
             <div class="stat-cards" id="mcInfoContainer">
                 <p style="color: var(--text-muted); padding: 10px;">Loading Minecraft info...</p>
@@ -159,8 +159,8 @@
 
     </main>
 
-    <script src="/i18n.js"></script>
-  <script src="/shared.js"></script>
+    <script src="/i18n.js?v=5"></script>
+  <script src="/shared.js?v=5"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
@@ -169,9 +169,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const storedName = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+            let storedName = localStorage.getItem(`guild_name_${guildId}`);
             const storedIcon = localStorage.getItem(`guild_icon_${guildId}`);
-            
+            if (!storedName) {
+                try {
+                    const g = await fetch('/api/guilds').then(r => r.json());
+                    const mine = (g.servers || g.guilds || []).find(x => String(x.id) === guildId);
+                    if (mine && mine.name) {
+                        storedName = mine.name;
+                        try { localStorage.setItem(`guild_name_${guildId}`, storedName); } catch(_){}
+                    }
+                } catch(_) {}
+            }
+            storedName = storedName || guildId;
             document.getElementById('breadServerName').textContent = storedName;
             document.getElementById('serverName').textContent = storedName;
             

@@ -10,26 +10,28 @@
   // ============================================================
   // THEME MANAGEMENT
   // ============================================================
+  // Premium design: DARK is the default. A 'light' class activates light mode.
+  // Legacy 'pmcbot_theme=dark' values are mapped to the default (no class).
   function initTheme() {
     const savedTheme = localStorage.getItem('pmcbot_theme') || 'dark';
-    if (savedTheme === 'dark') document.body.classList.add('dark');
+    if (savedTheme === 'light') document.body.classList.add('light');
     updateThemeIcon();
   }
 
   function updateThemeIcon() {
     const icon = document.getElementById('darkLight');
     if (!icon) return;
-    if (document.body.classList.contains('dark')) {
-      icon.classList.remove('bx-sun'); icon.classList.add('bx-moon');
-    } else {
+    if (document.body.classList.contains('light')) {
       icon.classList.remove('bx-moon'); icon.classList.add('bx-sun');
+    } else {
+      icon.classList.remove('bx-sun'); icon.classList.add('bx-moon');
     }
   }
 
   function toggleTheme() {
-    document.body.classList.toggle('dark');
-    const isDark = document.body.classList.contains('dark');
-    localStorage.setItem('pmcbot_theme', isDark ? 'dark' : 'light');
+    document.body.classList.toggle('light');
+    const isLight = document.body.classList.contains('light');
+    localStorage.setItem('pmcbot_theme', isLight ? 'light' : 'dark');
     updateThemeIcon();
   }
 

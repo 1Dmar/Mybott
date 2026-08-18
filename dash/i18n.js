@@ -602,6 +602,7 @@
     // ── Public navbar additions (home)
     'home.mc_lookup':     { en: 'MC Lookup', ar: 'فحص سيرفر', es: 'Buscar Servidor' },
     'home.directory':     { en: 'Directory', ar: 'دليل السيرفرات', es: 'Directorio' },
+    'home.docs':          { en: 'Docs', ar: 'الوثائق', es: 'Docs' },
 
     // ── MC Lookup tool
     'mc.back_home':       { en: 'Home', ar: 'الرئيسية', es: 'Inicio' },
