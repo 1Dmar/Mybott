@@ -527,8 +527,10 @@
             if (!badge) return;
             if (enabled) {
                 badge.innerHTML = '<span style="color:var(--success);"><i class="bx bx-check-circle"></i> ' + label + ' &amp; LIVE</span>';
+            } else if (label === 'Loaded') {
+                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-pause-circle"></i> ' + label + ' (OFF — press Save to publish)</span>';
             } else {
-                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-pause-circle"></i> ' + label + ' (OFF)</span>';
+                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-info-circle"></i> Not published yet — fill in the form and press <b>Save</b></span>';
             }
         }
 
