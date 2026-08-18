@@ -217,7 +217,11 @@
 
     <script>
     (function () {
-        const guildId = window.location.pathname.split('/').pop();
+        const pathGuildId = window.location.pathname.split('/').pop();
+        // When a custom domain / wildcard subdomain is used, the server resolves
+        // the site from the Host header — use 'default' in that case.
+        const isCustomHost = !/^(www\.)?promcbot\.dev$/i.test(window.location.hostname);
+        const guildId = isCustomHost ? 'default' : pathGuildId;
         const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
         async function load() {

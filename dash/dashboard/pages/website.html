@@ -209,6 +209,7 @@
             <button class="website-tab" data-tab="sections"><i class='bx bx-show'></i> Sections</button>
             <button class="website-tab" data-tab="news"><i class='bx bx-news'></i> News (Advanced)</button>
             <button class="website-tab" data-tab="socials"><i class='bx bx-share-alt'></i> Socials</button>
+            <button class="website-tab" data-tab="domain"><i class='bx bx-globe'></i> Domain</button>
             <button class="website-tab" data-tab="preview"><i class='bx bx-show-all'></i> Live Preview</button>
         </div>
 
@@ -336,6 +337,22 @@
         </div>
 
         <!-- Socials -->
+        <!-- Custom Domain -->
+        <div class="website-section" id="sec-domain">
+            <div class="card" style="max-width:720px;">
+                <div class="card-header"><div class="card-icon"><i class='bx bx-globe'></i></div>
+                    <div><h2 class="card-title">Custom Domain</h2><p class="card-subtitle">Use your own domain or a short subdomain on promcbot.dev for your website.</p></div>
+                </div>
+                <div class="form-group"><label class="form-label" for="customSubdomain">Subdomain on promcbot.dev</label>
+                    <input type="text" id="customSubdomain" class="form-control" placeholder="myserver" maxlength="40">
+                    <small class="form-hint">Your site becomes <b id="subdomainPreview">https://<span class="sub-host">myserver</span>.promcbot.dev</b> — only letters, numbers and hyphens.</small></div>
+                <div class="form-group"><label class="form-label" for="customDomain">Full Custom Domain (optional)</label>
+                    <input type="text" id="customDomain" class="form-control" placeholder="play.yourdomain.com" maxlength="100">
+                    <small class="form-hint">Point your domain to <b id="targetHost">promcbot.dev</b> with a CNAME (or A record to Railway's IP) — contact us to allow your domain in Railway.</small></div>
+            </div>
+        </div>
+
+        <!-- Socials -->
         <div class="website-section" id="sec-socials">
             <div class="card" style="max-width:720px;">
                 <div class="card-header"><div class="card-icon"><i class='bx bx-share-alt'></i></div>
@@ -368,15 +385,24 @@
     <script src="/shared.js"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+
+        function getPublicUrl(s) {
+            return (s && s.customDomain) ? `https://${s.customDomain}` : ((s && s.customSubdomain) ? `https://${s.customSubdomain}.promcbot.dev` : `https://promcbot.dev/site/${guildId}`);
+        }
+        function refreshPublicUrl(s) {
+            const url = getPublicUrl(s);
+            document.getElementById('siteUrlText').textContent = url;
+            document.getElementById('openSiteBtn').href = (s && s.customDomain) ? `https://${s.customDomain}` : ((s && s.customSubdomain) ? `https://${s.customSubdomain}.promcbot.dev` : `/site/${guildId}`);
+            document.getElementById('copySiteUrlBtn').onclick = (e) => {
+                navigator.clipboard.writeText(url).then(() =>
+                    Swal.fire({ icon: 'success', title: 'Copied!', timer: 1200, showConfirmButton: false }));
+            };
+        }
+
         if (!guildId) {
             Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
         } else {
-            document.getElementById('siteUrlText').textContent = `https://promcbot.dev/site/${guildId}`;
-            document.getElementById('copySiteUrlBtn').addEventListener('click', () => {
-                navigator.clipboard.writeText(`https://promcbot.dev/site/${guildId}`).then(() =>
-                    Swal.fire({ icon: 'success', title: 'Copied!', timer: 1200, showConfirmButton: false }));
-            });
-            document.getElementById('openSiteBtn').href = `/site/${guildId}`;
+            refreshPublicUrl(null);
         }
 
         let original = {};
@@ -431,6 +457,7 @@
                     lbMetric: s.leaderboard?.metric, lbLabel: s.leaderboard?.label,
                     socialDiscord: s.socials?.discord, socialTwitter: s.socials?.twitter,
                     socialYoutube: s.socials?.youtube, socialTiktok: s.socials?.tiktok,
+                    customSubdomain: s.customSubdomain, customDomain: s.customDomain,
                 };
                 Object.entries(bind).forEach(([id, v]) => { if (v !== undefined && v !== null) document.getElementById(id).value = v; });
                 if (s.accentColor) document.getElementById('accentColorPicker').value = s.accentColor;
@@ -442,6 +469,7 @@
                 const tplCard = document.querySelector(`.template-card[data-template="${tpl}"]`);
                 if (tplCard) { document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected')); tplCard.classList.add('selected'); }
                 (s.news || []).forEach(n => addNewsItem(n.title, n.body, n.tag, n.date));
+                refreshPublicUrl(s);
                 original = JSON.stringify({ settings: s });
             } catch (err) {
                 console.error(err);
@@ -471,6 +499,8 @@
                 bedrockIP: val('bedrockIP'), bedrockPort: Number(val('bedrockPort')) || 19132,
                 logoUrl: val('logoUrl'), accentColor: val('accentColor'),
                 template: selectedTpl ? selectedTpl.dataset.template : 'neon',
+                customSubdomain: val('customSubdomain').trim().replace(/[^a-z0-9-]/g, ''),
+                customDomain: val('customDomain').trim().toLowerCase(),
                 enabled: true,
                 sections: {
                     showLeaderboard: document.getElementById('showLeaderboard').checked,
@@ -488,6 +518,19 @@
         }
 
         function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+        // Live subdomain preview
+        const subInput = document.getElementById('customSubdomain');
+        const subHostSpan = document.querySelector('.sub-host');
+        if (subInput && subHostSpan) {
+            subInput.addEventListener('input', () => {
+                const raw = subInput.value.replace(/[^a-zA-Z0-9-]/g, '');
+                subInput.value = raw;
+                subHostSpan.textContent = raw ? raw.toLowerCase() : 'myserver';
+                refreshPublicUrl(currentSettings());
+            });
+        }
+        document.getElementById('customDomain')?.addEventListener('input', () => refreshPublicUrl(currentSettings()));
 
         function markDirty() {
             try {
@@ -507,7 +550,9 @@
                 if (!data.success) throw new Error(data.error || 'Save failed');
                 original = JSON.stringify({ settings: data.settings || currentSettings() });
                 document.getElementById('saveBar').classList.remove('show');
-                Swal.fire({ icon: 'success', title: 'Website saved!', text: 'Your site updates live at https://promcbot.dev/site/' + guildId, timer: 3000, showConfirmButton: false });
+                const cur = currentSettings();
+                const pubUrl = cur.customDomain ? `https://${cur.customDomain}` : (cur.customSubdomain ? `https://${cur.customSubdomain}.promcbot.dev` : `https://promcbot.dev/site/${guildId}`);
+                Swal.fire({ icon: 'success', title: 'Website saved!', text: `Your site updates live at ${pubUrl}`, timer: 3500, showConfirmButton: false });
                 document.getElementById('previewFrame').src = `/site/${guildId}?v=${Date.now()}`;
                 notifyUserOnce && notifyUserOnce({ type: 'success', title: 'Website updated', message: 'Your Minecraft server website was updated.' }).catch(() => {});
             } catch (err) {

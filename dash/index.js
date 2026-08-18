@@ -272,7 +272,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
     "img-src 'self' data: https://cdn.discordapp.com https://mc-heads.net https://lh3.googleusercontent.com https://media.tenor.com; " +
     "font-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; " +
-    "connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';");
+    "connect-src 'self' https:; frame-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none';");
   next();
 });
 
@@ -1027,7 +1027,7 @@ const WEBSITE_FIELDS = [
   'siteName', 'siteDescription', 'tagline', 'heroTitle', 'heroSubtitle',
   'javaIP', 'javaPort', 'bedrockIP', 'bedrockPort', 'serverType', 'copyIP',
   'logoUrl', 'accentColor', 'template', 'enabled', 'sections',
-  'socials', 'leaderboard', 'news'
+  'socials', 'leaderboard', 'news', 'customDomain', 'customSubdomain'
 ];
 app.get('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
@@ -1074,24 +1074,69 @@ app.post('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], a
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// Custom (sub)domain → guildId resolver (used by /site/:guildId AND custom-domain hosts)
+async function _resolveSiteByHost(host) {
+  try {
+    const hostName = (host || '').toLowerCase().replace(/^www\./, '').split(':')[0];
+    if (!hostName) return null;
+    // Exact customDomain match, e.g. play.myserver.com
+    const byDomain = await WebsiteSettings.findOne({ enabled: true, customDomain: hostName }).lean();
+    if (byDomain) return byDomain.guildId;
+    // Wildcard subdomain match, e.g. mysite.promcbot.dev
+    const sub = process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev';
+    if (hostName.endsWith('.' + sub)) {
+      const subLabel = hostName.slice(0, hostName.length - sub.length - 1);
+      const bySub = await WebsiteSettings.findOne({ enabled: true, customSubdomain: subLabel }).lean();
+      if (bySub) return bySub.guildId;
+    }
+    return null;
+  } catch (_) { return null; }
+}
+
 // Public website (no auth needed — open for everyone)
+// Wildcard host handler: any request that arrives on a custom domain
+// (pointed to this Railway service) is served as that site's public page.
+app.use(async (req, res, next) => {
+  const host = (req.hostname || '').toLowerCase().replace(/^www\./, '');
+  if (!host || host === 'localhost' || host === '127.0.0.1') return next();
+  if (host === (process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev') || host.endsWith('.' + (process.env.SITE_SUBDOMAIN_ROOT || 'promcbot.dev'))) return next();
+  const guildId = await _resolveSiteByHost(host);
+  if (!guildId) return next();
+  try {
+    const settings = await WebsiteSettings.findOne({ guildId }).lean();
+    if (!settings || !settings.enabled) return res.status(404).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
+    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-src 'self'; frame-ancestors 'self';");
+    res.sendFile(path.join(dashDir, 'pages', 'site-view.html'));
+  } catch (_) { next(); }
+});
+
 app.get('/site/:guildId', async (req, res) => {
   try {
-    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    let settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
     if (!settings || !settings.enabled) {
       return res.status(404).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
     }
+    if (settings.customDomain) {
+      res.setHeader('Link', `<https://${settings.customDomain}/site/${settings.guildId}>; rel="canonical"`);
+    }
     // Public pages get a safe, site-scoped CSP (the site owns its own styles/scripts)
-    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-ancestors 'none';");
+    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-src 'self'; frame-ancestors 'self';");
     res.sendFile(path.join(dashDir, 'pages', 'site-view.html'));
   } catch (err) {
     res.status(500).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
   }
 });
-// Public site settings (read-only snapshot for the public page)
-app.get('/api/site/:guildId/settings', async (req, res) => {
+// Public site settings (read-only snapshot for the public page) — also supports the
+// default site URL so custom-domain sites can fetch their data from /api/site/default/settings
+app.get('/api/site/:id/settings', async (req, res) => {
   try {
-    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    let guildId = req.params.id;
+    if (guildId === 'default') {
+      const resolved = await _resolveSiteByHost(req.hostname);
+      if (!resolved) return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
+      guildId = resolved;
+    }
+    const settings = await WebsiteSettings.findOne({ guildId }).lean();
     if (!settings || !settings.enabled) {
       return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
     }
@@ -1112,9 +1157,15 @@ app.get('/api/site/:guildId/settings', async (req, res) => {
   }
 });
 // Public leaderboard data (live from ProMcSecure API — open so the public site can fetch it)
-app.get('/api/site/:guildId/leaderboard', async (req, res) => {
+app.get('/api/site/:id/leaderboard', async (req, res) => {
   try {
-    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    let guildId = req.params.id;
+    if (guildId === 'default') {
+      const resolved = await _resolveSiteByHost(req.hostname);
+      if (!resolved) return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
+      guildId = resolved;
+    }
+    const settings = await WebsiteSettings.findOne({ guildId }).lean();
     if (!settings || !settings.enabled) {
       return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
     }
