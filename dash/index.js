@@ -1316,6 +1316,40 @@ app.get('/api/site/:id/leaderboard', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ── Public tools: MC Server Lookup + Servers Directory ────────────────
+app.get('/mc-lookup', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'mc-lookup.html')));
+app.get('/servers-directory', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers-directory.html')));
+
+// Free public MC server status check (proxy to mcsrvstat.us — no client-side CORS)
+app.get('/api/mc/:addr', async (req, res) => {
+  try {
+    const addr = decodeURIComponent(req.params.addr).trim();
+    if (!addr || addr.length > 120) return res.status(400).json({ ok: false, error: 'Invalid address' });
+    const r = await fetch(`https://api.mcsrvstat.us/3/${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return res.status(400).json({ ok: false, error: 'Lookup failed' });
+    const data = await r.json();
+    // mcsrvstat.us returns {ok: true/false}; we pass data through minus the internal ok flag
+    const { ok, ...rest } = data;
+    if (!ok) return res.json({ ok: false, error: 'SERVER_NOT_FOUND', ...rest });
+    res.json({ ok: true, ...rest });
+  } catch (err) {
+    res.status(502).json({ ok: false, error: 'Status service unavailable' });
+  }
+});
+
+// Public servers directory: all enabled published websites
+app.get('/api/directory', async (req, res) => {
+  try {
+    const servers = await WebsiteSettings.find({ enabled: true })
+      .select('guildId siteName tagline siteDescription javaIP javaPort copyIP accentColor logoUrl updatedAt')
+      .sort({ updatedAt: -1 }).limit(200).lean();
+    res.json({ success: true, count: servers.length, servers });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Minecraft Live Server Status (/info from MC API) ────────────────
 app.get('/api/server/:guildId/mc-status-live', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {

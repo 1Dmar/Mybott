@@ -206,6 +206,46 @@
     'misc.success':       { en: 'Success', ar: 'تم بنجاح', es: 'Éxito' },
     'misc.confirm':       { en: 'Confirm', ar: 'تأكيد', es: 'Confirmar' },
     'misc.cancel':        { en: 'Cancel', ar: 'إلغاء', es: 'Cancelar' },
+
+    // ── Public navbar additions (home)
+    'home.mc_lookup':     { en: 'MC Lookup', ar: 'فحص سيرفر', es: 'Buscar Servidor' },
+    'home.directory':     { en: 'Directory', ar: 'دليل السيرفرات', es: 'Directorio' },
+
+    // ── MC Lookup tool
+    'mc.back_home':       { en: 'Home', ar: 'الرئيسية', es: 'Inicio' },
+    'mc.directory':       { en: 'Server Directory', ar: 'دليل السيرفرات', es: 'Directorio' },
+    'mc.login':           { en: 'Login', ar: 'تسجيل الدخول', es: 'Iniciar Sesión' },
+    'mc.badge':           { en: 'Live Minecraft status — free for everyone', ar: 'حالة سيرفرات ماين كرافت مباشرة — مجانية للجميع', es: 'Estado en vivo — gratis para todos' },
+    'mc.title':           { en: 'Minecraft Server Lookup', ar: 'فحص سيرفر ماين كرافت', es: 'Buscar Servidor Minecraft' },
+    'mc.subtitle':        { en: 'Check any Minecraft server status, player count, MOTD and version instantly — Java & Bedrock.', ar: 'تحقق من حالة أي سيرفر ماين كرافت: عدد اللاعبين، MOTD والإصدار فورًا — جافا وبيدروك.', es: 'Consulta el estado, jugadores, MOTD y versión de cualquier servidor — Java y Bedrock.' },
+    'mc.ph':              { en: 'play.example.com  —  or IP:Port', ar: 'play.example.com  —  أو IP:Port', es: 'play.example.com  —  o IP:Puerto' },
+    'mc.check':           { en: 'Check', ar: 'فحص', es: 'Buscar' },
+    'mc.try':             { en: 'Try:', ar: 'جرب:', es: 'Prueba:' },
+    'mc.checking':        { en: 'Checking server…', ar: 'جارٍ فحص السيرفر…', es: 'Comprobando servidor…' },
+    'mc.net_error':       { en: 'Network error. Please try again.', ar: 'خطأ في الشبكة. حاول مرة أخرى.', es: 'Error de red. Intenta de nuevo.' },
+    'mc.not_found':       { en: 'Server not found', ar: 'لم يتم العثور على السيرفر', es: 'Servidor no encontrado' },
+    'mc.not_found_hint':  { en: 'Make sure the address is correct and the server allows public status queries.', ar: 'تأكد من صحة العنوان وأن السيرفر يسمح بالاستعلام العام.', es: 'Verifica la dirección y que el servidor permita consultas públicas.' },
+    'mc.sample':          { en: 'Sample players', ar: 'لاعبون مظهرون', es: 'Jugadores de muestra' },
+    'mc.players':         { en: 'Players', ar: 'اللاعبون', es: 'Jugadores' },
+    'mc.version':         { en: 'Version', ar: 'الإصدار', es: 'Versión' },
+    'mc.protocol':        { en: 'Protocol', ar: 'البروتوكول', es: 'Protocolo' },
+    'mc.ping':            { en: 'Latency', ar: 'الاستجابة', es: 'Latencia' },
+    'mc.type':            { en: 'Type', ar: 'النوع', es: 'Tipo' },
+    'mc.online':          { en: 'Online', ar: 'متصل', es: 'En línea' },
+    'mc.offline':         { en: 'Offline', ar: 'غير متصل', es: 'Desconectado' },
+    'mc.copy_ip':         { en: 'Copy address', ar: 'نسخ العنوان', es: 'Copiar dirección' },
+    'mc.copied':          { en: 'Copied!', ar: 'تم النسخ!', es: '¡Copiado!' },
+    'mc.footer':          { en: '© ProMcBot — Free Minecraft server tools. Data provided by mcsrvstat.us.', ar: '© ProMcBot — أدوات مجانية لسيرفرات ماين كرافت. البيانات من mcsrvstat.us.', es: '© ProMcBot — Herramientas gratuitas. Datos de mcsrvstat.us.' },
+
+    // ── Servers Directory tool
+    'dir.back_home':      { en: 'Home', ar: 'الرئيسية', es: 'Inicio' },
+    'dir.mc_lookup':      { en: 'MC Lookup', ar: 'فحص سيرفر', es: 'Buscar Servidor' },
+    'dir.login':          { en: 'Login', ar: 'تسجيل الدخول', es: 'Iniciar Sesión' },
+    'dir.title':          { en: 'Minecraft Server Directory', ar: 'دليل سيرفرات ماين كرافت', es: 'Directorio de Servidores Minecraft' },
+    'dir.subtitle':       { en: 'Explore Minecraft servers with beautiful websites, powered by ProMcBot.', ar: 'استكشف سيرفرات ماين كرافت بمواقع جميلة، بقوة ProMcBot.', es: 'Descubre servidores con sitios web hermosos, impulsados por ProMcBot.' },
+    'dir.empty':          { en: 'No servers published yet. Be the first!', ar: 'لم يُنشر أي سيرفر بعد. كن الأول!', es: 'Aún no hay servidores publicados. ¡Sé el primero!' },
+    'dir.visit':          { en: 'Visit website', ar: 'زيارة الموقع', es: 'Visitar sitio' },
+    'dir.footer':         { en: '© ProMcBot — Servers shown here chose to publish their website publicly.', ar: '© ProMcBot — السيرفرات المعروضة اختارت نشر موقعها علنًا.', es: '© ProMcBot — Los servidores mostrados eligieron publicar su sitio.' },
   };
 
   function get(key) {

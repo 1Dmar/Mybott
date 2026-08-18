@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Directory — ProMcBot</title>
+  <meta name="description" content="Discover Minecraft servers with websites powered by ProMcBot.">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #FF512F;
+      --brand-2: #F09819;
+      --bg: #0a0f1e;
+      --card: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --text: #e7ecf5;
+      --text-dim: #8b97b3;
+      --green: #4ade80;
+      --radius: 16px;
+    }
+    [data-theme="light"] {
+      --bg: #f4f7fc;
+      --card: rgba(255,255,255,0.9);
+      --card-border: rgba(15,23,42,0.08);
+      --text: #141c33;
+      --text-dim: #5a6480;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', 'Tajawal', sans-serif;
+      min-height: 100vh;
+    }
+    [dir="rtl"] body { font-family: 'Tajawal', 'Inter', sans-serif; }
+    .glow-orb {
+      position: fixed; border-radius: 50%; filter: blur(120px); opacity: 0.3; pointer-events: none; z-index: 0;
+    }
+    .glow-orb.orb1 { width: 520px; height: 520px; background: #FF512F; top: -140px; left: -140px; }
+    .glow-orb.orb2 { width: 460px; height: 460px; background: #3b82f6; bottom: -160px; right: -120px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; margin-bottom: 40px; }
+    .nav .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 800; font-size: 20px; }
+    .nav .logo img { width: 36px; height: 36px; border-radius: 10px; }
+    .nav nav { display: flex; gap: 18px; align-items: center; }
+    .nav nav a { color: var(--text-dim); text-decoration: none; font-size: 14px; font-weight: 600; }
+    .nav nav a:hover { color: var(--brand); }
+    .btn-home { background: linear-gradient(135deg, #FF512F 0%, #F09819 100%); color: #fff !important; padding: 8px 18px; border-radius: 10px; font-weight: 700; }
+    header.page-head { text-align: center; margin-bottom: 44px; }
+    header.page-head h1 {
+      font-size: clamp(28px, 4.5vw, 46px); font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 0%, #b7c1dc 55%, #FF512F 100%);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      margin-bottom: 10px;
+    }
+    header.page-head p { color: var(--text-dim); font-size: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+    .server-card {
+      background: var(--card); border: 1px solid var(--card-border);
+      border-radius: 22px; padding: 26px; backdrop-filter: blur(18px);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .server-card:hover { transform: translateY(-5px); border-color: rgba(255,81,47,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+    .card-top { display: flex; align-items: center; gap: 14px; }
+    .card-top img { width: 56px; height: 56px; border-radius: 14px; image-rendering: pixelated; border: 1px solid var(--card-border); }
+    .card-top .ph { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,81,47,0.25), rgba(240,152,25,0.25)); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .card-name { font-size: 18px; font-weight: 800; }
+    .card-tagline { color: var(--text-dim); font-size: 13px; margin-top: 2px; }
+    .card-ip {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+      padding: 8px 14px; border-radius: 10px; font-family: monospace; font-size: 13px; color: var(--text-dim);
+    }
+    .card-ip i { color: var(--green); }
+    .card-btn {
+      margin-top: auto; align-self: flex-start;
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      color: #fff; border: none; padding: 10px 20px; border-radius: 12px;
+      font-weight: 700; font-size: 14px; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 7px;
+    }
+    .empty-state { text-align: center; padding: 80px 20px; color: var(--text-dim); }
+    .empty-state i { font-size: 56px; opacity: 0.5; }
+    .empty-state p { margin-top: 14px; font-size: 16px; }
+    footer { text-align: center; padding: 70px 0 34px; color: var(--text-dim); font-size: 13px; position: relative; z-index: 1; }
+    footer a { color: var(--brand); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="glow-orb orb1"></div>
+  <div class="glow-orb orb2"></div>
+
+  <div class="container">
+    <header class="nav">
+      <a href="/" class="logo"><img src="/dashboard/logo.png" alt="ProMcBot"><span>ProMcBot</span></a>
+      <nav>
+        <a href="/" data-i18n="dir.back_home">Home</a>
+        <a href="/mc-lookup" data-i18n="dir.mc_lookup">MC Lookup</a>
+        <a href="/loading-auth" class="btn-home" data-i18n="dir.login">Login</a>
+      </nav>
+    </header>
+
+    <header class="page-head">
+      <h1 data-i18n="dir.title">Minecraft Server Directory</h1>
+      <p data-i18n="dir.subtitle">Explore Minecraft servers with beautiful websites, powered by ProMcBot.</p>
+    </header>
+
+    <div class="grid" id="serversGrid"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <i class='bx bx-package'></i>
+      <p data-i18n="dir.empty">No servers published yet. Be the first!</p>
+    </div>
+  </div>
+
+  <footer>
+    <p data-i18n="dir.footer">© ProMcBot — Servers shown here chose to publish their website publicly.</p>
+  </footer>
+
+  <script src="/i18n.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.__pmc_i18n) { window.__pmc_i18n.initLanguage(); window.__pmc_i18n.applyTranslations(); }
+      try {
+        const res = await fetch('/api/directory');
+        const data = await res.json();
+        const servers = (data && data.success && data.servers) || [];
+        const grid = document.getElementById('serversGrid');
+        const empty = document.getElementById('emptyState');
+        if (!servers.length) { empty.style.display = 'block'; return; }
+        grid.innerHTML = servers.map(s => {
+          const icon = s.logoUrl ? `<img src="${s.logoUrl}" alt="">` : `<div class="ph"><i class='bx bx-globe'></i></div>`;
+          const ip = s.copyIP || s.javaIP || '';
+          const ipChip = ip ? `<span class="card-ip"><i class='bx bx-check-circle'></i>${ip.replace(/</g,'&lt;')}${s.javaPort && s.javaPort !== 25565 ? ':' + s.javaPort : ''}</span>` : '';
+          const tag = s.tagline || s.siteDescription || '';
+          return `<div class="server-card">
+            <div class="card-top">${icon}<div><div class="card-name">${(s.siteName || 'Minecraft Server').replace(/</g,'&lt;')}</div><div class="card-tagline">${tag.replace(/</g,'&lt;')}</div></div></div>
+            ${ipChip}
+            <a class="card-btn" href="/site/${s.guildId}" data-i18n="dir.visit">Visit website <i class='bx bx-link-external'></i></a>
+          </div>`;
+        }).join('');
+        if (window.__pmc_i18n) window.__pmc_i18n.applyTranslations();
+      } catch (e) {
+        document.getElementById('emptyState').style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
