@@ -502,11 +502,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title">Welcome to ProMcBot!</div>
-              <div class="notification-desc">You have no new notifications.</div>
+              <div class="notification-title" data-i18n="not.welcome"><div>
+              <div class="notification-desc" data-i18n="not.empty"><div>
             </div>
           </div>
-          <div class="dropdown-footer">Notifications</div>
+          <div class="dropdown-footer" data-i18n="not.title"><div>
         </div>
       </div>
       <div class="dropdown">
@@ -515,7 +515,7 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName">Loading...</span>
+            <span id="navUserName" data-i18n="pg.loading"><span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
@@ -531,7 +531,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span>Collapse</span>
+        <span data-i18n="nav.collapse"><span>
       </div>
     </div>
   </nav>
@@ -591,10 +591,10 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="serverType">Server Type</label>
+                        <label for="serverType" data-i18n="pg.server_type"></label>
                         <select id="serverType" name="serverType">
-                            <option value="java">Java Edition</option>
-                            <option value="bedrock">Bedrock Edition</option>
+                            <option value="java" data-i18n="pg.java_edition"></option>
+                            <option value="bedrock" data-i18n="pg.bedrock_edition"></option>
                            
                         </select>
                     </div>

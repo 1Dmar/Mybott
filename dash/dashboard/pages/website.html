@@ -154,15 +154,15 @@
                 <div class="dropdown-content notification-dropdown" id="notificationDropdown">
                     <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
                     <div class="notification-item"><div class="notification-icon"><i class='bx bx-info-circle'></i></div>
-                        <div class="notification-content"><div class="notification-title">Welcome to ProMcBot!</div><div class="notification-desc">You have no new notifications.</div></div>
+                        <div class="notification-content"><div class="notification-title" data-i18n="not.welcome"><div><div class="notification-desc" data-i18n="not.empty"><div></div>
                     </div>
-                    <div class="dropdown-footer">Notifications</div>
+                    <div class="dropdown-footer" data-i18n="not.title"><div>
                 </div>
             </div>
             <div class="dropdown">
                 <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
                 <div class="dropdown-content" id="userDropdown">
-                    <div class="dropdown-header"><i class='bx bx-user'></i><span id="navUserName">Loading...</span></div>
+                    <div class="dropdown-header"><i class='bx bx-user'></i><span id="navUserName" data-i18n="pg.loading"><span></div>
                     <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
                     <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
                     <div style="border-top:1px solid var(--border);margin:4px 0"></div>
@@ -174,12 +174,12 @@
     <nav class="sidebar" id="sidebar">
         <div class="menu_content"></div>
         <div class="sidebar-footer">
-            <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span>Collapse</span></div>
+            <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span data-i18n="nav.collapse"><span></div>
         </div>
     </nav>
     <main class="main-content">
         <div class="page-breadcrumb">
-            <a href="/my-servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Website Builder</span>
+            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span>Website Builder</span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-globe'></i></div>
@@ -221,13 +221,13 @@
                 <div class="card-header"><div class="card-icon"><i class='bx bx-info-circle'></i></div>
                     <div><h2 class="card-title">General Info</h2><p class="card-subtitle">Basic identity of your website.</p></div>
                 </div>
-                <div class="form-group"><label class="form-label" for="siteName">Website Name</label>
+                <div class="form-group"><label class="form-label" for="siteName" data-i18n="pg.website_name"></label>
                     <input type="text" id="siteName" class="form-control" placeholder="PixelMC"></div>
-                <div class="form-group"><label class="form-label" for="tagline">Tagline (shown under logo)</label>
+                <div class="form-group"><label class="form-label" for="tagline" data-i18n="pg.tagline"></label>
                     <input type="text" id="tagline" class="form-control" placeholder="The Best Minecraft PvP Network"></div>
-                <div class="form-group"><label class="form-label" for="heroTitle">Hero Title</label>
+                <div class="form-group"><label class="form-label" for="heroTitle" data-i18n="pg.hero_title"></label>
                     <input type="text" id="heroTitle" class="form-control" placeholder="Join the battle. Dominate the arena."></div>
-                <div class="form-group"><label class="form-label" for="heroSubtitle">Hero Subtitle</label>
+                <div class="form-group"><label class="form-label" for="heroSubtitle" data-i18n="pg.hero_subtitle"></label>
                     <input type="text" id="heroSubtitle" class="form-control" placeholder="Practice · Ranked · 24/7 uptime"></div>
             </div>
         </div>
@@ -240,10 +240,10 @@
                 </div>
                 <div class="form-group"><label class="form-label" for="copyIP">Copy IP (shown in "Copy IP" button)</label>
                     <input type="text" id="copyIP" class="form-control" placeholder="play.pixel-mc.net"></div>
-                <div class="form-group"><label class="form-label" for="serverType">Server Type</label>
+                <div class="form-group"><label class="form-label" for="serverType" data-i18n="pg.server_type"></label>
                     <select id="serverType" class="form-control">
-                        <option value="java">Java Edition</option>
-                        <option value="bedrock">Bedrock Edition</option>
+                        <option value="java" data-i18n="pg.java_edition"></option>
+                        <option value="bedrock" data-i18n="pg.bedrock_edition"></option>
                     </select></div>
                 <div class="news-item-grid">
                     <div class="form-group"><label class="form-label" for="javaIP">Java IP</label>
@@ -262,7 +262,7 @@
         <div class="website-section" id="sec-branding">
             <div class="card" style="max-width:720px;">
                 <div class="card-header"><div class="card-icon"><i class='bx bx-paint'></i></div>
-                    <div><h2 class="card-title">Branding</h2><p class="card-subtitle">Logo and accent color of your website.</p></div>
+                    <div><h2 class="card-title" data-i18n="pg.branding"></h2><p class="card-subtitle">Logo and accent color of your website.</p></div>
                 </div>
                 <div class="form-group"><label class="form-label" for="logoUrl">Logo URL (image link)</label>
                     <input type="text" id="logoUrl" class="form-control" placeholder="https://i.ibb.co/.../logo.png"></div>
@@ -380,8 +380,8 @@
 
     <!-- Save Bar -->
     <div class="save-bar" id="saveBar">
-        <span class="save-bar-text">You have unsaved changes.</span>
-        <button class="btn btn-primary" onclick="saveWebsite()">Save Changes</button>
+        <span class="save-bar-text" data-i18n="pg.unsaved"><span>
+        <button class="btn btn-primary" onclick="saveWebsite()" data-i18n="pg.save_changes"><button>
     </div>
 
     <script src="/i18n.js"></script>
@@ -530,7 +530,7 @@
             } else if (label === 'Loaded') {
                 badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-pause-circle"></i> ' + label + ' (OFF — press Save to publish)</span>';
             } else {
-                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-info-circle"></i> Not published yet — fill in the form and press <b>Save</b></span>';
+                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-info-circle"></i> Not published yet — fill in the form and press <b data-i18n="pg.save"></b></span>';
             }
         }
 

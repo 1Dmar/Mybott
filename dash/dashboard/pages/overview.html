@@ -33,15 +33,15 @@
           <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
         <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title" data-i18n="not.title"><span></div>
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title">Welcome to ProMcBot!</div>
-              <div class="notification-desc">You have no new notifications.</div>
+              <div class="notification-title" data-i18n="not.welcome" data-i18n="not.welcome"><div>
+              <div class="notification-desc" data-i18n="not.empty" data-i18n="not.empty"><div>
             </div>
           </div>
-          <div class="dropdown-footer">Notifications</div>
+          <div class="dropdown-footer" data-i18n="not.title" data-i18n="not.title"><div>
         </div>
       </div>
       <div class="dropdown">
@@ -50,12 +50,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName">Loading...</span>
+            <span id="navUserName" data-i18n="pg.loading"><span>
           </div>
-          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
-          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="not.my_profile" data-i18n="not.my_profile"><span></a>
+          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="not.my_servers" data-i18n="not.my_servers"><span></a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="not.logout" data-i18n="not.logout"><span></a>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span>Collapse</span>
+        <span data-i18n="nav.collapse" data-i18n="nav.collapse"><span>
       </div>
     </div>
   </nav>
@@ -75,7 +75,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Overview</span>
+            <a href="/my-servers" data-i18n="not.servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="not.overview" data-i18n="not.overview"><span>
         </div>
         
         <div class="server-page-header">
@@ -83,7 +83,7 @@
                 <span id="serverIconText">...</span>
             </div>
             <div class="server-page-info">
-                <h1 class="server-page-name" id="serverName">Loading Server...</h1>
+                <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server"><h1>
                 <div class="server-page-meta">
                     <div class="bot-status-badge" id="botStatusBadge">
                         <i class='bx bx-loader-alt bx-spin'></i> Loading bot status...
@@ -97,21 +97,21 @@
                 <div class="stat-card-icon blue"><i class='bx bx-group'></i></div>
                 <div>
                     <div class="stat-card-value" id="statMembers">0</div>
-                    <div class="stat-card-label">Members</div>
+                    <div class="stat-card-label" data-i18n="not.members" data-i18n="not.members"><div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-icon green"><i class='bx bx-list-ul'></i></div>
                 <div>
                     <div class="stat-card-value" id="statLogs">0</div>
-                    <div class="stat-card-label">Logs</div>
+                    <div class="stat-card-label" data-i18n="not.logs" data-i18n="not.logs"><div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-card-icon purple"><i class='bx bx-message-rounded-dots'></i></div>
                 <div>
                     <div class="stat-card-value" id="statAR">0</div>
-                    <div class="stat-card-label">Auto Responders</div>
+                    <div class="stat-card-label" data-i18n="not.auto_responders">Auto Responders</div>
                 </div>
             </div>
         </div>
@@ -120,8 +120,8 @@
             <div class="card-header">
                 <div class="card-icon"><i class='bx bx-history'></i></div>
                 <div>
-                    <h2 class="card-title">Recent Activity</h2>
-                    <p class="card-subtitle">Latest logs for this server</p>
+                    <h2 class="card-title" data-i18n="not.recent_activity" data-i18n="not.recent_activity"><h2>
+                    <p class="card-subtitle" data-i18n="not.recent_activity_sub">Latest logs for this server</p>
                 </div>
             </div>
             <div class="timeline" id="recentLogsContainer">
@@ -133,8 +133,8 @@
             <div class="card-header">
                 <div class="card-icon"><i class='bx bx-grid-alt'></i></div>
                 <div>
-                    <h2 class="card-title">Modules</h2>
-                    <p class="card-subtitle">Active features on this server</p>
+                    <h2 class="card-title" data-i18n="not.modules" data-i18n="not.modules"><h2>
+                    <p class="card-subtitle" data-i18n="not.modules_sub">Active features on this server</p>
                 </div>
             </div>
             <div class="modules-grid" id="modulesContainer">
@@ -147,10 +147,10 @@
             <div class="card-header">
                 <div class="card-icon orange"><i class='bx bx-game'></i></div>
                 <div>
-                    <h2 class="card-title">Minecraft Server</h2>
-                    <p class="card-subtitle">Server connection info saved for this Discord server</p>
+                    <h2 class="card-title" data-i18n="not.mc_server">Minecraft Server</h2>
+                    <p class="card-subtitle" data-i18n="not.mc_server_sub">Server connection info saved for this Discord server</p>
                 </div>
-                <a href="/my-servers/1/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> Player Lookup</a>
+                <a href="/my-servers/1/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> <span data-i18n="not.player_lookup">Player Lookup</span></a>
             </div>
             <div class="stat-cards" id="mcInfoContainer">
                 <p style="color: var(--text-muted); padding: 10px;">Loading Minecraft info...</p>
@@ -273,8 +273,8 @@
                     const info = data.info || {};
                     const cfg = data.mcConfig;
                     const connectedBadge = cfg
-                        ? `<span class="bot-status-badge" style="background: var(--success-light); color: var(--success);"><i class='bx bx-check-circle'></i> API linked</span>`
-                        : `<span class="bot-status-badge" style="background: var(--warning-light, rgba(245,158,11,.15)); color: var(--warning, #f59e0b);"><i class='bx bx-unlink'></i> API not linked (/mc-setup)</span>`;
+                        ? `<span class="bot-status-badge" style="background: var(--success-light); color: var(--success);"><i class='bx bx-check-circle'></i> <span data-i18n="not.api_linked">API linked</span></span>`
+                        : `<span class="bot-status-badge" style="background: var(--warning-light, rgba(245,158,11,.15)); color: var(--warning, #f59e0b);"><i class='bx bx-unlink'></i> <span data-i18n="not.api_not_linked">API not linked (/mc-setup)</span></span>`;
                     container.innerHTML = `
                         <div class="stat-card" style="grid-column: 1 / -1;">
                             ${connectedBadge}
@@ -283,28 +283,28 @@
                             <div class="stat-card-icon blue"><i class='bx bx-globe'></i></div>
                             <div>
                                 <div class="stat-card-value">${info.javaIP || '—'}</div>
-                                <div class="stat-card-label">Java IP</div>
+                                <div class="stat-card-label" data-i18n="not.java_ip">Java IP</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-card-icon green"><i class='bx bx-radio'></i></div>
                             <div>
                                 <div class="stat-card-value">${info.javaPort || '—'}</div>
-                                <div class="stat-card-label">Java Port</div>
+                                <div class="stat-card-label" data-i18n="not.java_port">Java Port</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-card-icon purple"><i class='bx bx-grid-alt'></i></div>
                             <div>
                                 <div class="stat-card-value">${info.bedrockIP || '—'}</div>
-                                <div class="stat-card-label">Bedrock IP</div>
+                                <div class="stat-card-label" data-i18n="not.bedrock_ip">Bedrock IP</div>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-card-icon orange"><i class='bx bx-category'></i></div>
                             <div>
                                 <div class="stat-card-value">${(info.serverType || '—').toUpperCase()}</div>
-                                <div class="stat-card-label">Server Type</div>
+                                <div class="stat-card-label" data-i18n="pg.server_type"></div>
                             </div>
                         </div>`;
                 } else {
