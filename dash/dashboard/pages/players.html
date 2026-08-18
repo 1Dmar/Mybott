@@ -140,7 +140,7 @@
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
           Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -240,7 +240,7 @@
             if (!username) return;
             if (!/^[a-zA-Z0-9_]{1,16}$/.test(username)) {
                 Swal.fire('Invalid Username', 'Minecraft usernames are 1-16 characters: letters, numbers, and underscores only.', 'warning');
-                return;
+                throw new Error('Page guard triggered: missing context.');
             }
 
             const resultCard = document.getElementById('playerResultCard');

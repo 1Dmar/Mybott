@@ -812,7 +812,7 @@
             const logs = (logsRes?.success && Array.isArray(logsRes.logs)) ? logsRes.logs : [];
             if (!logs.length) {
                 activityList.innerHTML = '<div class="activity-item"><div class="activity-content"><div class="activity-title">No recent activity</div><div class="activity-time">Actions will appear here as you manage this server</div></div></div>';
-                return;
+                throw new Error('Page guard triggered: missing context.');
             }
             logs.forEach(log => {
                 const when = new Date(log.createdAt);
@@ -867,7 +867,7 @@
                 
                 if (isBlacklisted) {
                     showToast('Cannot save settings: Server is blacklisted', 'error');
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
                 
                 const formData = new FormData(serverSetupForm);
@@ -908,7 +908,7 @@
                 
                 if (isBlacklisted) {
                     showToast('Cannot save options: Server is blacklisted', 'error');
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
                 
                 const formData = new FormData(optionsForm);

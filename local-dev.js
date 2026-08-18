@@ -12,6 +12,7 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
   process.env.BUG_WEBHOOK_ID = process.env.BUG_WEBHOOK_ID || 'dummy';
   process.env.BUG_WEBHOOK_TOKEN = process.env.BUG_WEBHOOK_TOKEN || 'dummy';
   process.env.SESSION_SECRET = process.env.SESSION_SECRET || 'local-dev-secret';
+  process.env.LOCAL_DEV = '1';
   const { app } = require('./dash/index.js');
   app.listen(3999, () => console.log('[local-dev] Dashboard listening on :3999'));
 })().catch(err => { console.error('[local-dev]', err); process.exit(1); });

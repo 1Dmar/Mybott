@@ -35,17 +35,16 @@
         .logo_item {
             display: flex;
             align-items: center;
-            column-gap: 10px;
-            font-size: 22px;
-            font-weight: 500;
-            color: var(--grey-color);
-        }
-        
-        
-        
-        .search_bar {
-            height: 47px;
-            max-width: 430px;
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
             width: 100%;
         }
         
@@ -891,9 +890,6 @@
         
         // Toggle sidebar
         
-            
-        });
-        
         // Collapse sidebar
         collapseBtn.addEventListener('click', () => {
             sidebar.classList.add('auto-close');
@@ -904,21 +900,21 @@
         
         // Expand sidebar
         sidebar.addEventListener('click', (e) => {
-            if (e.target.closest('
-        });
-        
-        // Theme toggle
-        
-            document.
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                ;
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'light');
+            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
+                sidebar.classList.remove('active');
             }
         });
         
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
         // Apply saved theme
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme');

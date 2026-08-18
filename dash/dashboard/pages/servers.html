@@ -794,7 +794,7 @@
 
         if (allGuilds.length === 0) {
           document.getElementById('serversEmpty').style.display = 'flex';
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         renderGuilds(allGuilds);

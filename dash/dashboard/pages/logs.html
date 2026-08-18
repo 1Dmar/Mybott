@@ -107,7 +107,7 @@
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
           Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -123,12 +123,12 @@
 
                 if (!res.ok || !data.success) {
                     container.innerHTML = `<div class="alert alert-danger"><i class='bx bx-error-circle'></i> Error loading logs: ${data.error || 'Unknown error'}</div>`;
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
 
                 if (!data.logs || data.logs.length === 0) {
                     container.innerHTML = `<div class="alert alert-info"><i class='bx bx-info-circle'></i> No logs found for this server.</div>`;
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
 
                 container.innerHTML = '';

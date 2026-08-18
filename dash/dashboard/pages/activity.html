@@ -60,28 +60,25 @@
 
         /* Navbar - Fixed */
 
-        
-
-        .logo_item {
-
-            display: flex;
+        // Expand sidebar
+        sidebar.addEventListener('click', (e) => {
+            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
+                sidebar.classList.remove('active');
+            }
+        });
 
             align-items: center;
 
-            column-gap: 10px;
-
-            font-size: 22px;
-
-            font-weight: 500;
-
-            color: var(--grey-color);
-
-        }
-
-        
-
-        
-
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
         
 
         .search_bar {
@@ -1594,12 +1591,6 @@
 
         
 
-            
-
-        });
-
-        
-
         // Collapse sidebar
 
         collapseBtn.addEventListener('click', () => {
@@ -1619,36 +1610,21 @@
         // Expand sidebar
 
         sidebar.addEventListener('click', (e) => {
-
-            if (e.target.closest('
-
-        });
-
-        
-
-        // Theme toggle
-
-        
-
-            document.
-
-            if (document.body.classList.contains('dark')) {
-
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-
-                ;
-
-            } else {
-
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-
-                localStorage.setItem('theme', 'light');
-
+            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
+                sidebar.classList.remove('active');
             }
-
         });
 
-        
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
 
         // Apply saved theme
 

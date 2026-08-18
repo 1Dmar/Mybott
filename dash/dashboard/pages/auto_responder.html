@@ -147,7 +147,7 @@
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
           Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -179,7 +179,7 @@
                             </div>
                         </div>
                     `;
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
 
                 responders.forEach(r => {

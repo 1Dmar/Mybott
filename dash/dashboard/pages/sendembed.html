@@ -228,7 +228,7 @@
                     err.textContent = 'Unable to load channels: ' + (data.error || 'Bot may be offline');
                     err.style.display = 'block';
                     sel.innerHTML = '<option value="">Failed</option>';
-                    return;
+                    throw new Error('Page guard triggered: missing context.');
                 }
                 err.style.display = 'none';
                 sel.innerHTML = '<option value="">Choose channel…</option>' +

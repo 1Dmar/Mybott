@@ -224,7 +224,10 @@ passport.use(new DiscordStrategy(
 ));
 
 passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
+passport.deserializeUser((user, done) => {
+  if (process.env.LOCAL_DEV === '1') console.log('[auth-debug] deserializeUser:', user ? user.id : null);
+  done(null, user);
+});
 
 // ── Auth Guard Middleware ────────────────────────────────────────────
 // API routes MUST never receive an HTML redirect: fetch() on mobile browsers
@@ -1545,6 +1548,45 @@ app.get('/api/admin/guild/:guildId/roles', isAuthenticated, async (req, res) => 
   }
 });
 
+// ── LOCAL DEVELOPMENT ROUTES (never enabled in production) ─────────────
+// LOCAL_DEV is only set by local-dev.js; Railway production never sets it.
+if (process.env.LOCAL_DEV === '1') {
+  app.get('/__dev-create', (req, res) => {
+    // Create an authenticated session for local UI testing without Discord OAuth.
+    const fakeProfile = {
+      id: process.env.LOCAL_DEV_USER_ID || '123456789012345678',
+      username: 'localdev',
+      discriminator: '0',
+      avatar: null,
+      global_name: 'Local Dev',
+      email: 'dev@example.com',
+      guilds: [
+        { id: process.env.LOCAL_DEV_GUILD_ID || '1059183076636372993', name: 'Test Server', icon: null, permissions: (0x8 | 0x20).toString() }
+      ],
+      lastLogin: Date.now()
+    };
+    req.login(fakeProfile, () => {
+      res.json({ ok: true, user: fakeProfile.id, sid: req.sessionID });
+    });
+  });
+  app.get('/__dev-session', (req, res) => {
+    res.json({
+      sessionLoaded: !!req.session,
+      sid: req.sessionID || null,
+      cookieSid: req.signedCookies && req.signedCookies.sid,
+      user: req.user ? { id: req.user.id, guilds: (req.user.guilds || []).map(g => g.id) } : null,
+      isAuthenticated: req.isAuthenticated(),
+      envSecret: process.env.SESSION_SECRET ? 'env-set' : 'undefined'
+    });
+  });
+  app.get('/__dev-auth-check', (req, res) => {
+    if (req.isAuthenticated()) {
+      return res.json({ authViaMiddleware: true, user: req.user ? { id: req.user.id, guildCount: (req.user.guilds || []).length } : null });
+    }
+    res.status(401).json({ authenticated: false });
+  });
+}
+
 app.use((req, res) => {
   const notFoundPage = path.join(dashDir, '404', 'index.html');
   if (fs.existsSync(notFoundPage)) {
@@ -1557,6 +1599,11 @@ app.use((req, res) => {
 // ════════════════════════════════════════════════════════════════════
 //  EXPORTS
 // ════════════════════════════════════════════════════════════════════
+// Expose dashboard bot clients so security.js can fall back to bot-cache
+// membership checks when Discord OAuth guilds are stale (e.g. new guilds).
+// Global handle so dash/utils/security.js (no direct access to clients)
+// can fall back to bot-cache membership when OAuth guilds are stale.
+global.__dashClients = [client, client1].filter(Boolean);
 module.exports.app    = app;
 module.exports.client  = client;
 module.exports.client1 = client1;

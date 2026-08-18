@@ -262,7 +262,7 @@
       commands.forEach(command => {
         if (!command.type || !command.name) {
           console.error('Missing required fields in command:', command);
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         const card = document.createElement('div');
@@ -347,7 +347,7 @@
       async function updateCommand(command) {
         if (!command.type || !command.name) {
           console.error('Missing required fields:', command);
-          return;
+          throw new Error('Page guard triggered: missing context.');
         }
 
         await fetch('/api/commands', {

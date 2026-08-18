@@ -445,7 +445,11 @@
                 original = JSON.stringify({ settings: s });
             } catch (err) {
                 console.error(err);
-                Swal.fire('Error', `Failed to load website settings: ${err.message}`, 'error');
+                // Even if we cannot load existing settings, the user must still be
+                // able to create and save new ones (stale OAuth guilds, 401/403 etc).
+                original = '{}';
+                Swal.fire({ icon: 'warning', title: 'Could not load existing settings',
+                    text: `${err.message} — you can still fill in the form and save.`, timer: 6000 });
             }
         }
 

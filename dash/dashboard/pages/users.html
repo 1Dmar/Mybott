@@ -300,29 +300,25 @@
         }
 
         
-
-        .stat-description {
-
-            font-size: 0.95rem;
-
+        // Expand sidebar
+        sidebar.addEventListener('click', (e) => {
+            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
+                sidebar.classList.remove('active');
+            }
+        });
             color: var(--text);
 
             line-height: 1.5;
-
-        }
-
-        
-
-        .info-grid {
-
-            display: grid;
-
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-
-            gap: 20px;
-
-            margin-top: 30px;
-
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
         }
 
         
@@ -1246,8 +1242,7 @@
 
                 showError();
 
-                return;
-
+                throw new Error('Page guard triggered: missing context.');
             }
 
             
@@ -1306,12 +1301,6 @@
 
         
 
-            
-
-        });
-
-        
-
         // Collapse sidebar
 
         collapseBtn.addEventListener('click', () => {
@@ -1331,36 +1320,21 @@
         // Expand sidebar
 
         sidebar.addEventListener('click', (e) => {
-
-            if (e.target.closest('
-
-        });
-
-        
-
-        // Theme toggle
-
-        
-
-            document.
-
-            if (document.body.classList.contains('dark')) {
-
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-
-                ;
-
-            } else {
-
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-
-                localStorage.setItem('theme', 'light');
-
+            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
+                sidebar.classList.remove('active');
             }
-
         });
 
-        
+// Theme toggle
+        darkLight.addEventListener('click', () => {
+            if (document.body.classList.contains('dark')) {
+                darkLight.classList.replace('bx-sun', 'bx-moon');
+                localStorage.setItem('theme', 'light');
+            } else {
+                darkLight.classList.replace('bx-moon', 'bx-sun');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
 
         // Apply saved theme
 
