@@ -121,6 +121,7 @@ html[dir="rtl"] .page-breadcrumb { direction: rtl; }
 html[dir="rtl"] .user-dropdown { right: auto; left: 0; }
 html[dir="rtl"] .dropdown-content { right: auto; left: 0; }
 html[dir="rtl"] .navbar_content .user-dropdown { right: auto; left: 0; }
+html[dir="rtl"] .save-bar { right: auto; left: 24px; }
 @media screen and (max-width: 992px) {
     html[dir="rtl"] .sidebar { transform: translateX(100%); }
     html[dir="rtl"] .sidebar.active { transform: translateX(0); }
