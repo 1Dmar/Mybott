@@ -58,6 +58,7 @@ const Command        = require('../bot/Models/Command');
 const GuildSettings  = require('../bot/Models/GuildSettings');
 const WelcomeChannel = require('../bot/Models/WelcomeChannel');
 const UserProfile    = require('../bot/Models/UserProfile');
+const WebsiteSettings = require('../bot/Models/WebsiteSettings');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -376,7 +377,7 @@ app.get('/my-servers/:guildId/welcome',        ...serveServerPage('welcome.html'
 app.get('/my-servers/:guildId/members',        ...serveServerPage('members.html'));
 app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html'));
 app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
-
+app.get('/my-servers/:guildId/website',        ...serveServerPage('website.html'));
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 // Note: these routes lack guildId, so access relies on isAuthenticated only
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -1007,6 +1008,119 @@ app.get('/api/server/:guildId/player/:username', [isAuthenticated, verifyGuildAc
   }
 });
 
+// ════════════════════════════════════════════════════════════════════
+//  SERVER WEBSITE BUILDER (MC server public websites)
+// ════════════════════════════════════════════════════════════════════
+// Website settings — read (dashboard editor)
+const WEBSITE_FIELDS = [
+  'siteName', 'siteDescription', 'tagline', 'heroTitle', 'heroSubtitle',
+  'javaIP', 'javaPort', 'bedrockIP', 'bedrockPort', 'serverType', 'copyIP',
+  'logoUrl', 'accentColor', 'template', 'enabled', 'sections',
+  'socials', 'leaderboard', 'news'
+];
+app.get('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    res.json({ success: true, settings: settings || null });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// Website settings — write (dashboard editor)
+app.post('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const sanitized = pick(req.body || {}, WEBSITE_FIELDS);
+    if (sanitized.news && Array.isArray(sanitized.news)) {
+      sanitized.news = sanitized.news
+        .filter(n => n && typeof n === 'object')
+        .map(n => ({
+          title: String(n.title || '').slice(0, 200),
+          body: String(n.body || '').slice(0, 2000),
+          tag: String(n.tag || 'Update').slice(0, 40),
+          date: n.date ? new Date(n.date) : new Date(),
+        }))
+        .slice(0, 20);
+    }
+    if (sanitized.sections && typeof sanitized.sections === 'object') {
+      sanitized.sections = pick(sanitized.sections, ['showLeaderboard', 'showPlayers', 'showNews', 'showDiscord']);
+    }
+    if (sanitized.socials && typeof sanitized.socials === 'object') {
+      sanitized.socials = pick(sanitized.socials, ['discord', 'twitter', 'youtube', 'tiktok']);
+    }
+    if (sanitized.leaderboard && typeof sanitized.leaderboard === 'object') {
+      sanitized.leaderboard = pick(sanitized.leaderboard, ['title', 'metric', 'label']);
+    }
+    sanitized.updatedAt = new Date();
+    const settings = await WebsiteSettings.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      { $set: sanitized },
+      { upsert: true, new: true }
+    );
+    try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated server website' }); } catch (_) {}
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Website saved', message: `Your server website at /site/${req.params.guildId} was updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    res.json({ success: true, settings });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// Public website (no auth needed — open for everyone)
+app.get('/site/:guildId', async (req, res) => {
+  try {
+    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    if (!settings || !settings.enabled) {
+      return res.status(404).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
+    }
+    // Public pages get a safe, site-scoped CSP (the site owns its own styles/scripts)
+    res.set('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://unpkg.com https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; connect-src 'self' https:; frame-ancestors 'none';");
+    res.sendFile(path.join(dashDir, 'pages', 'site-view.html'));
+  } catch (err) {
+    res.status(500).sendFile(path.join(dashDir, 'pages', 'site-offline.html'));
+  }
+});
+// Public site settings (read-only snapshot for the public page)
+app.get('/api/site/:guildId/settings', async (req, res) => {
+  try {
+    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    if (!settings || !settings.enabled) {
+      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
+    }
+    // Strip internal fields — public page only needs display data
+    const safe = {
+      siteName: settings.siteName, tagline: settings.tagline,
+      heroTitle: settings.heroTitle, heroSubtitle: settings.heroSubtitle,
+      copyIP: settings.copyIP, javaIP: settings.javaIP, javaPort: settings.javaPort,
+      bedrockIP: settings.bedrockIP, bedrockPort: settings.bedrockPort,
+      serverType: settings.serverType, logoUrl: settings.logoUrl,
+      accentColor: settings.accentColor, template: settings.template,
+      sections: settings.sections, leaderboard: settings.leaderboard,
+      socials: settings.socials, news: settings.news,
+    };
+    res.json({ success: true, settings: safe });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+// Public leaderboard data (live from ProMcSecure API — open so the public site can fetch it)
+app.get('/api/site/:guildId/leaderboard', async (req, res) => {
+  try {
+    const settings = await WebsiteSettings.findOne({ guildId: req.params.guildId }).lean();
+    if (!settings || !settings.enabled) {
+      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND' });
+    }
+    let lb = [];
+    try {
+      const data = await McApi.getLeaderboard(req.params.guildId);
+      if (Array.isArray(data)) lb = data;
+      else if (data && Array.isArray(data.players)) lb = data.players;
+      else if (data && Array.isArray(data.leaderboard)) lb = data.leaderboard;
+    } catch (_) { /* no MC API config → show empty leaderboard */ }
+    const metric = (settings.leaderboard && settings.leaderboard.metric) || 'elo';
+    const sorted = lb.slice().sort((a, b) => (Number(b[metric]) || 0) - (Number(a[metric]) || 0)).slice(0, 50);
+    res.json({ success: true, metric, leaderboard: sorted, label: (settings.leaderboard && settings.leaderboard.label) || 'ELO' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 // ── Minecraft Live Server Status (/info from MC API) ────────────────
 app.get('/api/server/:guildId/mc-status-live', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {

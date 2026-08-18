@@ -90,6 +90,7 @@
           { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
           { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
           { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'MC Players' },
+          { href: `/my-servers/${guildId}/website`,        icon: 'bx-globe',       text: 'Website' },
           { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
         ]
       },

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="siteTitle">Loading...</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Orbitron:wght@500;700;900&display=swap' rel='stylesheet'>
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-2: #1a2235;
+            --border: rgba(255,255,255,0.08);
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --accent: #4070f4;
+            --accent-glow: rgba(64,112,244,0.35);
+            --gold: #fbbf24;
+            --radius: 14px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            line-height: 1.6;
+        }
+        .container { max-width: 1150px; margin: 0 auto; padding: 0 20px; }
+
+        /* ── Header ─────────────────────────────────── */
+        .site-header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10,14,23,0.85);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+        }
+        .header-inner {
+            display: flex; align-items: center; gap: 14px;
+            padding: 12px 0;
+        }
+        .site-logo {
+            width: 42px; height: 42px; border-radius: 10px; object-fit: cover;
+            border: 2px solid var(--accent);
+        }
+        .logo-placeholder {
+            width: 42px; height: 42px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #06b6d4);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 18px; color: white;
+        }
+        .brand-name { font-weight: 800; font-size: 20px; letter-spacing: 1.5px; font-family: 'Orbitron', sans-serif; }
+        .brand-tagline { font-size: 11px; color: var(--text-muted); margin-top: -3px; }
+        .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .social-btn {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 17px; text-decoration: none;
+            transition: .2s;
+        }
+        .social-btn:hover { color: var(--accent); border-color: var(--accent); }
+        .copy-ip-btn {
+            padding: 9px 18px; border-radius: 10px;
+            background: var(--accent); color: white; border: none;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transition: .2s;
+        }
+        .copy-ip-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 22px var(--accent-glow); }
+        .copy-ip-btn.copied { background: #16a34a; }
+
+        /* ── Hero ───────────────────────────────────── */
+        .hero {
+            padding: 70px 0 50px;
+            background:
+                radial-gradient(ellipse at 20% 0%, var(--accent-glow), transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(6,182,212,0.15), transparent 50%);
+        }
+        .hero-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(30px, 5vw, 54px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+        .hero-title .accent { color: var(--accent); }
+        .hero-subtitle { color: var(--text-muted); font-size: 17px; max-width: 600px; }
+        .hero-badges { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+        .hero-badge {
+            padding: 8px 16px; border-radius: 999px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            font-size: 13px; font-weight: 600;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .hero-badge i { color: var(--accent); }
+
+        /* ── Leaderboard ────────────────────────────── */
+        section { padding: 48px 0; }
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px; font-weight: 700; margin-bottom: 6px;
+        }
+        .section-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 26px; }
+
+        .podium {
+            display: grid; grid-template-columns: 1fr 1.1fr 1fr; gap: 16px;
+            align-items: end; margin-bottom: 26px;
+        }
+        .podium-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px; text-align: center;
+        }
+        .podium-card.winner {
+            border-color: var(--gold);
+            box-shadow: 0 8px 30px rgba(251,191,36,0.15);
+            transform: translateY(-10px);
+        }
+        .podium-avatar {
+            width: 88px; height: 88px; margin: 0 auto 12px;
+            image-rendering: pixelated;
+        }
+        .podium-rank {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--surface-2); color: var(--text-muted);
+            font-size: 13px; font-weight: 800; margin-bottom: 8px;
+        }
+        .podium-card.winner .podium-rank { background: var(--gold); color: #0a0e17; }
+        .podium-name { font-weight: 700; font-size: 17px; margin-bottom: 2px; }
+        .podium-score {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px; font-weight: 900; color: var(--accent); margin: 8px 0;
+        }
+        .podium-card.winner .podium-score { color: var(--gold); }
+        .podium-stats {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+            font-size: 11px; color: var(--text-muted); margin-top: 12px;
+            border-top: 1px solid var(--border); padding-top: 10px;
+        }
+        .podium-stats b { display: block; color: var(--text); font-size: 13px; }
+
+        .lb-table {
+            width: 100%; background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+        }
+        .lb-table th {
+            text-align: left; padding: 12px 16px; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted);
+            background: var(--surface-2); border-bottom: 1px solid var(--border);
+        }
+        .lb-table td {
+            padding: 11px 16px; font-size: 14px; border-bottom: 1px solid var(--border);
+        }
+        .lb-table tr:last-child td { border-bottom: none; }
+        .lb-table .score { font-weight: 800; color: var(--accent); font-family: 'Orbitron', sans-serif; }
+        .lb-table img { width: 28px; height: 28px; vertical-align: middle; image-rendering: pixelated; margin-right: 10px; }
+
+        .lb-empty {
+            text-align: center; padding: 36px; color: var(--text-muted);
+            background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius);
+        }
+
+        /* ── News ───────────────────────────────────── */
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .news-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+        }
+        .news-tag {
+            display: inline-block; padding: 4px 10px; border-radius: 999px;
+            background: var(--accent); color: white; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+        }
+        .news-title { font-weight: 700; font-size: 17px; margin-bottom: 8px; }
+        .news-body { color: var(--text-muted); font-size: 14px; white-space: pre-line; }
+        .news-date { color: var(--text-muted); font-size: 12px; margin-top: 12px; }
+
+        /* ── Discord CTA ────────────────────────────── */
+        .discord-cta {
+            background: linear-gradient(135deg, #5865f2 0%, #7c3aed 100%);
+            border-radius: 18px; padding: 44px 30px; text-align: center;
+            margin-top: 16px;
+        }
+        .discord-cta h3 { font-family: 'Orbitron', sans-serif; font-size: 26px; margin-bottom: 10px; }
+        .discord-cta p { opacity: 0.9; margin-bottom: 22px; }
+        .discord-cta .cta-btn {
+            padding: 13px 30px; border-radius: 12px; background: white;
+            color: #5865f2; font-weight: 800; font-size: 15px; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 10px;
+        }
+
+        /* ── Footer ─────────────────────────────────── */
+        .site-footer {
+            border-top: 1px solid var(--border); padding: 28px 0;
+            color: var(--text-muted); font-size: 13px; text-align: center;
+        }
+        .site-footer a { color: var(--accent); text-decoration: none; }
+
+        /* ── Loading & responsive ───────────────────── */
+        .site-loader { text-align: center; padding: 120px 20px; color: var(--text-muted); }
+        .site-loader i { font-size: 40px; animation: spin 1s linear infinite; display: block; margin-bottom: 14px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .podium { grid-template-columns: 1fr; }
+            .podium-card.winner { transform: none; }
+            .header-inner { flex-wrap: wrap; }
+            .header-right { width: 100%; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+    <div id="siteLoader" class="site-loader"><i class='bx bx-loader-alt'></i>Loading site...</div>
+    <div id="siteContent" style="display:none;"></div>
+
+    <script>
+    (function () {
+        const guildId = window.location.pathname.split('/').pop();
+        const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+        async function load() {
+            const res = await fetch('/api/site/' + guildId + '/settings');
+            if (!res.ok) throw new Error('Site not found');
+            const s = (await res.json()).settings || {};
+            const lbRes = await fetch('/api/site/' + guildId + '/leaderboard');
+            const data = lbRes.ok ? await lbRes.json() : { leaderboard: [], label: 'ELO', metric: 'elo' };
+            render(data, s);
+        }
+
+        function render(data, s) {
+            s = s || {};
+            const accent = (s.accentColor || '#4070f4').match(/^#[0-9a-f]{6}$/i) ? s.accentColor : '#4070f4';
+            document.documentElement.style.setProperty('--accent', accent);
+            document.documentElement.style.setProperty('--accent-glow', accent + '59');
+
+            document.title = (s.siteName || 'Minecraft Server') + ' — Official Website';
+            const showLB = s.sections ? s.sections.showLeaderboard !== false : true;
+            const showNews = s.sections ? s.sections.showNews !== false : true;
+            const showDiscord = s.sections ? s.sections.showDiscord !== false : true;
+
+            const lb = data.leaderboard || [];
+            const label = esc(data.label || 'ELO');
+            const metrics = ['wins','losses','kills','deaths','streak'];
+
+            let podiumHtml = '';
+            if (lb.length >= 1) {
+                const order = lb.length >= 3 ? [1, 0, 2] : (lb.length === 2 ? [0, 1] : [0]);
+                podiumHtml = '<div class="podium">' + order.map(i => {
+                    const p = lb[i]; const name = esc(p.username || p.player || 'Unknown');
+                    const skin = 'https://mc-heads.net/body/' + name;
+                    const score = Number(p[data.metric] || p.elo || p.kills || 0);
+                    return `<div class="podium-card ${i === 0 ? 'winner' : ''}">
+                        <div class="podium-rank">${i === 0 ? '👑 1' : '#' + (i + 1)}</div>
+                        <img class="podium-avatar" src="${skin}" alt="${name}" onerror="this.src='https://mc-heads.net/head/Steve'">
+                        <div class="podium-name">${name}</div>
+                        <div class="podium-score">${score.toLocaleString()}</div>
+                        <div class="podium-stats">${metrics.map(m => `<div>${Number(p[m] || 0)}<b>${m}</b></div>`).join('')}</div>
+                    </div>`;
+                }).join('') + '</div>';
+            }
+
+            let tableHtml = '';
+            if (lb.length > 3) {
+                tableHtml = `<table class="lb-table">
+                    <thead><tr><th>Rank</th><th>Player</th><th>${label}</th>${metrics.map(m => `<th>${m}</th>`).join('')}</tr></thead>
+                    <tbody>${lb.slice(3, 20).map((p, i) => {
+                        const name = esc(p.username || p.player || 'Unknown');
+                        return `<tr><td>#${i + 4}</td><td><img src="https://mc-heads.net/head/${name}" onerror="this.src='https://mc-heads.net/head/Steve'">${name}</td>
+                        <td class="score">${Number(p[data.metric] || p.elo || 0).toLocaleString()}</td>
+                        ${metrics.map(m => `<td>${Number(p[m] || 0).toLocaleString()}</td>`).join('')}</tr>`;
+                    }).join('')}</tbody></table>`;
+            }
+
+            let newsHtml = '';
+            if (showNews && s.news && s.news.length) {
+                newsHtml = `<section>
+                    <div class="container">
+                        <div class="section-title">Latest News</div>
+                        <div class="section-sub">Updates &amp; announcements from the server.</div>
+                        <div class="news-grid">${s.news.map(n => `
+                            <div class="news-card">
+                                <span class="news-tag">${esc(n.tag || 'Update')}</span>
+                                <div class="news-title">${esc(n.title)}</div>
+                                <div class="news-body">${esc(n.body)}</div>
+                                <div class="news-date">${n.date ? new Date(n.date).toLocaleDateString() : ''}</div>
+                            </div>`).join('')}</div>
+                    </div>
+                </section>`;
+            }
+
+            let discordHtml = '';
+            if (showDiscord) {
+                discordHtml = `<section><div class="container">
+                    <div class="discord-cta">
+                        <h3>Join Our Community</h3>
+                        <p>Chat with players, get support &amp; stay updated on events.</p>
+                        <a class="cta-btn" href="${esc(s.socials?.discord || '#')}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i> Join Discord</a>
+                    </div>
+                </div></section>`;
+            }
+
+            let socials = (s.socials || {});
+            let socialHtml = '';
+            if (socials.discord) socialHtml += `<a class="social-btn" href="${esc(socials.discord)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i></a>`;
+            if (socials.twitter) socialHtml += `<a class="social-btn" href="${esc(socials.twitter)}" target="_blank" rel="noopener"><i class='bx bxl-twitter'></i></a>`;
+            if (socials.youtube) socialHtml += `<a class="social-btn" href="${esc(socials.youtube)}" target="_blank" rel="noopener"><i class='bx bxl-youtube'></i></a>`;
+            if (socials.tiktok) socialHtml += `<a class="social-btn" href="${esc(socials.tiktok)}" target="_blank" rel="noopener"><i class='bx bxl-tiktok'></i></a>`;
+
+            const ip = esc(s.copyIP || s.javaIP || 'play.example.net');
+            const logoHtml = s.logoUrl
+                ? `<img class="site-logo" src="${esc(s.logoUrl)}" alt="logo" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'logo-placeholder',textContent:'${esc((s.siteName||'MC').charAt(0))}'}))">`
+                : `<div class="logo-placeholder">${esc((s.siteName || 'MC').charAt(0))}</div>`;
+
+            document.getElementById('siteContent').innerHTML = `
+                <header class="site-header"><div class="container header-inner">
+                    ${logoHtml}
+                    <div><div class="brand-name">${esc(s.siteName || 'Minecraft Server')}</div>
+                    <div class="brand-tagline">${esc(s.tagline || '')}</div></div>
+                    <div class="header-right">${socialHtml}
+                        <button class="copy-ip-btn" id="copyIpBtn"><i class='bx bx-copy'></i> <span id="copyIpText">${ip}</span></button>
+                    </div>
+                </div></header>
+
+                <div class="hero"><div class="container">
+                    <h1 class="hero-title">${esc(s.heroTitle || 'The Ultimate Minecraft Experience')}</h1>
+                    <p class="hero-subtitle">${esc(s.heroSubtitle || 'Join thousands of players. Compete. Dominate. Become a legend.')}</p>
+                    <div class="hero-badges">
+                        <span class="hero-badge"><i class='bx bx-world'></i> ${esc(s.serverType || 'Java')} Edition</span>
+                        <span class="hero-badge"><i class='bx bx-chip'></i> ${ip}</span>
+                        ${s.javaPort && s.javaPort !== 25565 ? `<span class="hero-badge"><i class='bx bx-transfer'></i> Port ${esc(s.javaPort)}</span>` : ''}
+                    </div>
+                </div></div>
+
+                ${showLB ? `<section>
+                    <div class="container">
+                        <div class="section-title">${esc((s.leaderboard && s.leaderboard.title) || 'Top Players')}</div>
+                        <div class="section-sub">Ranked by ${label} — live from the server.</div>
+                        ${podiumHtml}
+                        ${tableHtml || (!lb.length ? '<div class="lb-empty"><i class="bx bx-trophy" style="font-size:30px;margin-bottom:10px;display:block;"></i>Leaderboard data will appear once the Minecraft server API is configured.</div>' : '')}
+                    </div>
+                </section>` : ''}
+
+                ${newsHtml}
+                ${discordHtml}
+
+                <footer class="site-footer"><div class="container">
+                    Powered by <a href="https://promcbot.dev" target="_blank" rel="noopener">ProMcBot</a> &middot; Server ID: ${esc(guildId)}
+                </div></footer>
+            `;
+
+            document.getElementById('siteLoader').style.display = 'none';
+            document.getElementById('siteContent').style.display = 'block';
+
+            const copyBtn = document.getElementById('copyIpBtn');
+            copyBtn.addEventListener('click', () => {
+                navigator.clipboard.writeText(ip).then(() => {
+                    copyBtn.classList.add('copied');
+                    document.getElementById('copyIpText').textContent = 'Copied!';
+                    setTimeout(() => { copyBtn.classList.remove('copied'); document.getElementById('copyIpText').textContent = ip; }, 2000);
+                }).catch(() => {});
+            });
+        }
+
+        // Try to hydrate settings if injected by the server (keeps public route fast & private)
+        load().catch(() => {
+            document.getElementById('siteLoader').innerHTML = '<i class="bx bx-error-circle"></i>This site is offline or does not exist.';
+        });
+    })();
+    </script>
+</body>
+</html>
