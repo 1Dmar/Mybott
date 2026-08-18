@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile — ProMcBot</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #4070f4; --primary-glow: rgba(64,112,244,0.45);
+            --bg: #0a0e17; --card: #111827; --card-2: #0f1522;
+            --border: rgba(255,255,255,0.08); --text: #f1f5f9; --text-muted: #94a3b8;
+            --success: #10B981; --danger: #ef4444;
+        }
+        body {
+            min-height: 100vh; background: var(--bg); color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex; flex-direction: column; align-items: center; padding: 32px 16px 60px;
+        }
+        .lang-wrap { position: fixed; top: 18px; right: 18px; z-index: 20; }
+        html[dir="rtl"] .lang-wrap { right: auto; left: 18px; }
+        .lang-select {
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border);
+            color: var(--text); border-radius: 10px; padding: 6px 28px 6px 12px; font-size: 13px; font-weight: 600;
+            cursor: pointer; outline: none; font-family: inherit;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a5b4c8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 8px center;
+        }
+        html[dir="rtl"] .lang-select { background-position: left 8px center; padding: 6px 12px 6px 28px; }
+        .lang-select option { background: #1e2433; color: var(--text); }
+
+        .container { width: 100%; max-width: 640px; }
+
+        /* Loading / Error states */
+        .state-box { text-align: center; padding: 70px 24px; }
+        .state-box i { font-size: 52px; color: var(--text-muted); margin-bottom: 18px; display: block; }
+        .state-box h2 { font-size: 21px; margin-bottom: 8px; }
+        .state-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 22px; }
+        .spinner { width: 46px; height: 46px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Profile card */
+        .profile-card {
+            position: relative; border-radius: 24px; overflow: hidden;
+            background: var(--card); border: 1px solid var(--border);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+        }
+        .banner {
+            height: 170px; position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #1e1b4b 0%, #311026 45%, #4070f4 130%);
+        }
+        .banner img.banner-img { width: 100%; height: 100%; object-fit: cover; }
+        .banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.55)); }
+        .banner-glow {
+            position: absolute; top: -60px; right: -40px; width: 220px; height: 220px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(64,112,244,0.5) 0%, transparent 70%); filter: blur(6px);
+        }
+        .avatar-wrap { position: relative; margin: -58px 28px 0; width: 116px; height: 116px; }
+        .avatar-ring {
+            width: 100%; height: 100%; border-radius: 50%; padding: 4px;
+            background: linear-gradient(135deg, #4070f4, #a855f7, #ec4899);
+            box-shadow: 0 0 32px var(--primary-glow);
+            animation: glow-pulse 2.6s ease-in-out infinite;
+        }
+        @keyframes glow-pulse { 50% { box-shadow: 0 0 44px var(--primary-glow), 0 0 80px rgba(168,85,247,0.25); } }
+        .avatar-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid var(--card); display: block; }
+        .online-dot {
+            position: absolute; bottom: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%;
+            background: var(--success); border: 4px solid var(--card); box-shadow: 0 0 14px var(--success);
+        }
+
+        .profile-body { padding: 16px 28px 28px; }
+        .name-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+        .user-name { font-size: 25px; font-weight: 800; letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+        .name-row .tag { color: var(--text-muted); font-size: 14px; font-weight: 600; margin-left: 2px; }
+        html[dir="rtl"] .name-row .tag { margin-left: 0; margin-right: 2px; }
+        .custom-status {
+            display: inline-block; margin-top: 10px; padding: 5px 14px; border-radius: 999px;
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+            color: var(--text-muted); font-size: 12.5px; font-weight: 500;
+        }
+        .uid { color: var(--text-muted); font-size: 12.5px; font-family: monospace; margin-top: 12px; }
+
+        .follow-btn {
+            padding: 11px 26px; border-radius: 999px; border: none; cursor: pointer;
+            font-size: 14px; font-weight: 700; font-family: inherit;
+            background: linear-gradient(135deg, #4070f4, #a855f7); color: white;
+            box-shadow: 0 8px 26px var(--primary-glow); transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .follow-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 34px var(--primary-glow); }
+        .follow-btn.following { background: rgba(255,255,255,0.08); box-shadow: none; border: 1px solid var(--border); }
+        .follow-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
+        .stat-chip {
+            text-align: center; padding: 16px 8px; border-radius: 16px;
+            background: var(--card-2); border: 1px solid var(--border);
+        }
+        .stat-chip .num { font-size: 21px; font-weight: 800; display: block; color: var(--text); }
+        .stat-chip .lbl { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; margin-top: 3px; display: block; }
+
+        .profile-footer {
+            margin-top: 22px; text-align: center;
+        }
+        .profile-footer a {
+            color: var(--text-muted); font-size: 13px; text-decoration: none; font-weight: 600;
+        }
+        .profile-footer a:hover { color: var(--primary); }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 480px) {
+            .avatar-wrap { margin: -58px 18px 0; width: 100px; height: 100px; }
+            .profile-body { padding: 14px 18px 24px; }
+            .user-name { font-size: 21px; }
+            .banner { height: 140px; }
+            .stats-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .stat-chip { padding: 12px 6px; }
+            .stat-chip .num { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="lang-wrap">
+        <select class="lang-select" onchange="window.__pmc_i18n && window.__pmc_i18n.setLanguage(this.value)">
+            <option value="en">🇬🇧 EN</option>
+            <option value="ar">🇸🇦 AR</option>
+            <option value="es">🇪🇸 ES</option>
+        </select>
+    </div>
+
+    <div class="container" id="app">
+        <!-- Loading -->
+        <div id="stateLoading" class="state-box">
+            <div class="spinner"></div>
+            <h2 data-i18n="up.loading">Loading profile…</h2>
+        </div>
+
+        <!-- Not found -->
+        <div id="stateNotFound" class="state-box hidden">
+            <i class='bx bx-user-x'></i>
+            <h2 data-i18n="up.not_found">User not found</h2>
+            <p data-i18n="up.not_found_sub">This Discord account could not be resolved.</p>
+            <a class="follow-btn" href="/" data-i18n="up.view_dashboard">Visit ProMcBot Dashboard</a>
+        </div>
+
+        <!-- Profile -->
+        <div id="profileCard" class="profile-card hidden">
+            <div class="banner" id="banner">
+                <img class="banner-img hidden" id="bannerImg" alt="banner">
+                <div class="banner-glow"></div>
+            </div>
+            <div class="avatar-wrap">
+                <div class="avatar-ring"><img id="avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="avatar"></div>
+                <div class="online-dot" title="Connected"></div>
+            </div>
+            <div class="profile-body">
+                <div class="name-row">
+                    <div>
+                        <span class="user-name"><span id="userName">—</span></span>
+                        <span class="tag" id="userTag"></span>
+                    </div>
+                    <button class="follow-btn hidden" id="followBtn">
+                        <i class='bx bx-user-plus'></i> <span data-i18n="up.follow">Follow</span>
+                    </button>
+                </div>
+                <div class="custom-status hidden" id="customStatus"></div>
+                <div class="uid">ID: <span id="userIdSpan">—</span></div>
+                <div class="stats-row">
+                    <div class="stat-chip">
+                        <span class="num" id="followersCount">0</span>
+                        <span class="lbl" data-i18n="up.followers">Followers</span>
+                    </div>
+                    <div class="stat-chip">
+                        <span class="num" id="followingCount">0</span>
+                        <span class="lbl" data-i18n="up.following">Following</span>
+                    </div>
+                    <div class="stat-chip">
+                        <span class="num" id="planChip" style="color:var(--success)">✓</span>
+                        <span class="lbl" data-i18n="up.status">Status</span>
+                    </div>
+                </div>
+                <div class="profile-footer">
+                    <a href="/dashboard" data-i18n="up.view_dashboard">Visit ProMcBot Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/i18n.js"></script>
+    <script>
+        if (window.__pmc_i18n) window.__pmc_i18n.initLanguage();
+
+        const userId = (location.pathname.match(/^\/u\/(\d{15,22})/) || [])[1];
+        const $ = id => document.getElementById(id);
+
+        async function load() {
+            try {
+                const resp = await fetch(`/api/u/${userId}`, { credentials: 'same-origin' });
+                if (!resp.ok) { $('stateLoading').classList.add('hidden'); $('stateNotFound').classList.remove('hidden'); return; }
+                const d = await resp.json();
+                if (!d.success) { $('stateLoading').classList.add('hidden'); $('stateNotFound').classList.remove('hidden'); return; }
+
+                $('stateLoading').classList.add('hidden');
+                $('profileCard').classList.remove('hidden');
+
+                $('avatar').src = d.avatar;
+                $('userName').textContent = d.globalName;
+                $('userTag').textContent = d.discriminator && d.discriminator !== '0' ? '#' + d.discriminator : '@' + d.username;
+                $('userIdSpan').textContent = d.userId;
+                $('followersCount').textContent = d.followers.toLocaleString();
+                $('followingCount').textContent = d.following.toLocaleString();
+
+                if (d.banner) {
+                    const img = $('bannerImg');
+                    img.src = d.banner; img.classList.remove('hidden');
+                } else if (d.bannerAccent) {
+                    $('banner').style.background = d.bannerAccent;
+                } else {
+                    $('banner').style.background = 'linear-gradient(135deg, #1e1b4b 0%, #311026 45%, #4070f4 130%)';
+                }
+
+                const status = d.extras && d.extras.customStatus;
+                if (status) { $('customStatus').textContent = status; $('customStatus').classList.remove('hidden'); }
+
+                if (d.extras && d.extras.bannerImage) {
+                    const img = $('bannerImg');
+                    img.src = d.extras.bannerImage; img.classList.remove('hidden');
+                } else if (d.extras && d.extras.bannerColor) {
+                    $('banner').style.background = d.extras.bannerColor;
+                }
+
+                // Follow button (own profile hides it)
+                const btn = $('followBtn');
+                if (d.isOwn) {
+                    btn.classList.add('hidden');
+                } else {
+                    btn.classList.remove('hidden');
+                    updateFollowUI(btn, d.isFollowing);
+                    btn.addEventListener('click', async () => {
+                        btn.disabled = true;
+                        try {
+                            const r = await fetch(`/api/u/${d.userId}/follow`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } });
+                            const j = await r.json();
+                            if (j.success) {
+                                updateFollowUI(btn, j.following);
+                                d.isFollowing = j.following;
+                                $('followersCount').textContent = (d.followers + (j.following ? 1 : -1)).toLocaleString();
+                            } else if (!r.ok && j.error === 'Login required') {
+                                window.location.href = '/loading-auth';
+                            } else {
+                                btn.disabled = false;
+                            }
+                        } catch (_) { btn.disabled = false; }
+                    });
+                }
+            } catch (e) {
+                $('stateLoading').classList.add('hidden');
+                $('stateNotFound').classList.remove('hidden');
+            }
+        }
+
+        function updateFollowUI(btn, following) {
+            const label = btn.querySelector('span[data-i18n]');
+            if (following) {
+                btn.classList.add('following');
+                btn.innerHTML = `<i class='bx bx-user-minus'></i> <span data-i18n="up.unfollow">${following ? '' : ''}</span>`;
+            } else {
+                btn.classList.remove('following');
+                btn.innerHTML = `<i class='bx bx-user-plus'></i> <span data-i18n="up.follow">Follow</span>`;
+            }
+            if (window.__pmc_i18n) window.__pmc_i18n.applyTranslations();
+        }
+
+        if (userId) { load(); } else { $('stateLoading').classList.add('hidden'); $('stateNotFound').classList.remove('hidden'); }
+
+        if (window.__pmc_i18n) window.__pmc_i18n.applyTranslations();
+        document.querySelectorAll('.lang-select option').forEach(opt => {
+            opt.selected = opt.value === (window.__pmc_i18n ? (window.__pmc_i18n.getLangCookie() || 'en') : 'en');
+        });
+    </script>
+</body>
+</html>

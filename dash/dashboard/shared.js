@@ -51,16 +51,11 @@
     // User-level pages (no specific server selected)
     user: [
       {
-        label: 'My Space',
+        label: 'sb.label_account',
         items: [
-          { href: '/dashboard', icon: 'bx-user', text: 'Profile' },
-          { href: '/my-servers', icon: 'bx-server', text: 'My Servers' },
-        ]
-      },
-      {
-        label: 'Account',
-        items: [
-          { href: '/api/logout', icon: 'bx-log-out', text: 'Logout', cls: 'logout-link' },
+          { href: '/dashboard', icon: 'bx-user', text: 'nav.profile' },
+          { href: '/my-servers', icon: 'bx-server', text: 'nav.my_servers' },
+          { href: '/api/logout', icon: 'bx-log-out', text: 'nav.logout', cls: 'logout-link' },
         ]
       }
     ],
@@ -68,48 +63,57 @@
     // Server-specific pages
     server: (guildId) => [
       {
-        label: 'Server',
+        label: 'sb.label_server',
         items: [
-          { href: `/my-servers/${guildId}/overview`,       icon: 'bx-home-alt',    text: 'Overview' },
-          { href: `/my-servers/${guildId}/configuration`,  icon: 'bx-slider',      text: 'Configuration' },
-          { href: `/my-servers/${guildId}/modules`,        icon: 'bx-extension',   text: 'Modules' },
+          { href: `/my-servers/${guildId}/overview`,       icon: 'bx-home-alt',    text: 'sb.overview' },
+          { href: `/my-servers/${guildId}/configuration`,  icon: 'bx-slider',      text: 'sb.configuration' },
+          { href: `/my-servers/${guildId}/modules`,        icon: 'bx-extension',   text: 'sb.modules' },
         ]
       },
       {
-        label: 'Moderation',
+        label: 'sb.label_moderation',
         items: [
-          { href: `/my-servers/${guildId}/moderation`,    icon: 'bx-shield',      text: 'Moderation' },
-          { href: `/my-servers/${guildId}/roles`,          icon: 'bx-group',       text: 'Roles' },
-          { href: `/my-servers/${guildId}/logs`,           icon: 'bx-list-ul',     text: 'Logs' },
+          { href: `/my-servers/${guildId}/moderation`,    icon: 'bx-shield',      text: 'sb.moderation' },
+          { href: `/my-servers/${guildId}/roles`,          icon: 'bx-group',       text: 'sb.roles' },
+          { href: `/my-servers/${guildId}/logs`,           icon: 'bx-list-ul',     text: 'sb.logs' },
         ]
       },
       {
-        label: 'Features',
+        label: 'sb.label_features',
         items: [
-          { href: `/my-servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'Auto Responder' },
-          { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'Tickets' },
-          { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'Welcome' },
-          { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'MC Players' },
-          { href: `/my-servers/${guildId}/website`,        icon: 'bx-globe',       text: 'Website' },
-          { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'Settings' },
+          { href: `/my-servers/${guildId}/auto-responder`, icon: 'bx-bot',         text: 'sb.auto_responder' },
+          { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'sb.tickets' },
+          { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'sb.welcome' },
+          { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players' },
+          { href: `/my-servers/${guildId}/website`,        icon: 'bx-globe',       text: 'sb.website' },
+          { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'sb.settings' },
         ]
       },
       {
-        label: 'Management',
+        label: 'sb.label_management',
         items: [
-          { href: `/my-servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'Members' },
-          { href: `/my-servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'Danger Zone', cls: 'danger-link' },
+          { href: `/my-servers/${guildId}/members`,        icon: 'bx-user-circle', text: 'sb.members' },
+          { href: `/my-servers/${guildId}/danger`,         icon: 'bx-error-circle', text: 'sb.danger', cls: 'danger-link' },
         ]
       },
       {
-        label: 'Navigation',
+        label: 'sb.label_navigation',
         items: [
-          { href: '/my-servers',      icon: 'bx-arrow-back', text: 'Back to Servers' },
-          { href: '/api/logout',   icon: 'bx-log-out',    text: 'Logout', cls: 'logout-link' },
+          { href: '/my-servers',      icon: 'bx-arrow-back', text: 'sb.back_servers' },
+          { href: '/api/logout',   icon: 'bx-log-out',    text: 'nav.logout', cls: 'logout-link' },
         ]
       }
     ]
   };
+
+  // ── i18n helper (safe if /i18n.js was not loaded)
+  function itemLabel(val) {
+    if (typeof val === 'string' && val !== '' && val.includes('.')) {
+      const v = (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(val) : null;
+      if (v !== null) return v;
+    }
+    return String(val);
+  }
 
   function buildSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -131,15 +135,15 @@
         sections = [
           ...sections,
           {
-            label: 'Admin Panel',
+            label: 'nav.admin',
             items: [
-              { href: '/admin',           icon: 'bx-shield-quarter',  text: 'Overview', cls: 'admin-link' },
-              { href: '/admin/stats',     icon: 'bx-bar-chart-alt-2', text: 'Statistics', cls: 'admin-link' },
-              { href: '/admin/users',     icon: 'bx-user-check',      text: 'Users', cls: 'admin-link' },
-              { href: '/admin/email',     icon: 'bx-envelope',        text: 'Send Email', cls: 'admin-link' },
-{ href: '/admin/sendembed', icon: 'bx-message-square-dots', text: 'Send Embed', cls: 'admin-link' },
-              { href: '/admin/notifications', icon: 'bx-bell', text: 'Notifications', cls: 'admin-link' },
-              { href: '/admin/bugs',      icon: 'bx-bug',             text: 'Bug Reports', cls: 'admin-link' },
+              { href: '/admin',           icon: 'bx-shield-quarter',  text: 'sb.admin_overview', cls: 'admin-link' },
+              { href: '/admin/stats',     icon: 'bx-bar-chart-alt-2', text: 'sb.statistics', cls: 'admin-link' },
+              { href: '/admin/users',     icon: 'bx-user-check',      text: 'sb.users', cls: 'admin-link' },
+              { href: '/admin/email',     icon: 'bx-envelope',        text: 'sb.send_email', cls: 'admin-link' },
+{ href: '/admin/sendembed', icon: 'bx-message-square-dots', text: 'sb.send_embed', cls: 'admin-link' },
+              { href: '/admin/notifications', icon: 'bx-bell', text: 'nav.notification', cls: 'admin-link' },
+              { href: '/admin/bugs',      icon: 'bx-bug',             text: 'sb.bug_reports', cls: 'admin-link' },
             ]
           }
         ];
@@ -177,7 +181,7 @@
     let html = serverHeader;
 
     sections.forEach(section => {
-      html += `<ul class="menu_items"><div class="menu_title"><span>${section.label}</span></div>`;
+      html += `<ul class="menu_items"><div class="menu_title"><span>${itemLabel(section.label)}</span></div>`;
       section.items.forEach(item => {
         const isActive = currentPath === item.href || (item.href !== '/my-servers' && currentPath.startsWith(item.href));
         const activeClass = isActive ? ' active' : '';
@@ -189,7 +193,7 @@
             <a href="${item.href}" class="nav_link${activeClass}${extraClass}">
               <span class="navlink_icon"><i class="bx ${item.icon}"></i></span>
               <div class="navlink-container">
-                <span class="navlink">${item.text}</span>
+                <span class="navlink">${itemLabel(item.text)}</span>
                 ${tagHtml}
               </div>
             </a>
@@ -284,7 +288,7 @@
       dropdown = document.createElement('div');
       dropdown.id = 'notificationDropdown';
       dropdown.className = 'dropdown-content notification-dropdown';
-      dropdown.innerHTML = '<div class="dropdown-header"><i class="bx bx-bell"></i> Notifications</div><div class="dropdown-content-body">Loading...</div>';
+      dropdown.innerHTML = `<div class="dropdown-header"><i class="bx bx-bell"></i> <span data-i18n="nav.notification">${itemLabel('nav.notification')}</span></div><div class="dropdown-content-body">${itemLabel('misc.loading')}</div>`;
       // Attach inside navbar (absolute positioning anchors to navbar) to avoid overlapping page content
       const nav = document.querySelector('.navbar');
       (nav || notificationBtn.parentElement)?.appendChild(dropdown);
@@ -302,10 +306,10 @@
       userDropdown.id = 'userDropdown';
       userDropdown.className = 'dropdown-content';
       userDropdown.innerHTML = `
-        <div class="dropdown-header"><i class="bx bx-user"></i> <span>My Account</span></div>
-        <a href="/dashboard"><i class="bx bx-user-circle"></i> Profile</a>
-        <a href="/my-servers"><i class="bx bx-server"></i> My Servers</a>
-        <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class="bx bx-log-out"></i> Logout</a>`;
+        <div class="dropdown-header"><i class="bx bx-user"></i> <span data-i18n="nav.my_account">${itemLabel('nav.my_account')}</span></div>
+        <a href="/dashboard"><i class="bx bx-user-circle"></i> <span data-i18n="nav.profile">${itemLabel('nav.profile')}</span></a>
+        <a href="/my-servers"><i class="bx bx-server"></i> <span data-i18n="nav.my_servers">${itemLabel('nav.my_servers')}</span></a>
+        <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class="bx bx-log-out"></i> <span data-i18n="nav.logout">${itemLabel('nav.logout')}</span></a>`;
       const nav = document.querySelector('.navbar');
       (nav || userBtn.parentElement)?.appendChild(userDropdown);
     }
@@ -347,6 +351,34 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeAll();
     });
+  }
+
+  // ============================================================
+  // LANGUAGE SELECTOR (navbar)
+  // ============================================================
+  function initLanguageSelector() {
+    try {
+    if (!window.__pmc_i18n) return;
+    const nav = document.querySelector('.navbar');
+    if (!nav) return;
+    const darkLight = document.getElementById('darkLight');
+    if (!darkLight) return;
+    if (document.getElementById('langSelectWrap')) return; // avoid duplicates
+
+    const wrap = document.createElement('div');
+    wrap.id = 'langSelectWrap';
+    wrap.className = 'nav-icon-btn lang-select-wrap';
+    const lang = window.__pmc_i18n.getLangCookie() || 'en';
+    const flags = { en: '🇬🇧', ar: '🇸🇦', es: '🇪🇸' };
+    wrap.innerHTML = `
+      <select id="langSelect" class="lang-select" aria-label="Language">
+        ${['en', 'ar', 'es'].map(l => `<option value="${l}"${l === lang ? ' selected' : ''}>${flags[l]} ${l.toUpperCase()}</option>`).join('')}
+      </select>`;
+    (darkLight.parentNode || nav).insertBefore(wrap, darkLight);
+    document.getElementById('langSelect').addEventListener('change', e => {
+      window.__pmc_i18n.setLanguage(e.target.value);
+    });
+    } catch (e) { /* ignore; sidebar still works */ }
   }
 
   // ============================================================
@@ -478,7 +510,7 @@
         const unread = unreadRes.ok ? (await unreadRes.json()) : null;
         const inbox = inboxRes.ok ? (await inboxRes.json()) : null;
         if (!unread || !inbox || !inbox.success) {
-          body.innerHTML = '<div class="notification-empty">Unable to load notifications right now.</div>';
+          body.innerHTML = `<div class="notification-empty">${itemLabel('misc.error')}</div>`;
           return;
         }
 
@@ -499,12 +531,12 @@
               </div>
             </div>
           `).join('')
-          : '<div class="notification-empty">No new notifications.</div>';
+          : `<div class="notification-empty">${itemLabel('nav.no_notif')}</div>`;
 
         body.querySelectorAll('.notification-item').forEach(el => el.classList.add(el.classList.contains('notification-unread') ? 'notification-unread' : 'notification-read'));
       } catch (err) {
         console.warn('[PMC] Notification refresh failed:', err.message);
-        body.innerHTML = '<div class="notification-empty">No new notifications.</div>';
+        body.innerHTML = `<div class="notification-empty">${itemLabel('nav.no_notif')}</div>`;
       }
     }
 
@@ -545,15 +577,26 @@
   };
 
   // ============================================================
+  // LANGUAGE BOOTSTRAP (runs as early as possible)
+  // ============================================================
+  if (window.__pmc_i18n) {
+    window.__pmc_i18n.initLanguage();
+  }
+
+  // ============================================================
   // INIT ON DOM READY
   // ============================================================
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    initLanguageSelector();
     initSidebar();
     initDropdowns();
     initThemeBtn();
     initAuth();
     initNotifications();
+    if (window.__pmc_i18n) {
+      window.__pmc_i18n.applyTranslations();
+    }
   });
 
 })();

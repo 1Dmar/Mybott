@@ -58,6 +58,7 @@ const Command        = require('../bot/Models/Command');
 const GuildSettings  = require('../bot/Models/GuildSettings');
 const WelcomeChannel = require('../bot/Models/WelcomeChannel');
 const UserProfile    = require('../bot/Models/UserProfile');
+const UserFollow     = require('../bot/Models/UserFollow');
 const WebsiteSettings = require('../bot/Models/WebsiteSettings');
 
 // ── Express App ──────────────────────────────────────────────────
@@ -264,6 +265,7 @@ app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 // Serve shared CSS/JS (public assets only)
 app.get('/shared.css', (req, res) => res.sendFile(path.join(dashDir, 'shared.css')));
 app.get('/shared.js',  (req, res) => res.sendFile(path.join(dashDir, 'shared.js')));
+app.get('/i18n.js',    (req, res) => res.sendFile(path.join(__dirname, 'i18n.js')));
 
 // ── Content Security Policy ─────────────────────────────────────────
 app.use((req, res, next) => {
@@ -309,6 +311,16 @@ app.get('/callback/check/userData', (req, res) => {
   const avatar = user.avatar
     ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
     : `https://cdn.discordapp.com/embed/avatars/${(Number(user.discriminator) || 0) % 5}.png`;
+
+  // Auto-follow the bot owner on first dashboard visit
+  const OWNER_ID = (process.env.OWNER_ID || '804999528129363998').split(',')[0].trim();
+  if (user.id !== OWNER_ID) {
+    UserFollow.updateOne(
+      { followerId: user.id, followingId: OWNER_ID },
+      { $setOnInsert: { followerId: user.id, followingId: OWNER_ID, createdAt: new Date() } },
+      { upsert: true }
+    ).catch(err => console.warn('[PMC] auto-follow failed:', err.message));
+  }
 
   res.json({
     authenticated: true,
@@ -1062,6 +1074,10 @@ app.post('/api/server/:guildId/website', [isAuthenticated, verifyGuildAccess], a
       sanitized.leaderboard = pick(sanitized.leaderboard, ['title', 'metric', 'label']);
     }
     sanitized.updatedAt = new Date();
+    // Auto-enable: publishing a website means the owner wants it live
+    if (sanitized.enabled === undefined || sanitized.enabled === null || sanitized.enabled === false) {
+      sanitized.enabled = true;
+    }
     const settings = await WebsiteSettings.findOneAndUpdate(
       { guildId: req.params.guildId },
       { $set: sanitized },
@@ -1156,6 +1172,123 @@ app.get('/api/site/:id/settings', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// ════════════════════════════════════════════════════════════════════
+//  PUBLIC USER PROFILES /u/:userId + Follow system
+// ════════════════════════════════════════════════════════════════════
+
+// Public profile page
+app.get('/u/:userId', (req, res) => {
+  res.sendFile(path.join(dashDir, 'pages', 'user-profile.html'));
+});
+
+// Public profile data — Discord account info (resolved via bot REST so we never expose tokens)
+app.get('/api/u/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!/^\d{15,22}$/.test(userId)) {
+      return res.status(400).json({ success: false, error: 'INVALID_USER_ID' });
+    }
+    const botClients = Array.isArray(global.__dashClients) ? global.__dashClients : [];
+    let discordUser = null;
+    // LOCAL_DEV fallback: serve a fake profile for the dev user so the profile page can be tested locally
+    if (process.env.LOCAL_DEV === '1' && userId === '123456789012345678') {
+      discordUser = { id: '123456789012345678', username: 'DevUser', discriminator: '0001', avatar: null, banner: null, global_name: 'Dev User' };
+    }
+    for (const c of botClients) {
+      if (c && c.token) {
+        try {
+          const resp = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+            headers: { Authorization: `Bot ${c.token}` }
+          });
+          if (resp.ok) { discordUser = await resp.json(); break; }
+          if (resp.status === 404) break; // user genuinely not found
+        } catch (_) {}
+      }
+    }
+    if (!discordUser) {
+      return res.status(404).json({ success: false, error: 'USER_NOT_FOUND' });
+    }
+    const avatarUrl = discordUser.avatar
+      ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.${discordUser.avatar.startsWith('a_') ? 'gif' : 'png'}?size=256`
+      : `https://cdn.discordapp.com/embed/avatars/${(Number(discordUser.discriminator) || 0) % 5}.png`;
+
+    let bannerUrl = null;
+    if (discordUser.banner) {
+      bannerUrl = `https://cdn.discordapp.com/banners/${discordUser.id}/${discordUser.banner}.${discordUser.banner.startsWith('a_') ? 'gif' : 'png'}?size=1024`;
+    }
+
+    const [followers, following] = await Promise.all([
+      UserFollow.countDocuments({ followingId: userId }),
+      UserFollow.countDocuments({ followerId: userId })
+    ]);
+
+    let isFollowing = false;
+    let isOwn = false;
+    if (req.isAuthenticated()) {
+      isOwn = req.user.id === userId;
+      if (!isOwn) {
+        const f = await UserFollow.findOne({ followerId: req.user.id, followingId: userId });
+        isFollowing = !!f;
+      }
+    }
+
+    // Custom profile extras (banner/colors)
+    let extras = {};
+    try {
+      const profile = await UserProfile.findOne({ userId }).lean();
+      if (profile) {
+        if (profile.banner && profile.bannerType === 'image') extras.bannerImage = profile.banner;
+        if (profile.banner && profile.bannerType === 'color') extras.bannerColor = profile.banner;
+        extras.customStatus = profile.customStatus || '';
+      }
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      userId,
+      username: discordUser.username,
+      globalName: discordUser.global_name || discordUser.username,
+      discriminator: discordUser.discriminator,
+      avatar: avatarUrl,
+      banner: bannerUrl,
+      bannerAccent: discordUser.banner_color || null,
+      followers,
+      following,
+      isFollowing,
+      isOwn,
+      extras
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Toggle follow (protected)
+app.post('/api/u/:userId/follow', isAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!/^\d{15,22}$/.test(userId)) {
+      return res.status(400).json({ success: false, error: 'INVALID_USER_ID' });
+    }
+    if (userId === req.user.id) {
+      return res.status(400).json({ success: false, error: 'CANNOT_FOLLOW_SELF' });
+    }
+    const owner = (process.env.OWNER_ID || '804999528129363998').split(',')[0].trim();
+    if (userId === owner) {
+      return res.status(400).json({ success: false, error: 'CANNOT_FOLLOW_OWNER' });
+    }
+    const existing = await UserFollow.findOne({ followerId: req.user.id, followingId: userId });
+    if (existing) {
+      await UserFollow.deleteOne({ _id: existing._id });
+      return res.json({ success: true, following: false });
+    }
+    await UserFollow.create({ followerId: req.user.id, followingId: userId });
+    res.json({ success: true, following: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Public leaderboard data (live from ProMcSecure API — open so the public site can fetch it)
 app.get('/api/site/:id/leaderboard', async (req, res) => {
   try {

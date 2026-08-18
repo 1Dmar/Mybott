@@ -107,6 +107,29 @@
       border-color: rgba(255, 81, 47, 0.3);
     }
 
+    /* Language selector on home navbar */
+    .lang-select-home {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: var(--radius-md);
+      padding: 7px 26px 7px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      font-family: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a5b4c8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+    }
+    .lang-select-home:hover { border-color: rgba(255, 81, 47, 0.3); }
+    .lang-select-home option { background: #1e2433; color: #e2e8f0; }
+    .dark .lang-select-home option { background: #1e2433; color: #e2e8f0; }
+    html[dir="rtl"] .lang-select-home { background-position: left 7px center; padding: 7px 12px 7px 26px; }
+
     /* Navbar User Dropdown on Home Page */
     .landing-nav .dropdown {
       position: relative;
@@ -673,9 +696,14 @@
       <span>ProMcBot</span>
     </a>
     <nav>
-      <a href="#features">Features</a>
+      <a href="#features" data-i18n="home.features">Features</a>
       <a href="#faq">FAQ</a>
       <a href="/privacy">Privacy</a>
+      <select class="lang-select-home" onchange="window.__pmc_i18n && window.__pmc_i18n.setLanguage(this.value)">
+        <option value="en">🇬🇧 EN</option>
+        <option value="ar">🇸🇦 AR</option>
+        <option value="es">🇪🇸 ES</option>
+      </select>
       <button class="theme-toggle" id="themeToggle" title="Toggle theme"><i class='bx bx-sun'></i></button>
       <div id="authContainer">
         <a id="authButton" href="/loading-auth" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #FF512F 0%, #F09819 100%);color:white;padding:8px 18px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;">Login</a>
@@ -688,39 +716,39 @@
     <div class="hero-content">
       <div class="hero-badge">
         <span class="dot"></span>
-        <strong>ProMcBot v3.5</strong> — Advanced Minecraft & Discord Integration Engine
+        <strong>ProMcBot v3.5</strong> — <span data-i18n="home.badge">Advanced Minecraft & Discord Integration Engine</span>
       </div>
 
-      <h1>
+      <h1 data-i18n="home.hero_title_h1">
         Link your<br>
         <span class="highlight">Discord & Minecraft</span><br>
         servers seamlessly
       </h1>
 
-      <p>Manage your Minecraft servers directly from Discord with elite automation, real-time status monitoring, and bulletproof security.</p>
+      <p data-i18n="home.hero_subtitle">Manage your Minecraft servers directly from Discord with elite automation, real-time status monitoring, and bulletproof security.</p>
 
       <div class="hero-actions">
         <a id="authButton1" href="/loading-auth" class="btn btn-primary">
-          <i class='bx bx-rocket'></i> Get Started — It's Free
+          <i class='bx bx-rocket'></i> <span data-i18n="home.hero_start">Get Started — It's Free</span>
         </a>
         <a href="#features" class="btn btn-secondary">
-          <i class='bx bx-info-circle'></i> Explore Features
+          <i class='bx bx-info-circle'></i> <span data-i18n="home.hero_explore">Explore Features</span>
         </a>
       </div>
 
       <!-- Hero Showcase Mockup -->
       <div class="hero-showcase">
         <div class="showcase-item">
-          <div class="s-title"><i class='bx bx-server' style="color:#FF512F"></i> Bridge Status</div>
-          <div class="s-val" style="color:#10B981"><i class='bx bx-check-circle'></i> Fully Synchronized</div>
+          <div class="s-title"><i class='bx bx-server' style="color:#FF512F"></i> <span data-i18n="home.s_bridge">Bridge Status</span></div>
+          <div class="s-val" style="color:#10B981"><i class='bx bx-check-circle'></i> <span data-i18n="home.s_synced">Fully Synchronized</span></div>
         </div>
         <div class="showcase-item">
-          <div class="s-title"><i class='bx bx-group' style="color:#FF512F"></i> Connected Players</div>
-          <div class="s-val">1,482 Active Now</div>
+          <div class="s-title"><i class='bx bx-group' style="color:#FF512F"></i> <span data-i18n="home.s_players">Connected Players</span></div>
+          <div class="s-val">1,482 <span data-i18n="home.s_active">Active Now</span></div>
         </div>
         <div class="showcase-item">
-          <div class="s-title"><i class='bx bx-shield-quarter' style="color:#FF512F"></i> Anti-Crash Protection</div>
-          <div class="s-val" style="color:#FF512F">Active (99.99%)</div>
+          <div class="s-title"><i class='bx bx-shield-quarter' style="color:#FF512F"></i> <span data-i18n="home.s_anticrash">Anti-Crash Protection</span></div>
+          <div class="s-val" style="color:#FF512F"><span data-i18n="home.s_active_label">Active</span> (99.99%)</div>
         </div>
       </div>
     </div>
@@ -730,58 +758,58 @@
   <div class="stats-bar">
     <div class="stat-block">
       <span class="num" id="stat-servers">—</span>
-      <span class="lbl">Servers Connected</span>
+      <span class="lbl" data-i18n="home.servers">Servers Connected</span>
     </div>
     <div class="stat-block">
       <span class="num" id="stat-users">—</span>
-      <span class="lbl">Registered Users</span>
+      <span class="lbl" data-i18n="home.users">Registered Users</span>
     </div>
     <div class="stat-block">
       <span class="num">99.9%</span>
-      <span class="lbl">Server Uptime</span>
+      <span class="lbl" data-i18n="home.uptime">Server Uptime</span>
     </div>
     <div class="stat-block">
       <span class="num">Free</span>
-      <span class="lbl">Core Access</span>
+      <span class="lbl" data-i18n="home.core_access">Core Access</span>
     </div>
   </div>
 
   <!-- FEATURES -->
   <section class="features-section" id="features">
     <div class="section-header">
-      <h2>Everything you need to master your community</h2>
-      <p>Engineered specifically for Minecraft server owners and Discord administrators who demand excellence.</p>
+      <h2 data-i18n="home.features_title">Everything you need to master your community</h2>
+      <p data-i18n="home.features_sub">Engineered specifically for Minecraft server owners and Discord administrators who demand excellence.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-link-alt'></i></div>
-        <h3>Discord ↔ Minecraft Bridge</h3>
-        <p>Sync chat messages, commands, and console logs between Discord channels and Minecraft server chat in real-time with zero latency.</p>
+        <h3 data-i18n="home.f1_title">Discord ↔ Minecraft Bridge</h3>
+        <p data-i18n="home.f1_desc">Sync chat messages, commands, and console logs between Discord channels and Minecraft server chat in real-time with zero latency.</p>
       </div>
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-server'></i></div>
-        <h3>Live Server Status & Ping</h3>
-        <p>Monitor player counts, TPS, RAM usage, and MOTD updates directly from rich embeds in your Discord channels.</p>
+        <h3 data-i18n="home.f2_title">Live Server Status & Ping</h3>
+        <p data-i18n="home.f2_desc">Monitor player counts, TPS, RAM usage, and MOTD updates directly from rich embeds in your Discord channels.</p>
       </div>
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-shield'></i></div>
-        <h3>Advanced Moderation & Anti-Crash</h3>
-        <p>Protect your network with bulletproof anti-crash modules, automated bans, mutes, and unified moderation logs.</p>
+        <h3 data-i18n="home.f3_title">Advanced Moderation & Anti-Crash</h3>
+        <p data-i18n="home.f3_desc">Protect your network with bulletproof anti-crash modules, automated bans, mutes, and unified moderation logs.</p>
       </div>
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-bot'></i></div>
-        <h3>Smart Auto Responder</h3>
-        <p>Create custom automated responses, triggers, and keyword hooks to keep your community engaged 24/7 without manual intervention.</p>
+        <h3 data-i18n="home.f4_title">Smart Auto Responder</h3>
+        <p data-i18n="home.f4_desc">Create custom automated responses, triggers, and keyword hooks to keep your community engaged 24/7 without manual intervention.</p>
       </div>
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-crown'></i></div>
-        <h3>Automated Store & Ranks</h3>
-        <p>Reward your donors and members with automatic role syncing, permission updates, and Minecraft in-game perks.</p>
+        <h3 data-i18n="home.f5_title">Automated Store & Ranks</h3>
+        <p data-i18n="home.f5_desc">Reward your donors and members with automatic role syncing, permission updates, and Minecraft in-game perks.</p>
       </div>
       <div class="feature-card animated">
         <div class="feature-icon"><i class='bx bx-chart'></i></div>
-        <h3>Elite Analytics Dashboard</h3>
-        <p>Gain deep insights into server activity, engagement trends, and player retention with our high-performance control panel.</p>
+        <h3 data-i18n="home.f6_title">Elite Analytics Dashboard</h3>
+        <p data-i18n="home.f6_desc">Gain deep insights into server activity, engagement trends, and player retention with our high-performance control panel.</p>
       </div>
     </div>
   </section>
@@ -789,53 +817,53 @@
   <!-- FAQ (Restored Original Questions) -->
   <section class="faq-section" id="faq">
     <div class="section-header">
-      <h2>Frequently Asked Questions</h2>
-      <p>Got questions? We've got answers.</p>
+      <h2 data-i18n="home.faq_title">Frequently Asked Questions</h2>
+      <p data-i18n="home.faq_sub">Got questions? We've got answers.</p>
     </div>
 
     <div class="faq-item">
       <div class="faq-q">
-        What is ProMcBot?
+        <span data-i18n="home.faq1_q">What is ProMcBot?</span>
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control, automation, and community management.</div>
+      <div class="faq-a" data-i18n="home.faq1_a">ProMcBot is a Discord bot that links Discord servers with Minecraft servers for effortless control, automation, and community management.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        How do I connect my server?
+        <span data-i18n="home.faq2_q">How do I connect my server?</span>
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">Invite ProMcBot to your Discord, run the <code>/setup_server</code> command, and follow the prompts to authorize your Minecraft server via our plugin.</div>
+      <div class="faq-a" data-i18n="home.faq2_a">Invite ProMcBot to your Discord, run the <code>/setup_server</code> command, and follow the prompts to authorize your Minecraft server via our plugin.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        Is it free?
+        <span data-i18n="home.faq3_q">Is it free?</span>
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">Yes — ProMcBot's core features are completely free. Premium plans are available for advanced features and priority support.</div>
+      <div class="faq-a" data-i18n="home.faq3_a">Yes — ProMcBot's core features are completely free. Premium plans are available for advanced features and priority support.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        Which Minecraft versions are supported?
+        <span data-i18n="home.faq4_q">Which Minecraft versions are supported?</span>
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">ProMcBot supports both Java Edition and Bedrock Edition servers. Our plugin is compatible with popular server softwares like Paper, Spigot, and Velocity.</div>
+      <div class="faq-a" data-i18n="home.faq4_a">ProMcBot supports both Java Edition and Bedrock Edition servers. Our plugin is compatible with popular server softwares like Paper, Spigot, and Velocity.</div>
     </div>
     <div class="faq-item">
       <div class="faq-q">
-        Is my data secure?
+        <span data-i18n="home.faq5_q">Is my data secure?</span>
         <i class='bx bx-chevron-down faq-arrow'></i>
       </div>
-      <div class="faq-a">Absolutely. We follow industry best practices for data security. Read our <a href="/privacy" style="color:var(--primary)">Privacy Policy</a> for details.</div>
+      <div class="faq-a" data-i18n="home.faq5_a">Absolutely. We follow industry best practices for data security. Read our <a href="/privacy" style="color:var(--primary)">Privacy Policy</a> for details.</div>
     </div>
   </section>
 
   <!-- CTA -->
   <section class="cta-section">
-    <h2>Ready to supercharge your Minecraft community?</h2>
-    <p>Join thousands of servers already using ProMcBot to manage and automate their worlds.</p>
+    <h2 data-i18n="home.cta_title">Ready to supercharge your Minecraft community?</h2>
+    <p data-i18n="home.cta_sub">Join thousands of servers already using ProMcBot to manage and automate their worlds.</p>
     <a href="/loading-auth" class="btn">
-      <i class='bx bx-rocket'></i> Get Started for Free
+      <i class='bx bx-rocket'></i> <span data-i18n="home.cta_btn">Get Started for Free</span>
     </a>
   </section>
 
@@ -846,11 +874,12 @@
 
   <!-- COOKIE BANNER -->
   <div id="cookie-banner" style="display:none">
-    <p>We use cookies to enhance your experience.</p>
-    <button class="btn" id="cookie-ok">Accept</button>
+    <p data-i18n="home.cookie_text">We use cookies to enhance your experience.</p>
+    <button class="btn" id="cookie-ok" data-i18n="home.cookie_accept">Accept</button>
   </div>
 
   <!-- SCRIPTS -->
+  <script src="/i18n.js"></script>
   <script src="/shared.js"></script>
   <script>
     // ── Year ──────────────────────────────────────────────────────

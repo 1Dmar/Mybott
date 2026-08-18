@@ -206,7 +206,8 @@
         <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
     </div>
 
-    <script src="/shared.js"></script>
+    <script src="/i18n.js"></script>
+  <script src="/shared.js"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
@@ -251,12 +252,15 @@
                     document.getElementById('automodAction').value = automod.action || 'warn';
                     document.getElementById('automodLogChannel').value = automod.logChannel || '';
                     
-                    const filters = automod.filters || [];
-                    document.getElementById('filter_badwords').checked = filters.includes('badwords');
-                    document.getElementById('filter_links').checked = filters.includes('links');
-                    document.getElementById('filter_invites').checked = filters.includes('invites');
-                    document.getElementById('filter_spam').checked = filters.includes('spam');
-                    document.getElementById('filter_caps').checked = filters.includes('caps');
+                    const filters = automod.filters || {};
+                    const activeFilters = Array.isArray(filters)
+                        ? filters
+                        : Object.entries(filters).filter(([k, v]) => v).map(([k]) => k);
+                    document.getElementById('filter_badwords').checked = activeFilters.includes('badwords');
+                    document.getElementById('filter_links').checked = activeFilters.includes('links');
+                    document.getElementById('filter_invites').checked = activeFilters.includes('invites');
+                    document.getElementById('filter_spam').checked = activeFilters.includes('spam');
+                    document.getElementById('filter_caps').checked = activeFilters.includes('caps');
                 }
             } catch (err) {
                 console.error(err);
@@ -287,13 +291,16 @@
                 const getRes = await fetch(`/api/server/${guildId}/guild-settings`);
                 const getData = await getRes.json();
                 const updatedSettings = getData.settings || {};
-                
+                // Model expects filters as an object of booleans, keep any existing flags in sync
+                const allFilterKeys = ['badwords', 'caps', 'spam', 'invites', 'links', 'mentions'];
+                const filtersObj = {};
+                allFilterKeys.forEach(k => { filtersObj[k] = filters.includes(k); });
                 updatedSettings.automod = {
                     ...updatedSettings.automod,
                     enabled,
                     action,
                     logChannel,
-                    filters
+                    filters: filtersObj
                 };
 
                 const res = await fetch(`/api/server/${guildId}/guild-settings`, {

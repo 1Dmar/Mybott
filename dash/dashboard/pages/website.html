@@ -193,7 +193,9 @@
         <div class="site-url-box" id="siteUrlBox">
             <i class='bx bx-link-alt' style="color:var(--success);font-size:20px;"></i>
             <div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Your public website</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">
+                    Your public website — <span id="siteStatusBadge" style="font-weight:600;">Checking…</span>
+                </div>
                 <code id="siteUrlText">https://promcbot.dev/site/...</code>
             </div>
             <button class="copy-btn" id="copySiteUrlBtn"><i class='bx bx-copy'></i> Copy</button>
@@ -382,7 +384,8 @@
         <button class="btn btn-primary" onclick="saveWebsite()">Save Changes</button>
     </div>
 
-    <script src="/shared.js"></script>
+    <script src="/i18n.js"></script>
+  <script src="/shared.js"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
 
@@ -470,6 +473,7 @@
                 if (tplCard) { document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected')); tplCard.classList.add('selected'); }
                 (s.news || []).forEach(n => addNewsItem(n.title, n.body, n.tag, n.date));
                 refreshPublicUrl(s);
+                updateSiteBadge(Boolean(s.enabled), 'Loaded');
                 original = JSON.stringify({ settings: s });
             } catch (err) {
                 console.error(err);
@@ -518,6 +522,15 @@
         }
 
         function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+        function updateSiteBadge(enabled, label) {
+            const badge = document.getElementById('siteStatusBadge');
+            if (!badge) return;
+            if (enabled) {
+                badge.innerHTML = '<span style="color:var(--success);"><i class="bx bx-check-circle"></i> ' + label + ' &amp; LIVE</span>';
+            } else {
+                badge.innerHTML = '<span style="color:var(--warning);"><i class="bx bx-pause-circle"></i> ' + label + ' (OFF)</span>';
+            }
+        }
 
         // Live subdomain preview
         const subInput = document.getElementById('customSubdomain');
@@ -548,8 +561,10 @@
                 });
                 const data = await res.json();
                 if (!data.success) throw new Error(data.error || 'Save failed');
-                original = JSON.stringify({ settings: data.settings || currentSettings() });
+                const saved = data.settings || currentSettings();
+                original = JSON.stringify({ settings: saved });
                 document.getElementById('saveBar').classList.remove('show');
+                updateSiteBadge(Boolean(saved.enabled), 'Saved');
                 const cur = currentSettings();
                 const pubUrl = cur.customDomain ? `https://${cur.customDomain}` : (cur.customSubdomain ? `https://${cur.customSubdomain}.promcbot.dev` : `https://promcbot.dev/site/${guildId}`);
                 Swal.fire({ icon: 'success', title: 'Website saved!', text: `Your site updates live at ${pubUrl}`, timer: 3500, showConfirmButton: false });
