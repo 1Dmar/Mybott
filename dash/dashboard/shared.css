@@ -1,7 +1,7 @@
 /*
  * ProMcBot Dashboard - Shared Stylesheet
  * Unified design system for all dashboard pages
- * Version: 3.0
+ * Version: 4.0
  */
 
 /* ============================================================
@@ -1768,7 +1768,7 @@ html[dir="rtl"] .toast-container { right: auto; left: 24px; }
 
 /* ============================================================
    22. SHARED JS HELPER — Include at end of every page body:
-   <script src="/shared.js?v=5"></script>
+   <script src="/shared.js?v=6"></script>
    ============================================================ */
 
 /* ============================================================
