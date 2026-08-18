@@ -227,8 +227,16 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
 // ── Auth Guard Middleware ────────────────────────────────────────────
+// API routes MUST never receive an HTML redirect: fetch() on mobile browsers
+// sends Accept: */* (no application/json), which previously caused a 302 redirect
+// that fetch silently followed — returning the login HTML page instead of JSON
+// and breaking every data load (overview, auto responder, moderation, ...).
 function isAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
+  // Any /api/* request always gets a JSON 401 (mobile-safe)
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(401).json({ authenticated: false, error: 'Login required' });
+  }
   if (req.xhr || req.headers.accept?.includes('application/json')) {
     return res.status(401).json({ authenticated: false, error: 'Login required' });
   }
