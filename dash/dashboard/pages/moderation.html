@@ -208,7 +208,11 @@
 
     <script src="/shared.js"></script>
     <script>
-        const guildId = window.location.pathname.split('/')[2];
+        const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+        if (!guildId) {
+          Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
+          return;
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
@@ -305,9 +309,9 @@
                     throw new Error('Save failed');
                 }
             } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'Failed to save moderation settings.', 'error');
-            }
+      console.error(err);
+      Swal.fire('Error', `An error occurred: ${err.message || 'Unknown error'}`, 'error');
+    }
         }
     </script>
 </body>

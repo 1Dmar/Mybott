@@ -187,7 +187,11 @@
 
     <script src="/shared.js"></script>
     <script>
-        const guildId = (typeof window.getGuildIdFromPath === 'function' && window.getGuildIdFromPath()) || window.location.pathname.split('/')[2] || 'default';
+        const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+        if (!guildId) {
+          Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
+          return;
+        }
 
         function showToast(message, type) {
             const toast = document.getElementById('toast');

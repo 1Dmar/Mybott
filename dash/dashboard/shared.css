@@ -2051,3 +2051,27 @@ body.dark .alert-info    { color: #22d3ee; }
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ============================================================
+   22. MOBILE RESPONSIVE ENHANCEMENTS
+   ============================================================ */
+@media screen and (max-width: 768px) {
+    .stat-card-value {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+        max-width: 100%;
+        font-size: 22px;
+    }
+    .stat-card { min-width: 0; }
+    .card { min-width: 0; }
+    .page-title-row .btn-primary { flex-shrink: 0; white-space: nowrap; }
+    .page-title-row { flex-wrap: wrap; gap: 12px; }
+}
+@media screen and (max-width: 480px) {
+    .stat-card-value { font-size: 18px; white-space: normal; word-break: break-all; }
+    .stat-card { gap: 12px; padding: 14px 16px; }
+    .stat-card-icon { width: 40px; height: 40px; font-size: 18px; }
+    #mcInfoContainer .stat-card { flex-wrap: wrap; }
+}
