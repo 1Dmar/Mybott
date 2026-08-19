@@ -1,7 +1,7 @@
 /*
  * ProMcBot Dashboard - Shared Stylesheet
  * Unified design system for all dashboard pages
- * Version: 12.0
+ * Version: 13.0
  */
 
 /* ============================================================
@@ -1937,6 +1937,11 @@ html[dir="rtl"] .toast-container { right: auto; left: 24px; }
   gap: 18px;
   margin-bottom: 4px;
 }
+.form-grid .form-group { margin-bottom: 0; }
+.form-grid .form-group.full,
+.form-grid .full { grid-column: 1 / -1; }
+.form-grid .col-span-2 { grid-column: span 2; }
+html[dir="rtl"] .form-grid { direction: rtl; }
 .form-input {
   width: 100%;
   padding: 12px 16px;

@@ -263,6 +263,20 @@ app.get('/dashboard/logo.png', (req, res) => res.sendFile(path.join(dashDir, 'lo
 app.use('/dashboard', isAuthenticated, express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
+// Mojang profile proxy (Mojang API sends no CORS headers, so the dashboard
+// resolves Minecraft UUIDs through our own server)
+app.get('/api/mc-profile/:name', isAuthenticated, async (req, res) => {
+  try {
+    const name = String(req.params.name || '').slice(0, 16);
+    if (!/^[a-zA-Z0-9_]{1,16}$/.test(name)) return res.status(400).json({ error: 'Invalid name' });
+    const r = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`);
+    if (!r.ok) return res.status(r.status).json({ error: 'Profile not found' });
+    const j = await r.json();
+    const id = j.id || '';
+    const dashed = id.length === 32 ? `${id.slice(0,8)}-${id.slice(8,12)}-${id.slice(12,16)}-${id.slice(16,20)}-${id.slice(20)}` : id;
+    res.json({ id: j.id, uuid: dashed, name: j.name });
+  } catch (_) { res.status(502).json({ error: 'Profile lookup failed' }); }
+});
 // Serve shared CSS/JS (public assets only)
 app.get('/shared.css', (req, res) => res.sendFile(path.join(dashDir, 'shared.css')));
 app.get('/shared.js',  (req, res) => res.sendFile(path.join(dashDir, 'shared.js')));
@@ -1920,7 +1934,7 @@ app.post('/api/server/:guildId/events', [isAuthenticated, verifyGuildAccess], as
       maxParticipants: Math.min(200, Math.max(2, Number(req.body.maxParticipants) || 16)),
       scheduledAt: req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
       accent: (req.body.accent || '#FF512F').slice(0, 10),
-      participants: (req.body.participants || []).slice(0, 200).map(p => ({ name: String(p.name || '').slice(0, 40) })),
+      participants: (req.body.participants || []).slice(0, 200).map(p => ({ name: String(typeof p === 'string' ? p : (p.name || '')).trim().slice(0, 40) })).filter(p => p.name),
       status: 'upcoming',
     });
     res.status(201).json({ data: e });
@@ -1960,6 +1974,13 @@ app.post('/api/server/:guildId/events/:id/finish', [isAuthenticated, verifyGuild
       name: String(w.name || '').slice(0, 40),
       rank: Math.min(3, Math.max(1, Number(w.rank) || (i + 1))),
       discordId: w.discordId ? String(w.discordId) : undefined,
+      elo: w.elo !== undefined && w.elo !== '' ? Math.min(9999, Math.max(0, Number(w.elo) || 0)) : undefined,
+      division: w.division ? String(w.division).slice(0, 40) : undefined,
+      statWins: w.statWins !== undefined && w.statWins !== '' ? Math.max(0, Number(w.statWins) || 0) : undefined,
+      statLosses: w.statLosses !== undefined && w.statLosses !== '' ? Math.max(0, Number(w.statLosses) || 0) : undefined,
+      statKills: w.statKills !== undefined && w.statKills !== '' ? Math.max(0, Number(w.statKills) || 0) : undefined,
+      statDeaths: w.statDeaths !== undefined && w.statDeaths !== '' ? Math.max(0, Number(w.statDeaths) || 0) : undefined,
+      statStreak: w.statStreak !== undefined && w.statStreak !== '' ? Math.max(0, Number(w.statStreak) || 0) : undefined,
     }));
     ev.winners = winners;
     ev.status = 'finished';

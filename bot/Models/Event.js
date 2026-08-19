@@ -12,7 +12,15 @@ const EventParticipantSchema = new Schema({
   // Discord user id if linked
   discordId: { type: String },
   // Placement after the event ends: 1 = champion, 2, 3, or final rank
-  rank: { type: Number, min: 1 }
+  rank: { type: Number, min: 1 },
+  // Podium card stats (PixelMC-style leaderboard)
+  elo: { type: Number, min: 0, max: 9999 },
+  division: { type: String, maxlength: 40 },
+  statWins: { type: Number, min: 0 },
+  statLosses: { type: Number, min: 0 },
+  statKills: { type: Number, min: 0 },
+  statDeaths: { type: Number, min: 0 },
+  statStreak: { type: Number, min: 0 }
 });
 
 module.exports = model(
