@@ -51,6 +51,7 @@ const { notifyUser, notifyUserOnce, notifyEveryone, createNotification, getInbox
 const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const ServerPage = require('../bot/Models/ServerPage');
+const Event          = require('../bot/Models/Event');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Activity       = require('../bot/Models/Activity');
@@ -1841,6 +1842,7 @@ app.get('/s/:serverId', (req, res) => {
 });
 
 // ── Dashboard: server page settings ───────────────────────────────
+app.get('/my-servers/:guildId/events', ...serveServerPage('events.html'));
 app.get('/my-servers/:guildId/serverpage', ...serveServerPage('server_page.html'));
 
 // ── API: get server page settings ─────────────────────────────────
@@ -1872,7 +1874,7 @@ app.post('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) =>
   try {
     const ok = await verifyGuildAccess(req.user.discordId, req.params.guildId);
     if (!ok) return res.status(403).json({ error: 'Access denied' });
-    const { publicName, description, discordInvite, showInDirectory, logoUrl } = req.body || {};
+    const { publicName, description, discordInvite, showInDirectory, logoUrl, bannerUrl } = req.body || {};
     const page = await ServerPage.findOneAndUpdate(
       { guildId: req.params.guildId },
       {
@@ -1882,6 +1884,7 @@ app.post('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) =>
           discordInvite: discordInvite ?? undefined,
           showInDirectory: Boolean(showInDirectory),
           logoUrl: logoUrl ?? undefined,
+          bannerUrl: bannerUrl ?? undefined,
           updatedAt: new Date()
         }
       },
@@ -1895,6 +1898,89 @@ app.post('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) =>
 });
 
 // ── API: player analytics (dashboard page Players) ────────────────
+// ── Events system ──────────────────────────────────────────────
+app.get('/api/server/:guildId/events', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const list = await Event.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(100);
+    res.json({ data: list });
+  } catch (err) {
+    console.error('[events] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/server/:guildId/events', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const e = await Event.create({
+      guildId: req.params.guildId,
+      title: (req.body.title || '').slice(0, 120),
+      description: (req.body.description || '').slice(0, 500),
+      category: (req.body.category || 'other').slice(0, 30),
+      mapName: (req.body.mapName || '').slice(0, 60),
+      maxParticipants: Math.min(200, Math.max(2, Number(req.body.maxParticipants) || 16)),
+      scheduledAt: req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
+      accent: (req.body.accent || '#FF512F').slice(0, 10),
+      participants: (req.body.participants || []).slice(0, 200).map(p => ({ name: String(p.name || '').slice(0, 40) })),
+      status: 'upcoming',
+    });
+    res.status(201).json({ data: e });
+  } catch (err) {
+    console.error('[events] create error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.patch('/api/server/:guildId/events/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const ev = await Event.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!ev) return res.status(404).json({ error: 'not_found' });
+    const b = req.body || {};
+    if (b.title !== undefined) ev.title = String(b.title).slice(0, 120);
+    if (b.description !== undefined) ev.description = String(b.description).slice(0, 500);
+    if (b.category !== undefined) ev.category = String(b.category).slice(0, 30);
+    if (b.mapName !== undefined) ev.mapName = String(b.mapName).slice(0, 60);
+    if (b.maxParticipants !== undefined) ev.maxParticipants = Math.min(200, Math.max(2, Number(b.maxParticipants) || 16));
+    if (b.scheduledAt !== undefined) ev.scheduledAt = b.scheduledAt ? new Date(b.scheduledAt) : null;
+    if (b.accent !== undefined) ev.accent = String(b.accent).slice(0, 10);
+    if (b.status !== undefined && ['upcoming', 'live', 'finished'].includes(b.status)) ev.status = b.status;
+    if (b.participants !== undefined) ev.participants = (b.participants || []).slice(0, 200).map(p => ({ name: String(p.name || '').slice(0, 40) }));
+    await ev.save();
+    res.json({ data: ev });
+  } catch (err) {
+    console.error('[events] patch error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/server/:guildId/events/:id/finish', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const ev = await Event.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!ev) return res.status(404).json({ error: 'not_found' });
+    const winners = (req.body.winners || []).slice(0, 3).map((w, i) => ({
+      name: String(w.name || '').slice(0, 40),
+      rank: Math.min(3, Math.max(1, Number(w.rank) || (i + 1))),
+      discordId: w.discordId ? String(w.discordId) : undefined,
+    }));
+    ev.winners = winners;
+    ev.status = 'finished';
+    await ev.save();
+    res.json({ data: ev });
+  } catch (err) {
+    console.error('[events] finish error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.delete('/api/server/:guildId/events/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    await Event.deleteOne({ _id: req.params.id, guildId: req.params.guildId });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[events] delete error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.get('/api/server/:guildId/player-analytics', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
     const guildId = req.params.guildId;

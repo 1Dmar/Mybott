@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events — ProMcBot</title>
+  <link rel="stylesheet" href="/shared.css?v=12">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
+        </div>
+        <div class="dropdown-menu" id="notifDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="accountBtn" title="Account">
+          <i class='bx bx-user-circle'></i>
+        </div>
+        <div class="dropdown-menu" id="accountDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="langBtn" title="Language">
+          <i class='bx bx-world'></i>
+        </div>
+        <div class="dropdown-menu" id="langDropdown" style="display:none;"></div>
+      </div>
+    </div>
+  </nav>
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-content"></div>
+    </div>
+  </nav>
+  <!-- ── PAGE CONTENT ── -->
+  <div class="home-content" style="padding:28px;max-width:1080px;">
+    <div class="page-header">
+      <h1><i class='bx bx-trophy'></i> <span data-i18n="ev.title">Server Events & Tournaments</span></h1>
+      <p class="sub" data-i18n="ev.subtitle">Host epic Minecraft events — PvP arenas, build battles, parkour races. Register players, crown winners, and share a luxurious podium image with the world.</p>
+    </div>
+
+    <!-- ── Create / edit form ── -->
+    <div class="card" id="evFormCard">
+      <h2 id="evFormTitle"><i class='bx bx-plus-circle'></i> <span data-i18n="ev.create">Create Event</span></h2>
+      <input type="hidden" id="evEditId">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label" data-i18n="ev.name_label">Event title</label>
+          <input class="form-input" id="evName" type="text" maxlength="120" placeholder="e.g. Summer PvP Championship">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="ev.desc_label">Description</label>
+          <textarea class="form-input" id="evDesc" maxlength="500" rows="2" placeholder="Rules, prizes, what to bring..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="ev.category">Category</label>
+          <select class="form-input" id="evCategory">
+            <option value="pvp" data-i18n="ev.pvp">PvP Arena</option>
+            <option value="build" data-i18n="ev.build">Build Battle</option>
+            <option value="parkour" data-i18n="ev.parkour">Parkour Race</option>
+            <option value="quiz" data-i18n="ev.quiz">Quiz Night</option>
+            <option value="spleef" data-i18n="ev.spleef">Spleef</option>
+            <option value="speedrun" data-i18n="ev.speedrun">Speedrun</option>
+            <option value="minigame" data-i18n="ev.minigame">Minigame</option>
+            <option value="other" data-i18n="ev.other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="ev.map">Map / Mode</label>
+          <input class="form-input" id="evMap" type="text" maxlength="60" placeholder="e.g. Crystal Arena">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="ev.max_players">Max players</label>
+          <input class="form-input" id="evMax" type="number" min="2" max="200" placeholder="16">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="ev.scheduled">Scheduled</label>
+          <input class="form-input" id="evScheduled" type="datetime-local">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="ev.accent">Accent color</label>
+          <input class="form-input" id="evAccent" type="color" value="#FF512F" style="height:46px;">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="ev.players">Players</label>
+          <div style="display:flex;gap:10px;">
+            <input class="form-input" id="evNewPlayer" type="text" maxlength="40" data-i18n-placeholder="ev.player_name" placeholder="Player name (Minecraft username)">
+            <button class="btn btn-primary" id="evAddPlayerBtn" data-i18n="ev.add_player">Add player</button>
+          </div>
+          <div id="evPlayerList" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+        </div>
+      </div>
+      <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="evSaveBtn"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
+        <button class="btn btn-ghost" id="evResetBtn" data-i18n="save.discard">Discard</button>
+      </div>
+    </div>
+
+    <!-- ── Events list ── -->
+    <div class="card">
+      <h2><i class='bx bx-calendar-star'></i> <span data-i18n="ev.events">Events</span></h2>
+      <div id="evListWrap">
+        <div class="empty-state" id="evEmpty">
+          <i class='bx bx-trophy empty-icon'></i>
+          <h3 data-i18n="ev.no_events">No events yet. Host your first tournament and let your community compete!</h3>
+        </div>
+        <div id="evCards" style="display:flex;flex-direction:column;gap:14px;"></div>
+      </div>
+    </div>
+
+    <!-- ── Podium modal ── -->
+    <div id="evPodiumModal" class="modal-overlay" style="display:none;">
+      <div class="modal-card" style="max-width:860px;width:94%;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;">
+          <h2 style="font-size:19px;"><i class='bx bx-trophy'></i> <span id="evPodiumTitle"></span></h2>
+          <button class="btn btn-ghost" id="evPodiumClose" style="padding:8px 14px;"><i class='bx bx-x'></i></button>
+        </div>
+        <div style="display:flex;justify-content:center;background:rgba(255,255,255,.02);border-radius:16px;padding:16px;">
+          <canvas id="evPodiumCanvas" width="1200" height="760" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;justify-content:center;">
+          <button class="btn btn-primary" id="evDownloadBtn"><i class='bx bx-download'></i> <span data-i18n="ev.download">Download Podium Image</span></button>
+        </div>
+        <p class="form-hint" style="text-align:center;margin-top:12px;" data-i18n="ev.csp_img">Skins are fetched from mc-heads.net and rendered on the podium.</p>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .empty-state { text-align:center; padding:36px 20px; color:var(--text-muted); }
+    .empty-icon { font-size:44px; opacity:.55; }
+    .ev-card { border:1px solid var(--border); border-radius:16px; padding:18px; background:var(--surface); }
+    .ev-card-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .ev-cat-badge { font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; color:#fff; }
+    .ev-status-badge { font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; }
+    .ev-status-live { background:rgba(34,197,94,.15); color:#4ade80; }
+    .ev-status-upcoming { background:rgba(64,112,244,.15); color:#7da4ff; }
+    .ev-status-finished { background:rgba(255,255,255,.08); color:var(--text-muted); }
+    .ev-meta { color:var(--text-2); font-size:13px; margin-top:8px; }
+    .ev-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .ev-chip { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); font-size:12.5px; padding:5px 10px; border-radius:999px; }
+    .ev-chip img { width:16px; height:16px; border-radius:4px; }
+    .ev-player-item { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.05); border:1px solid var(--border); padding:6px 12px; border-radius:999px; font-size:13px; }
+    .ev-player-item button { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:0 2px; }
+    .ev-player-item button:hover { color:var(--primary); }
+    .ev-pick-row { margin-top:12px; }
+    .ev-pick-row label { font-size:12.5px; color:var(--text-2); display:block; margin-bottom:6px; }
+    .ev-pick-row select { width:100%; }
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
+  </style>
+  <script src="/i18n.js?v=12"></script>
+  <script src="/shared.js?v=12"></script>
+  <script>
+(function () {
+  const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
+  const $ = id => document.getElementById(id);
+  const CAT_META = {
+    pvp:     { label: 'ev.pvp',     color: '#FF512F', icon: 'bx-sword' },
+    build:   { label: 'ev.build',   color: '#4070f4', icon: 'bx-buildings' },
+    parkour: { label: 'ev.parkour', color: '#22c55e', icon: 'bx-run' },
+    quiz:    { label: 'ev.quiz',    color: '#f59e0b', icon: 'bx-question-mark' },
+    spleef:  { label: 'ev.spleef',  color: '#a855f7', icon: 'bx-bleach' },
+    speedrun:{ label: 'ev.speedrun',color: '#06b6d4', icon: 'bx-stopwatch' },
+    minigame:{ label: 'ev.minigame',color: '#ec4899', icon: 'bx-game' },
+    other:   { label: 'ev.other',   color: '#64748b', icon: 'bx-dots-horizontal-rounded' }
+  };
+  const i18n = k => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+
+  // ── Player scratch list (client-side draft) ──
+  let formPlayers = [];
+  function renderFormPlayers() {
+    const wrap = $('evPlayerList');
+    wrap.innerHTML = formPlayers.length
+      ? formPlayers.map((p, i) => `<span class="ev-player-item"><img src="https://mc-heads.net/avatar/${encodeURIComponent(p)}/16" onerror="this.style.display='none'" loading="lazy"><span>${esc(p)}</span><button data-i="${i}" title="Remove"><i class='bx bx-x'></i></button></span>`).join('')
+      : `<span class="form-hint">${i18n('ev.no_players_hint') || 'Added players appear here.'}</span>`;
+    wrap.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { formPlayers.splice(+b.dataset.i, 1); renderFormPlayers(); }));
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  $('evAddPlayerBtn').addEventListener('click', () => {
+    const name = $('evNewPlayer').value.trim();
+    if (!name) return;
+    if (formPlayers.includes(name)) { $('evNewPlayer').value = ''; return; }
+    formPlayers.push(name);
+    $('evNewPlayer').value = '';
+    renderFormPlayers();
+  });
+  $('evNewPlayer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('evAddPlayerBtn').click(); } });
+
+  // ── CRUD ──
+  let eventsCache = null;
+  async function loadEvents() {
+    const r = await fetch(`/api/server/${guildId}/events`);
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j.data || j.events || [];
+  }
+  async function renderList() {
+    eventsCache = await loadEvents();
+    const cards = $('evCards');
+    $('evEmpty').style.display = eventsCache.length ? 'none' : 'block';
+    cards.innerHTML = eventsCache.map(ev => {
+      const cat = CAT_META[ev.category] || CAT_META.other;
+      const statusCls = ev.status === 'live' ? 'ev-status-live' : ev.status === 'finished' ? 'ev-status-finished' : 'ev-status-upcoming';
+      const when = ev.scheduledAt ? `<span class="ev-meta"><i class='bx bx-time'></i> ${new Date(ev.scheduledAt).toLocaleString()}</span>` : '';
+      const map = ev.mapName ? `<span class="ev-meta"><i class='bx bx-map'></i> ${esc(ev.mapName)}</span>` : '';
+      const nPlayers = (ev.participants || []).length;
+      const hasWinners = ev.winners && ev.winners.length;
+      return `
+        <div class="ev-card">
+          <div class="ev-card-head">
+            <span class="ev-cat-badge" style="background:${cat.color};"><i class='bx ${cat.icon}'></i> ${i18n(cat.label)}</span>
+            <h3 style="margin:0;font-size:16px;">${esc(ev.title)}</h3>
+            <span class="ev-status-badge ${statusCls}">${i18n('ev.' + ev.status)}</span>
+          </div>
+          ${ev.description ? `<div class="ev-meta">${esc(ev.description)}</div>` : ''}
+          ${when} ${map}
+          <div class="ev-meta">${i18n('ev.players')}: ${nPlayers}</div>
+          ${hasWinners ? `<div class="ev-meta"><i class='bx bx-trophy' style="color:#f59e0b"></i> ${ev.winners.map(w => esc(w.name)).join(' · ')}</div>` : ''}
+          <div class="ev-actions">
+            <button class="btn btn-outline btn-sm ev-edit-btn" data-id="${ev._id}"><i class='bx bx-edit-alt'></i> Edit</button>
+            ${ev.status !== 'finished' ? `<button class="btn btn-outline btn-sm ev-finish-btn" data-id="${ev._id}"><i class='bx bx-flag-checkered'></i> <span data-i18n="ev.finish">Finish & Pick Winners</span></button>` : ''}
+            ${hasWinners ? `<button class="btn btn-outline btn-sm ev-podium-btn" data-id="${ev._id}"><i class='bx bx-trophy'></i> <span data-i18n="ev.view_podium">View Podium</span></button>` : ''}
+            ${ev.status === 'finished' ? `<button class="btn btn-ghost btn-sm ev-restart-btn" data-id="${ev._id}"><i class='bx bx-revision'></i> <span data-i18n="ev.restart">Reopen Event</span></button>` : ''}
+            <button class="btn btn-ghost btn-sm ev-delete-btn" data-id="${ev._id}"><i class='bx bx-trash'></i></button>
+          </div>
+          <div class="ev-finish-zone" data-id="${ev._id}" style="display:none;"></div>
+        </div>`;
+    }).join('');
+    attachCardListeners();
+  }
+
+  function attachCardListeners() {
+    document.querySelectorAll('.ev-edit-btn').forEach(b => b.addEventListener('click', openEdit));
+    document.querySelectorAll('.ev-delete-btn').forEach(b => b.addEventListener('click', () => delEvent(b.dataset.id)));
+    document.querySelectorAll('.ev-restart-btn').forEach(b => b.addEventListener('click', () => changeStatus(b.dataset.id, 'upcoming')));
+    document.querySelectorAll('.ev-finish-btn').forEach(b => b.addEventListener('click', () => openFinish(b.dataset.id)));
+    document.querySelectorAll('.ev-podium-btn').forEach(b => b.addEventListener('click', () => openPodium(b.dataset.id)));
+  }
+
+  async function delEvent(id) {
+    if (!confirm('Delete this event?')) return;
+    await fetch(`/api/server/${guildId}/events/${id}`, { method: 'DELETE' });
+    renderList();
+  }
+  async function changeStatus(id, status) {
+    await fetch(`/api/server/${guildId}/events/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    renderList();
+  }
+
+  // ── Create / edit ──
+  function clearForm() {
+    $('evEditId').value = '';
+    $('evFormTitle').querySelector('span').textContent = i18n('ev.create');
+    $('evName').value = ''; $('evDesc').value = ''; $('evMap').value = '';
+    $('evMax').value = ''; $('evScheduled').value = ''; $('evAccent').value = '#FF512F';
+    $('evCategory').value = 'pvp';
+    formPlayers = [];
+    renderFormPlayers();
+  }
+  $('evResetBtn').addEventListener('click', clearForm);
+
+  async function openEdit(e) {
+    const ev = eventsCache.find(x => String(x._id) === String(e.currentTarget.dataset.id));
+    if (!ev) return;
+    $('evEditId').value = ev._id;
+    $('evFormTitle').querySelector('span').textContent = 'Edit Event';
+    $('evName').value = ev.title || '';
+    $('evDesc').value = ev.description || '';
+    $('evMap').value = ev.mapName || '';
+    $('evMax').value = ev.maxParticipants || '';
+    $('evCategory').value = ev.category || 'pvp';
+    $('evAccent').value = ev.accent || '#FF512F';
+    if (ev.scheduledAt) $('evScheduled').value = ev.scheduledAt.slice(0, 16);
+    formPlayers = (ev.participants || []).map(p => p.name);
+    renderFormPlayers();
+    $('evFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Finish / pick winners ──
+  function openFinish(id) {
+    const ev = eventsCache.find(x => String(x._id) === String(id));
+    if (!ev) return;
+    const zone = document.querySelector(`.ev-finish-zone[data-id="${id}"]`);
+    const players = ev.participants || [];
+    if (!players.length) { alert('Add players to this event first.'); return; }
+    const opts = v => `<option value="${v}">—</option>` + players.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+    zone.innerHTML = `
+      <div class="ev-pick-row">
+        <label>${i18n('ev.champion')}</label>
+        <select class="form-input" data-place="1">${opts()}</select>
+      </div>
+      <div class="ev-pick-row">
+        <label>${i18n('ev.runner_up')}</label>
+        <select class="form-input" data-place="2">${opts()}</select>
+      </div>
+      <div class="ev-pick-row">
+        <label>${i18n('ev.third')}</label>
+        <select class="form-input" data-place="3">${opts()}</select>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button class="btn btn-primary btn-sm" data-save="${id}"><i class='bx bx-save'></i> <span data-i18n="ev.save_winners">Save Winners & Podium</span></button>
+        <button class="btn btn-ghost btn-sm" data-cancel>Cancel</button>
+      </div>`;
+    zone.style.display = 'block';
+    zone.querySelector('[data-cancel]').addEventListener('click', () => { zone.style.display = 'none'; });
+    zone.querySelector(`[data-save="${id}"]`).addEventListener('click', async () => {
+      const winners = Array.from(zone.querySelectorAll('select[data-place]'))
+        .map(s => ({ place: +s.dataset.place, name: s.value.trim() }))
+        .filter(w => w.name);
+      if (winners.length !== 3 || new Set(winners.map(w => w.name)).size !== 3) { alert('Pick 3 different players.'); return; }
+      await fetch(`/api/server/${guildId}/events/${id}/finish`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winners: winners.map(w => ({ name: w.name, rank: w.place })) })
+      });
+      zone.style.display = 'none';
+      renderList();
+      const ev2 = eventsCache.find(x => String(x._id) === String(id));
+      if (ev2 && ev2.winners && ev2.winners.length) openPodium(id);
+    });
+    zone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ── Save ──
+  $('evSaveBtn').addEventListener('click', async () => {
+    const title = $('evName').value.trim();
+    if (!title) { alert('Enter an event title.'); return; }
+    const body = {
+      title,
+      description: $('evDesc').value.trim(),
+      category: $('evCategory').value,
+      mapName: $('evMap').value.trim(),
+      maxParticipants: $('evMax').value ? +$('evMax').value : undefined,
+      scheduledAt: $('evScheduled').value ? new Date($('evScheduled').value).toISOString() : undefined,
+      accent: $('evAccent').value,
+      participants: formPlayers.map(n => ({ name: n }))
+    };
+    const editId = $('evEditId').value;
+    const url = editId ? `/api/server/${guildId}/events/${editId}` : `/api/server/${guildId}/events`;
+    const r = await fetch(url, { method: editId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(j.error || 'Save failed'); return; }
+    clearForm();
+    renderList();
+    const toast = document.querySelector('.toast') || { classList: null };
+    if (window.showToast) showToast(i18n('ev.saved'), 'success');
+  });
+
+  // ── Podium Canvas ──
+  const modal = $('evPodiumModal');
+  $('evPodiumClose').addEventListener('click', () => { modal.style.display = 'none'; });
+  modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+  async function loadSkinHead(name) {
+    // UUID + body render from mc-heads.net
+    try {
+      const r = await fetch(`https://api.mojang.com/users/profiles/minecraft/${encodeURIComponent(name)}`);
+      if (!r.ok) return null;
+      const j = await r.json();
+      return { uuid: j.id, name: j.name };
+    } catch (_) { return null; }
+  }
+  function drawRounded(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  async function drawPodium(ev) {
+    const canvas = $('evPodiumCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const accent = ev.accent || '#FF512F';
+
+    // ── Background ──
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#0a0b14'); bg.addColorStop(0.5, '#10121f'); bg.addColorStop(1, '#070a15');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+    // Radial glow behind podium
+    const glow = ctx.createRadialGradient(W / 2, H * 0.35, 40, W / 2, H * 0.4, W * 0.55);
+    glow.addColorStop(0, accent + '55'); glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+    // Stars
+    ctx.fillStyle = 'rgba(255,255,255,.4)';
+    for (let i = 0; i < 60; i++) {
+      const x = Math.random() * W, y = Math.random() * H * 0.6;
+      ctx.globalAlpha = 0.2 + Math.random() * 0.6;
+      ctx.fillRect(x, y, 1.6, 1.6);
+    }
+    ctx.globalAlpha = 1;
+
+    // ── Title ──
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 46px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(ev.title || 'Event Winners', W / 2, 92);
+    ctx.font = '600 22px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#93a3bd';
+    ctx.fillText('Official Podium · ProMcBot', W / 2, 132);
+
+    // ── Podium blocks (drawn behind players) ──
+    const cols = [
+      { place: 2, x: W * 0.13, w: W * 0.22, top: 470, height: 170, label: '2', color: '#b9c2d4', medal: '#c0c7d4' },
+      { place: 1, x: W * 0.39, w: W * 0.22, top: 400, height: 240, label: '1', color: '#f5c542', medal: '#ffd54a' },
+      { place: 3, x: W * 0.65, w: W * 0.22, top: 530, height: 110, label: '3', color: '#d98a5b', medal: '#e8a477' }
+    ];
+    cols.forEach(c => {
+      // Block shadow
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      drawRounded(ctx, c.x + 6, c.top + 10, c.w, H - c.top - 40 + 4, 18); ctx.fill();
+      // Block
+      const g = ctx.createLinearGradient(0, c.top, 0, H - 40);
+      g.addColorStop(0, c.color); g.addColorStop(1, '#3a3f52');
+      ctx.fillStyle = g;
+      drawRounded(ctx, c.x, c.top, c.w, H - 40 - c.top, 18); ctx.fill();
+      // Place number
+      ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,.5)';
+      ctx.fillText(c.label, c.x + c.w / 2, c.top + 100);
+      ctx.fillStyle = '#0a0b14';
+      ctx.fillText(c.label, c.x + c.w / 2, c.top + 96);
+    });
+
+    // ── Winners ──
+    const winners = (ev.winners || []).slice().sort((a, b) => (a.rank || 9) - (b.rank || 9));
+    const colByPlace = { 1: cols[1], 2: cols[0], 3: cols[2] };
+    const titles = { 1: i18n('ev.champion'), 2: i18n('ev.runner_up'), 3: i18n('ev.third') };
+
+    // Resolve skins in parallel
+    const resolved = await Promise.all(winners.slice(0, 3).map(async w => {
+      const skin = await loadSkinHead(w.name);
+      return { ...w, uuid: skin ? skin.uuid : null, resolvedName: skin ? skin.name : w.name };
+    }));
+
+    // Draw each winner
+    await Promise.all(resolved.map(async (w, i) => {
+      const c = colByPlace[w.rank];
+      if (!c) return;
+      const cx = c.x + c.w / 2;
+      const imgTop = c.top - 220;
+      const imgSize = 170;
+      // Player render
+      if (w.uuid) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise(res => {
+          img.onload = () => res();
+          img.onerror = () => res();
+          img.src = `https://mc-heads.net/body/${w.uuid}/2x.png`;
+        });
+        ctx.save();
+        drawRounded(ctx, cx - imgSize / 2, imgTop, imgSize, imgSize * 1.12, 16);
+        ctx.clip();
+        ctx.drawImage(img, cx - imgSize / 2, imgTop, imgSize, imgSize * 1.12);
+        ctx.restore();
+        // Soft glow around player
+        ctx.save();
+        ctx.shadowColor = accent; ctx.shadowBlur = 40;
+        ctx.strokeStyle = accent + '88'; ctx.lineWidth = 3;
+        drawRounded(ctx, cx - imgSize / 2, imgTop, imgSize, imgSize * 1.12, 16); ctx.stroke();
+        ctx.restore();
+      } else {
+        // No UUID — draw a cube head placeholder
+        ctx.fillStyle = '#3a3f52';
+        drawRounded(ctx, cx - 85, imgTop, 170, 190, 16); ctx.fill();
+        ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = '#e9edf5';
+        ctx.fillText('MC', cx, imgTop + 110);
+      }
+      // Name plate
+      const plateW = c.w + 20;
+      ctx.fillStyle = 'rgba(10,11,20,.92)';
+      drawRounded(ctx, cx - plateW / 2, imgTop + imgSize * 1.12 + 14, plateW, 58, 14); ctx.fill();
+      ctx.strokeStyle = accent; ctx.lineWidth = 1.5;
+      drawRounded(ctx, cx - plateW / 2, imgTop + imgSize * 1.12 + 14, plateW, 58, 14); ctx.stroke();
+      ctx.font = 'bold 24px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(w.resolvedName || w.name, cx, imgTop + imgSize * 1.12 + 52);
+      // Title
+      ctx.font = '600 17px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = w.rank === 1 ? '#f5c542' : '#93a3bd';
+      ctx.fillText(titles[w.rank], cx, imgTop + imgSize * 1.12 + 100);
+    }));
+
+    // ── Footer ──
+    ctx.font = '16px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#5d6b82';
+    ctx.fillText(`© ${new Date().getFullYear()} ${ev.title ? ev.title + ' · ' : ''}ProMcBot — promcbot.dev`, W / 2, H - 12);
+  }
+
+  async function openPodium(id) {
+    const ev = eventsCache.find(x => String(x._id) === String(id));
+    if (!ev || !ev.winners || !ev.winners.length) return;
+    $('evPodiumTitle').textContent = ev.title || 'Winners Podium';
+    modal.style.display = 'flex';
+    try {
+      await drawPodium(ev);
+    } catch (err) {
+      console.error('podium draw failed', err);
+    }
+  }
+
+  $('evDownloadBtn').addEventListener('click', () => {
+    const canvas = $('evPodiumCanvas');
+    const link = document.createElement('a');
+    link.download = `podium-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  // ── Init ──
+  renderList();
+  renderFormPlayers();
+})();
+  </script>
+</body>
+</html>

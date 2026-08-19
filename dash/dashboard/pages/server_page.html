@@ -1,77 +1,143 @@
-<div class="page-header">
-  <nav class="breadcrumb" id="spBreadcrumb"></nav>
-  <h1><i class='bx bx-globe'></i> <span data-i18n="sp.title">Server Public Page</span></h1>
-  <p class="sub" data-i18n="sp.subtitle">Publish a beautiful public page for your Minecraft server on promcbot.dev — with live status, player charts and a one-click join button.</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Server Public Page — ProMcBot</title>
+  <link rel="stylesheet" href="/shared.css?v=12">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
 
-<div class="card">
-  <h2><i class='bx bx-show'></i> <span data-i18n="sp.section_public">Public Page</span></h2>
-  <div class="form-grid">
-    <div class="form-group">
-      <label class="form-label" data-i18n="sp.name">Public name</label>
-      <input class="form-input" id="spPublicName" type="text" maxlength="80" placeholder="e.g. ProMc Network">
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
     </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="sp.invite">Discord invite link</label>
-      <input class="form-input" id="spInvite" type="url" placeholder="https://discord.gg/xxxx">
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
+        </div>
+        <div class="dropdown-menu" id="notifDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="accountBtn" title="Account">
+          <i class='bx bx-user-circle'></i>
+        </div>
+        <div class="dropdown-menu" id="accountDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="langBtn" title="Language">
+          <i class='bx bx-world'></i>
+        </div>
+        <div class="dropdown-menu" id="langDropdown" style="display:none;"></div>
+      </div>
     </div>
-    <div class="form-group full">
-      <label class="form-label" data-i18n="sp.description">Description</label>
-      <textarea class="form-input" id="spDescription" maxlength="300" rows="3" placeholder="A short description shown on your public page"></textarea>
+  </nav>
+
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-content"></div>
     </div>
-    <div class="form-group full">
-      <label class="form-label" data-i18n="sp.logo">Logo URL</label>
-      <input class="form-input" id="spLogo" type="url" placeholder="https://... (optional, defaults to your server wallpaper)">
+  </nav>
+
+  <!-- ── PAGE CONTENT ── -->
+  <div class="home-content" style="padding:28px;max-width:980px;">
+    <div class="page-header">
+      <nav class="breadcrumb" id="spBreadcrumb"></nav>
+      <h1><i class='bx bx-globe'></i> <span data-i18n="sp.title">Server Public Page</span></h1>
+      <p class="sub" data-i18n="sp.subtitle">Publish a beautiful public page for your Minecraft server on promcbot.dev — with live status, player charts and a one-click join button.</p>
+    </div>
+
+    <div class="card">
+      <h2><i class='bx bx-show'></i> <span data-i18n="sp.section_public">Public Page</span></h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" data-i18n="sp.name">Public name</label>
+          <input class="form-input" id="spPublicName" type="text" maxlength="80" placeholder="e.g. ProMc Network">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="sp.invite">Discord invite link</label>
+          <input class="form-input" id="spInvite" type="url" placeholder="https://discord.gg/xxxx">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="sp.description">Description</label>
+          <textarea class="form-input" id="spDescription" maxlength="300" rows="3" placeholder="A short description shown on your public page"></textarea>
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="sp.logo">Logo URL</label>
+          <input class="form-input" id="spLogo" type="url" placeholder="https://... (optional, defaults to your server wallpaper)">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="sp.banner">Banner URL</label>
+          <input class="form-input" id="spBanner" type="url" placeholder="https://... (optional)">
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <label class="toggle-label" style="margin:0;">
+          <span class="toggle-text" data-i18n="sp.directory">Show in the public directory</span>
+          <label class="switch">
+            <input type="checkbox" id="spDirectory">
+            <span class="slider round"></span>
+          </label>
+        </label>
+        <span class="form-hint" data-i18n="sp.directory_hint">When enabled, your server appears in the public Top Servers directory on promcbot.dev/servers</span>
+      </div>
+    </div>
+
+    <div class="card" id="spPreviewCard">
+      <h2><i class='bx bx-link'></i> <span data-i18n="sp.link_title">Your public page</span></h2>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <code id="spUrl" style="color:var(--primary-2);font-size:14px"></code>
+        <a class="btn btn-outline" id="spOpenBtn" target="_blank" rel="noopener" style="display:none"><i class='bx bx-show'></i> <span data-i18n="sp.open">Open page</span></a>
+      </div>
+      <p class="hint" data-i18n="sp.hint">Your page goes live instantly when you save. Anyone can view it — no login required.</p>
     </div>
   </div>
-  <div style="margin-top:20px">
-    <label class="toggle-label">
-      <span class="toggle-text" data-i18n="sp.directory">Show in the public directory</span>
-      <label class="switch">
-        <input type="checkbox" id="spDirectory">
-        <span class="slider"></span>
-      </label>
-    </label>
+
+  <!-- save bar (shared.js style) -->
+  <div class="save-bar" id="saveBar">
+    <span class="save-bar-text" data-i18n="save.unsaved">You have unsaved changes</span>
+    <div class="save-bar-actions">
+      <button class="btn btn-ghost" id="spDiscardBtn" data-i18n="save.discard">Discard</button>
+      <button class="btn btn-primary" id="spSaveBtn"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
+    </div>
   </div>
-</div>
 
-<div class="card" id="spPreviewCard">
-  <h2><i class='bx bx-link'></i> <span data-i18n="sp.link_title">Your public page</span></h2>
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <code id="spUrl" style="color:var(--primary-2);font-size:14px"></code>
-    <a class="btn btn-outline" id="spOpenBtn" target="_blank" rel="noopener" style="display:none"><i class='bx bx-show'></i> <span data-i18n="sp.open">Open page</span></a>
-  </div>
-  <p class="hint" data-i18n="sp.hint">Your page goes live instantly when you save. Anyone can view it — no login required.</p>
-</div>
+  <style>
+    .toggle-label { display:flex; align-items:center; gap:12px; cursor:pointer; }
+    .switch { position:relative; display:inline-block; width:46px; height:26px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider { position:absolute; inset:0; background:rgba(255,255,255,.12); border-radius:999px; transition:.25s; }
+    .slider::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.25s; }
+    .switch input:checked + .slider { background:linear-gradient(135deg,var(--primary),var(--primary-2)); }
+    .switch input:checked + .slider::before { transform:translateX(20px); }
+    .hint { color:var(--text-2); font-size:12.5px; margin-top:10px; }
+    .form-hint { color:var(--text-muted); font-size:12.5px; }
+    .btn-outline {
+      background:transparent; border:1px solid rgba(255,81,47,.5); color:var(--primary-2);
+      padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600;
+      text-decoration:none; display:inline-flex; align-items:center; gap:7px; transition:.25s;
+    }
+    .btn-outline:hover { background:rgba(255,81,47,.12); }
+    code { background:var(--surface); border:1px solid var(--border); padding:8px 14px; border-radius:10px; word-break:break-all; }
+  </style>
 
-<!-- save bar (shared.js) -->
-<div class="save-bar" id="saveBar">
-  <span class="save-bar-text" data-i18n="save.unsaved">You have unsaved changes</span>
-  <div class="save-bar-actions">
-    <button class="btn btn-ghost" id="spDiscardBtn" data-i18n="save.discard">Discard</button>
-    <button class="btn btn-primary" id="spSaveBtn"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
-  </div>
-</div>
-
-<style>
-  .toggle-label { display:flex; align-items:center; gap:12px; cursor:pointer; }
-  .switch { position:relative; display:inline-block; width:46px; height:26px; }
-  .switch input { opacity:0; width:0; height:0; }
-  .slider { position:absolute; inset:0; background:rgba(255,255,255,.12); border-radius:999px; transition:.25s; }
-  .slider::before { content:''; position:absolute; height:20px; width:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.25s; }
-  .switch input:checked + .slider { background:linear-gradient(135deg,var(--primary),var(--primary-2)); }
-  .switch input:checked + .slider::before { transform:translateX(20px); }
-  .hint { color:var(--text-2); font-size:12.5px; margin-top:10px; }
-  .btn-outline {
-    background:transparent; border:1px solid rgba(255,81,47,.5); color:var(--primary-2);
-    padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600;
-    text-decoration:none; display:inline-flex; align-items:center; gap:7px; transition:.25s;
-  }
-  .btn-outline:hover { background:rgba(255,81,47,.12); }
-  code { background:var(--surface); border:1px solid var(--border); padding:8px 14px; border-radius:10px; word-break:break-all; }
-</style>
-
-<script>
+  <script src="/i18n.js?v=12"></script>
+  <script src="/shared.js?v=12"></script>
+  <script>
 (function () {
   const API = (window.__pmc && window.__pmc.api) ? window.__pmc.api : '';
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -86,6 +152,7 @@
       description: $('spDescription').value.trim(),
       discordInvite: $('spInvite').value.trim(),
       logoUrl: $('spLogo').value.trim(),
+      bannerUrl: $('spBanner').value.trim(),
       showInDirectory: $('spDirectory').checked
     };
     const changed = JSON.stringify(val) !== JSON.stringify(draft);
@@ -93,7 +160,6 @@
   }
 
   async function load() {
-    // breadcrumb from /api/guilds (shared helper)
     try {
       const g = await fetch(API + '/api/guilds').then(r => r.json());
       const found = (g.guilds || []).find(x => String(x.id) === guildId);
@@ -106,12 +172,13 @@
       const res = await fetch(`${API}/api/server/${guildId}/serverpage`);
       const data = await res.json();
       current = data.page || {
-        publicName: '', description: '', discordInvite: '', logoUrl: '', showInDirectory: false
+        publicName: '', description: '', discordInvite: '', logoUrl: '', bannerUrl: '', showInDirectory: false
       };
       $('spPublicName').value = current.publicName || data.serverInfo?.serverName || '';
       $('spDescription').value = current.description || '';
       $('spInvite').value = current.discordInvite || '';
       $('spLogo').value = current.logoUrl || '';
+      $('spBanner').value = current.bannerUrl || '';
       $('spDirectory').checked = Boolean(current.showInDirectory);
       $('spUrl').textContent = window.location.origin + '/s/' + guildId;
       $('spOpenBtn').href = '/s/' + guildId;
@@ -121,6 +188,7 @@
         description: $('spDescription').value.trim(),
         discordInvite: $('spInvite').value.trim(),
         logoUrl: $('spLogo').value.trim(),
+        bannerUrl: ($('spBanner').value || '').trim(),
         showInDirectory: $('spDirectory').checked
       };
       setSaveVisible(false);
@@ -129,7 +197,7 @@
     }
   }
 
-  ['spPublicName', 'spDescription', 'spInvite', 'spLogo', 'spDirectory'].forEach(id => {
+  ['spPublicName', 'spDescription', 'spInvite', 'spLogo', 'spBanner', 'spDirectory'].forEach(id => {
     $(id).addEventListener('input', markDirty);
     $(id).addEventListener('change', markDirty);
   });
@@ -144,6 +212,7 @@
           description: $('spDescription').value.trim(),
           discordInvite: $('spInvite').value.trim(),
           logoUrl: $('spLogo').value.trim(),
+          bannerUrl: $('spBanner').value.trim(),
           showInDirectory: $('spDirectory').checked
         })
       });
@@ -154,10 +223,11 @@
         description: $('spDescription').value.trim(),
         discordInvite: $('spInvite').value.trim(),
         logoUrl: $('spLogo').value.trim(),
+        bannerUrl: $('spBanner').value.trim(),
         showInDirectory: $('spDirectory').checked
       };
       setSaveVisible(false);
-      showToast(i18nText('save.saved') || 'Saved successfully', 'success');
+      showToast((typeof i18nText === 'function' && i18nText('save.saved')) || 'Saved successfully', 'success');
     } catch (err) {
       showToast('Save failed: ' + err.message, 'error');
     }
@@ -169,10 +239,13 @@
     $('spDescription').value = draft.description;
     $('spInvite').value = draft.discordInvite;
     $('spLogo').value = draft.logoUrl;
+    $('spBanner').value = draft.bannerUrl || '';
     $('spDirectory').checked = draft.showInDirectory;
     setSaveVisible(false);
   });
 
   load();
 })();
-</script>
+  </script>
+</body>
+</html>

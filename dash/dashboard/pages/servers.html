@@ -6,7 +6,7 @@
   <title>ProMcBot — My Servers</title>
   <meta name="description" content="Manage your Discord servers with ProMcBot dashboard">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/shared.css?v=10">
+  <link rel="stylesheet" href="/shared.css?v=12">
   <style>
     /* ── Servers Page Specific ── */
     .servers-hero {
@@ -692,6 +692,7 @@
         : `<div class="guild-badge bot-away"><i class='bx bx-plus'></i> Invite Bot</div>`;
       // Real linked-status chips (from MongoDB)
       const linkChips = [];
+      const publicPageBtn = `<a href="/my-servers/${guild.id}/serverpage" class="btn-invite" title="Server Public Page"><i class='bx bx-globe'></i></a>`;
       if (linked.botConfigured) linkChips.push(`<span class="guild-chip" title="Bot setup saved in database"><i class='bx bx-cog'></i> Configured</span>`);
       if (linked.mcServerInfo) linkChips.push(`<span class="guild-chip guild-chip-mc" title="Minecraft server info saved"><i class='bx bx-server'></i> MC Server</span>`);
       if (linked.mcSetup) linkChips.push(`<span class="guild-chip guild-chip-mc" title="Minecraft server connected via bot"><i class='bx bx-link'></i> MC Setup</span>`);
@@ -852,7 +853,7 @@
       });
     });
   </script>
-  <script src="/i18n.js?v=10"></script>
-  <script src="/shared.js?v=10"></script>
+  <script src="/i18n.js?v=12"></script>
+  <script src="/shared.js?v=12"></script>
 </body>
 </html>

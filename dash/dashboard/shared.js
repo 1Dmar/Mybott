@@ -87,8 +87,8 @@
           { href: `/my-servers/${guildId}/ticket`,         icon: 'bx-support',     text: 'sb.tickets' },
           { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'sb.welcome' },
           { href: `/my-servers/${guildId}/serverpage`,     icon: 'bx-globe',       text: 'sb.server_page' },
-
-          { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players' },
+          { href: `/my-servers/${guildId}/events`,         icon: 'bx-trophy',      text: 'sb.events', tag: { text: 'ev.new', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players',  },
           { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'sb.settings' },
         ]
       },
@@ -189,7 +189,7 @@
         const isActive = currentPath === item.href || (item.href !== '/my-servers' && currentPath.startsWith(item.href));
         const activeClass = isActive ? ' active' : '';
         const extraClass = item.cls ? ` ${item.cls}` : '';
-        const tagHtml = item.tag ? `<span class="tag ${item.tag.cls}">${item.tag.text}</span>` : '';
+        const tagHtml = item.tag ? `<span class="tag ${item.tag.cls}">${itemLabel(item.tag.text)}</span>` : '';
 
         html += `
           <li class="item">
