@@ -84,6 +84,7 @@
     .badge.online { border-color: rgba(16,185,129,.45); color: var(--green); background: rgba(16,185,129,.1); }
     .badge.offline { border-color: rgba(239,68,68,.45); color: var(--red); background: rgba(239,68,68,.1); }
     .badge.top { border-color: rgba(240,152,25,.55); color: var(--primary-2); background: rgba(240,152,25,.12); }
+    .btn.voted { background: rgba(16,185,129,.15); color: #10B981; border-color: rgba(16,185,129,.4); }
     .badge i { font-size: 14px; }
     /* stats strip */
     .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
@@ -213,6 +214,7 @@
         : page.bumpedAt
         ? `<span class="badge top"><i class='bx bxs-up-arrow'></i>${t('top.badge')}</span>`
         : '';
+      const voteBadge = `<span class="badge" style="border-color:rgba(255,154,60,.5);color:#FF9A3C;background:rgba(255,154,60,.12)"><i class='bx bxs-flame'></i><span id="sv-votes">${page.votes12h || 0}</span> votes / 12h</span>`;
       document.getElementById('heroArea').innerHTML = `
         <div class="hero">
           <div class="hero-bg" style="background-image:url('${page.bannerUrl || ''}')"></div>
@@ -220,16 +222,32 @@
             <img class="server-logo" src="${page.logoUrl || server?.wallpaper || ''}" onerror="this.style.display='none'">
             <div class="server-name">${escapeHtml(page.publicName)}</div>
             ${page.description ? `<div class="server-desc">${escapeHtml(page.description)}</div>` : ''}
-            <div class="hero-badges">${statusBadge}${topBadge}
+            <div class="hero-badges">${statusBadge}${voteBadge}${topBadge}
               ${server?.javaIP ? `<span class="badge"><i class='bx bx-server'></i>${escapeHtml(server.javaIP + ':' + server.javaPort)}</span>` : ''}
               ${live?.version ? `<span class="badge"><i class='bx bx-code-alt'></i>${escapeHtml(live.version)}</span>` : ''}
             </div>
           </div>
         </div>
         <div class="actions">
-          ${page.discordInvite ? `<a class="btn btn-primary" href="${escapeHtml(page.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>${t('join')}</a>` : ''}
+          <button class="btn btn-primary" id="sv-vote-btn" onclick="svVote()"><i class='bx bxs-vote'></i>Vote for this server</button>
+          ${page.discordInvite ? `<a class="btn btn-ghost" href="${escapeHtml(page.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>${t('join')}</a>` : ''}
           ${server?.javaIP ? `<button class="btn btn-ghost" id="copyBtn"><i class='bx bx-copy'></i><span id="copyText">${t('copy.ip')}</span></button>` : ''}
-        </div>`;
+        </div>
+        <div id="sv-vote-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px"></div>`;
+      window.svVote = async function () {
+        const msg = document.getElementById('sv-vote-msg');
+        const btn = document.getElementById('sv-vote-btn');
+        try {
+          const r = await fetch('/api/s/' + id + '/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          const d = await r.json();
+          if (d.already) { msg.style.color = '#10B981'; msg.textContent = 'You already voted for this server. You can vote again in 12 hours.'; btn.classList.add('voted'); return; }
+          if (!d.ok) { msg.style.color = '#EF4444'; msg.textContent = 'Please log in with Discord first, then try again.'; return; }
+          msg.style.color = '#10B981'; msg.textContent = 'Thanks for your vote! You can vote again in 12 hours.';
+          btn.classList.add('voted');
+          const vc = document.getElementById('sv-votes');
+          if (vc) vc.textContent = String(parseInt(vc.textContent || '0') + 1);
+        } catch (_) { msg.style.color = '#EF4444'; msg.textContent = 'Could not send your vote. Please try again.'; }
+      };
       document.getElementById('copyBtn')?.addEventListener('click', async () => {
         await navigator.clipboard.writeText(server.javaIP + ':' + server.javaPort);
         document.getElementById('copyText').textContent = t('copied');

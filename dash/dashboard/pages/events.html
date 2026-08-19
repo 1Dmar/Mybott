@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=13">
+  <link rel="stylesheet" href="/shared.css?v=14">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -171,7 +171,7 @@
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
   <script src="/i18n.js?v=13"></script>
-  <script src="/shared.js?v=13"></script>
+  <script src="/shared.js?v=14"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -411,52 +411,64 @@
     ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
     // Radial glow behind podium
-    const glow = ctx.createRadialGradient(W / 2, H * 0.42, 60, W / 2, H * 0.45, W * 0.6);
-    glow.addColorStop(0, accent + '55'); glow.addColorStop(1, 'transparent');
+    const glow = ctx.createRadialGradient(W / 2, H * 0.5, 60, W / 2, H * 0.5, W * 0.62);
+    glow.addColorStop(0, accent + '50'); glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 
-    // Stars
+    // Stars (fixed seed for consistent look)
     ctx.fillStyle = 'rgba(255,255,255,.4)';
-    for (let i = 0; i < 60; i++) {
-      const x = Math.random() * W, y = Math.random() * H * 0.6;
-      ctx.globalAlpha = 0.2 + Math.random() * 0.6;
-      ctx.fillRect(x, y, 1.6, 1.6);
+    for (let i = 0; i < 70; i++) {
+      const x = (Math.sin(i * 127.1 + 311.7) * 43758.5453 % 1 + 1) % 1 * W;
+      const y = (Math.sin(i * 269.5 + 183.3) * 43758.5453 % 1 + 1) % 1 * H * 0.62;
+      ctx.globalAlpha = 0.15 + ((Math.sin(i * 78.2) + 1) / 2) * 0.55;
+      ctx.fillRect(Math.abs(x), Math.abs(y), 1.6, 1.6);
     }
     ctx.globalAlpha = 1;
 
     // ── Title ──
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 46px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center'
+    ctx.font = 'bold 40px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(ev.title || 'Event Winners', W / 2, 92);
-    ctx.font = '600 22px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(ev.title || 'Event Winners', W / 2, 76);
+    ctx.font = '600 19px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#93a3bd';
-    ctx.fillText('Official Podium · ProMcBot', W / 2, 132);
+    ctx.fillText('Official Podium · ProMcBot', W / 2, 108);
 
     // ── Podium blocks (2 left, 1 center-highest, 3 right) ──
+    // Blocks bottom out at the floor (H - 150) so cards float ABOVE the floor
+    const FLOOR = H - 150;
     const cols = [
-      { place: 2, x: W * 0.13, w: W * 0.22, top: 520, label: '2', color: '#b9c2d4', medal: '#c0c7d4' },
-      { place: 1, x: W * 0.39, w: W * 0.22, top: 440, label: '1', color: '#f5c542', medal: '#ffd54a' },
-      { place: 3, x: W * 0.65, w: W * 0.22, top: 590, label: '3', color: '#d98a5b', medal: '#e8a477' }
+      { place: 2, x: W * 0.13, w: W * 0.22, top: FLOOR - 170, label: '2', color: '#b9c2d4', medal: '#c0c7d4' },
+      { place: 1, x: W * 0.39, w: W * 0.22, top: FLOOR - 270, label: '1', color: '#f5c542', medal: '#ffd54a' },
+      { place: 3, x: W * 0.65, w: W * 0.22, top: FLOOR - 110, label: '3', color: '#d98a5b', medal: '#e8a477' }
     ];
+    // Floor line under the podium
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W * 0.06, FLOOR + 2); ctx.lineTo(W * 0.94, FLOOR + 2); ctx.stroke();
+
     cols.forEach(c => {
-      // Block shadow
-      ctx.fillStyle = 'rgba(0,0,0,.5)';
-      drawRounded(ctx, c.x + 6, c.top + 12, c.w, H - 70 - c.top, 16); ctx.fill();
-      // Block with glass gradient
-      const g = ctx.createLinearGradient(0, c.top, 0, H - 70);
-      g.addColorStop(0, c.color); g.addColorStop(0.55, shadeColor(c.color, -35)); g.addColorStop(1, '#24283a');
+      // Soft floor shadow
+      const fg = ctx.createRadialGradient(c.x + c.w / 2, FLOOR + 4, 4, c.x + c.w / 2, FLOOR + 4, c.w * 0.6);
+      fg.addColorStop(0, 'rgba(0,0,0,.45)'); fg.addColorStop(1, 'transparent');
+      ctx.fillStyle = fg; ctx.fillRect(c.x - c.w * 0.15, FLOOR - 10, c.w * 1.3, 30);
+      // Block with metallic gradient
+      const g = ctx.createLinearGradient(0, c.top, 0, FLOOR);
+      g.addColorStop(0, c.color); g.addColorStop(0.35, shadeColor(c.color, -18)); g.addColorStop(1, shadeColor(c.color, -48));
       ctx.fillStyle = g;
-      drawRounded(ctx, c.x, c.top, c.w, H - 70 - c.top, 16); ctx.fill();
-      // Glass highlight on top edge
-      ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;
-      drawRounded(ctx, c.x, c.top, c.w, 8, 16); ctx.stroke();
-      // Place number embossed
-      ctx.font = 'bold 76px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = 'rgba(0,0,0,.35)';
-      ctx.fillText(c.label, c.x + c.w / 2, c.top + 108);
+      drawRounded(ctx, c.x, c.top, c.w, FLOOR - c.top, 14); ctx.fill();
+      // Inner rim
+      ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1.5;
+      drawRounded(ctx, c.x, c.top, c.w, FLOOR - c.top, 14); ctx.stroke();
+      // Top glass edge highlight
+      ctx.beginPath();
+      ctx.moveTo(c.x + 16, c.top + 4); ctx.lineTo(c.x + c.w - 16, c.top + 4);
+      ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2; ctx.stroke();
+      // Place number embossed (centered vertically in block, never below its top)
+      ctx.font = 'bold 74px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,.32)';
+      ctx.fillText(c.label, c.x + c.w / 2, c.top + (FLOOR - c.top) / 2 + 26);
       ctx.fillStyle = 'rgba(255,255,255,.92)';
-      ctx.fillText(c.label, c.x + c.w / 2, c.top + 104);
+      ctx.fillText(c.label, c.x + c.w / 2, c.top + (FLOOR - c.top) / 2 + 22);
     });
 
     // ── Winners ──
@@ -469,25 +481,16 @@
       return { ...w, uuid: skin ? skin.uuid : null, resolvedName: skin ? skin.name : w.name };
     }));
 
-    // Draw each winner: full-body player standing on his block
+    // Draw each winner: player on his block, then glass card floating above floor
     await Promise.all(resolved.map(async w => {
       const c = colByPlace[w.rank];
       if (!c) return;
       const cx = c.x + c.w / 2;
-      const playerH = 235; // full body render height
-      const playerW = playerH / 1.25;
       const feetY = c.top; // stands on top of block
 
-      // Crown for champion (drawn behind head, drawn above)
-      if (w.rank === 1) {
-        // Glow under crown
-        const cg = ctx.createRadialGradient(cx, feetY - playerH - 20, 5, cx, feetY - playerH - 20, 60);
-        cg.addColorStop(0, '#ffd54a88'); cg.addColorStop(1, 'transparent');
-        ctx.fillStyle = cg; ctx.fillRect(cx - 70, feetY - playerH - 90, 140, 110);
-        drawCrown(ctx, cx - 40, feetY - playerH - 62, 80);
-      }
-
-      // Player image (full body)
+      // Player image (full body) — measured from the real sprite so it never stretches
+      let playerW = 176, playerH = 220;
+      let skinImg = null;
       if (w.uuid) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -496,10 +499,35 @@
           img.onerror = () => res();
           img.src = `https://mc-heads.net/body/${w.uuid}/2x.png`;
         });
-        // Soft glow around player
+        skinImg = img;
+        if (img.naturalWidth > 0) {
+          // Scale to a target body height, keep native aspect ratio
+          playerH = 230;
+          playerW = Math.round(img.naturalWidth / img.naturalHeight * playerH);
+        }
+      }
+
+      // Crown for champion (drawn ABOVE the head, with a clear gap — clear of the title)
+      if (w.rank === 1) {
+        const crownY = feetY - playerH - 64;
+        const cg = ctx.createRadialGradient(cx, crownY + 18, 5, cx, crownY + 18, 64);
+        cg.addColorStop(0, '#ffd54a88'); cg.addColorStop(1, 'transparent');
+        ctx.fillStyle = cg; ctx.fillRect(cx - 72, crownY - 28, 144, 84);
+        drawCrown(ctx, cx - 38, crownY, 76);
+      }
+
+      // Draw player with glow behind (never clipped)
+      if (skinImg) {
+        // Soft glow BEHIND player
         ctx.save();
-        ctx.shadowColor = w.rank === 1 ? '#ffd54a' : accent; ctx.shadowBlur = 45;
-        ctx.drawImage(img, cx - playerW / 2, feetY - playerH, playerW, playerH);
+        ctx.shadowColor = w.rank === 1 ? '#ffd54a' : accent; ctx.shadowBlur = 40;
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(cx - playerW / 2, feetY - playerH, playerW, playerH);
+        ctx.restore();
+        // Crisp pixel rendering (no smoothing blur on the sprite)
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(skinImg, Math.round(cx - playerW / 2), Math.round(feetY - playerH), playerW, playerH);
         ctx.restore();
       } else {
         ctx.fillStyle = '#3a3f52';
@@ -509,17 +537,18 @@
         ctx.fillText('MC', cx, feetY - playerH / 2);
       }
 
-      // ── Glass card (below the block) ──
-      const cardW = Math.min(W * 0.245, 268);
+      // ── Glass card floating ABOVE the floor (never clipped) ──
+      const cardW = Math.min(W * 0.24, 264);
+      const cardH = 92;
       const cardX = cx - cardW / 2;
-      const cardY = H - 62;
-      drawGlassCard(ctx, cardX, cardY, cardW, 52, w, c);
+      const cardY = FLOOR - cardH - 14; // floats in front of the block, above floor line
+      drawGlassCard(ctx, cardX, cardY, cardW, cardH, w, c);
     }));
 
-    // ── Footer ──
-    ctx.font = '16px "Segoe UI", Arial, sans-serif';
+    // ── Footer (below the floor line, no overlap with cards) ──
+    ctx.font = '15px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#5d6b82';
-    ctx.fillText(`© ${new Date().getFullYear()} ${ev.title ? ev.title + ' · ' : ''}ProMcBot — promcbot.dev`, W / 2, H - 12);
+    ctx.fillText(`© ${new Date().getFullYear()} ${ev.title ? ev.title + ' · ' : ''}ProMcBot — promcbot.dev`, W / 2, H - 16);
   }
 
   function shadeColor(hex, percent) {
@@ -557,76 +586,95 @@
   }
 
   function drawGlassCard(ctx, x, y, w, h, w_ /* winner */, c) {
-    // Glass base
     ctx.save();
+    // Drop shadow for floating glass
+    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
     const gg = ctx.createLinearGradient(x, y, x, y + h);
-    gg.addColorStop(0, 'rgba(255,255,255,.10)'); gg.addColorStop(1, 'rgba(255,255,255,.03)');
+    gg.addColorStop(0, 'rgba(255,255,255,.12)'); gg.addColorStop(1, 'rgba(255,255,255,.04)');
     ctx.fillStyle = gg;
-    drawRounded(ctx, x, y, w, h, 18); ctx.fill();
+    drawRounded(ctx, x, y, w, h, 16); ctx.fill();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     // Glass border
-    ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 1.2;
-    drawRounded(ctx, x, y, w, h, 18); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.2;
+    drawRounded(ctx, x, y, w, h, 16); ctx.stroke();
+    // Rank-colored top accent bar
+    const col = w_.rank === 1 ? '#ffd54a' : w_.rank === 2 ? '#c0c7d4' : '#e8a477';
+    ctx.save();
+    ctx.beginPath();
+    drawRounded(ctx, x, y, w, h, 16); ctx.clip();
+    ctx.fillStyle = col;
+    ctx.fillRect(x, y, w, 3);
+    ctx.restore();
     // Inner glass highlight
     ctx.beginPath();
-    ctx.moveTo(x + 18, y + 2);
-    ctx.lineTo(x + w - 18, y + 2);
-    ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.moveTo(x + 16, y + 3);
+    ctx.lineTo(x + w - 16, y + 3);
+    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1.5; ctx.stroke();
     ctx.restore();
 
     const cx = x + w / 2;
-    const col = w_.rank === 1 ? '#ffd54a' : w_.rank === 2 ? '#c0c7d4' : '#e8a477';
     // Rank badge (small circle above name)
-    const badgeR = 14;
+    const badgeR = 13;
     ctx.save();
-    ctx.shadowColor = col; ctx.shadowBlur = 18;
-    ctx.beginPath(); ctx.arc(cx, y - 14, badgeR, 0, Math.PI * 2);
+    ctx.shadowColor = col; ctx.shadowBlur = 16;
+    ctx.beginPath(); ctx.arc(cx, y + 15, badgeR, 0, Math.PI * 2);
     ctx.fillStyle = '#10121f'; ctx.fill();
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
     ctx.restore();
-    ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+    ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = col;
-    ctx.fillText(w_.rank === 1 ? '★' : w_.rank === 2 ? '✦' : '✦', cx, y - 9);
+    ctx.textAlign = 'center';
+    ctx.fillText(w_.rank === 1 ? '★' : w_.rank === 2 ? '✦' : '✦', cx, y + 20);
 
     // Name + division
-    ctx.font = 'bold 19px "Segoe UI", Arial, sans-serif';
+    ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#ffffff';
     const name = String(w_.resolvedName || w_.name).slice(0, 18);
-    ctx.fillText(name, cx, y + 22);
+    ctx.fillText(name, cx, y + 46);
     if (w_.division) {
-      ctx.font = '12px "Segoe UI", Arial, sans-serif';
+      ctx.font = '11.5px "Segoe UI", Arial, sans-serif';
       ctx.fillStyle = '#93a3bd';
-      ctx.fillText(String(w_.division).slice(0, 20), cx, y + 39);
+      ctx.fillText(String(w_.division).slice(0, 20), cx, y + 62);
     }
-    // ELO (big, colored)
-    if (w_.elo) {
-      ctx.font = 'bold 26px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = col;
-      ctx.fillText(String(w_.elo).slice(0, 8), cx, y + 68);
-      ctx.font = '11px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#5d6b82';
-      ctx.fillText('ELO', cx, y + 82);
-    }
-    // Stats row: W / L / K / D / S
-    const statY = y + h - 12;
+    // ELO (big, colored) + stats row on one compact card
+    const hasElo = w_.elo !== undefined && w_.elo !== null;
     const stats = [
-      { label: 'WINS', v: w_.statWins },
-      { label: 'LOSSES', v: w_.statLosses },
-      { label: 'KILLS', v: w_.statKills },
-      { label: 'DEATHS', v: w_.statDeaths },
-      { label: 'STREAK', v: w_.statStreak }
+      { label: 'W', v: w_.statWins },
+      { label: 'L', v: w_.statLosses },
+      { label: 'K', v: w_.statKills },
+      { label: 'D', v: w_.statDeaths },
+      { label: 'S', v: w_.statStreak }
     ];
+    // Stats row at the bottom (dividers between cells)
+    const statY = y + h - 16;
     const cellW = w / stats.length;
-    ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#e9edf5';
     stats.forEach((s, i) => {
       const sx = x + cellW * i + cellW / 2;
-      ctx.fillText(s.v !== undefined && s.v !== null ? String(s.v).slice(0, 6) : '—', sx, statY - 10);
-      ctx.font = '9.5px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#5d6b82';
-      ctx.fillText(s.label, sx, statY);
+      ctx.textAlign = 'center';
       ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
       ctx.fillStyle = '#e9edf5';
+      ctx.fillText(s.v !== undefined && s.v !== null ? String(s.v).slice(0, 6) : '—', sx, statY);
+      ctx.font = '9.5px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#5d6b82';
+      ctx.fillText(s.label, sx, statY + 13);
+      if (i > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x + cellW * i, statY - 12);
+        ctx.lineTo(x + cellW * i, statY + 13);
+        ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.stroke();
+      }
     });
+    // ELO on the right side (next to name), colored
+    if (hasElo) {
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 24px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = col;
+      ctx.fillText(String(w_.elo).slice(0, 7), x + w - 14, y + 50);
+      ctx.font = '10px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#5d6b82';
+      ctx.fillText('ELO', x + w - 14, y + 64);
+    }
+    ctx.textAlign = 'center';
   }
 
   async function openPodium(id) {

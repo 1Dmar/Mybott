@@ -106,6 +106,22 @@
       text-align: center; padding: 70px 20px; color: var(--text-2);
       border: 1px dashed var(--border); border-radius: 20px;
     }
+    .vote-wrap { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .vote-btn {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      background: linear-gradient(135deg, #FF9A3C, #FF512F); color: #fff; border: none; cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .vote-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(255, 81, 47, .4); }
+    .vote-btn.voted { background: rgba(16,185,129,.15); color: #10B981; border: 1px solid rgba(16,185,129,.35); }
+    .vote-btn.voted:hover { transform: none; box-shadow: none; }
+    .vote-count {
+      display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 10px;
+      background: rgba(255,255,255,.05); border: 1px solid var(--border); font-size: 12px; font-weight: 700; color: var(--text);
+    }
+    .vote-count i { color: #FF9A3C; }
+    .vote-err { color: #EF4444; font-size: 12px; margin-top: 6px; display: none; }
     .empty i { font-size: 42px; display: block; margin-bottom: 14px; color: var(--primary-2); }
     .footer-note { text-align: center; color: var(--text-2); font-size: 13px; margin-top: 44px; }
     .footer-note a { color: var(--primary-2); text-decoration: none; font-weight: 600; }
@@ -177,6 +193,13 @@
             </div>
             <div class="srv-desc">${s.description ? escapeHtml(s.description) : 'A Minecraft server community powered by ProMcBot.'}</div>
             <div class="srv-badges">${statusBadge}${topBadge}${ipHtml}</div>
+            <div class="vote-wrap">
+              <button class="vote-btn${s.voted ? ' voted' : ''}" data-guild="${s.guildId}" onclick="vote('${s.guildId}')">
+                <i class='bx ${s.voted ? 'bx-badge-check' : 'bxs-vote'}'></i>${s.voted ? 'Voted' : 'Vote for this server'}
+              </button>
+              <span class="vote-count"><i class='bx bxs-flame'></i><span id="vc-${s.guildId}">${s.votes12h || 0}</span> votes / 12h</span>
+            </div>
+            <div class="vote-err" id="ve-${s.guildId}">Please log in via Discord to vote.</div>
             <div class="srv-actions">
               <a class="btn btn-primary" href="/s/${s.guildId}"><i class='bx bx-show'></i>Server Page</a>
               ${s.discordInvite ? `<a class="btn btn-ghost" href="${escapeHtml(s.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>Join</a>` : ''}
@@ -184,8 +207,40 @@
           </div>`;
       }).join('');
     }
+    window.vote = async function (guildId) {
+      try {
+        const r = await fetch('/api/s/' + guildId + '/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const d = await r.json();
+        if (d.already) return; // already voted within 12h
+        if (!d.ok) {
+          const ve = document.getElementById('ve-' + guildId);
+          if (ve) ve.style.display = 'block';
+          return;
+        }
+        const srv = all.find(s => s.guildId === guildId);
+        if (srv) { srv.voted = true; srv.votes12h = (srv.votes12h || 0) + 1; }
+        render();
+      } catch (_) {}
+    };
     document.getElementById('search').addEventListener('input', render);
+    // Load my vote statuses (works when logged in)
+    async function loadMyVotes() {
+      try {
+        const me = await fetch('/api/me', { credentials: 'same-origin' });
+        const m = me.ok ? await me.json() : { loggedIn: false };
+        if (!m || !m.loggedIn) return;
+        await Promise.all(all.map(async (srv) => {
+          try {
+            const r = await fetch('/api/s/' + srv.guildId + '/vote?userId=' + m.id, { credentials: 'same-origin' });
+            const d = await r.json();
+            if (d) { srv.votes12h = d.votes || 0; srv.voted = d.voted || false; }
+          } catch (_) {}
+        }));
+        render();
+      } catch (_) {}
+    }
     load();
+    loadMyVotes();
   </script>
 </body>
 </html>

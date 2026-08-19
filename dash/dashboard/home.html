@@ -173,6 +173,18 @@
     .lang-select-home option { background: #101523; color: #e2e8f0; }
     html[dir="rtl"] .lang-select-home { background-position: left 7px center; padding: 0 12px 0 26px; }
 
+    /* Unified nav icon button (bell) */
+    .landing-nav .nav-icon-btn:hover { color: #FF9A64; border-color: var(--border-hi); background: var(--surface-2); }
+    /* Notification badge & dropdown inside landing-nav */
+    .landing-nav .notification-badge { top: 4px; right: 4px; }
+    .landing-nav .notification-dropdown { top: 52px; right: 0; }
+    .landing-nav .notification-item { display: flex; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .landing-nav .notification-item:last-child { border-bottom: none; }
+    .landing-nav .notification-icon { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,107,47,0.12); color: #FF7A3F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+    .landing-nav .notification-title { font-weight: 700; font-size: 13px; color: var(--text); }
+    .landing-nav .notification-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .landing-nav .notification-time { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; }
+
     /* User dropdown */
     .landing-nav .dropdown { position: relative; display: inline-block; }
     .landing-nav .user-avatar-nav {
@@ -650,6 +662,28 @@
         <option value="es">🇪🇸 ES</option>
       </select>
       <button class="theme-toggle" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></button>
+      <!-- Unified notifications bell (shown only when logged in) -->
+      <div id="navBellWrap" style="display:none;position:relative;">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications" style="position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:var(--transition-fast);">
+          <i class='bx bx-bell' style="font-size:18px;color:var(--text-secondary);"></i>
+          <span id="notifBadge" class="notification-badge" style="display:none;position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;line-height:16px;text-align:center;border-radius:999px;background:#FF512F;color:#fff;">0</span>
+        </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown" style="display:none;position:absolute;right:0;top:52px;min-width:300px;max-height:420px;overflow-y:auto;background:#0d1220;border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-xl);z-index:1000;">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="nav.notification">Notifications</span></div>
+          <div class="notification-list" id="notifList"></div>
+        </div>
+      </div>
+      <!-- User avatar dropdown (shown only when logged in) -->
+      <div id="navUserWrap" class="dropdown" style="display:none;">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar-nav" id="userBtn" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #FF512F;box-shadow:0 0 14px rgba(255,107,47,0.35);transition:transform 0.2s ease;">
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header"><i class='bx bx-user'></i> <span id="navUserName">Loading...</span></div>
+          <a href="/dashboard"><i class='bx bx-grid-alt'></i> <span data-i18n="nav.dashboard">Dashboard</span></a>
+          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="nav.my_servers">My Servers</span></a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout">Logout</span></a>
+        </div>
+      </div>
       <div id="authContainer">
         <a id="authButton" href="/loading-auth" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg, #FF512F 0%, #F09819 100%);color:white;padding:8px 18px;border-radius:var(--radius-md);font-weight:600;text-decoration:none;">Login</a>
       </div>
@@ -825,8 +859,8 @@
   </div>
 
   <!-- SCRIPTS -->
-  <script src="/i18n.js?v=12"></script>
-  <script src="/shared.js?v=13"></script>
+  <script src="/i18n.js?v=14"></script>
+  <script src="/shared.js?v=14"></script>
   <script>
     // ── Year ──────────────────────────────────────────────────────
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -852,6 +886,63 @@
       } catch (e) { /* keep — */ }
     }
     loadStats();
+
+    // ── Unified Navbar (bell + user dropdown for logged-in visitors) ───
+    async function initUnifiedNav() {
+      try {
+        const resp = await fetch('/api/me', { credentials: 'same-origin' });
+        const me = resp.ok ? await resp.json() : { loggedIn: false };
+        if (!me || !me.loggedIn) return;
+        document.getElementById('authContainer').style.display = 'none';
+        const bellWrap = document.getElementById('navBellWrap');
+        const userWrap = document.getElementById('navUserWrap');
+        if (bellWrap) bellWrap.style.display = 'block';
+        if (userWrap) userWrap.style.display = 'block';
+        const avatarUrl = me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=128` : `https://cdn.discordapp.com/embed/avatars/0.png`;
+        const ub = document.getElementById('userBtn');
+        if (ub) ub.src = avatarUrl;
+        const nn = document.getElementById('navUserName');
+        if (nn) nn.textContent = me.username || 'User';
+        // Bell interactions
+        const btn = document.getElementById('notificationBtn');
+        const dd = document.getElementById('notificationDropdown');
+        const list = document.getElementById('notifList');
+        if (btn && dd && list) {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+            if (dd.style.display === 'block') refreshBell();
+          });
+          document.addEventListener('click', () => { dd.style.display = 'none'; });
+          dd.addEventListener('click', e => e.stopPropagation());
+        }
+        async function refreshBell() {
+          try {
+            const [unreadRes, inboxRes] = await Promise.all([
+              fetch('/api/notifications/unread', { credentials: 'same-origin' }),
+              fetch('/api/notifications/inbox', { credentials: 'same-origin' })
+            ]);
+            const unread = unreadRes.ok ? await unreadRes.json() : null;
+            const inbox = inboxRes.ok ? await inboxRes.json() : null;
+            const badge = document.getElementById('notifBadge');
+            const count = (unread && unread.unread) || 0;
+            if (badge) { badge.textContent = count > 99 ? '99+' : count; badge.style.display = count > 0 ? 'inline-block' : 'none'; }
+            const items = (inbox && inbox.notifications) ? inbox.notifications : [];
+            if (!items.length) { list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">No new notifications</div>'; return; }
+            list.innerHTML = items.map(n => `
+              <div class="notification-item" style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);">
+                <div class="notification-icon" style="width:34px;height:34px;border-radius:50%;background:rgba(255,107,47,0.12);color:#FF7A3F;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;"><i class="bx ${n.type === 'warning' ? 'bx-error' : n.type === 'error' ? 'bx-x-circle' : 'bx-check-circle'}"></i></div>
+                <div>
+                  <div class="notification-title">${String(n.title || '').replace(/</g,'&lt;')}</div>
+                  <div class="notification-desc">${String(n.body || '').replace(/</g,'&lt;')}</div>
+                  <div class="notification-time">${new Date(n.createdAt).toLocaleString()}</div>
+                </div>
+              </div>`).join('');
+          } catch (_) { /* bell keeps working on next click */ }
+        }
+      } catch (_) { /* not logged in or API unavailable */ }
+    }
+    initUnifiedNav();
 
     // ── Cookie Banner ─────────────────────────────────────────────
     if (!localStorage.getItem('pmc_cookies_ok')) {

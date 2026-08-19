@@ -52,6 +52,7 @@ const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const ServerPage = require('../bot/Models/ServerPage');
 const Event          = require('../bot/Models/Event');
+const ServerVote     = require('../bot/Models/ServerVote');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Activity       = require('../bot/Models/Activity');
@@ -364,6 +365,54 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(dashDir, 'home.html'));
 });
 
+// ════════════════════════════════════════════════════════════════════
+//  SERVER VOTES — community voting for Minecraft servers
+// ════════════════════════════════════════════════════════════════════
+// Vote once per server every 12 hours (per discord user)
+app.post('/api/s/:guildId/vote', async (req, res) => {
+  try {
+    const { guildId } = req.params;
+    const userId = req.user?.id || (req.body && req.body.userId);
+    const userName = (req.user && (req.user.username || '')) || (req.body && req.body.userName) || '';
+    if (!guildId || !userId) return res.status(400).json({ error: 'missing_user' });
+    const votedRecently = await ServerVote.findOne({
+      guildId,
+      voterId: userId,
+      createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) }
+    });
+    if (votedRecently) return res.json({ voted: true, already: true });
+    await ServerVote.create({ guildId, voterId: userId, voterName: String(userName).slice(0, 40) });
+    res.json({ voted: true, ok: true });
+  } catch (err) {
+    console.error('[vote] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Public: check my vote status + vote count for a server
+app.get('/api/s/:guildId/vote', async (req, res) => {
+  try {
+    const userId = req.user?.id || (req.query && req.query.userId);
+    const since = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    const [count, mine] = await Promise.all([
+      ServerVote.countDocuments({ guildId: req.params.guildId, createdAt: { $gte: since } }),
+      userId ? ServerVote.findOne({ guildId: req.params.guildId, voterId: userId, createdAt: { $gte: since } }) : null
+    ]);
+    res.json({ votes: count, voted: !!mine });
+  } catch (err) {
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Public session status (for the unified navbar on public pages)
+app.get('/api/me', (req, res) => {
+  if (req.isAuthenticated() && req.user) {
+    res.json({ loggedIn: true, id: req.user.id, username: req.user.username, avatar: req.user.avatar || null, discriminator: req.user.discriminator });
+  } else {
+    res.json({ loggedIn: false });
+  }
+});
+
 app.get('/privacy', (req, res) => {
   res.sendFile(path.join(dashDir, 'pages', 'PrivacyPolicy.html'));
 });
@@ -585,7 +634,7 @@ app.post('/api/server/:guildId/config', [isAuthenticated, verifyGuildAccess], as
             { upsert: true, new: true }
     );
     try {
-      notifyUserOnce(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'Configuration saved', message: `Bot configuration updated for your server.`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated bot configuration' }); } catch (_) {}
@@ -790,7 +839,7 @@ app.post('/api/server/:guildId/modules', [isAuthenticated, verifyGuildAccess], a
       { upsert: true, new: true }
     );
     try {
-      notifyUserOnce(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'Modules updated', message: `Server modules changed.`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     } catch (_) {}
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (_) {}
     try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: `Dashboard toggled modules: ${Object.keys(req.body || {}).slice(0, 5).join(', ') || 'none'}` }); } catch (_) {}
@@ -818,7 +867,7 @@ app.post('/api/server/:guildId/guild-settings', [isAuthenticated, verifyGuildAcc
       { upsert: true, new: true }
     );
     try {
-      notifyUserOnce(req.user.id, { type: 'success', title: 'AutoMod settings saved', message: `Guild settings updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+      notifyUserOnce(req.user.id, { type: 'success', title: 'AutoMod settings saved', message: `Guild settings updated.`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     } catch (_) {}
     res.json({ success: true, settings });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
@@ -844,7 +893,7 @@ app.post('/api/server/:guildId/welcome', [isAuthenticated, verifyGuildAccess], a
       { $set: { welcome: req.body } },
       { upsert: true, new: true }
     );
-    notifyUserOnce(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Welcome message saved', message: `Welcome config updated for your server.`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated welcome settings' }); } catch (_) {}
     res.json({ success: true, welcome: config.welcome });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
@@ -870,7 +919,7 @@ app.post('/api/server/:guildId/ticket-config', [isAuthenticated, verifyGuildAcce
       { $set: { ticket: req.body } },
       { upsert: true, new: true }
     );
-    notifyUserOnce(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Ticket settings saved', message: `Ticket configuration updated.`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: 'Dashboard updated ticket settings' }); } catch (_) {}
     res.json({ success: true, ticket: config.ticket });
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
@@ -982,7 +1031,7 @@ app.post('/api/server/:guildId/mc-info', [isAuthenticated, verifyGuildAccess], a
     );
     try { DashboardBridge?.invalidate(req.params.guildId); } catch (e) { console.warn('Bridge invalidate failed:', e.message); }
     try { logActivity(req.params.guildId, { user: `${req.user.username} (Dashboard)`, action: `Dashboard saved Minecraft server info (${setFields.serverName || setFields.serverType})` }); } catch (_) {}
-    notifyUserOnce(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard' }).catch(() => {});
+    notifyUserOnce(req.user.id, { type: 'success', title: 'Settings saved', message: `Minecraft server info saved (${req.params.guildId}).`, createdByLabel: 'Dashboard', source: 'system' }).catch(() => {});
     res.json({ success: true, info });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1517,6 +1566,7 @@ app.post('/api/admin/notifications/send', isAdmin, async (req, res) => {
       forAdmin: !!forAdmin,
       createdBy: req.user.id,
       createdByLabel: req.user.username || req.user.global_name || 'Admin',
+      source: 'admin',
       type: ['info', 'success', 'warning', 'error'].includes(type) ? type : 'info',
       title: escapeHtml(String(title).slice(0, 256)),
       message: escapeHtml(String(message).slice(0, 4000)),
@@ -1556,7 +1606,8 @@ app.delete('/api/admin/notifications/:id', isAdmin, async (req, res) => {
 app.get('/api/notifications/inbox', isAuthenticated, async (req, res) => {
   try {
     const adminIds = (process.env.OWNER_ID || '804999528129363998').split(',');
-    const inbox = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id) });
+    // Navbar bell: Admin Panel notifications ONLY (system save confirmations hidden)
+    const inbox = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id), bellOnly: true });
     res.json({ success: true, ...inbox });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1566,7 +1617,7 @@ app.get('/api/notifications/inbox', isAuthenticated, async (req, res) => {
 app.get('/api/notifications/unread', isAuthenticated, async (req, res) => {
   try {
     const adminIds = (process.env.OWNER_ID || '804999528129363998').split(',');
-    const { unread } = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id) });
+    const { unread } = await getInbox(req.user.id, { isAdmin: adminIds.includes(req.user.id), bellOnly: true });
     res.json({ success: true, unread: Math.min(unread, 99) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -1768,6 +1819,7 @@ async function directoryData() {
     for (const page of pages) {
       const server = await ServerInfo.findOne({ serverId: page.guildId }).lean();
       const bumped = await BumpedServer.findOne({ guildId: page.guildId }).lean();
+      const votes12h = await ServerVote.countDocuments({ guildId: page.guildId, createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) } });
       out.push({
         guildId: page.guildId,
         publicName: page.publicName || server?.serverName || 'Minecraft Server',
@@ -1777,11 +1829,14 @@ async function directoryData() {
         javaIP: server?.javaIP || '',
         featured: Boolean(page.featured),
         bumpedAt: bumped?.bumpedAt || null,
-        registeredAt: page.registeredAt
+        registeredAt: page.registeredAt,
+        votes12h: votes12h
       });
     }
     out.sort((a, b) => {
       if (a.featured !== b.featured) return a.featured ? -1 : 1;
+      const va = a.votes12h || 0, vb = b.votes12h || 0;
+      if (va !== vb) return vb - va;
       if (a.bumpedAt && b.bumpedAt && a.bumpedAt.getTime() !== b.bumpedAt.getTime())
         return b.bumpedAt.getTime() - a.bumpedAt.getTime();
       return (b.registeredAt || 0) - (a.registeredAt || 0);
@@ -1815,6 +1870,7 @@ app.get('/api/s/:serverId', async (req, res) => {
     if (!page) return res.json({ success: false, error: 'not_found' });
     const server = await ServerInfo.findOne({ serverId: req.params.serverId }).lean();
     const bumped = await BumpedServer.findOne({ guildId: req.params.serverId }).lean();
+    const votes12h = await ServerVote.countDocuments({ guildId: req.params.serverId, createdAt: { $gte: new Date(Date.now() - 12 * 60 * 60 * 1000) } });
     const javaPort = server?.javaPort || 25565;
     const live = await liveMcStatus(server?.javaIP, javaPort, server?.serverType === 'bedrock' ? 'bedrock' : 'java');
     const growth = await growthChart(req.params.serverId);
@@ -1829,7 +1885,8 @@ app.get('/api/s/:serverId', async (req, res) => {
         bannerUrl: page.bannerUrl || server?.wallpaper || null,
         discordInvite: page.discordInvite || '',
         featured: Boolean(page.featured),
-        bumpedAt: bumped?.bumpedAt || null
+        bumpedAt: bumped?.bumpedAt || null,
+        votes12h: votes12h
       },
       server: server ? {
         serverId: server.serverId,
@@ -1860,10 +1917,8 @@ app.get('/my-servers/:guildId/events', ...serveServerPage('events.html'));
 app.get('/my-servers/:guildId/serverpage', ...serveServerPage('server_page.html'));
 
 // ── API: get server page settings ─────────────────────────────────
-app.get('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) => {
+app.get('/api/server/:guildId/serverpage', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
-    const ok = await verifyGuildAccess(req.user.discordId, req.params.guildId);
-    if (!ok) return res.status(403).json({ error: 'Access denied' });
     const page = await ServerPage.findOne({ guildId: req.params.guildId }).lean();
     const server = await ServerInfo.findOne({ serverId: req.params.guildId }).lean();
     res.json({
@@ -1884,10 +1939,8 @@ app.get('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) => 
 });
 
 // ── API: save server page settings ────────────────────────────────
-app.post('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) => {
+app.post('/api/server/:guildId/serverpage', [isAuthenticated, verifyGuildAccess], async (req, res) => {
   try {
-    const ok = await verifyGuildAccess(req.user.discordId, req.params.guildId);
-    if (!ok) return res.status(403).json({ error: 'Access denied' });
     const { publicName, description, discordInvite, showInDirectory, logoUrl, bannerUrl } = req.body || {};
     const page = await ServerPage.findOneAndUpdate(
       { guildId: req.params.guildId },

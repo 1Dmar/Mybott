@@ -4,9 +4,9 @@
 const Notification = require('../Models/Notification');
 
 /** Create one dashboard notification for a specific user. */
-function notifyUser(recipientId, { type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, expiresInMs } = {}) {
+function notifyUser(recipientId, { type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, expiresInMs, source = 'admin' } = {}) {
   return Notification.create({
-    recipientId, type, title, message, createdByLabel, actionUrl, actionLabel,
+    recipientId, type, title, message, createdByLabel, actionUrl, actionLabel, source,
     expiresAt: expiresInMs ? new Date(Date.now() + expiresInMs) : undefined
   }).catch(() => null);
 }
@@ -17,15 +17,16 @@ function notifyUser(recipientId, { type = 'info', title = '', message = '', crea
  * minutes, refresh its timestamp/message instead of creating a duplicate.
  */
 const DEBOUNCE_MIN = 15;
-async function notifyUserOnce(recipientId, { type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, expiresInMs, debounceMin = DEBOUNCE_MIN } = {}) {
+async function notifyUserOnce(recipientId, { type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, expiresInMs, debounceMin = DEBOUNCE_MIN, source = 'admin' } = {}) {
   try {
     const cutoff = new Date(Date.now() - debounceMin * 60 * 1000);
     const existing = await Notification.findOne({
       recipientId,
       title,
+      source: { $in: [source, { $exists: false }] },
       createdAt: { $gte: cutoff }
     }).sort({ createdAt: -1 }).lean();
-    const update = { message, type, createdByLabel };
+    const update = { message, type, createdByLabel, source };
     if (actionUrl) update.actionUrl = actionUrl;
     if (actionLabel) update.actionLabel = actionLabel;
     if (existing) {
@@ -33,7 +34,7 @@ async function notifyUserOnce(recipientId, { type = 'info', title = '', message 
       return { deduped: true, id: existing._id };
     }
     const doc = await Notification.create({
-      recipientId, type, title, message, createdByLabel, actionUrl, actionLabel,
+      recipientId, type, title, message, createdByLabel, actionUrl, actionLabel, source,
       expiresAt: expiresInMs ? new Date(Date.now() + expiresInMs) : undefined
     });
     return { deduped: false, id: doc?._id };
@@ -43,9 +44,9 @@ async function notifyUserOnce(recipientId, { type = 'info', title = '', message 
 }
 
 /** Announcement visible to every logged-in user. */
-function notifyEveryone({ type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, forAdmin = false, expiresInMs } = {}) {
+function notifyEveryone({ type = 'info', title = '', message = '', createdByLabel = 'System', actionUrl, actionLabel, forAdmin = false, expiresInMs, source = 'admin' } = {}) {
   return Notification.create({
-    recipientId: null, forAdmin, type, title, message, createdByLabel, actionUrl, actionLabel,
+    recipientId: null, forAdmin, type, title, message, createdByLabel, actionUrl, actionLabel, source,
     expiresAt: expiresInMs ? new Date(Date.now() + expiresInMs) : undefined
   }).catch(() => null);
 }
@@ -63,12 +64,23 @@ async function createNotification(data = {}) {
 }
 
 /** Inbox for a logged-in user: personal unread + everyone + (admins: forAdmin). */
-async function getInbox(userId, { isAdmin = false, limit = 50 } = {}) {
-  const filters = [
-    { recipientId: userId },
-    { recipientId: null, forAdmin: false }
-  ];
-  if (isAdmin) filters.push({ recipientId: null, forAdmin: true });
+/**
+ * Navbar bell inbox: ONLY Admin Panel notifications (source='admin').
+ * System save confirmations (source='system') are hidden from the bell.
+ */
+async function getInbox(userId, { isAdmin = false, limit = 50, bellOnly = false } = {}) {
+  const filters = [];
+  if (bellOnly) {
+    // Navbar bell: personal admin notifications + global announcements (source=admin)
+    filters.push({ recipientId: userId, source: 'admin' });
+    filters.push({ recipientId: null, forAdmin: false, source: 'admin' });
+    if (isAdmin) filters.push({ recipientId: null, forAdmin: true, source: 'admin' });
+  } else {
+    // Full inbox (admin panel page): everything
+    filters.push({ recipientId: userId });
+    filters.push({ recipientId: null, forAdmin: false });
+    if (isAdmin) filters.push({ recipientId: null, forAdmin: true });
+  }
   const docs = await Notification.find({ $or: filters })
     .sort({ pinned: -1, createdAt: -1 })
     .limit(limit)
@@ -88,7 +100,8 @@ async function markRead(notificationId, userId) {
 
 /** Mark all of a user's inbox read. */
 async function markAllRead(userId) {
-  await Notification.updateMany({ $or: [{ recipientId: userId }, { recipientId: null, forAdmin: false }] }, { read: true });
+  // Mark only admin-source (bell) notifications read to keep system confirmations untouched
+  await Notification.updateMany({ $or: [{ recipientId: userId, source: 'admin' }, { recipientId: null, forAdmin: false, source: 'admin' }] }, { read: true });
   return true;
 }
 

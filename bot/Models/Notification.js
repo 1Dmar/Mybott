@@ -12,6 +12,11 @@ module.exports = model(
     recipientId: { type: String },        // discordId of the recipient (null = everyone)
     forAdmin:    { type: Boolean, default: false }, // admin-only announcement
 
+    // ── Source ────────────────────────────────────────────────────
+    // 'admin'  → from Admin Panel (visible in navbar bell)
+    // 'system' → auto save confirmations (hidden from navbar bell)
+    source:      { type: String, enum: ['admin', 'system'], default: 'admin' },
+
     // ── Who created it ────────────────────────────────────────────
     createdBy:       { type: String },
     createdByLabel:  { type: String },   // e.g. 'Admin Panel', 'System'
