@@ -50,6 +50,7 @@ const Notification   = require('../bot/Models/Notification');
 const { notifyUser, notifyUserOnce, notifyEveryone, createNotification, getInbox, markRead, markAllRead, cleanupNotifications } = require('../bot/utils/notificationSender');
 const ServerInfo     = require('../bot/Models/Server');
 const MinecraftConfig = require('../bot/Models/MinecraftConfig');
+const ServerPage = require('../bot/Models/ServerPage');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Activity       = require('../bot/Models/Activity');
@@ -1669,6 +1670,302 @@ if (process.env.LOCAL_DEV === '1') {
   });
 }
 
+// ═══ Session 5: Public Server Pages / Directory / Player Analytics ═══
+
+/** Lightweight live Minecraft status via mcsrvstat (no owner API needed). */
+async function liveMcStatus(ip, port, type) {
+  try {
+    const addr = ip ? `${String(ip).replace(/^https?:\/\//, '').split('/')[0]}:${port || 25565}` : null;
+    if (!addr) return null;
+    const url = type === 'bedrock'
+      ? `https://api.mcsrvstat.us/bedrock/3/${addr}`
+      : `https://api.mcsrvstat.us/3/${addr}`;
+    const res = await axios.get(url, { timeout: 6000 });
+    const d = res.data || {};
+    return {
+      online: Boolean(d.online),
+      players: { online: d.players?.online ?? 0, max: d.players?.max ?? 0 },
+      version: d.version ?? '',
+      motd: (d.motd?.clean && d.motd.clean.join(' ')) || (d.motd?.raw && d.motd.raw.join(' ')) || '',
+      icon: d.icon ?? null,
+      checkedAt: new Date()
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Growth chart from PlayerHistory (last 48h, hourly). */
+async function growthChart(serverId) {
+  try {
+    const PlayerHistory = require('../bot/Models/PlayerHistory');
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const rows = await PlayerHistory.find({ serverId, timestamp: { $gte: new Date(cutoff) } })
+      .sort({ timestamp: 1 }).lean();
+    const step = Math.max(1, Math.floor(rows.length / 24));
+    return rows.filter((_, i) => i % step === 0 || i === rows.length - 1)
+      .map(r => ({ t: r.timestamp.getTime(), v: r.onlinePlayers }));
+  } catch (_) {
+    return [];
+  }
+}
+
+/** Peak playing hours (0-23) from PlayerHistory. */
+async function peakHours(serverId) {
+  try {
+    const PlayerHistory = require('../bot/Models/PlayerHistory');
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const rows = await PlayerHistory.find({ serverId, timestamp: { $gte: new Date(cutoff) } }).lean();
+    const buckets = new Array(24).fill(0);
+    rows.forEach(r => { buckets[r.timestamp.getUTCHours()] += r.onlinePlayers || 0; });
+    return buckets.map((v, h) => ({ h, v }));
+  } catch (_) {
+    return [];
+  }
+}
+
+/** Most active Discord users (from Activity sub-docs). */
+async function topActiveUsers(serverId) {
+  try {
+    const Activity = require('../bot/Models/Activity');
+    const docs = await Activity.find({ serverId }, { activities: 1 }).lean();
+    const counts = {};
+    for (const doc of docs) {
+      for (const a of (doc.activities || [])) {
+        if (!a.user) continue;
+        counts[a.user] = (counts[a.user] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([user, actions]) => ({ user, actions }));
+  } catch (_) {
+    return [];
+  }
+}
+
+/** Aggregate directory data for the public servers list. */
+async function directoryData() {
+  try {
+    const pages = await ServerPage.find({ showInDirectory: true }).lean();
+    const out = [];
+    for (const page of pages) {
+      const server = await ServerInfo.findOne({ serverId: page.guildId }).lean();
+      const bumped = await BumpedServer.findOne({ guildId: page.guildId }).lean();
+      out.push({
+        guildId: page.guildId,
+        publicName: page.publicName || server?.serverName || 'Minecraft Server',
+        description: page.description || '',
+        logoUrl: page.logoUrl || (server ? server.wallpaper : null),
+        discordInvite: page.discordInvite || '',
+        javaIP: server?.javaIP || '',
+        featured: Boolean(page.featured),
+        bumpedAt: bumped?.bumpedAt || null,
+        registeredAt: page.registeredAt
+      });
+    }
+    out.sort((a, b) => {
+      if (a.featured !== b.featured) return a.featured ? -1 : 1;
+      if (a.bumpedAt && b.bumpedAt && a.bumpedAt.getTime() !== b.bumpedAt.getTime())
+        return b.bumpedAt.getTime() - a.bumpedAt.getTime();
+      return (b.registeredAt || 0) - (a.registeredAt || 0);
+    });
+    return out;
+  } catch (_) {
+    return [];
+  }
+}
+
+
+// ── Public server directory page ──────────────────────────────────
+app.get('/servers', (req, res) => {
+  res.sendFile(path.join(dashDir, 'public', 'directory.html'));
+});
+// ── Public server directory data (no auth) ────────────────────────
+app.get('/api/servers', async (req, res) => {
+  try {
+    const data = await directoryData();
+    res.json({ success: true, servers: data });
+  } catch (err) {
+    console.error('[/servers] error:', err.message);
+    res.json({ success: false, servers: [] });
+  }
+});
+
+// ── Public server page view data (no auth) ────────────────────────
+app.get('/api/s/:serverId', async (req, res) => {
+  try {
+    const page = await ServerPage.findOne({ guildId: req.params.serverId }).lean();
+    if (!page) return res.json({ success: false, error: 'not_found' });
+    const server = await ServerInfo.findOne({ serverId: req.params.serverId }).lean();
+    const bumped = await BumpedServer.findOne({ guildId: req.params.serverId }).lean();
+    const javaPort = server?.javaPort || 25565;
+    const live = await liveMcStatus(server?.javaIP, javaPort, server?.serverType === 'bedrock' ? 'bedrock' : 'java');
+    const growth = await growthChart(req.params.serverId);
+    const peaks = await peakHours(req.params.serverId);
+    const top = await topActiveUsers(req.params.serverId);
+    res.json({
+      success: true,
+      page: {
+        publicName: page.publicName || server?.serverName || 'Minecraft Server',
+        description: page.description || '',
+        logoUrl: page.logoUrl || server?.wallpaper || null,
+        bannerUrl: page.bannerUrl || server?.wallpaper || null,
+        discordInvite: page.discordInvite || '',
+        featured: Boolean(page.featured),
+        bumpedAt: bumped?.bumpedAt || null
+      },
+      server: server ? {
+        serverId: server.serverId,
+        serverName: server.serverName,
+        javaIP: server.javaIP,
+        javaPort,
+        serverType: server.serverType || 'java',
+        wallpaper: server.wallpaper
+      } : null,
+      live,
+      growth,
+      peaks,
+      topUsers: top
+    });
+  } catch (err) {
+    console.error('[/api/s/:id] error:', err.message);
+    res.json({ success: false, error: 'server_error' });
+  }
+});
+
+// ── Public HTML page (standalone, dark glass) ─────────────────────
+app.get('/s/:serverId', (req, res) => {
+  res.sendFile(path.join(dashDir, 'public', 'server_view.html'));
+});
+
+// ── Dashboard: server page settings ───────────────────────────────
+app.get('/my-servers/:guildId/serverpage', ...serveServerPage('server_page.html'));
+
+// ── API: get server page settings ─────────────────────────────────
+app.get('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) => {
+  try {
+    const ok = await verifyGuildAccess(req.user.discordId, req.params.guildId);
+    if (!ok) return res.status(403).json({ error: 'Access denied' });
+    const page = await ServerPage.findOne({ guildId: req.params.guildId }).lean();
+    const server = await ServerInfo.findOne({ serverId: req.params.guildId }).lean();
+    res.json({
+      success: true,
+      page: page || null,
+      serverInfo: server ? {
+        serverName: server.serverName,
+        javaIP: server.javaIP,
+        javaPort: server.javaPort,
+        wallpaper: server.wallpaper,
+        serverType: server.serverType
+      } : null
+    });
+  } catch (err) {
+    console.error('[serverpage GET] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// ── API: save server page settings ────────────────────────────────
+app.post('/api/server/:guildId/serverpage', isAuthenticated, async (req, res) => {
+  try {
+    const ok = await verifyGuildAccess(req.user.discordId, req.params.guildId);
+    if (!ok) return res.status(403).json({ error: 'Access denied' });
+    const { publicName, description, discordInvite, showInDirectory, logoUrl } = req.body || {};
+    const page = await ServerPage.findOneAndUpdate(
+      { guildId: req.params.guildId },
+      {
+        $set: {
+          publicName: publicName ?? undefined,
+          description: description ?? undefined,
+          discordInvite: discordInvite ?? undefined,
+          showInDirectory: Boolean(showInDirectory),
+          logoUrl: logoUrl ?? undefined,
+          updatedAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, page });
+  } catch (err) {
+    console.error('[serverpage POST] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// ── API: player analytics (dashboard page Players) ────────────────
+app.get('/api/server/:guildId/player-analytics', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const guildId = req.params.guildId;
+    const [growth, peaks, top] = await Promise.all([
+      growthChart(guildId),
+      peakHours(guildId),
+      topActiveUsers(guildId)
+    ]);
+    const current = growth.length ? growth[growth.length - 1].v : 0;
+    const first = growth.length ? growth[0].v : 0;
+    res.json({ success: true, growth, peaks, topUsers: top, currentPlayers: current, firstPlayers: first });
+  } catch (err) {
+    console.error('[player-analytics] error:', err.message);
+    res.status(500).json({ success: false, error: 'server_error' });
+  }
+});
+// ── System: smart notifications — offline/online watcher ──────────
+// Runs every 10 minutes, checks registered servers, notifies owners.
+const NOTIF_INTERVAL_MS = 10 * 60 * 1000;
+setInterval(async () => {
+  try {
+    const pages = await ServerPage.find({}).lean();
+    const ownerCache = new Map();
+    for (const page of pages) {
+      try {
+        const server = await ServerInfo.findOne({ serverId: page.guildId }).lean();
+        const ip = server?.javaIP;
+        if (!ip) continue;
+        // resolve the real guild owner (discord user id) to notify
+        let ownerId = ownerCache.get(page.guildId);
+        if (!ownerId) {
+          try {
+            const botClient = typeof global !== 'undefined' ? (global.__botClient || (global.__dashClients && global.__dashClients[0])) : null;
+            const guild = botClient?.guilds?.cache?.get(page.guildId);
+            const g = guild?.ready ? guild : await guild?.fetch();
+            if (g?.ownerId) ownerId = g.ownerId;
+          } catch (_) { ownerId = null; }
+          ownerCache.set(page.guildId, ownerId || null);
+        }
+        const live = await liveMcStatus(ip, server.javaPort || 25565, server.serverType === 'bedrock' ? 'bedrock' : 'java');
+        const online = Boolean(live?.online);
+        if (!online && !page.wasOffline) {
+          await ServerPage.updateOne({ guildId: page.guildId }, { $set: { wasOffline: true } });
+          if (!ownerId) continue;
+          await notifyUserOnce(ownerId, {
+            type: 'error',
+            title: 'Your Minecraft server went offline',
+            message: `We detected that ${page.publicName || server.serverName || 'your server'} (${ip}) is offline. Check it now.`,
+            createdByLabel: 'ProMcBot System',
+            actionUrl: `/my-servers/${page.guildId}/settings`,
+            actionLabel: 'Open settings'
+          });
+        } else if (online && page.wasOffline) {
+          await ServerPage.updateOne({ guildId: page.guildId }, { $set: { wasOffline: false } });
+          if (!ownerId) continue;
+          await notifyUserOnce(ownerId, {
+            type: 'success',
+            title: 'Your Minecraft server is back online',
+            message: `${page.publicName || server.serverName || 'Your server'} (${ip}) is reachable again.`,
+            createdByLabel: 'ProMcBot System',
+            actionUrl: `/s/${page.guildId}`,
+            actionLabel: 'View page'
+          });
+        }
+      } catch (_) { /* skip bad entries */ }
+    }
+  } catch (err) {
+    console.error('[notif watcher] error:', err.message);
+  }
+}, NOTIF_INTERVAL_MS);
+
 app.use((req, res) => {
   const notFoundPage = path.join(dashDir, '404', 'index.html');
   if (fs.existsSync(notFoundPage)) {
@@ -1678,7 +1975,9 @@ app.use((req, res) => {
   }
 });
 
+
 // ════════════════════════════════════════════════════════════════════
+
 //  EXPORTS
 // ════════════════════════════════════════════════════════════════════
 // Expose dashboard bot clients so security.js can fall back to bot-cache
@@ -1691,3 +1990,4 @@ module.exports.client  = client;
 module.exports.client1 = client1;
 
 // ════════════════════════════════════════════════════════════════════
+

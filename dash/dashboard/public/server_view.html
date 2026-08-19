@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Server — ProMcBot</title>
+  <meta name="description" content="Live Minecraft server page powered by ProMcBot — real-time status, player growth and top players.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    :root {
+      --bg: #030409;
+      --bg-2: #0a0f1c;
+      --surface: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e8eaef;
+      --text-2: #9aa3b2;
+      --primary: #FF512F;
+      --primary-2: #F09819;
+      --green: #10B981;
+      --red: #EF4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 60% 45% at 20% 0%, rgba(255, 81, 47, 0.14), transparent 60%),
+        radial-gradient(ellipse 55% 45% at 85% 20%, rgba(79, 58, 255, 0.12), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(240, 152, 25, 0.10), transparent 60%);
+    }
+    .container { max-width: 1040px; margin: 0 auto; padding: 28px 22px 80px; position: relative; z-index: 1; }
+    /* top bar */
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 34px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; color: var(--text); }
+    .logo-mark {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      display: grid; place-items: center; font-size: 17px; color: #fff;
+    }
+    .back-btn {
+      color: var(--text-2); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px;
+      padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
+      transition: all .25s;
+    }
+    .back-btn:hover { color: var(--text); border-color: rgba(255, 81, 47, .5); }
+    /* hero */
+    .hero {
+      position: relative; border-radius: 26px; overflow: hidden;
+      border: 1px solid var(--border); margin-bottom: 26px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 60%);
+      box-shadow: 0 30px 90px rgba(0,0,0,.55);
+    }
+    .hero-bg {
+      position: absolute; inset: 0; background-size: cover; background-position: center;
+      filter: blur(14px) brightness(.5); transform: scale(1.06);
+    }
+    .hero-content { position: relative; padding: 64px 40px 48px; }
+    .server-logo {
+      width: 96px; height: 96px; border-radius: 24px; border: 2px solid rgba(255,255,255,.15);
+      background: var(--bg-2); object-fit: cover; margin-bottom: 22px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.6);
+    }
+    .server-name { font-size: 34px; font-weight: 800; letter-spacing: -.02em;
+      background: linear-gradient(120deg, #fff 20%, var(--primary-2));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .server-desc { color: var(--text-2); margin-top: 10px; max-width: 640px; font-size: 15px; line-height: 1.6; }
+    .hero-badges { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .badge {
+      font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(255,255,255,.05); color: var(--text-2);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .badge.online { border-color: rgba(16,185,129,.45); color: var(--green); background: rgba(16,185,129,.1); }
+    .badge.offline { border-color: rgba(239,68,68,.45); color: var(--red); background: rgba(239,68,68,.1); }
+    .badge.top { border-color: rgba(240,152,25,.55); color: var(--primary-2); background: rgba(240,152,25,.12); }
+    .badge i { font-size: 14px; }
+    /* stats strip */
+    .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    .stat {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; backdrop-filter: blur(12px);
+      transition: transform .25s, border-color .25s;
+    }
+    .stat:hover { transform: translateY(-2px); border-color: rgba(255,81,47,.4); }
+    .stat i { font-size: 20px; color: var(--primary-2); margin-bottom: 10px; }
+    .stat .v { font-size: 26px; font-weight: 800; }
+    .stat .l { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+    /* cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 26px; margin-bottom: 20px; backdrop-filter: blur(12px);
+    }
+    .card h2 { font-size: 17px; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 9px; }
+    .card h2 i { color: var(--primary-2); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 14px;
+      padding: 14px 24px; border-radius: 999px; text-decoration: none; cursor: pointer; border: none;
+      transition: all .25s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff;
+      box-shadow: 0 10px 30px rgba(255, 81, 47, .35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(255, 81, 47, .5); }
+    .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn-ghost:hover { border-color: rgba(255,81,47,.5); }
+    .players-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+    .player-chip {
+      display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+      border: 1px solid var(--border); border-radius: 12px; background: rgba(255,255,255,.03);
+      font-size: 13.5px; font-weight: 500;
+    }
+    .player-chip img { width: 26px; height: 26px; border-radius: 6px; }
+    .top-list { display: flex; flex-direction: column; gap: 8px; }
+    .top-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px;
+      background: rgba(255,255,255,.03); font-size: 14px;
+    }
+    .top-item .rank { color: var(--primary-2); font-weight: 700; width: 30px; }
+    .top-item .actions-n { color: var(--text-2); font-size: 12px; }
+    .empty { color: var(--text-2); font-size: 14px; text-align: center; padding: 26px 0; }
+    .footer-note { text-align: center; color: var(--text-2); font-size: 13px; margin-top: 36px; }
+    .footer-note a { color: var(--primary-2); text-decoration: none; font-weight: 600; }
+    @media (max-width: 760px) {
+      .stats-strip { grid-template-columns: repeat(2, 1fr); }
+      .server-name { font-size: 26px; }
+      .hero-content { padding: 44px 22px 36px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="topbar">
+      <a class="logo" href="https://promcbot.dev/">
+        <div class="logo-mark"><i class='bx bx-game'></i></div>
+        <span>ProMcBot</span>
+      </a>
+      <a class="back-btn" href="https://promcbot.dev/"><i class='bx bx-left-arrow-alt'></i> Back to ProMcBot</a>
+    </div>
+
+    <!-- content injected by JS -->
+    <div id="heroArea"></div>
+    <div id="statsArea"></div>
+    <div id="livePlayersCard" class="card" style="display:none;"></div>
+    <div class="card">
+      <h2><i class='bx bx-line-chart'></i> <span id="growthTitle">Player growth · last 48h</span></h2>
+      <canvas id="growthChart" height="110"></canvas>
+      <div id="growthEmpty" class="empty">No player history data yet. Snapshots appear once the server is connected.</div>
+    </div>
+    <div class="card">
+      <h2><i class='bx bx-time-five'></i> <span id="peakTitle">Peak hours (UTC)</span></h2>
+      <canvas id="peakChart" height="100"></canvas>
+      <div id="peakEmpty" class="empty">Peak hour data will appear once your server collects history.</div>
+    </div>
+    <div class="card" id="topCard" style="display:none;"></div>
+    <p class="footer-note">This page is powered by <a href="https://promcbot.dev/">ProMcBot</a> — the all-in-one management bot for Minecraft servers.</p>
+  </div>
+
+  <script>
+    const id = location.pathname.split('/s/')[1] || '';
+    const t = (k) => ({
+      'players.online': 'Players online',
+      'players.max': 'Max players',
+      'status': 'Status',
+      'version': 'Version',
+      'growth': 'Player growth · last 48h',
+      'peaks': 'Peak hours (UTC)',
+      'join': 'Join Discord',
+      'copy.ip': 'Copy server IP',
+      'view.page': 'Server page',
+      'copied': 'IP copied!',
+      'offline.title': 'Server offline',
+      'top.players': 'Most active members',
+      'online': 'Online',
+      'offline': 'Offline',
+      'top.badge': 'Bumped server',
+      'featured.badge': 'Featured',
+      'no.players': 'No players online right now',
+      'actions.title': 'Quick actions'
+    }[k] || k);
+
+    async function load() {
+      const res = await fetch('/api/s/' + id);
+      const data = await res.json();
+      if (!data.success || !data.page) {
+        document.getElementById('heroArea').innerHTML =
+          '<div class="card" style="text-align:center"><h2>Not found</h2><p class="empty">This server page does not exist or has not been activated yet.</p></div>';
+        return;
+      }
+      const { page, server, live, growth, peaks, topUsers } = data;
+      document.title = (page.publicName || 'Minecraft Server') + ' — ProMcBot';
+
+      // hero
+      const online = live?.online;
+      const statusBadge = online
+        ? `<span class="badge online"><i class='bx bxs-circle' style="color:#10B981;font-size:9px"></i>${t('online')} · ${live.players?.online ?? 0}</span>`
+        : `<span class="badge offline"><i class='bx bxs-circle' style="color:#EF4444;font-size:9px"></i>${t('offline')}</span>`;
+      const topBadge = page.featured
+        ? `<span class="badge top"><i class='bx bxs-star'></i>${t('featured.badge')}</span>`
+        : page.bumpedAt
+        ? `<span class="badge top"><i class='bx bxs-up-arrow'></i>${t('top.badge')}</span>`
+        : '';
+      document.getElementById('heroArea').innerHTML = `
+        <div class="hero">
+          <div class="hero-bg" style="background-image:url('${page.bannerUrl || ''}')"></div>
+          <div class="hero-content">
+            <img class="server-logo" src="${page.logoUrl || server?.wallpaper || ''}" onerror="this.style.display='none'">
+            <div class="server-name">${escapeHtml(page.publicName)}</div>
+            ${page.description ? `<div class="server-desc">${escapeHtml(page.description)}</div>` : ''}
+            <div class="hero-badges">${statusBadge}${topBadge}
+              ${server?.javaIP ? `<span class="badge"><i class='bx bx-server'></i>${escapeHtml(server.javaIP + ':' + server.javaPort)}</span>` : ''}
+              ${live?.version ? `<span class="badge"><i class='bx bx-code-alt'></i>${escapeHtml(live.version)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          ${page.discordInvite ? `<a class="btn btn-primary" href="${escapeHtml(page.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>${t('join')}</a>` : ''}
+          ${server?.javaIP ? `<button class="btn btn-ghost" id="copyBtn"><i class='bx bx-copy'></i><span id="copyText">${t('copy.ip')}</span></button>` : ''}
+        </div>`;
+      document.getElementById('copyBtn')?.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(server.javaIP + ':' + server.javaPort);
+        document.getElementById('copyText').textContent = t('copied');
+      });
+
+      // stats
+      document.getElementById('statsArea').innerHTML = `
+        <div class="stats-strip">
+          <div class="stat"><i class='bx bxs-group'></i><div class="v">${live?.players?.online ?? 0}</div><div class="l">${t('players.online')}</div></div>
+          <div class="stat"><i class='bx bxs-bar-chart-alt-2'></i><div class="v">${live?.players?.max ?? '—'}</div><div class="l">${t('players.max')}</div></div>
+          <div class="stat"><i class='bx bx-code-alt'></i><div class="v">${live?.version || '—'}</div><div class="l">${t('version')}</div></div>
+          <div class="stat"><i class='bx bx-heart'></i><div class="v">${growth?.length ? '48h' : '—'}</div><div class="l">History</div></div>
+        </div>`;
+
+      // live players (mcsrvstat sample)
+      if (online) {
+        const pcard = document.getElementById('livePlayersCard');
+        pcard.style.display = 'block';
+        pcard.innerHTML = '<h2><i class=\'bx bxs-user-detail\'></i> Connected now</h2><div id="livePlayers"></div>';
+        // mcsrvstat doesn't return names in v3 for most servers; show sample from history if any
+        const here = document.getElementById('livePlayers');
+        if (server?.javaIP && online) {
+          try {
+            const r = await fetch('https://api.mcsrvstat.us/3/' + server.javaIP + ':' + server.javaPort);
+            const d = await r.json();
+            const list = d.players?.sample || [];
+            here.innerHTML = list.length
+              ? '<div class="players-list">' + list.map(p =>
+                  `<div class="player-chip"><img src="https://mc-heads.net/avatar/${encodeURIComponent(p)}/26">${escapeHtml(p)}</div>`).join('') + '</div>'
+              : `<div class="empty">${t('no.players')}</div>`;
+          } catch (_) { here.innerHTML = `<div class="empty">${t('no.players')}</div>`; }
+        }
+      }
+
+      // growth chart
+      if (growth && growth.length > 1) {
+        document.getElementById('growthEmpty').style.display = 'none';
+        new Chart(document.getElementById('growthChart'), {
+          data: {
+            labels: growth.map(g => new Date(g.t).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })),
+            datasets: [{
+              label: 'Online players',
+              data: growth.map(g => g.v),
+              borderColor: '#F09819',
+              backgroundColor: 'rgba(240, 152, 25, 0.15)',
+              fill: true, tension: .35, pointRadius: 2, borderWidth: 2
+            }]
+          },
+          options: chartOpts()
+        });
+      }
+      // peak chart
+      if (peaks && peaks.length) {
+        document.getElementById('peakEmpty').style.display = 'none';
+        new Chart(document.getElementById('peakChart'), {
+          type: 'bar',
+          data: {
+            labels: peaks.map(p => String(p.h).padStart(2, '0') + ':00'),
+            datasets: [{
+              label: 'Activity',
+              data: peaks.map(p => p.v),
+              backgroundColor: 'rgba(255, 81, 47, 0.55)',
+              borderRadius: 6, borderWidth: 0
+            }]
+          },
+          options: chartOpts()
+        });
+      }
+      // top users
+      if (topUsers && topUsers.length) {
+        const tc = document.getElementById('topCard');
+        tc.style.display = 'block';
+        tc.innerHTML = '<h2><i class=\'bx bxs-medal\'></i> ' + t('top.players') + '</h2><div class="top-list">' +
+          topUsers.map((u, i) =>
+            `<div class="top-item"><span><span class="rank">#${i + 1}</span> ${escapeHtml(u.user)}</span><span class="actions-n">${u.actions} activities</span></div>`).join('') + '</div>';
+      }
+    }
+    function chartOpts() {
+      return {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 700 },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#9aa3b2', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.05)' } },
+          y: { ticks: { color: '#9aa3b2', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.05)' } }
+        }
+      };
+    }
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    load();
+  </script>
+</body>
+</html>

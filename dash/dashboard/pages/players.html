@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Players - ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css?v=9">
+    <link rel="stylesheet" href="/shared.css?v=10">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -119,6 +119,34 @@
             </div>
         </div>
 
+        <!-- Player Analytics -->
+        <div class="card" id="paWrap" style="display: none;">
+            <div class="card-header">
+                <div class="card-icon"><i class='bx bx-line-chart'></i></div>
+                <div class="card-info">
+                    <h2 class="card-title">Player Analytics — 48h</h2>
+                    <p class="card-subtitle">Growth, peak hours and most active players (from your server history)</p>
+                </div>
+            </div>
+            <div class="stat-cards" style="margin-bottom: 18px;">
+                <div class="stat-card">
+                    <div class="stat-card-icon"><i class='bx bx-user'></i></div>
+                    <div class="stat-info"><span class="stat-label">Online now</span><span class="stat-value" id="paCurrent">—</span></div>
+                </div>
+            </div>
+            <div style="height: 200px; margin-bottom: 18px;"><canvas id="paGrowthChart"></canvas></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                <div>
+                    <h3 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;">Peak hours</h3>
+                    <div id="paPeaks"></div>
+                </div>
+                <div>
+                    <h3 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;">Top players</h3>
+                    <div id="paTop"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Player Result -->
         <div class="card" id="playerResultCard" style="display: none;">
             <div class="card-header">
@@ -133,8 +161,8 @@
 
     </main>
 
-    <script src="/i18n.js?v=9"></script>
-  <script src="/shared.js?v=9"></script>
+    <script src="/i18n.js?v=10"></script>
+  <script src="/shared.js?v=10"></script>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {
@@ -157,6 +185,7 @@
             }
 
             loadMcLive();
+        try { loadPlayerAnalytics(); } catch (_) {}
         });
 
         async function loadMcLive() {
@@ -332,7 +361,74 @@
         }
 
         document.getElementById('lookupBtn').addEventListener('click', lookupPlayer);
-        document.getElementById('playerUsername').addEventListener('keydown', (e) => {
+
+        /* ── Player Analytics ──────────────────────────────────── */
+        async function loadPlayerAnalytics() {
+          try {
+            const res = await fetch(`/api/server/${guildId}/player-analytics`);
+            const data = await res.json();
+            if (!res.ok || !data.success) return;
+            const d = data.data || {};
+            // current players row
+            const cur = document.getElementById('paCurrent');
+            if (cur && d.currentPlayers !== undefined) cur.textContent = d.currentPlayers;
+            // growth chart
+            if (typeof Chart !== 'undefined' && d.growth && d.growth.length) {
+              const ctx = document.getElementById('paGrowthChart');
+              if (ctx) {
+                new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: d.growth.map(p => p.label),
+                    datasets: [{
+                      label: 'Online players',
+                      data: d.growth.map(p => p.players),
+                      borderColor: '#FF512F',
+                      backgroundColor: 'rgba(255, 81, 47, 0.15)',
+                      fill: true,
+                      tension: 0.35,
+                      pointRadius: 2,
+                      borderWidth: 2
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: { ticks: { color: '#8a93a6', maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                      y: { ticks: { color: '#8a93a6', precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                  }
+                });
+              }
+            }
+            // peak hours
+            const peakList = document.getElementById('paPeaks');
+            if (peakList && d.peaks && d.peaks.length) {
+              peakList.innerHTML = d.peaks.slice(0, 6).map(p =>
+                `<div class="pa-peak-item"><span class="pa-peak-hour">${p.label}</span><span class="pa-peak-bar" style="width:${Math.max(6, (p.count / Math.max(...d.peaks.map(x => x.count))) * 100)}%"></span><span class="pa-peak-count">${p.count}</span></div>`
+              ).join('');
+            }
+            // top players
+            const topList = document.getElementById('paTop');
+            if (topList && d.topUsers && d.topUsers.length) {
+              topList.innerHTML = d.topUsers.slice(0, 10).map((p, i) =>
+                `<div class="pa-top-item">
+                   <img class="pa-top-avatar" src="https://mc-heads.net/avatar/${encodeURIComponent(p.name)}/32" alt="">
+                   <span class="pa-top-rank">#${i + 1}</span>
+                   <span class="pa-top-name">${escapeHtml(p.name)}</span>
+                   <span class="pa-top-count">${p.count} events</span>
+                 </div>`
+              ).join('');
+            }
+            const wrap = document.getElementById('paWrap');
+            if (wrap) wrap.style.display = 'block';
+          } catch (_) {}
+        }
+        function escapeHtml(str) {
+          return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        }
             if (e.key === 'Enter') lookupPlayer();
         });
     </script>
@@ -346,6 +442,16 @@
         .player-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
         .player-stat-value { font-weight: 600; font-size: 14px; }
         #playerUsername:focus { outline: none; border-color: var(--primary); }
+    
+        .pa-peak-item { display: flex; align-items: center; gap: 10px; font-size: 12.5px; margin-bottom: 7px; }
+        .pa-peak-hour { width: 52px; color: var(--text-muted); flex-shrink: 0; }
+        .pa-peak-bar { height: 7px; border-radius: 999px; background: linear-gradient(90deg, #FF512F, #F09819); min-width: 6px; }
+        .pa-peak-count { color: var(--text-secondary); font-weight: 600; }
+        .pa-top-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; background: rgba(255,255,255,.03); border: 1px solid var(--border); margin-bottom: 7px; font-size: 13px; }
+        .pa-top-avatar { width: 30px; height: 30px; border-radius: 7px; }
+        .pa-top-rank { color: var(--primary-2); font-weight: 700; width: 22px; }
+        .pa-top-name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pa-top-count { color: var(--text-muted); font-size: 12px; }
     </style>
 </body>
 </html>
