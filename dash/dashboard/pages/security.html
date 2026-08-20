@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Center — ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css?v=22">
+    <link rel="stylesheet" href="/shared.css?v=25">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -12,32 +12,42 @@
   <!-- NAVBAR (unified) -->
   <nav class="navbar">
     <div style="display:flex;align-items:center;gap:14px;">
-      <div class="mobile-toggle" id="sidebarToggle"><i class='bx bx-menu'></i></div>
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
       <a href="/dashboard" class="logo_item">
         <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
         <span class="brand-name">ProMcBot</span>
       </a>
     </div>
     <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
       <div class="dropdown">
         <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
           <i class='bx bx-bell'></i>
           <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
-        <div class="dropdown-menu" id="notifMenu"></div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">You have no new notifications.</div>
+            </div>
+          </div>
+          <div class="dropdown-footer">Notifications</div>
+        </div>
       </div>
       <div class="dropdown">
-        <select class="nav-icon-btn lang-select" id="langSelect" style="appearance:none;background:transparent;border:none;cursor:pointer;color:var(--text)" title="Language">
-          <option value="en">🇬🇧 EN</option><option value="ar">🇸🇦 AR</option><option value="es">🇪🇸 ES</option>
-        </select>
-      </div>
-      <div class="dropdown">
-        <img id="userBtn" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
-        <div class="dropdown-menu" style="min-width:200px">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
-            <img id="navUserAvatar" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
-            <div><div id="navUserName" data-i18n="pg.loading">Loading...</div></div>
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
@@ -67,40 +77,54 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon red"><i class='bx bxs-shield-alt-2'></i></div>
+    <div class="sec-hero">
+      <div class="sec-hero-bg" aria-hidden="true"></div>
+      <div class="sec-hero-grid" aria-hidden="true"></div>
+      <div class="sec-hero-content">
+        <div class="sec-hero-icon"><i class='bx bxs-shield-alt-2 sec-shield-pulse'></i></div>
         <div>
-          <h2 class="card-title" data-i18n="sc.title">Security Center</h2>
-          <p class="card-subtitle" data-i18n="sc.subtitle">Raid detection, anti-nuke stats, ban watchlist and a health score — one place to see every threat against your server.</p>
+          <h2 class="sec-hero-title" data-i18n="sc.title">Security Center</h2>
+          <p class="sec-hero-sub" data-i18n="sc.subtitle">Raid detection, anti-nuke stats, ban watchlist and a health score — one place to see every threat against your server.</p>
+        </div>
+        <div class="sec-hero-actions">
+          <button class="btn btn-primary sec-btn-glow" id="scReportBtn"><i class='bx bx-plus'></i> <span data-i18n="sc.report">Report Event</span></button>
+          <button class="btn btn-ghost sec-btn-ghost" id="scWatchlistBtn"><i class='bx bx-user-x'></i> <span data-i18n="sc.watchlist">Watchlist</span></button>
+          <button class="btn btn-danger sec-btn-lockdown" id="scLockdownBtn"><i class='bx bx-lock-alt'></i> <span data-i18n="sc.lockdown">Emergency Lockdown</span></button>
+          <button class="btn btn-ghost sec-btn-icon" id="scRefreshBtn"><i class='bx bx-refresh'></i></button>
         </div>
       </div>
-      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-primary" id="scReportBtn"><i class='bx bx-plus'></i> <span data-i18n="sc.report">Report Event</span></button>
-        <button class="btn btn-outline" id="scWatchlistBtn"><i class='bx bx-user-x'></i> <span data-i18n="sc.watchlist">Watchlist</span></button>
-        <button class="btn" style="background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.4)" id="scLockdownBtn"><i class='bx bx-lock-alt'></i> <span data-i18n="sc.lockdown">Emergency Lockdown</span></button>
-        <button class="btn btn-outline" id="scRefreshBtn"><i class='bx bx-refresh'></i></button>
+    </div>
+
+    <div class="sec-threat-strip" id="scStats">
+      <div class="sec-threat-card">
+        <div class="sec-threat-icon shield"><i class='bx bxs-shield'></i><span class="sec-threat-ring"></span></div>
+        <div class="sec-threat-info"><span class="stat-label" data-i18n="sc.h_score">Security Score</span><span class="sec-threat-value" id="scScore">—</span></div>
+      </div>
+      <div class="sec-threat-card">
+        <div class="sec-threat-icon bug"><i class='bx bx-bug'></i><span class="sec-threat-ring"></span></div>
+        <div class="sec-threat-info"><span class="stat-label" data-i18n="sc.h_week">Events (7d)</span><span class="sec-threat-value" id="scWeek">—</span></div>
+      </div>
+      <div class="sec-threat-card">
+        <div class="sec-threat-icon warn"><i class='bx bxs-error-alt'></i><span class="sec-threat-ring"></span></div>
+        <div class="sec-threat-info"><span class="stat-label" data-i18n="sc.h_unresolved">Unresolved</span><span class="sec-threat-value" id="scUnresolved">—</span></div>
+      </div>
+      <div class="sec-threat-card">
+        <div class="sec-threat-icon crit"><i class='bx bxs-star'></i><span class="sec-threat-ring"></span></div>
+        <div class="sec-threat-info"><span class="stat-label" data-i18n="sc.h_critical">Critical open</span><span class="sec-threat-value" id="scCritical">—</span></div>
       </div>
     </div>
 
-    <div class="stat-cards" id="scStats">
-      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-shield'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_score">Security Score</span><span class="stat-value" id="scScore">—</span></div></div>
-      <div class="stat-card"><div class="stat-card-icon"><i class='bx bx-bug'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_week">Events (7d)</span><span class="stat-value" id="scWeek">—</span></div></div>
-      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-error-alt'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_unresolved">Unresolved</span><span class="stat-value" id="scUnresolved">—</span></div></div>
-      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-star'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_critical">Critical open</span><span class="stat-value" id="scCritical">—</span></div></div>
-    </div>
-
-    <div class="card" style="margin-top:24px">
-      <div class="card-header">
-        <div class="card-icon blue"><i class='bx bx-line-chart'></i></div>
+    <div class="sec-section-card">
+      <div class="sec-section-header">
+        <div class="sec-section-tag blue"><i class='bx bx-line-chart'></i></div>
         <div><h2 class="card-title" data-i18n="sc.history">Score History (14 days)</h2><p class="card-subtitle" data-i18n="sc.history_hint">Daily security score computed from raids, bans and join surges.</p></div>
       </div>
-      <div id="scHistoryChart" style="height:150px;display:flex;align-items:flex-end;gap:4px;padding:10px 18px"></div>
+      <div id="scHistoryChart" class="sec-chart-wrap"></div>
     </div>
 
-    <div class="card" style="margin-top:24px">
-      <div class="card-header">
-        <div class="card-icon red"><i class='bx bx-bug'></i></div>
+    <div class="sec-section-card">
+      <div class="sec-section-header">
+        <div class="sec-section-tag red"><i class='bx bx-bug'></i></div>
         <div><h2 class="card-title" data-i18n="sc.events">Security Events</h2><p class="card-subtitle" data-i18n="sc.events_hint">Latest events — raids, mass joins, bans and watchlist hits.</p></div>
       </div>
       <div style="overflow-x:auto">
@@ -115,9 +139,9 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:24px">
-      <div class="card-header">
-        <div class="card-icon purple"><i class='bx bx-user-x'></i></div>
+    <div class="sec-section-card">
+      <div class="sec-section-header">
+        <div class="sec-section-tag purple"><i class='bx bx-user-x'></i></div>
         <div><h2 class="card-title" data-i18n="sc.watchlist_title">Ban Watchlist</h2><p class="card-subtitle" data-i18n="sc.watchlist_hint">Flag users to be alerted (or auto-banned) when they join your server.</p></div>
       </div>
       <div style="overflow-x:auto">
@@ -131,8 +155,8 @@
       </div>
     </div>
   </main>
-  <script src="/i18n.js?v=22"></script>
-  <script src="/shared.js?v=22"></script>
+  <script src="/i18n.js?v=25"></script>
+  <script src="/shared.js?v=25"></script>
   <script>
     const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
     if (!guildId) { Swal.fire('Error', 'Server ID not found in the URL.', 'error'); throw new Error('Page guard: missing context'); }
@@ -289,9 +313,47 @@
     }
   </script>
   <style>
-    .card-icon.red { background: rgba(239,68,68,.15); color: #EF4444; }
-    .card-icon.purple { background: rgba(139,92,246,.15); color: #8B5CF6; }
-    @media (max-width: 760px) { .stat-cards { grid-template-columns: repeat(2, 1fr) !important; } }
+    /* ── Security: Cyber Command Center identity ─────────────────────────── */
+    .sec-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(239,68,68,.28); background: linear-gradient(135deg, rgba(15,23,42,.95), rgba(30,10,20,.9)); margin-bottom: 20px; box-shadow: 0 0 0 1px rgba(239,68,68,.08), 0 8px 32px rgba(239,68,68,.14); }
+    .sec-hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 70% 20%, rgba(239,68,68,.18), transparent 60%), radial-gradient(ellipse 50% 50% at 15% 90%, rgba(139,92,246,.14), transparent 60%); }
+    .sec-hero-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(239,68,68,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(239,68,68,.07) 1px, transparent 1px); background-size: 34px 34px; mask-image: radial-gradient(ellipse 70% 70% at 60% 30%, black 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 70% at 60% 30%, black 20%, transparent 75%); }
+    .sec-hero-content { position: relative; padding: 22px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .sec-hero-icon { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 27px; background: linear-gradient(135deg, #EF4444, #B91C1C); color: #fff; box-shadow: 0 0 22px rgba(239,68,68,.5); }
+    .sec-shield-pulse { animation: secPulse 2.4s ease-in-out infinite; }
+    @keyframes secPulse { 0%,100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(239,68,68,.5)); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(239,68,68,.9)); } }
+    .sec-hero-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -.2px; }
+    .sec-hero-sub { font-size: 13.5px; color: rgba(255,255,255,.62); margin-top: 2px; max-width: 480px; }
+    .sec-hero-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .sec-btn-glow { box-shadow: 0 0 16px rgba(239,68,68,.45); }
+    .sec-btn-ghost { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.16); color: #fff; }
+    .sec-btn-ghost:hover { background: rgba(255,255,255,.12); }
+    .sec-btn-lockdown { background: rgba(239,68,68,.22); border: 1px solid rgba(239,68,68,.55); color: #FF8A8A; box-shadow: 0 0 14px rgba(239,68,68,.25); }
+    .sec-btn-lockdown:hover { background: rgba(239,68,68,.34); }
+    .sec-btn-icon { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.16); color: #fff; min-width: 40px; justify-content: center; }
+    .sec-btn-icon:hover { background: rgba(255,255,255,.12); }
+
+    .sec-threat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .sec-threat-card { position: relative; background: linear-gradient(160deg, rgba(15,23,42,.75), rgba(20,15,30,.75)); border: 1px solid rgba(239,68,68,.22); border-radius: 14px; padding: 16px; overflow: hidden; box-shadow: 0 4px 18px rgba(0,0,0,.22); }
+    .sec-threat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #EF4444, #F59E0B, #8B5CF6); opacity: .85; }
+    .sec-threat-icon { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: rgba(239,68,68,.14); color: #EF4444; margin-bottom: 10px; position: relative; }
+    .sec-threat-icon.bug { background: rgba(245,158,11,.14); color: #F59E0B; }
+    .sec-threat-icon.warn { background: rgba(139,92,246,.14); color: #8B5CF6; }
+    .sec-threat-icon.crit { background: rgba(239,68,68,.22); color: #FF6B6B; }
+    .sec-threat-ring { position: absolute; inset: -4px; border-radius: 13px; border: 1.5px dashed rgba(239,68,68,.35); animation: secRingSpin 18s linear infinite; }
+    @keyframes secRingSpin { to { transform: rotate(360deg); } }
+    .sec-threat-info { display: flex; flex-direction: column; gap: 3px; }
+    .sec-threat-value { font-size: 21px; font-weight: 800; color: var(--text); letter-spacing: -.4px; }
+
+    .sec-section-card { background: linear-gradient(160deg, rgba(26,30,45,.85), rgba(22,18,34,.85)); border: 1px solid rgba(100,116,139,.22); border-radius: 14px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.22); overflow: hidden; }
+    .sec-section-header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid rgba(100,116,139,.18); background: rgba(0,0,0,.18); }
+    .sec-section-tag { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; flex-shrink: 0; }
+    .sec-section-tag.blue { background: rgba(59,130,246,.15); color: #60A5FA; }
+    .sec-section-tag.red { background: rgba(239,68,68,.15); color: #EF4444; }
+    .sec-section-tag.purple { background: rgba(139,92,246,.15); color: #A78BFA; }
+    .sec-chart-wrap { height: 150px; display: flex; align-items: flex-end; gap: 4px; padding: 12px 18px; }
+
+    @media (max-width: 900px) { .sec-threat-strip { grid-template-columns: repeat(2, 1fr) !important; } .sec-hero-actions { margin-left: 0; } }
+    @media (max-width: 640px) { .sec-threat-strip { grid-template-columns: repeat(2, 1fr) !important; } .sec-hero-content { padding: 16px; } .sec-hero-title { font-size: 19px; } }
   </style>
 </body>
 </html>

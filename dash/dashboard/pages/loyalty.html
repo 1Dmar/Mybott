@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loyalty — ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css?v=22">
+    <link rel="stylesheet" href="/shared.css?v=25">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -29,23 +29,25 @@
           <i class='bx bx-bell'></i>
           <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
-        <div class="dropdown-menu" id="notifMenu"></div>
-      </div>
-      <div class="dropdown">
-        <select class="nav-icon-btn lang-select" id="langSelect" style="appearance:none;background:transparent;border:none;cursor:pointer;color:var(--text)" title="Language">
-          <option value="en">🇬🇧 EN</option>
-          <option value="ar">🇸🇦 AR</option>
-          <option value="es">🇪🇸 ES</option>
-        </select>
-      </div>
-      <div class="dropdown">
-        <img id="userBtn" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
-        <div class="dropdown-menu" style="min-width: 200px;">
-          <div class="dropdown-header">
-            <img id="navUserAvatar" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
-            <div>
-              <div id="navUserName" data-i18n="pg.loading">Loading...</div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> Notifications</div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title">Welcome to ProMcBot!</div>
+              <div class="notification-desc">You have no new notifications.</div>
             </div>
+          </div>
+          <div class="dropdown-footer">Notifications</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName">Loading...</span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
@@ -70,61 +72,52 @@
     <div class="page-breadcrumb">
       <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.loyalty">Loyalty</span>
     </div>
-    <div class="server-page-header">
-      <div class="server-page-icon" id="serverIconContainer">
-        <span id="serverIconText">...</span>
-      </div>
-      <div class="server-page-info">
-        <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server">Loading...</h1>
-        <div class="server-page-meta">
-          <div class="bot-status-badge"><i class='bx bxs-star'></i> <span data-i18n="sb.loyalty">Streak &amp; Loyalty</span></div>
+    <div class="loy-hero">
+      <div class="loy-hero-bg" aria-hidden="true"></div>
+      <div class="loy-hero-content">
+        <div class="loy-hero-badge"><i class='bx bxs-crown'></i></div>
+        <div class="loy-hero-text">
+          <h2 class="loy-hero-title" data-i18n="lg.title">Streak &amp; Loyalty</h2>
+          <p class="loy-hero-sub" data-i18n="lg.subtitle">Reward members who show up every day — streaks, points, tiers and milestones keep your community alive.</p>
+        </div>
+        <div class="loy-hero-actions">
+          <button class="btn btn-primary loy-btn-gold" id="lgRefreshBtn"><i class='bx bx-refresh'></i> <span data-i18n="lg.refresh">Refresh</span></button>
+          <button class="btn btn-ghost loy-btn-ghost" id="lgSettingsBtn"><i class='bx bx-slider-alt'></i> <span data-i18n="lg.settings">Settings</span></button>
         </div>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon gold"><i class='bx bxs-flame'></i></div>
-        <div>
-          <h2 class="card-title" data-i18n="lg.title">Streak &amp; Loyalty</h2>
-          <p class="card-subtitle" data-i18n="lg.subtitle">Reward members who show up every day — streaks, points, tiers and milestones keep your community alive.</p>
-        </div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-primary" id="lgRefreshBtn"><i class='bx bx-refresh'></i> <span data-i18n="lg.refresh">Refresh</span></button>
-        <select id="lgSort" class="form-control" style="max-width:180px">
+      <div class="loy-sort-bar">
+        <select id="lgSort" class="loy-sort-select">
           <option value="points" data-i18n="lg.sort_points">Sort: Points</option>
           <option value="currentStreak" data-i18n="lg.sort_streak">Sort: Current Streak</option>
           <option value="bestStreak" data-i18n="lg.sort_best">Sort: Best Streak</option>
           <option value="messagesAllTime" data-i18n="lg.sort_messages">Sort: Messages</option>
           <option value="voiceMinutesAllTime" data-i18n="lg.sort_voice">Sort: Voice Time</option>
         </select>
-        <button class="btn btn-outline" id="lgSettingsBtn"><i class='bx bx-slider-alt'></i> <span data-i18n="lg.settings">Settings</span></button>
       </div>
     </div>
 
-    <div class="stat-cards" id="lgStats">
-      <div class="stat-card">
-        <div class="stat-card-icon"><i class='bx bx-group'></i></div>
-        <div class="stat-info"><span class="stat-label" data-i18n="lg.tracked">Tracked members</span><span class="stat-value" id="lgTotal">—</span></div>
+    <div class="loy-stat-royal" id="lgStats">
+      <div class="loy-stat-card bronze">
+        <div class="loy-stat-crest"><i class='bx bx-group'></i></div>
+        <div class="loy-stat-info"><span class="stat-label" data-i18n="lg.tracked">Tracked members</span><span class="loy-stat-value" id="lgTotal">—</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-icon"><i class='bx bxs-flame'></i></div>
-        <div class="stat-info"><span class="stat-label" data-i18n="lg.active_streaks">Active streaks</span><span class="stat-value" id="lgActive">—</span></div>
+      <div class="loy-stat-card silver">
+        <div class="loy-stat-crest"><i class='bx bxs-flame'></i></div>
+        <div class="loy-stat-info"><span class="stat-label" data-i18n="lg.active_streaks">Active streaks</span><span class="loy-stat-value" id="lgActive">—</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-icon"><i class='bx bxs-trophy'></i></div>
-        <div class="stat-info"><span class="stat-label" data-i18n="lg.top_streak">Top streak</span><span class="stat-value" id="lgTop">—</span></div>
+      <div class="loy-stat-card gold">
+        <div class="loy-stat-crest"><i class='bx bxs-trophy'></i></div>
+        <div class="loy-stat-info"><span class="stat-label" data-i18n="lg.top_streak">Top streak</span><span class="loy-stat-value" id="lgTop">—</span></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-card-icon"><i class='bx bxs-diamond'></i></div>
-        <div class="stat-info"><span class="stat-label" data-i18n="lg.tiers">Tiers (D/M)</span><span class="stat-value" id="lgTiers">—</span></div>
+      <div class="loy-stat-card diamond">
+        <div class="loy-stat-crest"><i class='bx bxs-diamond'></i></div>
+        <div class="loy-stat-info"><span class="stat-label" data-i18n="lg.tiers">Tiers (D/M)</span><span class="loy-stat-value" id="lgTiers">—</span></div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:24px">
-      <div class="card-header">
-        <div class="card-icon blue"><i class='bx bxs-star'></i></div>
+    <div class="loy-leaders-card">
+      <div class="loy-leaders-header">
+        <div class="loy-leaders-tag"><i class='bx bxs-star'></i></div>
         <div>
           <h2 class="card-title" data-i18n="lg.leaders">Loyalty Leaders</h2>
           <p class="card-subtitle" data-i18n="lg.leaders_hint">Top members by loyalty points. Bot tracks activity automatically when connected.</p>
@@ -148,14 +141,14 @@
           <tbody id="lgBody"></tbody>
         </table>
       </div>
-      <div id="lgEmpty" style="display:none;padding:28px;text-align:center;color:var(--text-muted)">
+        <div id="lgEmpty" style="display:none;padding:28px;text-align:center;color:var(--text-muted)">
         <i class='bx bx-star' style="font-size:30px;opacity:.4"></i>
         <p data-i18n="lg.no_data">No tracked members yet — activity tracking starts once the bot is in your server.</p>
       </div>
     </div>
   </main>
-  <script src="/i18n.js?v=22"></script>
-  <script src="/shared.js?v=22"></script>
+  <script src="/i18n.js?v=25"></script>
+  <script src="/shared.js?v=25"></script>
   <script>
     const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
     if (!guildId) { Swal.fire('Error', 'Server ID not found in the URL.', 'error'); throw new Error('Page guard: missing context'); }
@@ -241,8 +234,48 @@
     }
   </script>
   <style>
-    .card-icon.gold { background: rgba(245, 158, 11, .15); color: #F59E0B; }
-    @media (max-width: 760px) { .stat-cards { grid-template-columns: repeat(2, 1fr) !important; } }
+    /* ── Loyalty: Royal Gold identity ────────────────────────────────────── */
+    .loy-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(245,190,60,.35); background: linear-gradient(135deg, rgba(40,28,8,.92), rgba(30,20,12,.9)); margin-bottom: 20px; box-shadow: 0 0 0 1px rgba(245,190,60,.1), 0 8px 32px rgba(180,120,20,.18); }
+    .loy-hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 80% 10%, rgba(250,210,90,.22), transparent 60%), radial-gradient(ellipse 55% 50% at 10% 95%, rgba(212,140,30,.16), transparent 60%); }
+    .loy-hero-bg::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(250,215,100,.1) 1px, transparent 1.5px); background-size: 22px 22px; }
+    .loy-hero-content { position: relative; padding: 20px 22px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .loy-hero-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; background: linear-gradient(135deg, #F6C34A, #C8860E); color: #3a2605; box-shadow: 0 0 24px rgba(246,195,74,.55); }
+    .loy-hero-title { font-size: 22px; font-weight: 800; color: #FDF6E3; letter-spacing: -.2px; }
+    .loy-hero-sub { font-size: 13.5px; color: rgba(253,246,227,.6); margin-top: 2px; max-width: 470px; }
+    .loy-hero-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    .loy-btn-gold { background: linear-gradient(135deg, #E0A41C, #B8860B); color: #fff; box-shadow: 0 0 16px rgba(224,164,28,.45); border: 1px solid rgba(250,220,120,.5); }
+    .loy-btn-gold:hover { background: linear-gradient(135deg, #E8B233, #C49416); }
+    .loy-btn-ghost { background: rgba(253,246,227,.07); border: 1px solid rgba(253,246,227,.18); color: #FDF6E3; }
+    .loy-btn-ghost:hover { background: rgba(253,246,227,.14); }
+    .loy-sort-bar { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 22px 12px; }
+    .loy-sort-select { background: rgba(0,0,0,.3); border: 1px solid rgba(245,190,60,.3); color: #FDF6E3; border-radius: 10px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+    .loy-sort-select option { background: #2a1d08; color: #FDF6E3; }
+
+    .loy-stat-royal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .loy-stat-card { position: relative; overflow: hidden; border-radius: 14px; padding: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.22); }
+    .loy-stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .loy-stat-card.bronze { background: linear-gradient(160deg, rgba(35,24,10,.85), rgba(30,20,10,.85)); border: 1px solid rgba(180,120,50,.3); }
+    .loy-stat-card.bronze::before { background: linear-gradient(90deg, #B45309, #D97706); }
+    .loy-stat-card.silver { background: linear-gradient(160deg, rgba(26,28,34,.85), rgba(22,24,30,.85)); border: 1px solid rgba(156,163,175,.3); }
+    .loy-stat-card.silver::before { background: linear-gradient(90deg, #9CA3AF, #D1D5DB); }
+    .loy-stat-card.gold { background: linear-gradient(160deg, rgba(45,32,8,.9), rgba(38,26,6,.9)); border: 1px solid rgba(245,190,60,.38); }
+    .loy-stat-card.gold::before { background: linear-gradient(90deg, #F5C24B, #F6E0A0, #D99A1E); }
+    .loy-stat-card.diamond { background: linear-gradient(160deg, rgba(12,26,50,.85), rgba(10,22,44,.85)); border: 1px solid rgba(96,165,250,.3); }
+    .loy-stat-card.diamond::before { background: linear-gradient(90deg, #3B82F6, #93C5FD); }
+    .loy-stat-crest { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 21px; margin-bottom: 10px; }
+    .loy-stat-card.bronze .loy-stat-crest { background: rgba(180,100,30,.18); color: #E5A13B; }
+    .loy-stat-card.silver .loy-stat-crest { background: rgba(156,163,175,.16); color: #D1D5DB; }
+    .loy-stat-card.gold .loy-stat-crest { background: rgba(245,190,60,.2); color: #F6C34A; box-shadow: 0 0 14px rgba(246,195,74,.35); }
+    .loy-stat-card.diamond .loy-stat-crest { background: rgba(59,130,246,.16); color: #93C5FD; }
+    .loy-stat-info { display: flex; flex-direction: column; gap: 3px; }
+    .loy-stat-value { font-size: 21px; font-weight: 800; color: var(--text); letter-spacing: -.4px; }
+
+    .loy-leaders-card { background: linear-gradient(160deg, rgba(30,22,10,.85), rgba(26,18,8,.85)); border: 1px solid rgba(245,190,60,.24); border-radius: 14px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.22); overflow: hidden; }
+    .loy-leaders-header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid rgba(245,190,60,.18); background: rgba(0,0,0,.22); }
+    .loy-leaders-tag { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; background: rgba(245,190,60,.15); color: #F6C34A; flex-shrink: 0; }
+
+    @media (max-width: 900px) { .loy-stat-royal { grid-template-columns: repeat(2, 1fr) !important; } .loy-hero-actions { margin-left: 0; } }
+    @media (max-width: 640px) { .loy-hero-content { padding: 16px; } .loy-hero-title { font-size: 19px; } }
   </style>
 </body>
 </html>

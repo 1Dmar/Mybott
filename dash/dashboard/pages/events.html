@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=22">
+  <link rel="stylesheet" href="/shared.css?v=25">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -54,12 +54,19 @@
   </nav>
   <!-- ── SIDEBAR (auto-built by shared.js) ── -->
   <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
     <div class="sidebar-footer">
-      <div class="sidebar-footer-content"></div>
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span data-i18n="nav.collapse">Collapse</span>
+      </div>
     </div>
   </nav>
   <!-- ── PAGE CONTENT ── -->
-  <div class="home-content" style="padding:28px;max-width:1080px;">
+  <main class="main-content">
+    <div class="page-breadcrumb">
+      <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.events">Events</span>
+    </div>
     <div class="page-header">
       <h1><i class='bx bx-trophy'></i> <span data-i18n="ev.title">Server Events & Tournaments</span></h1>
       <p class="sub" data-i18n="ev.subtitle">Host epic Minecraft events — PvP arenas, build battles, parkour races. Register players, crown winners, and share a luxurious podium image with the world.</p>
@@ -167,8 +174,7 @@
         <p class="form-hint" style="text-align:center;margin-top:12px;" data-i18n="ev.csp_img">Skins are fetched from mc-heads.net and rendered on the podium.</p>
       </div>
     </div>
-  </div>
-
+  </main>
   <style>
     .empty-state { text-align:center; padding:36px 20px; color:var(--text-muted); }
     .empty-icon { font-size:44px; opacity:.55; }
@@ -195,8 +201,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=22"></script>
-  <script src="/shared.js?v=22"></script>
+  <script src="/i18n.js?v=25"></script>
+  <script src="/shared.js?v=25"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -504,6 +510,15 @@
     const winners = (ev.winners || []).slice().sort((a, b) => (a.rank || 9) - (b.rank || 9)).slice(0, 3);
     const colByPlace = { 1: cols[1], 2: cols[0], 3: cols[2] };
 
+    // Champion crown: real 3D-rendered MC crown PNG with transparent background
+    const crownImg = document.createElement('img');
+    crownImg.crossOrigin = 'anonymous';
+    await new Promise(res => {
+      crownImg.onload = () => res();
+      crownImg.onerror = () => res();
+      crownImg.src = '/dashboard/assets/crown.webp';
+    });
+
     // Resolve skins in parallel — mc-heads accepts either uuid or name
     const resolved = await Promise.all(winners.map(async w => {
       const skin = await loadSkinHead(w.name);
@@ -516,11 +531,13 @@
       const c = colByPlace[w.rank];
       if (!c) return;
       const cx = c.cx;
-      const feetY = c.top; // stands on top of block
+      // Players stand with feet right on the block top surface (no gap between platform and player)
+      const feetY = c.top + Math.round(8 * T);
 
       // Player image (full body, pose per rank) — sized to the template blocks
       // A standing MC player is 2 blocks tall; one block ≈ 62px in the 1536-wide template.
-      const playerH = Math.round(2.6 * 62 * T);
+      // Enlarged skins (user: skins were too small): 1st ≈ 3.7 blocks, 2nd/3rd ≈ 3.5 blocks tall.
+      const playerH = Math.round((w.rank === 1 ? 3.4 : 3.0) * 62 * T);
       let playerW = playerH, skinImg = null;
       const pose = POSE[w.rank] || 'front';
       if (w.ident) {
@@ -537,11 +554,16 @@
         }
       }
 
-      // Champion: Minecraft-vanilla crown (gold blocks) floating above the head
-      if (w.rank === 1) {
-        const crownW = Math.min(playerW * 0.9, Math.round(110 * T));
-        const crownY = feetY - playerH - crownW * 0.55 - Math.round(14 * T);
-        drawMcCrown(ctx, cx - crownW / 2, crownY, crownW);
+      // Champion: the real 3D crown (transparent PNG) centered above the head
+      if (w.rank === 1 && crownImg.naturalWidth > 0) {
+        const crownW = Math.round(Math.min(playerW * 0.60, 90 * T));
+        const crownH = Math.round(crownW * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
+        // Real crown image (transparent PNG) sitting directly on top of the champion's head.
+        const headY = Math.round(feetY - playerH + playerH * 0.02);
+        const crownY = Math.round(headY - crownH * 0.28 - 2 * T);
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(crownImg, cx - crownW / 2, crownY, crownW, crownH);
+        ctx.imageSmoothingEnabled = false;
       }
 
       // Draw player on his block with a soft shadow under the feet
@@ -584,11 +606,20 @@
         ctx.fillText('MC', cx, feetY - playerH / 2);
       }
 
-      // ── Stats glass card: sits in FRONT of the block, above the floor ──
+      // ── Stats glass card ──
+      // Rank 1: card attached to his block (top edge just below the plaque).
+      // Ranks 2 & 3: cards lowered — top edge under the block tops (2) and (3).
+      let cardY;
+      if (w.rank === 1) {
+        cardY = c.top + Math.round(105 * T); // below the rank-1 plaque (plaque center ~y605)
+      } else if (w.rank === 2) {
+        cardY = c.top + Math.round(60 * T); // below block 2 (bottom ~y700)
+      } else {
+        cardY = c.top + Math.round(55 * T); // below block 3
+      }
       const cardW = Math.min(W * 0.23, 260);
       const cardH = 94;
       const cardX = cx - cardW / 2;
-      const cardY = H - Math.round(130 * T) - cardH - 16;
       drawGlassCard(ctx, cardX, cardY, cardW, cardH, w, c);
     }));
 
@@ -663,31 +694,21 @@
     ctx.restore();
 
     const cx = x + w / 2;
-    // Rank badge (small circle above name)
-    const badgeR = 13;
-    ctx.save();
-    ctx.shadowColor = col; ctx.shadowBlur = 16;
-    ctx.beginPath(); ctx.arc(cx, y + 15, badgeR, 0, Math.PI * 2);
-    ctx.fillStyle = '#10121f'; ctx.fill();
-    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
-    ctx.restore();
-    ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = col;
-    ctx.textAlign = 'center';
-    ctx.fillText(w_.rank === 1 ? '★' : w_.rank === 2 ? '✦' : '✦', cx, y + 20);
 
-    // Name + division
-    ctx.font = 'bold 18px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    const name = String(w_.resolvedName || w_.name).slice(0, 18);
-    ctx.fillText(name, cx, y + 46);
-    if (w_.division) {
-      ctx.font = '11.5px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#93a3bd';
-      ctx.fillText(String(w_.division).slice(0, 20), cx, y + 62);
-    }
-    // ELO (big, colored) + stats row on one compact card
+    // ELO (big, colored) at the TOP of the card (next to accent bar)
     const hasElo = w_.elo !== undefined && w_.elo !== null;
+    if (hasElo) {
+      ctx.textAlign = 'right';
+      ctx.font = 'bold 24px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = col;
+      ctx.fillText(String(w_.elo).slice(0, 7), x + w - 14, y + 26);
+      ctx.font = '10px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#93a3bd';
+      ctx.fillText('ELO', x + w - 14, y + 40);
+      ctx.textAlign = 'center';
+    }
+
+    // ── Stats row at the TOP (under the accent bar) — the user's numbers ──
     const stats = [
       { label: 'W', v: w_.statWins },
       { label: 'L', v: w_.statLosses },
@@ -695,9 +716,11 @@
       { label: 'D', v: w_.statDeaths },
       { label: 'S', v: w_.statStreak }
     ];
-    // Stats row at the bottom (dividers between cells)
-    const statY = y + h - 16;
+    const statY = y + 56;
     const cellW = w / stats.length;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.1)';
+    ctx.lineWidth = 1;
     stats.forEach((s, i) => {
       const sx = x + cellW * i + cellW / 2;
       ctx.textAlign = 'center';
@@ -709,20 +732,42 @@
       ctx.fillText(s.label, sx, statY + 13);
       if (i > 0) {
         ctx.beginPath();
-        ctx.moveTo(x + cellW * i, statY - 12);
-        ctx.lineTo(x + cellW * i, statY + 13);
-        ctx.strokeStyle = 'rgba(255,255,255,.1)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.moveTo(x + cellW * i, statY - 26);
+        ctx.lineTo(x + cellW * i, statY + 15);
+        ctx.stroke();
       }
     });
-    // ELO on the right side (next to name), colored
-    if (hasElo) {
-      ctx.textAlign = 'right';
-      ctx.font = 'bold 24px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = col;
-      ctx.fillText(String(w_.elo).slice(0, 7), x + w - 14, y + 50);
-      ctx.font = '10px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#5d6b82';
-      ctx.fillText('ELO', x + w - 14, y + 64);
+    ctx.restore();
+
+    // Divider between stats and name
+    ctx.beginPath();
+    ctx.moveTo(x + 18, y + 74);
+    ctx.lineTo(x + w - 18, y + 74);
+    ctx.strokeStyle = 'rgba(255,255,255,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Rank badge + Name at the BOTTOM of the card (name glued to the player)
+    const badgeR = 13;
+    ctx.save();
+    ctx.shadowColor = col; ctx.shadowBlur = 16;
+    ctx.beginPath(); ctx.arc(cx, y + 92, badgeR, 0, Math.PI * 2);
+    ctx.fillStyle = '#10121f'; ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
+    ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = col;
+    ctx.textAlign = 'center';
+    ctx.fillText(w_.rank === 1 ? '★' : '✦', cx, y + 97);
+
+    ctx.font = 'bold 19px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    const name = String(w_.resolvedName || w_.name).slice(0, 18);
+    ctx.fillText(name, cx, y + h - 18);
+    if (w_.division) {
+      ctx.font = '11px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#93a3bd';
+      ctx.fillText(String(w_.division).slice(0, 20), cx, y + h - 5);
     }
     ctx.textAlign = 'center';
   }
