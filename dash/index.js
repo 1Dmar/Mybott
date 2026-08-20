@@ -2120,6 +2120,7 @@ app.post('/api/server/:guildId/events/:id/finish', [isAuthenticated, verifyGuild
       statKills: w.statKills !== undefined && w.statKills !== '' ? Math.max(0, Number(w.statKills) || 0) : undefined,
       statDeaths: w.statDeaths !== undefined && w.statDeaths !== '' ? Math.max(0, Number(w.statDeaths) || 0) : undefined,
       statStreak: w.statStreak !== undefined && w.statStreak !== '' ? Math.max(0, Number(w.statStreak) || 0) : undefined,
+      score: w.score !== undefined && w.score !== '' ? Math.min(999999, Math.max(0, Number(w.score) || 0)) : undefined,
     }));
     ev.winners = winners;
     ev.status = 'finished';

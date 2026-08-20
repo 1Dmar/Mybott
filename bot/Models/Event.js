@@ -20,7 +20,9 @@ const EventParticipantSchema = new Schema({
   statLosses: { type: Number, min: 0 },
   statKills: { type: Number, min: 0 },
   statDeaths: { type: Number, min: 0 },
-  statStreak: { type: Number, min: 0 }
+  statStreak: { type: Number, min: 0 },
+  // Podium card score (shown under the rank number inside the block)
+  score: { type: Number, min: 0, max: 999999 }
 });
 
 module.exports = model(
