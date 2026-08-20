@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=28">
+  <link rel="stylesheet" href="/shared.css?v=30">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -201,8 +201,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=28"></script>
-  <script src="/shared.js?v=28"></script>
+  <script src="/i18n.js?v=30"></script>
+  <script src="/shared.js?v=30"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -601,33 +601,26 @@
         ctx.fillText('MC', cx, feetY - playerH / 2);
       }
 
-      // ── Score + stats strip inside the block, UNDER the rank number ──
-      drawBlockScore(ctx, w, c, T, ev);
-      // ── Winner name pill under the block ──
-      drawNamePill(ctx, w, c, T);
     }));
 
-    // ── Champion crown: drawn LAST so it has the highest z-order —
-    // it sits ABOVE (in front of) the skin, never hidden behind it ──
+    // ── Champion crown: worn ON the head (like a Minecraft player wearing it) —
+    // lower third overlaps the top of the head, rest above. Drawn after the skin so
+    // it sits in front of it.
     if (crownPos && crownImg.naturalWidth > 0) {
       const crownH = Math.round(crownPos.crownW * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
-      // crown rests ABOVE the head (clearly over it, not buried in the skin)
-      const crownY = Math.round(crownPos.headY - crownH * 0.75 - 3 * T);
+      // top 30% of the crown overlaps the top of the head — it looks WORN, not hovering
+      const crownY = Math.round(crownPos.headY - crownH * 0.30);
       ctx.imageSmoothingEnabled = true;
-      // soft gold glow behind the crown for visibility
-      const cg = ctx.createRadialGradient(crownPos.cx, crownY + crownH * 0.3, 4, crownPos.cx, crownY + crownH * 0.3, crownPos.crownW * 0.75);
-      cg.addColorStop(0, 'rgba(255,213,74,.35)'); cg.addColorStop(1, 'transparent');
-      ctx.fillStyle = cg;
-      ctx.beginPath(); ctx.arc(crownPos.cx, crownY + crownH * 0.3, crownPos.crownW * 0.75, 0, Math.PI * 2); ctx.fill();
       ctx.drawImage(crownImg, crownPos.cx - crownPos.crownW / 2, crownY, crownPos.crownW, crownH);
       ctx.imageSmoothingEnabled = false;
     }
 
+    // ── Unified stats card (IDENTICAL for all 3 places, below the blocks, never
+    //    entering the rank number). Rich & symmetric: ELO / W-L / K-D / STK / SCORE + name + badge ──
+    drawPodiumCard(ctx, resolved, T);
+
     // ── Event title banner at the TOP (event name + game mode/map) ──
     drawEventBanner(ctx, ev, W, T);
-
-    // ── Celebration particles around the champion (more visible, dense) ──
-    drawParticles(ctx, W, T);
 
     // ── Footer: copyright centered ──
     ctx.font = '15px "Segoe UI", Arial, sans-serif';
@@ -637,54 +630,71 @@
     ctx.textAlign = 'left';
   }
 
-  // Score plaque inside each block: a dark glass strip with the winner's score,
-  // placed directly UNDER the rank number so it reads as part of the game block.
-  function drawBlockScore(ctx, w, c, T, ev) {
-    // Rich stats strip: the exact fields filled in the event (ELO / W / L / K / D / Streak / Score)
-    const stats = [
-      { k: 'elo', label: 'ELO', v: w.elo },
-      { k: 'statWins', label: 'W', v: w.statWins },
-      { k: 'statLosses', label: 'L', v: w.statLosses },
-      { k: 'statKills', label: 'K', v: w.statKills },
-      { k: 'statDeaths', label: 'D', v: w.statDeaths },
-      { k: 'statStreak', label: 'STK', v: w.statStreak },
-      { k: 'score', label: 'SCORE', v: w.score }
-    ].filter(s => s.v !== null && s.v !== undefined && String(s.v).trim() !== '');
-    const plaqueBottomY = c.top + Math.round((w.rank === 1 ? 175 : 178) * T); // below plaque numbers — pushed down so the rank number stays visible
-    const stripW = Math.min(c.w * 0.86, 245);
-    const lineH = 17; // one row per field
-    const pad = 8;
-    const stripH = Math.max(26, stats.length * lineH + pad * 2);
-    const sx = c.cx - stripW / 2;
-    const sy = plaqueBottomY + Math.round(14 * T); // lower offset so the '1' number fully shows above
-    const col = w.rank === 1 ? '#ffd54a' : w.rank === 2 ? '#c9d1de' : '#e0a87a';
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
-    const gg = ctx.createLinearGradient(sx, sy, sx, sy + stripH);
-    gg.addColorStop(0, 'rgba(16,18,31,.86)'); gg.addColorStop(1, 'rgba(16,18,31,.70)');
-    ctx.fillStyle = gg;
-    drawRounded(ctx, sx, sy, stripW, stripH, 12); ctx.fill();
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    ctx.strokeStyle = col + '66'; ctx.lineWidth = 1.2;
-    drawRounded(ctx, sx, sy, stripW, stripH, 12); ctx.stroke();
-    // gold top accent
-    ctx.beginPath(); ctx.moveTo(sx + 14, sy + 2); ctx.lineTo(sx + stripW - 14, sy + 2);
-    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
-    // rows: LABEL ... value
-    let y = sy + pad + 13;
-    for (const s of stats) {
-      ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = '#8b98af';
+  // ONE unified podium card for EACH place (all 3 identical in size & content),
+  // placed BELOW the blocks so the rank numbers stay clean and untouched.
+  function drawPodiumCard(ctx, winners, T) {
+    const col = { 1: '#ffd54a', 2: '#c9d1de', 3: '#e0a87a' };
+    for (const w of winners) {
+      const cw = 336, ch = 92;
+      const cx0 = { 1: 765 - cw / 2, 2: 395 - cw / 2, 3: 1160 - cw / 2 }[w.rank];
+      // all cards end above the footer (footer at y=786) — never cut off
+      const cy0 = { 1: 680, 2: 666, 3: 666 }[w.rank];
+      const accent = col[w.rank];
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
+      const cg = ctx.createLinearGradient(cx0, cy0, cx0, cy0 + ch);
+      cg.addColorStop(0, 'rgba(12,14,26,.88)'); cg.addColorStop(1, 'rgba(12,14,26,.76)');
+      ctx.fillStyle = cg;
+      drawRounded(ctx, cx0, cy0, cw, ch, 14); ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      // accent border + top line
+      ctx.strokeStyle = accent + '70'; ctx.lineWidth = 1.2;
+      drawRounded(ctx, cx0, cy0, cw, ch, 14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx0 + 14, cy0 + 2); ctx.lineTo(cx0 + cw - 14, cy0 + 2);
+      ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.stroke();
+      // rank badge (left)
+      const bx = cx0 + 26, by = cy0 + ch / 2;
+      ctx.beginPath(); ctx.arc(bx, by, 15, 0, Math.PI * 2);
+      ctx.fillStyle = '#10121f'; ctx.fill();
+      ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillStyle = accent;
+      ctx.fillText(w.rank === 1 ? '★' : '✦', bx, by + 5);
+      // name (next to badge)
+      const name = String(w.resolvedName || w.name).slice(0, 16);
       ctx.textAlign = 'left';
-      ctx.fillText(s.label, sx + 14, y);
-      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = col;
-      ctx.textAlign = 'right';
-      ctx.fillText(String(s.v), sx + stripW - 14, y);
-      y += lineH;
+      ctx.font = 'bold 17px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(name, bx + 24, by + 6);
+      // stats strip: ELO · W/L · K/D · STK · SCORE (same fields for ALL places, horizontal row)
+      const stats = [
+        { l: 'ELO', v: w.elo },
+        { l: 'W/L', v: w.statWins !== null && w.statWins !== undefined && w.statLosses !== null && w.statLosses !== undefined ? `${w.statWins}/${w.statLosses}` : null },
+        { l: 'K/D', v: w.statKills !== null && w.statKills !== undefined && w.statDeaths !== null && w.statDeaths !== undefined ? `${w.statKills}/${w.statDeaths}` : null },
+        { l: 'STK', v: w.statStreak },
+        { l: 'SCORE', v: w.score }
+      ].filter(s => s.v !== null && s.v !== undefined && String(s.v).trim() !== '');
+      const stripY = cy0 + ch - 24;
+      // divider above the strip
+      ctx.beginPath(); ctx.moveTo(cx0 + 16, cy0 + ch - 40); ctx.lineTo(cx0 + cw - 16, cy0 + ch - 40);
+      ctx.strokeStyle = 'rgba(139,152,175,.35)'; ctx.lineWidth = 1; ctx.stroke();
+      // evenly spread stats across the card
+      const colW = cw - 32;
+      const nCols = Math.max(stats.length, 1);
+      stats.forEach((s, i) => {
+        const sx = cx0 + 16 + (colW * i) / nCols;
+        ctx.font = 'bold 9.5px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = '#8b98af'; ctx.textAlign = 'left';
+        ctx.fillText(s.l, sx, stripY);
+        ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+        ctx.fillStyle = accent; ctx.textAlign = 'left';
+        ctx.fillText(String(s.v).slice(0, 8), sx, stripY + 14);
+      });
+      ctx.restore();
     }
-    ctx.restore();
   }
+
+  // (drawBlockScore removed — replaced by the unified drawPodiumCard below the blocks)
 
   // Event banner across the top: event name + the game/mode it was played in (mapName)
   function drawEventBanner(ctx, ev, W, T) {
@@ -794,36 +804,7 @@
     ctx.restore();
   }
 
-  // Winner name pills under each block (replaces the old glass stats card)
-  function drawNamePill(ctx, w, c, T) {
-    const name = String(w.resolvedName || w.name).slice(0, 18);
-    const pillW = Math.max(110, name.length * 10.5 + 34);
-    const pillH = 32;
-    const py = c.top + Math.round((w.rank === 1 ? 218 : 215) * T); // under block base
-    const px = c.cx - pillW / 2;
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
-    const col = w.rank === 1 ? '#ffd54a' : w.rank === 2 ? '#c9d1de' : '#e0a87a';
-    const pg = ctx.createLinearGradient(px, py, px, py + pillH);
-    pg.addColorStop(0, 'rgba(16,18,31,.84)'); pg.addColorStop(1, 'rgba(16,18,31,.70)');
-    ctx.fillStyle = pg;
-    drawRounded(ctx, px, py, pillW, pillH, 14); ctx.fill();
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-    ctx.strokeStyle = col + '77'; ctx.lineWidth = 1.2;
-    drawRounded(ctx, px, py, pillW, pillH, 14); ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(name, c.cx + 4, py + 21);
-    // rank badge dot
-    ctx.beginPath(); ctx.arc(px + 16, py + pillH / 2, 8, 0, Math.PI * 2);
-    ctx.fillStyle = '#10121f'; ctx.fill();
-    ctx.strokeStyle = col; ctx.lineWidth = 1.8; ctx.stroke();
-    ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = col;
-    ctx.fillText(w.rank === 1 ? '★' : '✦', px + 16, py + pillH / 2 + 4);
-    ctx.restore();
-  }
+  // (drawNamePill removed — name/badge moved inside the unified drawPodiumCard)
 
   async function openPodium(id) {
     const ev = eventsCache.find(x => String(x._id) === String(id));
