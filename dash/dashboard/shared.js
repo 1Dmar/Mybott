@@ -88,6 +88,7 @@
           { href: `/my-servers/${guildId}/welcome`,        icon: 'bx-door-open',   text: 'sb.welcome' },
           { href: `/my-servers/${guildId}/serverpage`,     icon: 'bx-globe',       text: 'sb.server_page' },
           { href: `/my-servers/${guildId}/events`,         icon: 'bx-trophy',      text: 'sb.events', tag: { text: 'ev.new', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/giveaways`,      icon: 'bx-gift',        text: 'sb.giveaways', tag: { text: 'gw.new', cls: 'tag-new' } },
           { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players',  },
           { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'sb.settings' },
         ]

@@ -53,6 +53,7 @@ const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const ServerPage = require('../bot/Models/ServerPage');
 const Event          = require('../bot/Models/Event');
 const ServerVote     = require('../bot/Models/ServerVote');
+const Giveaway       = require('../bot/Models/Giveaway');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Activity       = require('../bot/Models/Activity');
@@ -492,6 +493,7 @@ app.get('/my-servers/:guildId/welcome',        ...serveServerPage('welcome.html'
 app.get('/my-servers/:guildId/members',        ...serveServerPage('members.html'));
 app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html'));
 app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
+app.get('/my-servers/:guildId/giveaways',      ...serveServerPage('giveaways.html'));
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 // Note: these routes lack guildId, so access relies on isAuthenticated only
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -1908,6 +1910,24 @@ app.get('/api/servers', async (req, res) => {
   }
 });
 
+// ── Public: weekly top voters for a server (reward leaderboard) ──
+// Every Sunday the top-3 voters of the last 7 days win a 24h Featured Boost.
+app.get('/api/s/:serverId/top-voters', async (req, res) => {
+  try {
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const agg = await ServerVote.aggregate([
+      { $match: { guildId: req.params.serverId, createdAt: { $gte: since } } },
+      { $group: { _id: '$voterId', name: { $first: '$voterName' }, votes: { $sum: 1 }, lastAt: { $max: '$createdAt' } } },
+      { $sort: { votes: -1 } },
+      { $limit: 3 }
+    ]);
+    res.json({ success: true, topVoters: agg.map(x => ({ id: x._id, name: x.name || 'Voter', votes: x.votes })) });
+  } catch (err) {
+    console.error('[top-voters] error:', err.message);
+    res.json({ success: false, topVoters: [] });
+  }
+});
+
 // ── Public server page view data (no auth) ────────────────────────
 app.get('/api/s/:serverId', async (req, res) => {
   try {
@@ -2034,6 +2054,8 @@ app.post('/api/server/:guildId/events', [isAuthenticated, verifyGuildAccess], as
       scheduledAt: req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
       accent: (req.body.accent || '#FF512F').slice(0, 10),
       participants: (req.body.participants || []).slice(0, 200).map(p => ({ name: String(typeof p === 'string' ? p : (p.name || '')).trim().slice(0, 40) })).filter(p => p.name),
+      reminderEnabled: req.body.reminderEnabled === true || req.body.reminderEnabled === 'true',
+      reminderSent: false,
       status: 'upcoming',
     });
     res.status(201).json({ data: e });
@@ -2056,6 +2078,8 @@ app.patch('/api/server/:guildId/events/:id', [isAuthenticated, verifyGuildAccess
     if (b.scheduledAt !== undefined) ev.scheduledAt = b.scheduledAt ? new Date(b.scheduledAt) : null;
     if (b.accent !== undefined) ev.accent = String(b.accent).slice(0, 10);
     if (b.status !== undefined && ['upcoming', 'live', 'finished'].includes(b.status)) ev.status = b.status;
+    if (b.reminderEnabled !== undefined) { ev.reminderEnabled = !!b.reminderEnabled; if (!ev.reminderEnabled) ev.reminderSent = false; }
+    if (b.reminderSent !== undefined && ev.status === 'upcoming') ev.reminderSent = !!b.reminderSent;
     if (b.participants !== undefined) ev.participants = (b.participants || []).slice(0, 200).map(p => ({ name: String(p.name || '').slice(0, 40) }));
     await ev.save();
     res.json({ data: ev });
@@ -2117,6 +2141,166 @@ app.get('/api/server/:guildId/player-analytics', [isAuthenticated, verifyGuildAc
     res.status(500).json({ success: false, error: 'server_error' });
   }
 });
+// ── System: event reminders watcher (notify owner 1h before an event) ──
+// Runs every 60 seconds; fires once per upcoming event that opted in.
+setInterval(async () => {
+  try {
+    const due = await Event.find({
+      status: 'upcoming',
+      reminderEnabled: true,
+      reminderSent: false,
+      scheduledAt: { $lte: new Date(Date.now() + 60 * 60 * 1000), $gt: new Date() }
+    }).limit(25);
+    const guildCache = new Map();
+    for (const ev of due) {
+      try {
+        // Resolve the discord guild owner to notify them
+        let ownerId = guildCache.get(ev.guildId);
+        if (ownerId === undefined) {
+          ownerId = null;
+          try {
+            const g = client1?.guilds?.cache?.get(ev.guildId) || await client1?.guilds?.fetch(ev.guildId).catch(() => null);
+            if (g) ownerId = g.ownerId || null;
+            if (!ownerId && client !== client1) {
+              const g2 = client?.guilds?.cache?.get(ev.guildId) || await client?.guilds?.fetch(ev.guildId).catch(() => null);
+              if (g2) ownerId = g2.ownerId || null;
+            }
+          } catch (_) { ownerId = null; }
+          guildCache.set(ev.guildId, ownerId);
+        }
+        if (!ownerId) { ev.reminderSent = true; await ev.save(); continue; }
+        const when = ev.scheduledAt ? `Starting in about 1 hour (${new Date(ev.scheduledAt).toLocaleString()})` : 'Starting soon';
+        await notifyUserOnce(ownerId, {
+          type: 'info',
+          title: `Event reminder: ${ev.title}`,
+          message: `Your Minecraft event “${ev.title}” (${ev.category || 'event'}) starts soon. ${when}. ${ev.mapName ? 'Map: ' + ev.mapName + '.' : ''} Good luck!`,
+          createdByLabel: 'ProMcBot System',
+          actionUrl: `/my-servers/${ev.guildId}/events`,
+          actionLabel: 'Open Events'
+        });
+        ev.reminderSent = true;
+        await ev.save();
+        console.log(`[event-reminder] notified ${ownerId} for ${ev.title}`);
+      } catch (_) { /* skip bad entries */ }
+    }
+  } catch (err) {
+    console.error('[event-reminder] error:', err.message);
+  }
+}, 60000).unref();
+
+// ── Giveaway system (dashboard, server owners) ─────────────────────
+app.get('/api/server/:guildId/giveaways', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const list = await Giveaway.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50);
+    res.json({ success: true, data: list });
+  } catch (err) {
+    console.error('[giveaways] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/server/:guildId/giveaways', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const prize = String(req.body.prize || '').trim();
+    if (!prize) return res.status(400).json({ error: 'prize_required' });
+    const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const g = await Giveaway.create({
+      guildId: req.params.guildId,
+      prize: prize.slice(0, 120),
+      requirements: String(req.body.requirements || '').slice(0, 300),
+      endsAt,
+      status: endsAt > new Date() ? 'active' : 'ended'
+    });
+    res.status(201).json({ success: true, data: g });
+  } catch (err) {
+    console.error('[giveaways] create error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.patch('/api/server/:guildId/giveaways/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!g) return res.status(404).json({ error: 'not_found' });
+    const b = req.body || {};
+    if (b.prize !== undefined) g.prize = String(b.prize).slice(0, 120);
+    if (b.requirements !== undefined) g.requirements = String(b.requirements).slice(0, 300);
+    if (b.endsAt !== undefined) { g.endsAt = new Date(b.endsAt); if (g.endsAt <= new Date()) g.status = 'ended'; }
+    await g.save();
+    res.json({ success: true, data: g });
+  } catch (err) {
+    console.error('[giveaways] patch error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.delete('/api/server/:guildId/giveaways/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    await Giveaway.deleteOne({ _id: req.params.id, guildId: req.params.guildId });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[giveaways] delete error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Public: enter a giveaway (any logged-in discord user, once per giveaway)
+app.post('/api/s/:guildId/giveaways/:id/enter', async (req, res) => {
+  try {
+    if (!req.isAuthenticated() || !req.user?.id) return res.status(401).json({ error: 'login_required' });
+    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId, status: 'active' });
+    if (!g) return res.status(404).json({ error: 'not_found' });
+    if (g.entries.some(e => e.userId === req.user.id)) return res.json({ entered: true, already: true });
+    g.entries.push({ userId: req.user.id, userName: String(req.user.username || '').slice(0, 40), joinedAt: new Date() });
+    await g.save();
+    res.json({ entered: true, entries: g.entries.length });
+  } catch (err) {
+    console.error('[giveaway enter] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Owner: draw a random winner
+app.post('/api/server/:guildId/giveaways/:id/draw', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId, status: 'active' });
+    if (!g) return res.status(404).json({ error: 'not_found' });
+    if (!g.entries.length) return res.status(400).json({ error: 'no_entries' });
+    const winner = g.entries[Math.floor(Math.random() * g.entries.length)];
+    g.winner = { userId: winner.userId, userName: winner.userName, wonAt: new Date() };
+    g.status = 'ended';
+    await g.save();
+    res.json({ success: true, data: g });
+  } catch (err) {
+    console.error('[giveaway draw] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+// Public: giveaway list with public data (server page shows them)
+app.get('/api/s/:serverId/giveaways', async (req, res) => {
+  try {
+    const list = await Giveaway.find({ guildId: req.params.serverId }).sort({ createdAt: -1 }).limit(20);
+    res.json({ success: true, data: list.map(g => ({
+      _id: g._id, prize: g.prize, requirements: g.requirements, endsAt: g.endsAt,
+      entriesCount: g.entries.length, status: g.status, winner: g.winner, createdAt: g.createdAt
+    })) });
+  } catch (err) {
+    console.error('[public giveaways] error:', err.message);
+    res.json({ success: false, data: [] });
+  }
+});
+
+// Giveaway auto-ender: closes active giveaways past their end date (runs every 2 min)
+setInterval(async () => {
+  try {
+    await Giveaway.updateMany(
+      { status: 'active', endsAt: { $lte: new Date() } },
+      { $set: { status: 'ended' } }
+    );
+  } catch (_) {}
+}, 120000).unref();
+
 // ── System: smart notifications — offline/online watcher ──────────
 // Runs every 10 minutes, checks registered servers, notifies owners.
 const NOTIF_INTERVAL_MS = 10 * 60 * 1000;

@@ -10,7 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <link rel="stylesheet" href="/dashboard/shared.css?v=16">
   <style>
+    /* Page-specific overrides on top of shared.css (dark default + light support) */
     :root {
       --bg: #030409;
       --bg-2: #0a0f1c;
@@ -22,6 +24,14 @@
       --primary-2: #F09819;
       --green: #10B981;
       --red: #EF4444;
+    }
+    body.light {
+      --bg: #f0f2f7;
+      --bg-2: #f8f9fc;
+      --surface: #ffffff;
+      --border: rgba(0, 0, 0, 0.08);
+      --text: #1a1a2e;
+      --text-2: #6b7280;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
@@ -40,20 +50,44 @@
         radial-gradient(ellipse 60% 40% at 50% 100%, rgba(240, 152, 25, 0.10), transparent 60%);
     }
     .container { max-width: 1040px; margin: 0 auto; padding: 28px 22px 80px; position: relative; z-index: 1; }
-    /* top bar */
-    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 34px; }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; color: var(--text); }
-    .logo-mark {
-      width: 34px; height: 34px; border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--primary-2));
-      display: grid; place-items: center; font-size: 17px; color: #fff;
+    /* Chart wrapper — fixed height to prevent blow-up on scroll */
+    .gw-section { margin-bottom: 22px; }
+    .gw-card { border: 1px solid var(--border); border-radius: 18px; padding: 20px; background: var(--surface); margin-bottom: 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .gw-info { flex: 1; min-width: 220px; }
+    .gw-prize { font-size: 17px; font-weight: 800; background: linear-gradient(120deg, #fff 20%, var(--primary-2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .gw-meta { color: var(--text-2); font-size: 13px; margin-top: 6px; }
+    .gw-status-badge { font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px; }
+    .gw-status-active { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.4); }
+    .gw-status-ended { background: rgba(255,255,255,.08); color: var(--text-2); border: 1px solid var(--border); }
+    .gw-winner { display: inline-flex; align-items: center; gap: 8px; background: rgba(240,152,25,.12); border: 1px solid rgba(240,152,25,.35); color: #fbbf24; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 999px; margin-top: 8px; }
+    .chart-wrap { position: relative; height: 240px; }
+    .chart-wrap.small { height: 180px; }
+    body.light .chart-wrap canvas { filter: none; }
+    body.light .card { background: #fff; }
+    /* Page top bar — matches dashboard navbar exactly */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+      height: 68px; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100; backdrop-filter: blur(16px);
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
     }
+    body.light .topbar { box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; text-decoration: none; color: var(--text); }
+    .logo img { width: 38px; height: 38px; border-radius: 10px; border: 2px solid var(--border); object-fit: cover; }
+    .logo .brand-name { background: linear-gradient(135deg, #FF512F, #F09819); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
     .back-btn {
       color: var(--text-2); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px;
       padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface);
       transition: all .25s;
     }
     .back-btn:hover { color: var(--text); border-color: rgba(255, 81, 47, .5); }
+    #darkLight {
+      width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 18px;
+      transition: all .25s;
+    }
+    #darkLight:hover { border-color: rgba(255,81,47,.5); transform: translateY(-1px); }
     /* hero */
     .hero {
       position: relative; border-radius: 26px; overflow: hidden;
@@ -149,21 +183,25 @@
         <div class="logo-mark"><i class='bx bx-game'></i></div>
         <span>ProMcBot</span>
       </a>
-      <a class="back-btn" href="https://promcbot.dev/"><i class='bx bx-left-arrow-alt'></i> Back to ProMcBot</a>
+      <div class="topbar-right">
+        <div id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+        <a class="back-btn" href="https://promcbot.dev/"><i class='bx bx-left-arrow-alt'></i> Back to ProMcBot</a>
+      </div>
     </div>
 
     <!-- content injected by JS -->
     <div id="heroArea"></div>
+    <div id="gwArea"></div>
     <div id="statsArea"></div>
     <div id="livePlayersCard" class="card" style="display:none;"></div>
     <div class="card">
       <h2><i class='bx bx-line-chart'></i> <span id="growthTitle">Player growth · last 48h</span></h2>
-      <canvas id="growthChart" height="110"></canvas>
+      <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
       <div id="growthEmpty" class="empty">No player history data yet. Snapshots appear once the server is connected.</div>
     </div>
     <div class="card">
       <h2><i class='bx bx-time-five'></i> <span id="peakTitle">Peak hours (UTC)</span></h2>
-      <canvas id="peakChart" height="100"></canvas>
+      <div class="chart-wrap small"><canvas id="peakChart"></canvas></div>
       <div id="peakEmpty" class="empty">Peak hour data will appear once your server collects history.</div>
     </div>
     <div class="card" id="topCard" style="display:none;"></div>
@@ -190,7 +228,15 @@
       'top.badge': 'Bumped server',
       'featured.badge': 'Featured',
       'no.players': 'No players online right now',
-      'actions.title': 'Quick actions'
+      'actions.title': 'Quick actions',
+      'gw.title': 'Giveaways & Rewards',
+      'gw.enter': 'Enter Giveaway',
+      'gw.entered': 'Entered',
+      'gw.ends': 'Ends',
+      'gw.entries': 'entries',
+      'gw.winner': 'Winner',
+      'gw.require': 'Requirements',
+      'gw.login': 'Log in via Discord to enter'
     }[k] || k);
 
     async function load() {
@@ -202,6 +248,7 @@
         return;
       }
       const { page, server, live, growth, peaks, topUsers } = data;
+      loadGiveaways();
       document.title = (page.publicName || 'Minecraft Server') + ' — ProMcBot';
 
       // hero
@@ -356,6 +403,55 @@
     function escapeHtml(s) {
       return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
+    /* ── Giveaways on the public page ── */
+    async function loadGiveaways() {
+      try {
+        const r = await fetch('/api/s/' + id + '/giveaways');
+        const j = await r.json();
+        const list = (j.data || []).filter(g => g.status === 'active' || g.winner);
+        const area = document.getElementById('gwArea');
+        if (!list.length) { area.innerHTML = ''; return; }
+        const meRes = await fetch('/api/me', { credentials: 'same-origin' });
+        const me = meRes.ok ? await meRes.json() : { loggedIn: false };
+        area.innerHTML = '<div class="card gw-section"><h2><i class=\'bx bxs-gift\'></i> ' + t('gw.title') + '</h2>' +
+          list.map(g => {
+            const active = g.status === 'active';
+            const entered = active && me?.loggedIn && me.id && false; // enter check below
+            const ends = g.endsAt ? new Date(g.endsAt).toLocaleString() : '—';
+            return `
+              <div class="gw-card">
+                <div class="gw-info">
+                  <div class="gw-prize"><i class='bx bxs-gift'></i> ${escapeHtml(g.prize)}</div>
+                  <div class="gw-meta">${g.requirements ? escapeHtml(g.requirements) + '<br>' : ''}${t('gw.ends')}: ${ends} · <span id="gw-ent-${g._id}">${g.entriesCount}</span> ${t('gw.entries')}</span></div>
+                  ${g.winner ? `<div class="gw-winner"><i class='bx bxs-crown'></i> ${t('gw.winner')}: ${escapeHtml(g.winner.userName || '?')}</div>` : ''}
+                </div>
+                ${active ? `<button class="btn btn-primary gw-enter-btn" data-id="${g._id}"><i class='bx bx-party'></i> ${t('gw.enter')}</button>` : ''}
+              </div>`;
+          }).join('') + '</div>';
+        // enter handlers
+        area.querySelectorAll('.gw-enter-btn').forEach(b => b.addEventListener('click', async () => {
+          const rr = await fetch('/api/s/' + id + '/giveaways/' + b.dataset.id + '/enter', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          const dd = await rr.json();
+          const el = document.getElementById('gw-ent-' + b.dataset.id);
+          if (dd.entries) el.textContent = dd.entries;
+          if (dd.already) { b.textContent = '✓ ' + t('gw.entered'); b.disabled = true; }
+          else if (!dd.entered) b.insertAdjacentHTML('afterend', '<div style="color:#EF4444;font-size:12px;margin-left:10px">' + t('gw.login') + '</div>');
+          else { b.textContent = '✓ ' + t('gw.entered'); b.disabled = true; }
+        }));
+      } catch (_) {}
+    }
+    /* ── Light/Dark mode (shared with dashboard) ── */
+    (function initTheme() {
+      const saved = localStorage.getItem('promcb-theme');
+      const pref = saved === 'light' || (!saved && window.matchMedia('(prefers-color-scheme: light)').matches);
+      document.body.classList.toggle('light', pref);
+      document.querySelector('#darkLight i')?.setAttribute('class', pref ? 'bx bx-moon' : 'bx bx-sun');
+      document.getElementById('darkLight')?.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light');
+        localStorage.setItem('promcb-theme', isLight ? 'light' : 'dark');
+        document.querySelector('#darkLight i')?.setAttribute('class', isLight ? 'bx bx-moon' : 'bx bx-sun');
+      });
+    })();
     load();
   </script>
 </body>

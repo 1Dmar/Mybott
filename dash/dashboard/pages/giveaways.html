@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giveaways — ProMcBot</title>
+  <link rel="stylesheet" href="/shared.css?v=16">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notif-dot" id="notifDot" style="display:none;"></span>
+        </div>
+        <div class="dropdown-menu" id="notifDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="accountBtn" title="Account">
+          <i class='bx bx-user-circle'></i>
+        </div>
+        <div class="dropdown-menu" id="accountDropdown" style="display:none;"></div>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="langBtn" title="Language">
+          <i class='bx bx-world'></i>
+        </div>
+        <div class="dropdown-menu" id="langDropdown" style="display:none;"></div>
+      </div>
+    </div>
+  </nav>
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-content"></div>
+    </div>
+  </nav>
+  <!-- ── PAGE CONTENT ── -->
+  <div class="home-content" style="padding:28px;max-width:1080px;">
+    <div class="page-header">
+      <h1><i class='bx bx-gift'></i> <span data-i18n="gw.title">Giveaways & Rewards</span></h1>
+      <p class="sub" data-i18n="gw.subtitle">Host giveaways to grow your community — members enter with one click, and you draw the winner fairly. Giveaways appear on your public server page.</p>
+    </div>
+
+    <!-- ── Create form ── -->
+    <div class="card" id="gwFormCard">
+      <h2 id="gwFormTitle"><i class='bx bx-plus-circle'></i> <span data-i18n="gw.create">Create Giveaway</span></h2>
+      <input type="hidden" id="gwEditId">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label" data-i18n="gw.prize">Prize</label>
+          <input class="form-input" id="gwPrize" type="text" maxlength="120" placeholder="e.g. VIP Rank for 30 days">
+        </div>
+        <div class="form-group full">
+          <label class="form-label" data-i18n="gw.requirements">Requirements (optional)</label>
+          <textarea class="form-input" id="gwReqs" maxlength="300" rows="2" placeholder="e.g. Must be level 10+ in the server"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="gw.ends">Ends at</label>
+          <input class="form-input" id="gwEnds" type="datetime-local">
+        </div>
+      </div>
+      <div style="margin-top:22px;display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="gwSaveBtn"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
+        <button class="btn btn-ghost" id="gwResetBtn" data-i18n="save.discard">Discard</button>
+      </div>
+    </div>
+
+    <!-- ── Giveaways list ── -->
+    <div class="card">
+      <h2><i class='bx bx-gift'></i> <span data-i18n="gw.giveaways">Giveaways</span></h2>
+      <div id="gwEmpty" class="empty-state" style="display:none;">
+        <i class='bx bx-gift empty-icon'></i>
+        <h3 data-i18n="gw.no_giveaways">No giveaways yet. Launch one and watch your community engage!</h3>
+      </div>
+      <div id="gwCards" style="display:flex;flex-direction:column;gap:14px;"></div>
+    </div>
+  </div>
+
+  <style>
+    .gw-card { border:1px solid var(--border); border-radius:16px; padding:18px; background:var(--surface); }
+    .gw-card-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .gw-status { font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; }
+    .gw-status-active { background:rgba(34,197,94,.15); color:#4ade80; }
+    .gw-status-ended { background:rgba(255,255,255,.08); color:var(--text-muted); }
+    .gw-meta { color:var(--text-2); font-size:13px; margin-top:8px; }
+    .gw-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .gw-winner { margin-top:10px; display:inline-flex; align-items:center; gap:8px; background:rgba(240,152,25,.12); border:1px solid rgba(240,152,25,.35); color:#fbbf24; font-size:13px; font-weight:600; padding:6px 14px; border-radius:999px; }
+    .empty-state { text-align:center; padding:36px 20px; color:var(--text-muted); }
+    .empty-icon { font-size:44px; opacity:.55; }
+  </style>
+  <script src="/i18n.js?v=16"></script>
+  <script src="/shared.js?v=16"></script>
+  <script>
+(function () {
+  const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
+  const $ = id => document.getElementById(id);
+  const i18n = k => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  let cache = null;
+  async function load() {
+    const r = await fetch(`/api/server/${guildId}/giveaways`);
+    if (!r.ok) return [];
+    const j = await r.json();
+    return j.data || [];
+  }
+  function fmtDate(d) { return d ? new Date(d).toLocaleString() : '—'; }
+
+  async function render() {
+    cache = await load();
+    $('gwEmpty').style.display = cache.length ? 'none' : 'block';
+    $('gwCards').innerHTML = cache.map(g => {
+      const active = g.status === 'active';
+      const endsSoon = active && g.endsAt && (new Date(g.endsAt) - Date.now()) < 24 * 60 * 60 * 1000;
+      return `
+        <div class="gw-card">
+          <div class="gw-card-head">
+            <h3 style="margin:0;font-size:16px;"><i class='bx bxs-gift'></i> ${esc(g.prize)}</h3>
+            <span class="gw-status ${active ? 'gw-status-active' : 'gw-status-ended'}">${i18n(active ? 'gw.active' : 'gw.ended')}</span>
+            ${endsSoon ? '<span class="gw-status gw-status-active" style="background:rgba(240,152,25,.15);color:#fbbf24;">Ending soon</span>' : ''}
+          </div>
+          ${g.requirements ? `<div class="gw-meta"><i class='bx bx-list-checks'></i> ${esc(g.requirements)}</div>` : ''}
+          <div class="gw-meta"><i class='bx bx-time'></i> ${i18n('gw.ends_at_label')}: ${fmtDate(g.endsAt)}</div>
+          <div class="gw-meta"><i class='bx bx-group'></i> ${g.entries.length} ${i18n('gw.entries')}</div>
+          ${g.winner ? `<div class="gw-winner"><i class='bx bxs-crown'></i> ${i18n('gw.winner')}: ${esc(g.winner.userName || 'Unknown')}</div>` : ''}
+          <div class="gw-actions">
+            <button class="btn btn-outline btn-sm gw-edit-btn" data-id="${g._id}"><i class='bx bx-edit-alt'></i> Edit</button>
+            ${active ? `<button class="btn btn-primary btn-sm gw-draw-btn" data-id="${g._id}"><i class='bx bx-shuffle'></i> <span data-i18n="gw.draw">Draw Winner</span></button>` : ''}
+            <button class="btn btn-ghost btn-sm gw-del-btn" data-id="${g._id}"><i class='bx bx-trash'></i></button>
+          </div>
+        </div>`;
+    }).join('');
+    document.querySelectorAll('.gw-edit-btn').forEach(b => b.addEventListener('click', openEdit));
+    document.querySelectorAll('.gw-del-btn').forEach(b => b.addEventListener('click', del));
+    document.querySelectorAll('.gw-draw-btn').forEach(b => b.addEventListener('click', draw));
+  }
+
+  function clearForm() {
+    $('gwEditId').value = '';
+    $('gwFormTitle').querySelector('span').textContent = i18n('gw.create');
+    $('gwPrize').value = ''; $('gwReqs').value = ''; $('gwEnds').value = '';
+  }
+  $('gwResetBtn').addEventListener('click', clearForm);
+
+  function openEdit(e) {
+    const g = cache.find(x => String(x._id) === String(e.currentTarget.dataset.id));
+    if (!g) return;
+    $('gwEditId').value = g._id;
+    $('gwFormTitle').querySelector('span').textContent = 'Edit Giveaway';
+    $('gwPrize').value = g.prize || '';
+    $('gwReqs').value = g.requirements || '';
+    if (g.endsAt) $('gwEnds').value = new Date(g.endsAt).toISOString().slice(0, 16);
+    $('gwFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  $('gwSaveBtn').addEventListener('click', async () => {
+    const prize = $('gwPrize').value.trim();
+    if (!prize) { alert('Enter a prize.'); return; }
+    const body = {
+      prize,
+      requirements: $('gwReqs').value.trim(),
+      endsAt: $('gwEnds').value ? new Date($('gwEnds').value).toISOString() : undefined
+    };
+    const editId = $('gwEditId').value;
+    const url = editId ? `/api/server/${guildId}/giveaways/${editId}` : `/api/server/${guildId}/giveaways`;
+    const r = await fetch(url, { method: editId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(j.error || 'Save failed'); return; }
+    clearForm();
+    render();
+    if (window.showToast) showToast(i18n('gw.saved'), 'success');
+  });
+
+  async function del(e) {
+    const id = e.currentTarget.dataset.id;
+    if (!confirm('Delete this giveaway?')) return;
+    await fetch(`/api/server/${guildId}/giveaways/${id}`, { method: 'DELETE' });
+    render();
+  }
+
+  async function draw(e) {
+    const id = e.currentTarget.dataset.id;
+    const g = cache.find(x => String(x._id) === String(id));
+    if (!g || !g.entries.length) { alert('No one has entered this giveaway yet.'); return; }
+    if (!confirm(`Draw a random winner for “${g.prize}”?`)) return;
+    const r = await fetch(`/api/server/${guildId}/giveaways/${id}/draw`, { method: 'POST' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(j.error || 'Draw failed'); return; }
+    render();
+    if (j.data?.winner && window.showToast) showToast(`Winner: ${j.data.winner.userName}`, 'success');
+  }
+
+  render();
+  if (window.initUnifiedNav) window.initUnifiedNav();
+})();
+  </script>
+</body>
+</html>

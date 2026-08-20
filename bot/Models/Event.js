@@ -54,6 +54,9 @@ module.exports = model(
     maxParticipants: { type: Number },
     // Custom theme accent (any hex)
     accent: { type: String },
+    // Event reminder (sent 1h before the event starts)
+    reminderEnabled: { type: Boolean, default: false },
+    reminderSent: { type: Boolean, default: false },
     createdBy: { type: String },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }

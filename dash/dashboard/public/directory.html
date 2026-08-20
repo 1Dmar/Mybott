@@ -51,6 +51,19 @@
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
     .page-sub { color: var(--text-2); font-size: 15px; margin-bottom: 30px; max-width: 620px; }
+    .champs-zone { margin-bottom: 30px; border: 1px solid var(--border); border-radius: 22px; background: linear-gradient(135deg, rgba(255,81,47,.08), rgba(240,152,25,.05)); padding: 24px; }
+    .champs-head { margin-bottom: 16px; }
+    .champs-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px;
+      background: linear-gradient(120deg, #fff 20%, var(--primary-2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .champs-sub { color: var(--text-2); font-size: 13.5px; }
+    .champs-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .champ { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 12px; }
+    .champ.rank-1 { border-color: rgba(240,152,25,.55); background: linear-gradient(135deg, rgba(240,152,25,.12), transparent); }
+    .champ-rank { font-size: 24px; font-weight: 800; min-width: 30px; text-align: center;
+      background: linear-gradient(120deg, #fff, var(--primary-2)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .champ-info { flex: 1; min-width: 0; }
+    .champ-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .champ-votes { font-size: 12px; color: var(--text-2); }
     .search-box {
       position: relative; margin-bottom: 28px;
     }
@@ -146,6 +159,13 @@
       <i class='bx bx-search'></i>
       <input id="search" type="text" placeholder="Search servers...">
     </div>
+    <div class="champs-zone" id="champsZone" style="display:none;">
+      <div class="champs-head">
+        <h2 class="champs-title"><i class='bx bxs-medal'></i> Weekly Voting Champions</h2>
+        <span class="champs-sub">Top voters this week win a 24h Featured Boost for their server. Vote more to climb!</span>
+      </div>
+      <div class="champs-row" id="champsRow"></div>
+    </div>
     <div class="grid" id="grid"></div>
     <p class="footer-note">Own a Minecraft server? <a href="https://promcbot.dev/invitebot">Add ProMcBot</a> and publish your own page for free.</p>
   </div>
@@ -227,6 +247,39 @@
     };
     document.getElementById('search').addEventListener('input', render);
     // Load my vote statuses (works when logged in)
+    // ── Weekly Voting Champions ──
+    async function loadChamps() {
+      // aggregate top voters across ALL listed servers this week
+      const meRes = await fetch('/api/me', { credentials: 'same-origin' });
+      const me = meRes.ok ? await meRes.json() : { loggedIn: false };
+      try {
+        const r = await fetch('/api/servers'); const d = await r.json();
+        const ids = (d.servers || []).map(s => s.guildId);
+        const results = await Promise.all(ids.map(async (g) => {
+          try { const x = await fetch('/api/s/' + g + '/top-voters'); return (await x.json()).topVoters || []; }
+          catch (_) { return []; }
+        }));
+        const byId = new Map();
+        results.flat().forEach(v => {
+          const cur = byId.get(v.id) || { id: v.id, name: v.name, votes: 0 };
+          cur.votes += v.votes;
+          if (v.name !== 'Voter') cur.name = v.name;
+          byId.set(v.id, cur);
+        });
+        const top = Array.from(byId.values()).sort((a, b) => b.votes - a.votes).slice(0, 3);
+        if (!top.length || top[0].votes < 1) return;
+        document.getElementById('champsZone').style.display = 'block';
+        const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+        document.getElementById('champsRow').innerHTML = top.map((v, i) => `
+          <div class="champ rank-${i + 1}">
+            <div class="champ-rank">${medals[i]}</div>
+            <div class="champ-info">
+              <div class="champ-name">${escapeHtml(v.name)}</div>
+              <div class="champ-votes">${v.votes} vote${v.votes === 1 ? '' : 's'} this week${v.id === (me?.id || '') ? ' \u2022 you!' : ''}</div>
+            </div>
+          </div>`).join('');
+      } catch (_) {}
+    }
     async function loadMyVotes() {
       try {
         const me = await fetch('/api/me', { credentials: 'same-origin' });
@@ -244,6 +297,7 @@
     }
     load();
     loadMyVotes();
+    loadChamps();
   </script>
 </body>
 </html>
