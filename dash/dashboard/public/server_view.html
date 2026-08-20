@@ -230,6 +230,7 @@
         </div>
         <div class="actions">
           <button class="btn btn-primary" id="sv-vote-btn" onclick="svVote()"><i class='bx bxs-vote'></i>Vote for this server</button>
+          ${((page.boostedUntil || 0) > Date.now()) ? `<span class="badge boosted"><i class='bx bxs-rocket'></i>Boosted</span>` : `<button class="btn btn-ghost" id="sv-boost-btn" onclick="svBoost()"><i class='bx bxs-rocket'></i>Boost 24h</button>`}
           ${page.discordInvite ? `<a class="btn btn-ghost" href="${escapeHtml(page.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>${t('join')}</a>` : ''}
           ${server?.javaIP ? `<button class="btn btn-ghost" id="copyBtn"><i class='bx bx-copy'></i><span id="copyText">${t('copy.ip')}</span></button>` : ''}
         </div>
@@ -252,6 +253,23 @@
         await navigator.clipboard.writeText(server.javaIP + ':' + server.javaPort);
         document.getElementById('copyText').textContent = t('copied');
       });
+      window.svBoost = async function () {
+        const btn = document.getElementById('sv-boost-btn');
+        try {
+          const r = await fetch('/api/s/' + id + '/boost', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          const d = await r.json();
+          if (r.status === 401) { msg.style.color = '#EF4444'; msg.textContent = 'Please log in with Discord first.'; return; }
+          if (r.status === 403 || d.error === 'no_access') { msg.style.color = '#EF4444'; msg.textContent = 'Only the server owner can boost this server.'; return; }
+          if (d.already) {
+            const hh = Math.max(1, Math.ceil((d.cooldownMs || 3600000) / 3600000));
+            msg.style.color = '#10B981'; msg.textContent = 'This server is already boosted — next boost available in ' + hh + 'h.';
+            btn.outerHTML = '<span class="badge boosted"><i class=\'bx bxs-rocket\'></i>Boosted</span>';
+            return;
+          }
+          msg.style.color = '#10B981'; msg.textContent = 'Server boosted! It will appear at the top of the directory for 24 hours.';
+          btn.outerHTML = '<span class="badge boosted"><i class=\'bx bxs-rocket\'></i>Boosted</span>';
+        } catch (_) { msg.style.color = '#EF4444'; msg.textContent = 'Could not boost. Please try again.'; }
+      };
 
       // stats
       document.getElementById('statsArea').innerHTML = `

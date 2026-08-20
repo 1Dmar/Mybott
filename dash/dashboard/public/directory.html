@@ -184,6 +184,9 @@
         const topBadge = s.featured
           ? `<span class="badge top"><i class='bx bxs-star'></i>Featured</span>`
           : '';
+        const boostBadge = (s.boostedUntil || 0) > Date.now()
+          ? `<span class="badge boosted"><i class='bx bxs-rocket'></i>Boosted</span>`
+          : '';
         const ipHtml = s.javaIP ? `<span class="badge"><i class='bx bx-server'></i>${escapeHtml(s.javaIP)}</span>` : '';
         return `
           <div class="srv">
@@ -192,7 +195,7 @@
               <div class="srv-name">${escapeHtml(s.publicName)}</div>
             </div>
             <div class="srv-desc">${s.description ? escapeHtml(s.description) : 'A Minecraft server community powered by ProMcBot.'}</div>
-            <div class="srv-badges">${statusBadge}${topBadge}${ipHtml}</div>
+            <div class="srv-badges">${statusBadge}${topBadge}${boostBadge}${ipHtml}</div>
             <div class="vote-wrap">
               <button class="vote-btn${s.voted ? ' voted' : ''}" data-guild="${s.guildId}" onclick="vote('${s.guildId}')">
                 <i class='bx ${s.voted ? 'bx-badge-check' : 'bxs-vote'}'></i>${s.voted ? 'Voted' : 'Vote for this server'}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=14">
+  <link rel="stylesheet" href="/shared.css?v=15">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -116,7 +116,17 @@
 
     <!-- ── Events list ── -->
     <div class="card">
-      <h2><i class='bx bx-calendar-star'></i> <span data-i18n="ev.events">Events</span></h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <h2 style="margin:0;"><i class='bx bx-calendar-star'></i> <span data-i18n="ev.events">Events</span></h2>
+        <button class="btn btn-ghost btn-sm" id="evHistoryToggle"><i class='bx bx-time-five'></i> <span data-i18n="ev.history">Event History</span> <span id="evHistoryCount" style="background:rgba(255,255,255,.12);border-radius:999px;padding:2px 9px;font-size:12px;">0</span></button>
+      </div>
+      <div id="evHistoryPanel" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
+        <div id="evHistoryEmpty" style="color:var(--text-muted);font-size:13.5px;padding:12px 0;" data-i18n="ev.no_history">No finished events yet. History will appear here with all past podiums.</div>
+        <div id="evHistoryList" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2><i class='bx bx-star'></i> <span data-i18n="ev.active">Active Events</span></h2>
       <div id="evListWrap">
         <div class="empty-state" id="evEmpty">
           <i class='bx bx-trophy empty-icon'></i>
@@ -171,7 +181,7 @@
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
   <script src="/i18n.js?v=13"></script>
-  <script src="/shared.js?v=14"></script>
+  <script src="/shared.js?v=15"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -219,8 +229,12 @@
   async function renderList() {
     eventsCache = await loadEvents();
     const cards = $('evCards');
-    $('evEmpty').style.display = eventsCache.length ? 'none' : 'block';
-    cards.innerHTML = eventsCache.map(ev => {
+    const finished = eventsCache.filter(e => e.status === 'finished');
+    $('evHistoryCount').textContent = String(finished.length);
+    renderHistoryList(finished);
+    const active = eventsCache.filter(e => e.status !== 'finished');
+    $('evEmpty').style.display = active.length ? 'none' : 'block';
+    cards.innerHTML = active.map(ev => {
       const cat = CAT_META[ev.category] || CAT_META.other;
       const statusCls = ev.status === 'live' ? 'ev-status-live' : ev.status === 'finished' ? 'ev-status-finished' : 'ev-status-upcoming';
       const when = ev.scheduledAt ? `<span class="ev-meta"><i class='bx bx-time'></i> ${new Date(ev.scheduledAt).toLocaleString()}</span>` : '';
@@ -697,9 +711,40 @@
     link.click();
   });
 
+  // ── Event history (finished events archive with podiums) ──
+  $('evHistoryToggle').addEventListener('click', () => {
+    const panel = $('evHistoryPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
+
+  function renderHistoryList(finished) {
+    $('evHistoryEmpty').style.display = finished.length ? 'none' : 'block';
+    $('evHistoryList').innerHTML = finished.slice().sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0)).map(ev => {
+      const cat = CAT_META[ev.category] || CAT_META.other;
+      const hasPodium = ev.winners && ev.winners.length;
+      const winNames = (ev.winners || []).slice().sort((a, b) => (a.rank || 9) - (b.rank || 9)).map(w => esc(w.name)).join(' · ');
+      const endedAt = ev.updatedAt ? new Date(ev.updatedAt).toLocaleString() : (ev.scheduledAt ? new Date(ev.scheduledAt).toLocaleString() : '—');
+      return `
+        <div class="ev-card" style="opacity:.88;">
+          <div class="ev-card-head">
+            <span class="ev-cat-badge" style="background:${cat.color};"><i class='bx ${cat.icon}'></i> ${i18n(cat.label)}</span>
+            <h3 style="margin:0;font-size:16px;">${esc(ev.title)}</h3>
+            <span class="ev-status-badge ev-status-finished"><i class='bx bx-flag-checkered'></i> <span data-i18n="ev.finished">Finished</span></span>
+          </div>
+          ${ev.description ? `<div class="ev-meta">${esc(ev.description)}</div>` : ''}
+          <div class="ev-meta"><i class='bx bx-time-five'></i> ${i18n('ev.ended')} ${endedAt} · ${(ev.participants || []).length} ${i18n('ev.players')}</div>
+          ${hasPodium ? `<div class="ev-meta"><i class='bx bx-trophy' style="color:#f59e0b"></i> ${winNames}</div>` : ''}
+          <div class="ev-actions">
+            ${hasPodium ? `<button class="btn btn-outline btn-sm ev-podium-btn" data-id="${ev._id}"><i class='bx bx-trophy'></i> <span data-i18n="ev.view_podium">View Podium</span></button>` : `<span class="ev-meta">${i18n('ev.no_winners_hint') || 'No winners recorded'}</span>`}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
   // ── Init ──
   renderList();
   renderFormPlayers();
+  attachCardListeners();
 })();
   </script>
 </body>

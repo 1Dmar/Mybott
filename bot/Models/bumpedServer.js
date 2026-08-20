@@ -12,5 +12,7 @@ module.exports = model(
       type: Date,
       required: true,
     },
+    // Optional boost deadline — gives the server a 24h Featured boost
+    boostedUntil: { type: Date, default: null },
   })
 );

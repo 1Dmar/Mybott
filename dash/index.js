@@ -404,6 +404,33 @@ app.get('/api/s/:guildId/vote', async (req, res) => {
   }
 });
 
+// ── Server Boost (owner self-service): 24h Featured reward, 24h cooldown ──
+// Any dashboard user managing a server they own can boost it once per day
+app.post('/api/s/:guildId/boost', async (req, res) => {
+  try {
+    const { guildId } = req.params;
+    if (!req.isAuthenticated() || !req.user?.id) return res.status(401).json({ error: 'login_required' });
+    const page = await ServerPage.findOne({ guildId }).lean();
+    if (!page) return res.json({ success: false, error: 'not_found' });
+    // Owner check: discord member must manage this server (same check as /api/server/:id routes)
+    const member = await client1.guilds.cache.get(guildId)?.members.fetch(req.user.id).catch(() => null)
+      || await client.guilds.cache.get(guildId)?.members.fetch(req.user.id).catch(() => null);
+    if (!member) return res.status(403).json({ error: 'no_access' });
+    const existing = await BumpedServer.findOne({ guildId }).lean();
+    const boostedUntil = existing?.boostedUntil ? new Date(existing.boostedUntil).getTime() : 0;
+    if (boostedUntil > Date.now()) {
+      return res.json({ success: true, boosted: true, cooldownMs: boostedUntil - Date.now(), already: true });
+    }
+    const BOOST_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    await BumpedServer.updateOne({ guildId }, { bumpedAt: new Date(), boostedUntil: new Date(now + BOOST_MS) }, { upsert: true });
+    res.json({ success: true, boosted: true, boostedUntil: now + BOOST_MS });
+  } catch (err) {
+    console.error('[boost] error:', err.message);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 // Public session status (for the unified navbar on public pages)
 app.get('/api/me', (req, res) => {
   if (req.isAuthenticated() && req.user) {
@@ -1833,10 +1860,28 @@ async function directoryData() {
         votes12h: votes12h
       });
     }
+    // ── Auto boost reward: top 3 servers by votes (last 12h) get a 24h Featured boost ──
+    const now = Date.now();
+    const BOOST_MS = 24 * 60 * 60 * 1000;
+    const topByVotes = [...out].sort((a, b) => (b.votes12h || 0) - (a.votes12h || 0)).slice(0, 3);
+    for (const t of topByVotes) {
+      if ((t.votes12h || 0) <= 2) continue; // minimum 3 votes to qualify
+      const tb = await BumpedServer.findOne({ guildId: t.guildId }).lean();
+      const boostedUntil = tb?.boostedUntil ? new Date(tb.boostedUntil).getTime() : 0;
+      if (boostedUntil > now) continue;
+      await BumpedServer.updateOne({ guildId: t.guildId }, { bumpedAt: new Date(), boostedUntil: new Date(now + BOOST_MS) }, { upsert: true });
+      t.featured = true;
+      t.boostedUntil = now + BOOST_MS;
+    }
+    for (const o of out) {
+      const ob = await BumpedServer.findOne({ guildId: o.guildId }).lean();
+      o.boostedUntil = ob?.boostedUntil ? new Date(ob.boostedUntil).getTime() : 0;
+    }
     out.sort((a, b) => {
       if (a.featured !== b.featured) return a.featured ? -1 : 1;
       const va = a.votes12h || 0, vb = b.votes12h || 0;
       if (va !== vb) return vb - va;
+      if ((a.boostedUntil || 0) !== (b.boostedUntil || 0)) return (b.boostedUntil || 0) - (a.boostedUntil || 0);
       if (a.bumpedAt && b.bumpedAt && a.bumpedAt.getTime() !== b.bumpedAt.getTime())
         return b.bumpedAt.getTime() - a.bumpedAt.getTime();
       return (b.registeredAt || 0) - (a.registeredAt || 0);
@@ -1886,6 +1931,7 @@ app.get('/api/s/:serverId', async (req, res) => {
         discordInvite: page.discordInvite || '',
         featured: Boolean(page.featured),
         bumpedAt: bumped?.bumpedAt || null,
+        boostedUntil: bumped?.boostedUntil ? new Date(bumped.boostedUntil).getTime() : 0,
         votes12h: votes12h
       },
       server: server ? {
