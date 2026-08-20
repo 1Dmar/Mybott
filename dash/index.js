@@ -83,6 +83,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Health endpoint (Railway healthcheck — no auth/session required) ──
+app.get('/health', (req, res) => {
+  res.json({ success: true, service: 'promcbot', timestamp: Date.now() });
+});
+
 // ── Rate limiting (anti brute-force / anti flood) ──────────────────
 app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 120, message: { success: false, error: 'Too many requests, please slow down' } }));
 
