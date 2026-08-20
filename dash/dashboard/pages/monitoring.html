@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css?v=17">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-content notification-dropdown" id="notificationDropdown">
+          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title">Notifications</span></div>
+          <div class="notification-item">
+            <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+            <div class="notification-content">
+              <div class="notification-title" data-i18n="not.welcome">Loading...</div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
+            </div>
+          </div>
+          <div class="dropdown-footer" data-i18n="not.footer">Notifications</div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <img src="https://cdn.discordapp.com/embed/avatars/0.png"
+             alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
+        <div class="dropdown-content" id="userDropdown">
+          <div class="dropdown-header">
+            <i class='bx bx-user'></i>
+            <span id="navUserName" data-i18n="pg.loading">Loading...</span>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── SIDEBAR (auto-built by shared.js) ── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span data-i18n="nav.collapse">Collapse</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="main-content">
+    <div class="page-breadcrumb">
+      <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.monitoring">Monitoring</span>
+    </div>
+    <div class="server-page-header">
+      <div class="server-page-icon" id="serverIconContainer">
+        <span id="serverIconText">...</span>
+      </div>
+      <div class="server-page-info">
+        <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server">Loading...</h1>
+        <div class="server-page-meta">
+          <div class="bot-status-badge" id="botStatusBadge">
+            <i class='bx bx-pulse'></i> <span data-i18n="sb.monitoring">Smart Server Monitoring</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero intro -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-icon blue"><i class='bx bx-pulse'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="mon.title">Smart Server Monitoring</h2>
+          <p class="card-subtitle" data-i18n="mon.subtitle">Monitoring subtitle</p>
+        </div>
+      </div>
+      <div style="margin-top: 8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button id="refreshBtn" class="btn btn-primary"><i class='bx bx-refresh'></i> <span data-i18n="mon.refresh">Refresh now</span></button>
+        <div id="liveStatusChip" class="stat-chip" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Status strip -->
+    <div class="stat-cards" id="statusStrip">
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bx-time-five'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="mon.uptime">Uptime (30 days)</span><span class="stat-value" id="stUptime">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bx-group'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="mon.players">Players online</span><span class="stat-value" id="stPlayers">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bx-code-alt'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="mon.version">Version</span><span class="stat-value" id="stVersion">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bx-network-chart'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="mon.live_status">Live status</span><span class="stat-value" id="stIp">—</span></div>
+      </div>
+    </div>
+
+    <!-- No IP state -->
+    <div class="card" id="noIpCard" style="display:none; margin-top: 24px;">
+      <div class="card-header">
+        <div class="card-icon"><i class='bx bx-info-circle'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="mon.no_ip">No server IP configured</h2>
+          <p class="card-subtitle" data-i18n="mon.no_ip_hint">Connect your Minecraft server IP in Settings → Server Page to start monitoring.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Downtime history -->
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <div class="card-icon red"><i class='bx bx-history'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="mon.downtime_log">Downtime history</h2>
+          <p class="card-subtitle" data-i18n="mon.log_note">Last 30 days — every outage is logged with its duration.</p>
+        </div>
+      </div>
+      <div id="downtimeList">
+        <p style="color: var(--text-muted); padding: 10px;" data-i18n="pg.loading">Loading...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="/i18n.js?v=17"></script>
+  <script src="/shared.js?v=17"></script>
+  <script>
+    const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+    if (!guildId) {
+      Swal.fire('Error', 'Server ID not found in the URL. Please go back to My Servers and open this server again.', 'error');
+      throw new Error('Page guard triggered: missing context.');
+    }
+    document.addEventListener('DOMContentLoaded', async () => {
+      const storedName = localStorage.getItem(`guild_name_${guildId}`) || guildId;
+      const storedIcon = localStorage.getItem(`guild_icon_${guildId}`);
+      document.getElementById('breadServerName').textContent = storedName;
+      document.getElementById('serverName').textContent = storedName;
+      const iconContainer = document.getElementById('serverIconContainer');
+      if (storedIcon && storedIcon !== 'null') {
+        iconContainer.innerHTML = `<img src="${storedIcon}" alt="Server Icon">`;
+      } else {
+        iconContainer.innerHTML = storedName.charAt(0).toUpperCase();
+      }
+      loadMonitoring();
+      document.getElementById('refreshBtn').addEventListener('click', loadMonitoring);
+      if (window.__pmc_i18n && window.__pmc_i18n.applyAll) window.__pmc_i18n.applyAll();
+    });
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    }
+    const tk = (k) => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+
+    async function loadMonitoring() {
+      try {
+        const res = await fetch(`/api/server/${guildId}/monitoring`);
+        const j = await res.json();
+        if (!j.success) return;
+        const m = j.monitoring || {};
+
+        // status strip
+        document.getElementById('stUptime').textContent = m.uptimePct != null ? `${m.uptimePct}%` : '—';
+        if (m.live) {
+          document.getElementById('stPlayers').textContent = m.live.players ? `${m.live.players.online}/${m.live.players.max}` : '—';
+          document.getElementById('stVersion').textContent = m.live.version || '—';
+          document.getElementById('stIp').textContent = m.live.online ? 'Online' : 'Offline';
+          document.getElementById('stIp').style.color = m.live.online ? '#10B981' : '#EF4444';
+          const chip = document.getElementById('liveStatusChip');
+          chip.style.display = 'inline-flex';
+          if (m.live.online) {
+            chip.innerHTML = `<i class='bx bxs-circle' style='color:#10B981;font-size:9px'></i> ${tk('mon.online')}`;
+            chip.style.color = '#10B981';
+            chip.style.background = 'rgba(16,185,129,.12)';
+          } else {
+            chip.innerHTML = `<i class='bx bxs-circle' style='color:#EF4444;font-size:9px'></i> ${tk('mon.offline')}${m.currentDowntimeStart ? ` — ${tk('mon.ongoing')} since ${new Date(m.currentDowntimeStart).toLocaleString()}` : ''}`;
+            chip.style.color = '#EF4444';
+            chip.style.background = 'rgba(239,68,68,.12)';
+          }
+        } else if (m.ip) {
+          document.getElementById('stIp').textContent = 'Unreachable';
+          document.getElementById('stIp').style.color = '#EF4444';
+        } else {
+          document.getElementById('noIpCard').style.display = 'block';
+          document.getElementById('statusStrip').style.display = 'none';
+          document.getElementById('downtimeList').innerHTML = '';
+          return;
+        }
+
+        // downtime list
+        const list = document.getElementById('downtimeList');
+        if (!m.logs || !m.logs.length) {
+          list.innerHTML = `<div class="player-note" style="background: rgba(16,185,129,.1); color:#10B981; border:1px solid rgba(16,185,129,.3);">${tk('mon.no_downtime')}</div>`;
+          return;
+        }
+        list.innerHTML = `<div class="dt-table-wrap"><table class="dt-table">
+          <thead><tr>
+            <th>${tk('mon.start')}</th><th>${tk('mon.end')}</th><th>${tk('mon.duration')}</th>
+          </tr></thead>
+          <tbody>${m.logs.map(l => {
+            const dur = l.durationMin != null ? `${l.durationMin} ${tk('mon.min')}` : (l.endedAt ? '—' : `<span style="color:#EF4444;font-weight:700">${tk('mon.ongoing')}</span>`);
+            return `<tr>
+              <td>${new Date(l.startedAt).toLocaleString()}</td>
+              <td>${l.endedAt ? new Date(l.endedAt).toLocaleString() : '<span style="color:#EF4444">—</span>'}</td>
+              <td>${dur}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`;
+      } catch (_) {}
+    }
+  </script>
+  <style>
+    .dt-table-wrap { overflow-x: auto; margin-top: 6px; }
+    .dt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .dt-table th { text-align: left; padding: 9px 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+    .dt-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .dt-table tr:last-child td { border-bottom: none; }
+    .stat-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; border: 1px solid var(--border); }
+    .btn { display: inline-flex; align-items: center; gap: 8px; }
+    @media (max-width: 760px) {
+      .stat-cards { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+  </style>
+</body>
+</html>

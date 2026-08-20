@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=16">
+  <link rel="stylesheet" href="/shared.css?v=17">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -187,8 +187,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=16"></script>
-  <script src="/shared.js?v=16"></script>
+  <script src="/i18n.js?v=17"></script>
+  <script src="/shared.js?v=17"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -459,70 +459,49 @@
     const W = canvas.width, H = canvas.height;
     const accent = ev.accent || '#FF512F';
 
-    // ── Minecraft world background ──
-    const px = Math.max(4, Math.round(W / 240)); // pixel size for the world
-    // Night-to-sunset sky (Minecraft dusk)
+    // ── Clean modern backdrop: calm dusk gradient with soft stars and a subtle horizon ──
     const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#0c1445');
-    sky.addColorStop(0.42, '#1b3a8f');
-    sky.addColorStop(0.68, '#6e57c9');
-    sky.addColorStop(0.84, '#e8734a');
-    sky.addColorStop(1, '#ffae5c');
+    sky.addColorStop(0, '#0b1230');
+    sky.addColorStop(0.5, '#162048');
+    sky.addColorStop(0.85, '#2a3a72');
+    sky.addColorStop(1, '#3d4f96');
     ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
 
-    // Stars (fixed seed)
+    // Soft stars (fixed seed, gentle, never crowded)
     ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 60; i++) {
-      const x = (Math.sin(i * 127.1 + 311.7) * 43758.5453 % 1 + 1) % 1 * W;
-      const y = (Math.sin(i * 269.5 + 183.3) * 43758.5453 % 1 + 1) % 1 * H * 0.45;
-      ctx.globalAlpha = 0.2 + ((Math.sin(i * 78.2) + 1) / 2) * 0.6;
-      ctx.fillRect(Math.abs(x), Math.abs(y), 2, 2);
+    for (let i = 0; i < 36; i++) {
+      const x = ((Math.sin(i * 127.1 + 311.7) * 43758.5453 % 1 + 1) % 1) * W;
+      const y = ((Math.sin(i * 269.5 + 183.3) * 43758.5453 % 1 + 1) % 1) * H * 0.4;
+      ctx.globalAlpha = 0.15 + ((Math.sin(i * 78.2) + 1) / 2) * 0.35;
+      ctx.fillRect(Math.abs(x), Math.abs(y), 1.5, 1.5);
     }
     ctx.globalAlpha = 1;
 
-    // Blocky Minecraft moon + sun on opposite sides
-    const sqSz = 26;
-    ctx.fillStyle = '#fffbe3';
-    for (let gy = 0; gy < sqSz; gy += 4) for (let gx = 0; gx < sqSz; gx += 4) mcRect(ctx, W * 0.86 + gx, 54 + gy, 4, gy < 10 && gx > 10 ? '#d8d2b8' : '#fffbe3');
-    ctx.fillStyle = '#ffe98a';
-    for (let gy = 0; gy < 20; gy += 4) for (let gx = 0; gx < 20; gx += 4) mcRect(ctx, W * 0.10 + gx, 74 + gy, 4, '#ffe98a');
+    // One elegant square moon (Minecraft touch, minimal)
+    ctx.fillStyle = '#f3ecd6';
+    const ms = 34;
+    mcRect(ctx, W * 0.84, 58, ms);
+    ctx.fillStyle = '#ddd3b4';
+    mcRect(ctx, W * 0.84 + 10, 58 + 8, 8);
+    mcRect(ctx, W * 0.84 + 4, 58 + 20, 6);
 
-    // Blocky clouds
-    mcCloud(ctx, W * 0.18, 106, 12);
-    mcCloud(ctx, W * 0.52, 68, 14);
-    mcCloud(ctx, W * 0.72, 130, 10);
-
-    // Distant blocky mountains
-    const mBase = H - 150;
-    ctx.fillStyle = '#2d4a7a';
-    ctx.beginPath(); ctx.moveTo(0, mBase);
-    for (let mx = 0; mx <= W; mx += 16) {
-      const mh = 40 + 46 * Math.abs(Math.sin(mx * 0.012 + 1.3));
-      ctx.lineTo(mx, mBase - mh);
+    // Horizon haze: a single soft band separating sky from floor
+    const HZ = H - 150;
+    const haze = ctx.createLinearGradient(0, HZ - 60, 0, HZ + 30);
+    haze.addColorStop(0, 'rgba(61,79,150,0)'); haze.addColorStop(1, '#23305e');
+    ctx.fillStyle = haze; ctx.fillRect(0, HZ - 60, W, 90);
+    // Ground (flat, calm, single blocky grass strip — not a noisy texture)
+    const groundTop = HZ;
+    ctx.fillStyle = '#2f4a35';
+    ctx.fillRect(0, groundTop + 3, W, H - groundTop);
+    // Grass top edge: one clean line of alternating greens
+    for (let gx = 0; gx < W; gx += 8) {
+      ctx.fillStyle = ((gx / 8) % 2) ? '#4c9a42' : '#3e8a36';
+      ctx.fillRect(gx, groundTop, 8, 3);
     }
-    ctx.lineTo(W, mBase); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#3a5d99';
-    ctx.beginPath(); ctx.moveTo(0, mBase);
-    for (let mx = 0; mx <= W; mx += 16) {
-      const mh = 22 + 26 * Math.abs(Math.sin(mx * 0.021 + 3.7));
-      ctx.lineTo(mx, mBase - mh);
-    }
-    ctx.lineTo(W, mBase); ctx.closePath(); ctx.fill();
-
-    // Grass ground with per-pixel blocky texture (Minecraft grass style)
-    const groundTop = mBase;
-    ctx.save();
-    for (let gy = groundTop; gy < H; gy += px) mcBlock(ctx, 0, gy, px);
-    ctx.restore();
-    // Grass top line (lighter pixels)
-    for (let gx = 0; gx < W; gx += px) {
-      const n = Math.sin(gx * 31.1) * 43758.5453 % 1;
-      ctx.fillStyle = n > 0 ? '#74c947' : '#5fb83c';
-      ctx.fillRect(gx, groundTop, px, Math.min(px, 6));
-    }
-    // Radial glow behind podium to lift winners out of the background
-    const glow = ctx.createRadialGradient(W / 2, groundTop - 90, 40, W / 2, groundTop - 90, W * 0.55);
-    glow.addColorStop(0, accent + '66'); glow.addColorStop(1, 'transparent');
+    // Soft radial glow behind the podium to lift the winners
+    const glow = ctx.createRadialGradient(W / 2, groundTop - 120, 30, W / 2, groundTop - 120, W * 0.5);
+    glow.addColorStop(0, accent + '40'); glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 
     // ── Title ──
@@ -551,14 +530,14 @@
       const fg = ctx.createRadialGradient(c.x + c.w / 2, FLOOR + 4, 4, c.x + c.w / 2, FLOOR + 4, c.w * 0.6);
       fg.addColorStop(0, 'rgba(0,0,0,.45)'); fg.addColorStop(1, 'transparent');
       ctx.fillStyle = fg; ctx.fillRect(c.x - c.w * 0.15, FLOOR - 10, c.w * 1.3, 30);
-      // Blocky Minecraft-style podium block (per-pixel texture) with metallic tint
+      // Clean podium block: smooth metallic gradient with a subtle top edge (no noisy pixel texture)
       ctx.save();
-      const bpx = Math.max(4, Math.round(c.w / 32));
       const baseColor = c.place === 1 ? '#e8c94a' : c.place === 2 ? '#d3d9e4' : '#d98a5b';
+      const bpx = Math.max(4, Math.round(c.w / 32));
       for (let gy = c.top; gy < FLOOR; gy += bpx) {
         for (let gx = c.x; gx < c.x + c.w; gx += bpx) {
           const n = Math.sin(gx * 17.3 + gy * 23.9) * 43758.5453 % 1;
-          const shift = n > 0.4 ? 14 : n > -0.4 ? 0 : -18;
+          const shift = n > 0.4 ? 6 : n > -0.4 ? 0 : -6;
           ctx.fillStyle = shadeColor(baseColor, shift);
           ctx.fillRect(Math.round(gx), Math.round(gy), bpx, bpx);
         }
@@ -580,8 +559,8 @@
     });
 
     // ── Winners ──
-    // Pose per rank: 1st = jump (celebrating), 2nd = left, 3rd = right — real MC poses, never standing twins
-    const POSE = { 1: 'jump', 2: 'left', 3: 'right' };
+    // Pose per rank: 1st = jump (celebrating), 2nd = side-left, 3rd = front — real MC poses, never standing twins
+    const POSE = { 1: 'jump', 2: 'left', 3: 'front' };
     const winners = (ev.winners || []).slice().sort((a, b) => (a.rank || 9) - (b.rank || 9)).slice(0, 3);
     const colByPlace = { 1: cols[1], 2: cols[0], 3: cols[2] };
 
@@ -599,7 +578,7 @@
       const feetY = c.top; // stands on top of block
 
       // Player image (full body, pose per rank) — measured from the real sprite so it never stretches
-      let playerW = 176, playerH = 220;
+      let playerW = 176, playerH = 210;
       let skinImg = null;
       const pose = POSE[w.rank] || '2x';
       if (w.uuid) {
@@ -613,14 +592,14 @@
         skinImg = img;
         if (img.naturalWidth > 0) {
           // Scale to a target body height, keep native aspect ratio (poses differ slightly)
-          playerH = 232;
+          playerH = 210;
           playerW = Math.round(img.naturalWidth / img.naturalHeight * playerH);
         }
       }
 
       // Crown for champion (drawn ABOVE the head, with a clear gap — clear of the title). Jump pose needs a higher crown offset.
       if (w.rank === 1) {
-        const crownY = feetY - playerH - (pose === 'jump' ? 84 : 64);
+        const crownY = feetY - playerH - (pose === 'jump' ? 78 : 58);
         const cg = ctx.createRadialGradient(cx, crownY + 18, 5, cx, crownY + 18, 64);
         cg.addColorStop(0, '#ffd54a88'); cg.addColorStop(1, 'transparent');
         ctx.fillStyle = cg; ctx.fillRect(cx - 72, crownY - 28, 144, 84);
@@ -636,17 +615,22 @@
         ctx.fillRect(cx - playerW / 2, feetY - playerH, playerW, playerH);
         ctx.restore();
         // Crisp pixel rendering (no smoothing blur on the sprite)
-        // NOTE: mc-heads `/body/:uuid/right.png` returns the sprite flipped upside-down;
-        // `left` and `jump` come back upright. Flip only the right pose back into place.
-        ctx.save();
+        // NOTE: some mc-heads poses (e.g. right) return the sprite flipped upside-down;
+        // draw into a small offscreen canvas and flip it back so the winner always stands upright.
         ctx.imageSmoothingEnabled = false;
         const px0 = Math.round(cx - playerW / 2), py0 = Math.round(feetY - playerH);
+        const off = document.createElement('canvas');
+        off.width = playerW; off.height = playerH;
+        const octx = off.getContext('2d');
+        octx.imageSmoothingEnabled = false;
+        octx.save();
         if (pose === 'right') {
-          ctx.translate(0, 2 * py0 + playerH);
-          ctx.scale(1, -1);
+          octx.translate(0, playerH);
+          octx.scale(1, -1);
         }
-        ctx.drawImage(skinImg, px0, py0, playerW, playerH);
-        ctx.restore();
+        octx.drawImage(skinImg, 0, 0, playerW, playerH);
+        octx.restore();
+        ctx.drawImage(off, px0, py0, playerW, playerH);
         // Rank ring under the feet (gold/silver/bronze circle on the grass)
         ctx.save();
         const ringCol = w.rank === 1 ? '#ffd54a' : w.rank === 2 ? '#d3d9e4' : '#e8a477';

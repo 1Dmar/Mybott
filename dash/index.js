@@ -53,7 +53,7 @@ const MinecraftConfig = require('../bot/Models/MinecraftConfig');
 const ServerPage = require('../bot/Models/ServerPage');
 const Event          = require('../bot/Models/Event');
 const ServerVote     = require('../bot/Models/ServerVote');
-const Giveaway       = require('../bot/Models/Giveaway');
+const DowntimeLog    = require('../bot/Models/DowntimeLog');
 const McApi          = require('../bot/utils/minecraftApi');
 const Log            = require('../bot/Models/Log');
 const Activity       = require('../bot/Models/Activity');
@@ -481,6 +481,7 @@ function serveServerPage(filename) {
 
 app.get('/my-servers/:guildId/overview',       ...serveServerPage('overview.html'));
 app.get('/my-servers/:guildId/settings',       ...serveServerPage('settings.html'));
+app.get('/my-servers/:guildId/monitoring',       ...serveServerPage('monitoring.html'));
 app.get('/my-servers/:guildId/moderation',     ...serveServerPage('moderation.html'));
 app.get('/my-servers/:guildId/roles',          ...serveServerPage('roles.html'));
 app.get('/my-servers/:guildId/logs',           ...serveServerPage('logs.html'));
@@ -493,7 +494,7 @@ app.get('/my-servers/:guildId/welcome',        ...serveServerPage('welcome.html'
 app.get('/my-servers/:guildId/members',        ...serveServerPage('members.html'));
 app.get('/my-servers/:guildId/danger',         ...serveServerPage('danger.html'));
 app.get('/my-servers/:guildId/players',        ...serveServerPage('players.html'));
-app.get('/my-servers/:guildId/giveaways',      ...serveServerPage('giveaways.html'));
+
 // ── Legacy / direct page routes (backward compatibility) ─────────────
 // Note: these routes lack guildId, so access relies on isAuthenticated only
 app.get('/overview',       isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'overview.html')));
@@ -1896,16 +1897,18 @@ async function directoryData() {
 
 
 // ── Public server directory page ──────────────────────────────────
-app.get('/servers', (req, res) => {
+app.get('/servers', (req, res) => res.redirect('/guilds'));
+app.get('/api/servers', (req, res) => res.redirect('/api/guilds-list'));
+app.get('/guilds', (req, res) => {
   res.sendFile(path.join(dashDir, 'public', 'directory.html'));
 });
 // ── Public server directory data (no auth) ────────────────────────
-app.get('/api/servers', async (req, res) => {
+app.get('/api/guilds-list', async (req, res) => {
   try {
     const data = await directoryData();
     res.json({ success: true, servers: data });
   } catch (err) {
-    console.error('[/servers] error:', err.message);
+    console.error('[/guilds-list] error:', err.message);
     res.json({ success: false, servers: [] });
   }
 });
@@ -2141,6 +2144,47 @@ app.get('/api/server/:guildId/player-analytics', [isAuthenticated, verifyGuildAc
     res.status(500).json({ success: false, error: 'server_error' });
   }
 });
+// ── Monitoring API: live status + downtime history + uptime stats ──
+app.get('/api/server/:guildId/monitoring', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const { guildId } = req.params;
+    const page = await ServerPage.findOne({ guildId }).lean();
+    if (!page) return res.json({ success: false, error: 'not_found' });
+    const server = await ServerInfo.findOne({ serverId: guildId }).lean();
+    const ip = server?.javaIP;
+    let live = null;
+    if (ip) {
+      live = await liveMcStatus(ip, server.javaPort || 25565, server.serverType === 'bedrock' ? 'bedrock' : 'java');
+      // update wasOffline flag so the watcher stays in sync
+      await ServerPage.updateOne({ guildId }, { $set: { wasOffline: !Boolean(live?.online) } });
+    }
+    // downtime log last 30 days
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const logs = await DowntimeLog.find({ guildId, startedAt: { $gte: since } }).sort({ startedAt: -1 }).limit(200).lean();
+    // uptime % last 30 days: count minutes offline in this window
+    const totalMin = 30 * 24 * 60;
+    let offlineMin = 0;
+    for (const l of logs) {
+      const end = l.endedAt ? Math.min(l.endedAt.getTime(), Date.now()) : Date.now();
+      const start = Math.max(l.startedAt.getTime(), since.getTime());
+      if (end > start) offlineMin += (end - start) / 60000;
+    }
+    const uptimePct = Math.max(0, Math.min(100, 100 * (1 - offlineMin / totalMin)));
+    // currently down? record start
+    const currentDowntime = await DowntimeLog.findOne({ guildId, endedAt: null }).sort({ startedAt: -1 }).lean();
+    res.json({ success: true, monitoring: {
+      ip,
+      live,
+      logs,
+      uptimePct: Math.round(uptimePct * 10) / 10,
+      currentDowntimeStart: currentDowntime?.startedAt ?? null
+    } });
+  } catch (err) {
+    console.error('[monitoring] error:', err.message);
+    res.json({ success: false, error: err.message });
+  }
+});
+
 // ── System: event reminders watcher (notify owner 1h before an event) ──
 // Runs every 60 seconds; fires once per upcoming event that opted in.
 setInterval(async () => {
@@ -2188,118 +2232,7 @@ setInterval(async () => {
   }
 }, 60000).unref();
 
-// ── Giveaway system (dashboard, server owners) ─────────────────────
-app.get('/api/server/:guildId/giveaways', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const list = await Giveaway.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50);
-    res.json({ success: true, data: list });
-  } catch (err) {
-    console.error('[giveaways] error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-app.post('/api/server/:guildId/giveaways', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const prize = String(req.body.prize || '').trim();
-    if (!prize) return res.status(400).json({ error: 'prize_required' });
-    const endsAt = req.body.endsAt ? new Date(req.body.endsAt) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    const g = await Giveaway.create({
-      guildId: req.params.guildId,
-      prize: prize.slice(0, 120),
-      requirements: String(req.body.requirements || '').slice(0, 300),
-      endsAt,
-      status: endsAt > new Date() ? 'active' : 'ended'
-    });
-    res.status(201).json({ success: true, data: g });
-  } catch (err) {
-    console.error('[giveaways] create error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-app.patch('/api/server/:guildId/giveaways/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId });
-    if (!g) return res.status(404).json({ error: 'not_found' });
-    const b = req.body || {};
-    if (b.prize !== undefined) g.prize = String(b.prize).slice(0, 120);
-    if (b.requirements !== undefined) g.requirements = String(b.requirements).slice(0, 300);
-    if (b.endsAt !== undefined) { g.endsAt = new Date(b.endsAt); if (g.endsAt <= new Date()) g.status = 'ended'; }
-    await g.save();
-    res.json({ success: true, data: g });
-  } catch (err) {
-    console.error('[giveaways] patch error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-app.delete('/api/server/:guildId/giveaways/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    await Giveaway.deleteOne({ _id: req.params.id, guildId: req.params.guildId });
-    res.json({ success: true });
-  } catch (err) {
-    console.error('[giveaways] delete error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-// Public: enter a giveaway (any logged-in discord user, once per giveaway)
-app.post('/api/s/:guildId/giveaways/:id/enter', async (req, res) => {
-  try {
-    if (!req.isAuthenticated() || !req.user?.id) return res.status(401).json({ error: 'login_required' });
-    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId, status: 'active' });
-    if (!g) return res.status(404).json({ error: 'not_found' });
-    if (g.entries.some(e => e.userId === req.user.id)) return res.json({ entered: true, already: true });
-    g.entries.push({ userId: req.user.id, userName: String(req.user.username || '').slice(0, 40), joinedAt: new Date() });
-    await g.save();
-    res.json({ entered: true, entries: g.entries.length });
-  } catch (err) {
-    console.error('[giveaway enter] error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-// Owner: draw a random winner
-app.post('/api/server/:guildId/giveaways/:id/draw', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const g = await Giveaway.findOne({ _id: req.params.id, guildId: req.params.guildId, status: 'active' });
-    if (!g) return res.status(404).json({ error: 'not_found' });
-    if (!g.entries.length) return res.status(400).json({ error: 'no_entries' });
-    const winner = g.entries[Math.floor(Math.random() * g.entries.length)];
-    g.winner = { userId: winner.userId, userName: winner.userName, wonAt: new Date() };
-    g.status = 'ended';
-    await g.save();
-    res.json({ success: true, data: g });
-  } catch (err) {
-    console.error('[giveaway draw] error:', err.message);
-    res.status(500).json({ error: 'server_error' });
-  }
-});
-
-// Public: giveaway list with public data (server page shows them)
-app.get('/api/s/:serverId/giveaways', async (req, res) => {
-  try {
-    const list = await Giveaway.find({ guildId: req.params.serverId }).sort({ createdAt: -1 }).limit(20);
-    res.json({ success: true, data: list.map(g => ({
-      _id: g._id, prize: g.prize, requirements: g.requirements, endsAt: g.endsAt,
-      entriesCount: g.entries.length, status: g.status, winner: g.winner, createdAt: g.createdAt
-    })) });
-  } catch (err) {
-    console.error('[public giveaways] error:', err.message);
-    res.json({ success: false, data: [] });
-  }
-});
-
-// Giveaway auto-ender: closes active giveaways past their end date (runs every 2 min)
-setInterval(async () => {
-  try {
-    await Giveaway.updateMany(
-      { status: 'active', endsAt: { $lte: new Date() } },
-      { $set: { status: 'ended' } }
-    );
-  } catch (_) {}
-}, 120000).unref();
+// Giveaway system REMOVED per owner request
 
 // ── System: smart notifications — offline/online watcher ──────────
 // Runs every 10 minutes, checks registered servers, notifies owners.
@@ -2328,6 +2261,7 @@ setInterval(async () => {
         const online = Boolean(live?.online);
         if (!online && !page.wasOffline) {
           await ServerPage.updateOne({ guildId: page.guildId }, { $set: { wasOffline: true } });
+          await DowntimeLog.create({ guildId: page.guildId, startedAt: new Date(), ip }).catch(() => {});
           if (!ownerId) continue;
           await notifyUserOnce(ownerId, {
             type: 'error',
@@ -2339,6 +2273,12 @@ setInterval(async () => {
           });
         } else if (online && page.wasOffline) {
           await ServerPage.updateOne({ guildId: page.guildId }, { $set: { wasOffline: false } });
+          const dt = await DowntimeLog.findOne({ guildId: page.guildId, endedAt: null }).sort({ startedAt: -1 });
+          if (dt) {
+            dt.endedAt = new Date();
+            dt.durationMin = Math.round((dt.endedAt - dt.startedAt) / 60000);
+            await dt.save();
+          }
           if (!ownerId) continue;
           await notifyUserOnce(ownerId, {
             type: 'success',

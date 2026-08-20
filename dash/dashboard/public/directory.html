@@ -23,21 +23,44 @@
       background: var(--bg); color: var(--text);
       font-family: 'Inter', sans-serif; overflow-x: hidden;
     }
-    body::after {
-      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(ellipse 60% 45% at 20% 0%, rgba(255, 81, 47, 0.14), transparent 60%),
-        radial-gradient(ellipse 55% 45% at 85% 20%, rgba(79, 58, 255, 0.12), transparent 60%),
-        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(240, 152, 25, 0.10), transparent 60%);
+    /* light mode vars (shared pmc_theme key) */
+    body.light { --bg: #f7f8fa; --bg-2: #ffffff; --surface: rgba(0,0,0,.035); --border: rgba(0,0,0,.10); --text: #1a1f2e; --text-2: #5a6375; }
+    body.light .topbar { background: rgba(247,248,250,.92); border-bottom: 1px solid var(--border); }
+    body.light .btn-ghost, body.light .vote-btn.voted { background: rgba(0,0,0,.05); }
+    body.light .logo-mark { background: linear-gradient(135deg, #FF512F, #F09819); }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 38px;
+      padding: 12px 18px; border-radius: var(--radius-lg, 16px);
+      background: rgba(255,255,255,.04); border: 1px solid var(--border); backdrop-filter: blur(10px);
+      position: sticky; top: 10px; z-index: 50;
     }
     .container { max-width: 1080px; margin: 0 auto; padding: 36px 22px 90px; position: relative; z-index: 1; }
-    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 38px; }
     .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; color: var(--text); }
     .logo-mark {
       width: 36px; height: 36px; border-radius: 11px;
       background: linear-gradient(135deg, var(--primary), var(--primary-2));
       display: grid; place-items: center; font-size: 18px; color: #fff;
     }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .lang-select {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-2); border-radius: 10px;
+      padding: 8px 28px 8px 12px; font-size: 13px; font-weight: 600;
+      cursor: pointer; outline: none; font-family: inherit;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 7px center;
+      transition: .25s ease;
+    }
+    .lang-select:hover { border-color: rgba(255,81,47,.5); color: var(--text); }
+    .lang-select option { background: #101523; color: #e2e8f0; }
+    body.light .lang-select option { background: #fff; color: #1a1f2e; }
+    .icon-btn {
+      width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--text-2); font-size: 15px; cursor: pointer; transition: .25s ease;
+    }
+    .icon-btn:hover { color: var(--text); border-color: rgba(255,81,47,.5); }
     .back-btn {
       color: var(--text-2); text-decoration: none; font-size: 14px;
       display: flex; align-items: center; gap: 6px;
@@ -148,32 +171,82 @@
   <div class="container">
     <div class="topbar">
       <a class="logo" href="https://promcbot.dev/">
-        <div class="logo-mark"><i class='bx bx-game'></i></div>
+        <img src="/dashboard/logo.png" alt="ProMcBot" style="width:40px;height:40px;border-radius:12px;object-fit:cover;">
         <span>ProMcBot</span>
       </a>
-      <a class="back-btn" href="https://promcbot.dev/"><i class='bx bx-left-arrow-alt'></i> Back</a>
+      <div class="topbar-right">
+        <select class="lang-select" id="dirLang" onchange="setDirLang(this.value)" aria-label="Language">
+          <option value="en">🇬🇧 EN</option>
+          <option value="ar">🇸🇦 AR</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
+        <div class="icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+        <a class="back-btn" href="https://promcbot.dev/"><i class='bx bx-left-arrow-alt'></i> <span id="dirBack">Back</span></a>
+      </div>
     </div>
-    <h1 class="page-title">Minecraft Server Directory</h1>
-    <p class="page-sub">Live status, player counts and one-click join. Every server here is registered with ProMcBot and monitored in real time.</p>
+    <h1 class="page-title" id="dirTitle">Minecraft Server Directory</h1>
+    <p class="page-sub" id="dirSub">Live status, player counts and one-click join. Every server here is registered with ProMcBot and monitored in real time.</p>
     <div class="search-box">
       <i class='bx bx-search'></i>
-      <input id="search" type="text" placeholder="Search servers...">
+      <input id="search" type="text" placeholder="Search servers..." id="dirSearch">
     </div>
     <div class="champs-zone" id="champsZone" style="display:none;">
       <div class="champs-head">
-        <h2 class="champs-title"><i class='bx bxs-medal'></i> Weekly Voting Champions</h2>
-        <span class="champs-sub">Top voters this week win a 24h Featured Boost for their server. Vote more to climb!</span>
+        <h2 class="champs-title"><i class='bx bxs-medal'></i> <span id="champsTitle">Weekly Voting Champions</span></h2>
+        <span class="champs-sub" id="champsSub">x</span>
       </div>
       <div class="champs-row" id="champsRow"></div>
     </div>
     <div class="grid" id="grid"></div>
-    <p class="footer-note">Own a Minecraft server? <a href="https://promcbot.dev/invitebot">Add ProMcBot</a> and publish your own page for free.</p>
+    <p class="footer-note"><span id="dirFooter">Own a Minecraft server? <a href="https://promcbot.dev/invitebot">Add ProMcBot</a> and publish your own page for free.</span></p>
   </div>
   <script>
     const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    /* ── Unified theme (pmc_theme) + language (pmc_lang) shared with other pages ── */
+    const savedTheme = localStorage.getItem('pmc_theme') || 'dark';
+    if (savedTheme === 'light') document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const dl = document.getElementById('darkLight');
+      if (dl) {
+        dl.querySelector('i').className = savedTheme === 'light' ? 'bx bx-moon' : 'bx bx-sun';
+        dl.addEventListener('click', () => {
+          const isLight = document.body.classList.toggle('light');
+          localStorage.setItem('pmc_theme', isLight ? 'light' : 'dark');
+          dl.querySelector('i').className = isLight ? 'bx bx-moon' : 'bx bx-sun';
+        });
+      }
+    });
+    const DIR_I18N = {
+      en: { title: 'Minecraft Server Directory', sub: 'Live status, player counts and one-click join. Every server here is registered with ProMcBot and monitored in real time.', search: 'Search servers...', champs_title: 'Weekly Voting Champions', champs_sub: 'Top voters this week win a 24h Featured Boost for their server. Vote more to climb!', no_srv: "No servers listed yet.\nBe the first to publish your server page.", online: 'online', featured: 'Featured', boosted: 'Boosted', voted: 'Voted', vote: 'Vote for this server', votes_unit: 'votes / 12h', need_login: 'Please log in via Discord to vote.', page: 'Server Page', join: 'Join', footer: 'Own a Minecraft server? ', footer_link: 'Add ProMcBot', footer_end: ' and publish your own page for free.', back: 'Back', you: '\u2022 you!', vote_s: 'vote', votes: 'votes', me: 'this week' },
+      ar: { title: 'دليل سيرفرات ماين كرافت', sub: 'حالة مباشرة، عداد لاعبين، وانضمام بنقرة واحدة. كل سيرفر هنا مسجّل في ProMcBot ويتم مراقبته لحظيًا.', search: 'ابحث عن سيرفر...', champs_title: 'أبطال التصويت الأسبوعيون', champs_sub: 'أفضل المصوتين هذا الأسبوع يكسبون تعزيزًا مميزًا 24 ساعة لسيرفرهم. صوّت أكثر لتتصدر!', no_srv: "لا توجد سيرفرات في القائمة بعد.\nكن أول من ينشر صفحة سيرفره.", online: 'متصل', featured: 'مميز', boosted: 'معزز', voted: 'صوّت', vote: 'صوّت لهذا السيرفر', votes_unit: 'تصويت / 12 ساعة', need_login: 'سجّل الدخول عبر ديسكورد أولًا.', page: 'صفحة السيرفر', join: 'انضم', footer: 'تملك سيرفر ماين كرافت؟ ', footer_link: 'أضف ProMcBot', footer_end: ' وانشر صفحتك مجانًا.', back: 'رجوع', you: '• أنت!', vote_s: 'تصويت', votes: 'تصويتات', me: 'هذا الأسبوع' },
+      es: { title: 'Directorio de servidores de Minecraft', sub: 'Estado en vivo, conteos de jugadores y unirse con un clic. Cada servidor está registrado con ProMcBot y se monitorea en tiempo real.', search: 'Buscar servidores...', champs_title: 'Campeones de votación de la semana', champs_sub: 'Los mejores votantes de la semana ganan un Impulso Destacado de 24h. ¡Vota más para subir!', no_srv: "Aún no hay servidores listados.\nSé el primero en publicar tu página.", online: 'en línea', featured: 'Destacado', boosted: 'Impulsado', voted: 'Votado', vote: 'Votar por este servidor', votes_unit: 'votos / 12h', need_login: 'Inicia sesión con Discord para votar.', page: 'Página del servidor', join: 'Unirse', footer: '¿Tienes un servidor de Minecraft? ', footer_link: 'Añade ProMcBot', footer_end: ' y publica tu propia página gratis.', back: 'Volver', you: '\u2022 ¡tú!', vote_s: 'voto', votes: 'votos', me: 'esta semana' }
+    };
+    let dd = DIR_I18N.en;
+    function dirT(k) { return dd[k] || k; }
+    function refreshStaticTexts() {
+      const t = document.getElementById('dirTitle'); if (t) t.textContent = dirT('title');
+      const s = document.getElementById('dirSub'); if (s) s.textContent = dirT('sub');
+      const q = document.getElementById('dirSearch'); if (q) q.placeholder = dirT('search');
+      const ct = document.getElementById('champsTitle'); if (ct) ct.textContent = dirT('champs_title');
+      const cs = document.getElementById('champsSub'); if (cs) cs.textContent = dirT('champs_sub');
+      const df = document.getElementById('dirFooter');
+      if (df) df.innerHTML = dirT('footer') + '<a href="https://promcbot.dev/invitebot">' + dirT('footer_link') + '</a>' + dirT('footer_end');
+      const bk = document.getElementById('dirBack'); if (bk) bk.textContent = dirT('back');
+    }
+    function setDirLang(lang) {
+      dd = DIR_I18N[lang] || DIR_I18N.en;
+      document.cookie = 'pmc_lang=' + lang + '; path=/; max-age=31536000; SameSite=Lax';
+      localStorage.setItem('pmc_lang', lang);
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
+      refreshStaticTexts();
+      render();
+    }
+    const lang0 = (localStorage.getItem('pmc_lang') || 'en');
+    setDirLang(['en', 'ar', 'es'].includes(lang0) ? lang0 : 'en');
     let all = [];
     async function load() {
-      const res = await fetch('/api/servers');
+      const res = await fetch('/api/guilds-list');
       const data = await res.json();
       all = (data.servers || []).map(s => ({ ...s, live: null }));
       // fetch live status for each in parallel
@@ -193,19 +266,19 @@
       );
       const grid = document.getElementById('grid');
       if (!list.length) {
-        grid.innerHTML = '<div class="empty"><i class=\'bx bx-server\'></i>No servers listed yet.<br>Be the first to publish your server page.</div>';
+        grid.innerHTML = '<div class="empty"><i class=\'bx bx-server\'></i><span>${escapeHtml(dirT("no_srv")).replace("\n", "<br>")}</span></div>';
         return;
       }
       grid.innerHTML = list.map(s => {
         const online = s.live?.online;
         const statusBadge = online
-          ? `<span class="badge online"><i class='bx bxs-circle' style="color:#10B981;font-size:9px"></i>${s.live.players.online} online</span>`
+          ? `<span class="badge online"><i class='bx bxs-circle' style="color:#10B981;font-size:9px"></i>${s.live.players.online} ' + dirT("online") + '</span>`
           : `<span class="badge offline"><i class='bx bxs-circle' style="color:#EF4444;font-size:9px"></i>Offline</span>`;
         const topBadge = s.featured
-          ? `<span class="badge top"><i class='bx bxs-star'></i>Featured</span>`
+          ? `<span class="badge top"><i class='bx bxs-star'></i>' + dirT("featured") + '</span>`
           : '';
         const boostBadge = (s.boostedUntil || 0) > Date.now()
-          ? `<span class="badge boosted"><i class='bx bxs-rocket'></i>Boosted</span>`
+          ? `<span class="badge boosted"><i class='bx bxs-rocket'></i>' + dirT("boosted") + '</span>`
           : '';
         const ipHtml = s.javaIP ? `<span class="badge"><i class='bx bx-server'></i>${escapeHtml(s.javaIP)}</span>` : '';
         return `
@@ -218,14 +291,14 @@
             <div class="srv-badges">${statusBadge}${topBadge}${boostBadge}${ipHtml}</div>
             <div class="vote-wrap">
               <button class="vote-btn${s.voted ? ' voted' : ''}" data-guild="${s.guildId}" onclick="vote('${s.guildId}')">
-                <i class='bx ${s.voted ? 'bx-badge-check' : 'bxs-vote'}'></i>${s.voted ? 'Voted' : 'Vote for this server'}
+                <i class='bx ${s.voted ? 'bx-badge-check' : 'bxs-vote'}'></i>${s.voted ? dirT("voted") : dirT("vote")}
               </button>
-              <span class="vote-count"><i class='bx bxs-flame'></i><span id="vc-${s.guildId}">${s.votes12h || 0}</span> votes / 12h</span>
+              <span class="vote-count"><i class='bx bxs-flame'></i><span id="vc-${s.guildId}">${s.votes12h || 0}</span> ' + dirT("votes_unit") + '</span>
             </div>
-            <div class="vote-err" id="ve-${s.guildId}">Please log in via Discord to vote.</div>
+            <div class="vote-err" id="ve-${s.guildId}">' + dirT("need_login") + '</div>
             <div class="srv-actions">
-              <a class="btn btn-primary" href="/s/${s.guildId}"><i class='bx bx-show'></i>Server Page</a>
-              ${s.discordInvite ? `<a class="btn btn-ghost" href="${escapeHtml(s.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>Join</a>` : ''}
+              <a class="btn btn-primary" href="/s/${s.guildId}"><i class='bx bx-show'></i>' + dirT("page") + '</a>
+              ${s.discordInvite ? `<a class="btn btn-ghost" href="${escapeHtml(s.discordInvite)}" target="_blank" rel="noopener"><i class='bx bxl-discord'></i>' + dirT("join") + '</a>` : ''}
             </div>
           </div>`;
       }).join('');
@@ -246,6 +319,7 @@
       } catch (_) {}
     };
     document.getElementById('search').addEventListener('input', render);
+    refreshStaticTexts();
     // Load my vote statuses (works when logged in)
     // ── Weekly Voting Champions ──
     async function loadChamps() {
@@ -253,7 +327,7 @@
       const meRes = await fetch('/api/me', { credentials: 'same-origin' });
       const me = meRes.ok ? await meRes.json() : { loggedIn: false };
       try {
-        const r = await fetch('/api/servers'); const d = await r.json();
+        const r = await fetch('/api/guilds-list'); const d = await r.json();
         const ids = (d.servers || []).map(s => s.guildId);
         const results = await Promise.all(ids.map(async (g) => {
           try { const x = await fetch('/api/s/' + g + '/top-voters'); return (await x.json()).topVoters || []; }
@@ -275,7 +349,7 @@
             <div class="champ-rank">${medals[i]}</div>
             <div class="champ-info">
               <div class="champ-name">${escapeHtml(v.name)}</div>
-              <div class="champ-votes">${v.votes} vote${v.votes === 1 ? '' : 's'} this week${v.id === (me?.id || '') ? ' \u2022 you!' : ''}</div>
+              <div class="champ-votes">${v.votes} ${(v.votes === 1 ? dirT("vote_s") : dirT("votes"))} ' + dirT("me") + '${v.id === (me?.id || '') ? ' ' + dirT("you") : ''}</div>
             </div>
           </div>`).join('');
       } catch (_) {}

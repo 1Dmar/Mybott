@@ -6,231 +6,191 @@
   <meta name="description" content="ProMcBot — Login to your account to manage your Discord and Minecraft servers.">
   <title>Login — ProMcBot</title>
 
-  <!-- Boxicons -->
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <!-- Google Fonts: Tajawal for Arabic excellence + Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     /* ══════════════════════════════════════════
-       ProMcBot Premium Login — Vetox-inspired
-       (night-sky glow, glass panel, MC identity)
+       ProMcBot Login — Clean & calm
        ══════════════════════════════════════════ */
+    :root {
+      --primary: #FF6B3F;
+      --bg: #0a0d14;
+      --bg-2: #0f131c;
+      --surface: rgba(255, 255, 255, 0.04);
+      --surface-2: rgba(255, 255, 255, 0.07);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hi: rgba(255, 107, 63, 0.35);
+      --text: #eceff4;
+      --text-secondary: #9aa3b2;
+      --text-muted: #60697a;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
+    html { scroll-behavior: smooth; }
     body {
       font-family: 'Inter', 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      background:
-        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59, 130, 246, 0.35) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 50% at 85% 10%, rgba(251, 146, 60, 0.22) 0%, transparent 50%),
-        radial-gradient(ellipse 70% 50% at 10% 100%, rgba(59, 130, 246, 0.18) 0%, transparent 55%),
-        linear-gradient(160deg, #05070d 0%, #070b14 40%, #0a0f1c 100%);
-      color: #e6edf7;
+      background: var(--bg);
+      color: var(--text);
       overflow-x: hidden;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    body.light {
+      --bg: #f7f8fa;
+      --bg-2: #ffffff;
+      --surface: rgba(0, 0, 0, 0.035);
+      --surface-2: rgba(0, 0, 0, 0.06);
+      --border: rgba(0, 0, 0, 0.10);
+      --border-hi: rgba(255, 107, 63, 0.4);
+      --text: #1a1f2e;
+      --text-secondary: #5a6375;
+      --text-muted: #8a93a5;
     }
 
-    /* animated stars / floating particles */
-    .stars, .stars2 {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-repeat: repeat;
-    }
-    .stars { background-image: radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.9), transparent),
-                              radial-gradient(1px 1px at 70% 80%, rgba(255,255,255,0.7), transparent),
-                              radial-gradient(1px 1px at 45% 55%, rgba(255,255,255,0.85), transparent),
-                              radial-gradient(1px 1px at 85% 20%, rgba(255,255,255,0.6), transparent),
-                              radial-gradient(1.5px 1.5px at 60% 45%, rgba(147,197,253,0.9), transparent);
-      background-size: 380px 380px;
-      animation: starDrift 60s linear infinite;
-    }
-    @keyframes starDrift { from { background-position: 0 0; } to { background-position: 380px 380px; } }
-
-    /* floating Minecraft-style cubes */
-    .floatcube {
-      position: fixed; z-index: 0; pointer-events: none;
-      border-radius: 6px;
-      background: linear-gradient(135deg, rgba(59,130,246,0.16), rgba(59,130,246,0.04));
-      border: 1px solid rgba(96,165,250,0.18);
-      backdrop-filter: blur(1px);
-      animation: floatY 9s ease-in-out infinite;
-    }
-    .floatcube.c1 { width: 56px; height: 56px; left: 8%;  top: 22%; animation-delay: 0s; }
-    .floatcube.c2 { width: 38px; height: 38px; left: 82%; top: 14%; animation-delay: -3s; transform: rotate(18deg); }
-    .floatcube.c3 { width: 70px; height: 70px; left: 14%; top: 72%; animation-delay: -5s; opacity: .55; }
-    .floatcube.c4 { width: 44px; height: 44px; left: 88%; top: 68%; animation-delay: -2s; transform: rotate(30deg); opacity: .65;
-      background: linear-gradient(135deg, rgba(251,146,60,0.16), rgba(251,146,60,0.04));
-      border-color: rgba(251,146,60,0.2); }
-    @keyframes floatY { 0%,100% { transform: translateY(0) rotate(var(--r, 0deg)); } 50% { transform: translateY(-26px) rotate(var(--r, 0deg)); } }
-
-    /* top glow band (mountain-sky feel from vetox) */
-    .skyglow {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background: linear-gradient(180deg, rgba(30,58,138,0.28) 0%, transparent 35%);
-    }
-
-    /* ── Navbar ── */
+    /* ── Navbar (unified) ── */
     .landing-nav {
-      position: relative; z-index: 10;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 2.5rem; height: 74px;
+      padding: 0 2.5rem; height: 68px;
+      background: rgba(10, 13, 20, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
+    body.light .landing-nav { background: rgba(247, 248, 250, 0.88); }
     .landing-nav .logo {
       display: flex; align-items: center; gap: 12px;
-      font-size: 22px; font-weight: 900; color: #fff; text-decoration: none;
+      font-size: 21px; font-weight: 800; color: var(--text); text-decoration: none;
     }
-    .landing-nav .logo img {
-      width: 44px; height: 44px; border-radius: 12px; object-fit: cover;
-      box-shadow: 0 0 24px rgba(251,146,60,0.5);
-    }
+    .landing-nav .logo img { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; }
     .landing-nav .logo span {
-      background: linear-gradient(135deg, #ff9b52 0%, #f09819 55%, #ffffff 100%);
+      background: linear-gradient(135deg, #FF7A3F 0%, #F0B539 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .landing-nav nav { display: flex; align-items: center; gap: 18px; }
+    .landing-nav nav { display: flex; align-items: center; gap: 10px; }
     .landing-nav nav a {
-      color: rgba(230,237,247,0.7); font-size: 14px; font-weight: 600;
-      padding: 8px 16px; border-radius: 10px; transition: .25s ease; text-decoration: none;
+      color: var(--text-secondary); font-size: 14px; font-weight: 600;
+      padding: 8px 14px; border-radius: var(--radius-md); transition: .25s ease; text-decoration: none;
     }
-    .landing-nav nav a:hover { color: #fff; background: rgba(255,255,255,0.07); }
+    .landing-nav nav a:hover { color: var(--text); background: var(--surface-2); }
     .lang-select {
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-      color: #e6edf7; border-radius: 10px; padding: 7px 12px; font-size: 13px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-secondary); border-radius: var(--radius-md);
+      padding: 8px 30px 8px 14px; font-size: 13px; font-weight: 600;
       cursor: pointer; outline: none;
+      font-family: inherit;
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa3b2' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      background-color: var(--surface);
+      transition: .25s ease;
     }
-    .lang-select option { background: #0c1222; color: #e6edf7; }
+    .lang-select:hover { border-color: var(--border-hi); color: var(--text); }
+    .lang-select option { background: #101523; color: #e2e8f0; }
+    body.light .lang-select option { background: #ffffff; color: #1a1f2e; }
 
     /* ── Main ── */
     .login-section {
-      position: relative; z-index: 5;
+      flex: 1;
       display: flex; align-items: center; justify-content: center;
-      padding: 56px 20px 80px; gap: 56px; flex-wrap: wrap;
+      padding: 56px 24px 70px; gap: 64px; flex-wrap: wrap;
     }
 
-    /* hero text column */
-    .login-hero {
-      max-width: 460px; animation: fadeRight .8s ease-out both;
-    }
-    @keyframes fadeRight { from { opacity:0; transform: translateX(-28px);} to {opacity:1; transform:none;} }
+    .login-hero { max-width: 420px; }
     .login-hero .badge {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 7px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 700; letter-spacing: .6px;
-      color: #7dd3fc; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25);
-      margin-bottom: 22px; text-transform: uppercase;
+      padding: 7px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 700;
+      color: var(--text-secondary); background: var(--surface-2); border: 1px solid var(--border);
+      margin-bottom: 22px;
     }
+    .login-hero .badge i { color: #FF9A64; }
     .login-hero h1 {
-      font-size: clamp(34px, 5vw, 52px); line-height: 1.15; font-weight: 900; color: #fff;
-      margin-bottom: 18px;
+      font-size: clamp(32px, 4.6vw, 46px); line-height: 1.16; font-weight: 800;
+      color: var(--text); margin-bottom: 16px; letter-spacing: -0.5px;
     }
     .login-hero h1 .grad {
-      background: linear-gradient(120deg, #60a5fa 0%, #38bdf8 45%, #fbbf24 100%);
+      background: linear-gradient(120deg, #FF7A3F 0%, #F0B539 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .login-hero p {
-      color: rgba(230,237,247,0.65); font-size: 16.5px; line-height: 1.7;
+      color: var(--text-secondary); font-size: 16px; line-height: 1.7;
+      margin-bottom: 32px;
     }
-    .login-hero .stats { display: flex; gap: 28px; margin-top: 34px; }
+    .login-hero .stats { display: flex; gap: 28px; }
     .login-hero .stats .st { text-align: left; }
-    .login-hero .stats .st b { display: block; font-size: 24px; font-weight: 900; color: #fff; }
-    .login-hero .stats .st span { font-size: 12.5px; color: rgba(230,237,247,0.55); letter-spacing:.4px; }
+    .login-hero .stats .st b { display: block; font-size: 22px; font-weight: 800; color: var(--primary); }
+    .login-hero .stats .st span { font-size: 12.5px; color: var(--text-muted); letter-spacing: .4px; }
 
-    /* ── Glass card ── */
+    /* ── Card ── */
     .login-card {
-      position: relative; z-index: 6;
-      width: 100%; max-width: 440px;
-      background: rgba(14, 20, 34, 0.55);
-      border: 1px solid rgba(96,165,250,0.22);
-      border-radius: 24px; padding: 44px 38px;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.03),
-        0 30px 80px -20px rgba(0,0,0,0.7),
-        0 0 60px -10px rgba(59,130,246,0.25);
-      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
-      animation: fadeInUp .8s ease-out both;
+      width: 100%; max-width: 400px;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 40px 34px;
+      box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.5);
       text-align: center;
     }
-    @keyframes fadeInUp { from { opacity:0; transform: translateY(26px);} to {opacity:1; transform:none;} }
-
-    /* soft glow behind the card */
-    .login-card::before {
-      content: ""; position: absolute; inset: -1px; border-radius: 24px; padding: 1px;
-      background: linear-gradient(160deg, rgba(96,165,250,0.45), transparent 45%, rgba(251,146,60,0.35));
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor; mask-composite: exclude;
-      pointer-events: none; opacity: .7;
-    }
-
-    .login-header { margin-bottom: 30px; }
+    .login-header { margin-bottom: 28px; }
     .login-header .logo-mini {
-      width: 68px; height: 68px; border-radius: 18px; margin: 0 auto 18px;
+      width: 64px; height: 64px; border-radius: 16px; margin: 0 auto 16px;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(96,165,250,0.3);
-      box-shadow: 0 0 30px rgba(251,146,60,0.35);
-      animation: logoGlow 4s ease-in-out infinite;
+      background: var(--surface-2); border: 1px solid var(--border);
     }
-    .login-header .logo-mini img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; }
-    @keyframes logoGlow { 0%,100% { box-shadow: 0 0 30px rgba(251,146,60,0.35);} 50% { box-shadow: 0 0 46px rgba(59,130,246,0.5);} }
+    .login-header .logo-mini img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; }
+    .login-header h1 { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .login-header p { color: var(--text-secondary); font-size: 14px; }
 
-    .login-header h1 { font-size: 26px; font-weight: 900; color: #fff; margin-bottom: 8px; }
-    .login-header p { color: rgba(230,237,247,0.6); font-size: 14.5px; }
-
-    .login-form { display: flex; flex-direction: column; gap: 18px; margin-bottom: 22px; }
+    .login-form { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
 
     .btn-discord {
       width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 700;
-      background: linear-gradient(135deg, #5865F2 0%, #4752C4 100%);
-      border: 1px solid rgba(139,152,255,0.35);
-      color: #fff; border-radius: 14px; cursor: pointer;
+      background: #5865F2;
+      border: 1px solid rgba(88, 101, 242, 0.4);
+      color: #fff; border-radius: var(--radius-md); cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 12px;
-      transition: .3s ease; text-decoration: none;
-      box-shadow: 0 10px 30px -8px rgba(88,101,242,0.6);
+      transition: .25s ease; text-decoration: none;
     }
-    .btn-discord:hover { transform: translateY(-2px); box-shadow: 0 14px 38px -8px rgba(88,101,242,0.8); }
+    .btn-discord:hover { opacity: 0.9; transform: translateY(-2px); }
 
     .btn-register {
       width: 100%; padding: 13px; font-size: 14px; font-weight: 700;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.14);
-      color: rgba(230,237,247,0.85); border-radius: 14px; cursor: pointer;
-      transition: .3s ease; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-secondary); border-radius: var(--radius-md); cursor: pointer;
+      transition: .25s ease; text-decoration: none;
     }
-    .btn-register:hover { background: rgba(255,255,255,0.09); color: #fff; transform: translateY(-2px); }
+    .btn-register:hover { background: var(--surface-2); color: var(--text); }
 
-    .login-footer { margin-top: 24px; font-size: 13px; color: rgba(230,237,247,0.5); }
-    .login-footer a { color: #7dd3fc; text-decoration: none; font-weight: 700; }
+    .login-footer { margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+    .login-footer a { color: #FF9A64; text-decoration: none; font-weight: 700; }
     .login-footer a:hover { text-decoration: underline; }
 
     /* footer strip */
     .foot-strip {
-      position: relative; z-index: 5;
       text-align: center; padding: 22px; font-size: 12.5px;
-      color: rgba(230,237,247,0.4);
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
     }
 
     /* RTL */
     [dir="rtl"] body { font-family: 'Tajawal', 'Inter', sans-serif; }
-    [dir="rtl"] .login-hero { animation-name: fadeLeft; }
-    @keyframes fadeLeft { from { opacity:0; transform: translateX(28px);} to {opacity:1; transform:none;} }
     [dir="rtl"] .login-hero .stats .st { text-align: right; }
 
     @media (max-width: 900px) {
       .login-section { flex-direction: column-reverse; gap: 32px; padding-top: 24px; }
       .login-hero { text-align: center; }
       .login-hero .stats { justify-content: center; }
+      .landing-nav { padding: 0 1.2rem; }
     }
   </style>
 </head>
 <body>
 
-  <div class="stars"></div>
-  <div class="skyglow"></div>
-  <div class="floatcube c1"></div>
-  <div class="floatcube c2"></div>
-  <div class="floatcube c3"></div>
-  <div class="floatcube c4"></div>
-
-  <!-- Navbar -->
+  <!-- Navbar (unified) -->
   <header class="landing-nav">
     <a href="/" class="logo">
       <img src="/dashboard/logo.png" alt="ProMcBot Logo">
@@ -242,6 +202,7 @@
         <option value="ar">🇸🇦 AR</option>
         <option value="es">🇪🇸 ES</option>
       </select>
+      <div class="nav-tool icon-btn" id="darkLight" title="Toggle theme" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-secondary);font-size:16px;transition:.25s ease;"><i class='bx bx-sun'></i></div>
       <a href="/" id="ln_home">Home</a>
     </nav>
   </header>
@@ -284,14 +245,22 @@
   <div class="foot-strip">© 2026 ProMcBot — <span id="ft_rights">All rights reserved.</span></div>
 
   <script>
-    /* ── Light theme: remove dark background (kept dark by default, premium look) ── */
-    if (localStorage.getItem('theme') === 'light') {
-      document.body.style.background =
-        'radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,0.18) 0%, transparent 55%), linear-gradient(160deg, #eef3fc 0%, #e5edfa 100%)';
-      document.body.style.color = '#1e293b';
-    }
+    // ── Theme (shared pmc_theme key) ──
+    const savedTheme = localStorage.getItem('pmc_theme') || 'dark';
+    if (savedTheme === 'light') document.body.classList.add('light');
+    document.addEventListener('DOMContentLoaded', () => {
+      const dl = document.getElementById('darkLight');
+      if (dl) {
+        dl.querySelector('i').className = savedTheme === 'light' ? 'bx bx-moon' : 'bx bx-sun';
+        dl.addEventListener('click', () => {
+          const isLight = document.body.classList.toggle('light');
+          localStorage.setItem('pmc_theme', isLight ? 'light' : 'dark');
+          dl.querySelector('i').className = isLight ? 'bx bx-moon' : 'bx bx-sun';
+        });
+      }
+    });
 
-    /* ── i18n (local, cookie pmc_lang) ── */
+    // ── i18n (local, cookie pmc_lang) ──
     function getCookieLang() {
       const m = document.cookie.match(/pmc_lang=([a-z]{2})/);
       return m && ['en','ar','es'].includes(m[1]) ? m[1] : 'en';
@@ -314,35 +283,34 @@
       ar: {
         ln_home: 'الرئيسية', hero_badge_t: 'ديسكورد + ماين كرافت',
         hero_title: 'تحكّم بسيرفراتك في <span class="grad">عالم واحد</span>',
-        hero_sub: 'لوحة تحكم احترافية لأصحاب سيرفرات ماين كرافت: إشراف، تحليلات، مواقع حية، نطاقات خاصة وربط كامل بالبوت — كل شيء في مكان واحد.',
-        st_servers: 'سيرفر', st_users: 'مستخدم', st_uptime: 'تشغيل دائم',
-        card_title: 'أهلاً بعودتك', card_sub: 'سجّل الدخول لإدارة سيرفراتك',
+        hero_sub: 'لوحة تحكم احترافية لأصحاب سيرفرات ماين كرافت: إشراف، تحليلات، أدوات مباشرة وربط كامل مع البوت — كل شيء في مكان واحد.',
+        st_servers: 'سيرفر', st_users: 'مستخدم', st_uptime: 'تشغيل',
+        card_title: 'مرحبًا بعودتك', card_sub: 'سجّل الدخول لإدارة سيرفراتك',
         btn_discord_t: 'الدخول عبر ديسكورد', btn_register_t: 'العودة للرئيسية',
-        lf_q: 'جديد على ProMcBot؟', lf_a: 'أنشئ حسابًا — مجانًا', ft_rights: 'جميع الحقوق محفوظة.'
+        lf_q: "جديد على ProMcBot؟", lf_a: 'أنشئ حسابًا — مجانًا', ft_rights: 'جميع الحقوق محفوظة.'
       },
       es: {
         ln_home: 'Inicio', hero_badge_t: 'Discord + Minecraft',
         hero_title: 'Controla tus servidores en <span class="grad">un solo universo</span>',
-        hero_sub: 'Un panel premium para dueños de servidores de Minecraft: moderación, analíticas, sitios web en vivo, dominios propios y conexión total con el bot.',
-        st_servers: 'Servidores', st_users: 'Usuarios', st_uptime: 'Activo 24/7',
-        card_title: 'Bienvenido de Nuevo', card_sub: 'Inicia sesión para gestionar tus servidores',
-        btn_discord_t: 'Continuar con Discord', btn_register_t: 'Volver al Inicio',
-        lf_q: '¿Nuevo en ProMcBot?', lf_a: 'Crea una cuenta — es gratis', ft_rights: 'Todos los derechos reservados.'
+        hero_sub: 'Un panel premium para propietarios de servidores de Minecraft: moderación, análisis, herramientas en vivo y conexión completa con el bot — todo en un solo lugar.',
+        st_servers: 'Servidores', st_users: 'Usuarios', st_uptime: 'Disponibilidad',
+        card_title: 'Bienvenido de nuevo', card_sub: 'Inicia sesión para gestionar tus servidores',
+        btn_discord_t: 'Continuar con Discord', btn_register_t: 'Volver al inicio',
+        lf_q: "¿Nuevo en ProMcBot?", lf_a: 'Crea una cuenta — es gratis', ft_rights: 'Todos los derechos reservados.'
       }
     };
     function applyLoginI18n(lang) {
       const d = LOGIN_I18N[lang] || LOGIN_I18N.en;
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-      for (const id in d) {
+      for (const [id, txt] of Object.entries(d)) {
         const el = document.getElementById(id);
-        if (el) {
-          if (id === 'hero_title') el.innerHTML = d[id];
-          else el.textContent = d[id];
-        }
+        if (el) el.innerHTML = txt;
       }
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
     }
-    applyLoginI18n(getCookieLang());
+    const lang = (localStorage.getItem('pmc_lang') || getCookieLang());
+    document.getElementById('loginLang').value = ['en','ar','es'].includes(lang) ? lang : 'en';
+    applyLoginI18n(lang);
   </script>
 </body>
 </html>
