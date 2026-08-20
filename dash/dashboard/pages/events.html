@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=31">
+  <link rel="stylesheet" href="/shared.css?v=32">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -201,8 +201,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=31"></script>
-  <script src="/shared.js?v=31"></script>
+  <script src="/i18n.js?v=32"></script>
+  <script src="/shared.js?v=32"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -520,6 +520,20 @@
       crownImg.src = '/dashboard/assets/crown.webp';
     });
 
+    // Rank-specific medal icons (gold crown / silver shield / bronze shield)
+    const ICONS = {
+      1: '/dashboard/assets/crown_300.webp',
+      2: '/dashboard/assets/medal_silver.webp',
+      3: '/dashboard/assets/medal_bronze.webp'
+    };
+    const iconImgs = {};
+    await Promise.all(Object.entries(ICONS).map(([rank, src]) => new Promise(res => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = () => { iconImgs[rank] = img; res(); };
+      img.onerror = () => res();
+      img.src = src;
+    })));
+
     // Resolve skins in parallel — mc-heads accepts either uuid or name
     const resolved = await Promise.all(winners.map(async w => {
       const skin = await loadSkinHead(w.name);
@@ -546,11 +560,20 @@
       if (w.ident) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
-        await new Promise(res => {
-          img.onload = () => res();
-          img.onerror = () => res();
-          img.src = `https://mc-heads.net/body/${encodeURIComponent(w.ident)}/${pose}.png`;
-        });
+        // mc-heads.net may stop sending CORS headers; fall back to minotar.net (same renders, CORS-safe)
+        const candidates = [
+          `https://mc-heads.net/body/${encodeURIComponent(w.ident)}/${pose}.png`,
+          `https://minotar.net/body/${encodeURIComponent(w.ident)}/100.png` // minotar has no pose variants
+        ];
+        let loaded = false;
+        for (const src of candidates) {
+          await new Promise(res => {
+            img.onload = () => { loaded = true; res(); };
+            img.onerror = () => res();
+            img.src = src;
+          });
+          if (loaded) break;
+        }
         skinImg = img;
         if (img.naturalWidth > 0) {
           playerW = Math.round(img.naturalWidth / img.naturalHeight * playerH);
@@ -614,9 +637,12 @@
       }
 
         }));
-    // ── Name badges ONLY (no stats): star-circle badge + player name, floating
+    // ── Rank numbers: the master template ALREADY contains the large plaques
+    //    (1-Gold / 2-Silver / 3-Bronze) per spec — nothing extra is drawn here ──
+
+    // ── Name badges ONLY (no stats): medal icon + player name, floating
     //    just below each rank block — never entering the rank numbers ──
-    drawPodiumBadges(ctx, resolved, T);
+    drawPodiumBadges(ctx, resolved, T, iconImgs, W);
 
     // ── Event title banner at the TOP (event name + game mode/map) ──
     drawEventBanner(ctx, ev, W, T);
@@ -631,7 +657,8 @@
 
     // Name badges ONLY under each rank block (star-circle + name, no stats).
   // Floating just below each block's base — never entering the rank numbers.
-  function drawPodiumBadges(ctx, winners, T) {
+  // Rank-specific premium medals: gold crown (1st), silver shield (2nd), bronze shield (3rd)
+  function drawPodiumBadges(ctx, winners, T, iconImgs, W) {
     const col = { 1: '#ffd54a', 2: '#c9d1de', 3: '#e0a87a' };
     for (const w of winners) {
       const cx = { 1: 765, 2: 395, 3: 1160 }[w.rank];
@@ -642,10 +669,11 @@
       // measured label width for a compact pill under the block
       ctx.font = 'bold 17px "Segoe UI", Arial, sans-serif';
       const nw = ctx.measureText(name).width;
-      const pillW = Math.min(260, 44 + nw + 26);
-      const pillX = cx - pillW / 2;
-      const pillH = 38;
-      const pillY = base - 24;
+      const pillW = Math.min(280, 52 + nw + 30);
+      let pillX = cx - pillW / 2;
+      if (pillX < 8) pillX = 8; else if (pillX + pillW > W - 8) pillX = W - 8 - pillW;
+      const pillH = 42;
+      const pillY = base - 26;
       ctx.shadowColor = 'rgba(0,0,0,.75)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
       const pg = ctx.createLinearGradient(pillX, pillY, pillX, pillY + pillH);
       pg.addColorStop(0, 'rgba(10,12,22,.85)'); pg.addColorStop(1, 'rgba(10,12,22,.72)');
@@ -656,43 +684,91 @@
       ctx.strokeStyle = accent + '90'; ctx.lineWidth = 1.4;
       drawRounded(ctx, pillX, pillY, pillW, pillH, pillH / 2);
       ctx.stroke();
-      // star circle (left inside the pill)
-      const bx = pillX + 19, by = pillY + pillH / 2;
-      ctx.beginPath(); ctx.arc(bx, by, 13, 0, Math.PI * 2);
+      // rank-specific medal icon (left inside the pill)
+      const bx = pillX + 21, by = pillY + pillH / 2;
+      ctx.beginPath(); ctx.arc(bx, by, 15, 0, Math.PI * 2);
       ctx.fillStyle = '#10121f'; ctx.fill();
       ctx.strokeStyle = accent; ctx.lineWidth = 2; ctx.stroke();
-      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
-      ctx.fillStyle = accent;
-      ctx.fillText(w.rank === 1 ? '★' : '✦', bx, by + 5);
+      const med = iconImgs && iconImgs[w.rank];
+      if (med && med.complete && med.naturalWidth) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(bx, by, 11.5, 0, Math.PI * 2); ctx.clip();
+        ctx.drawImage(med, bx - 11.5, by - 11.5, 23, 23);
+        ctx.restore();
+      } else {
+        ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillStyle = accent;
+        ctx.fillText(w.rank === 1 ? '★' : '✦', bx, by + 5);
+      }
       // name
       ctx.textAlign = 'left';
       ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(name, bx + 22, by + 6);
+      ctx.fillText(name, bx + 24, by + 6);
       ctx.restore();
     }
   }
   // (drawPodiumCard removed — replaced by compact drawPodiumBadges under each block)
 
-  // Event banner across the top: event name + the game/mode it was played in (mapName)
-  function drawEventBanner(ctx, ev, W, T) {
-    const title = (ev.title || 'WINNERS PODIUM').slice(0, 60);
-    const mode = ev.mapName ? ev.mapName.slice(0, 40) : '';
+  // The new master template keeps the block fronts CLEAN (no plaques), so the rank
+  // numbers are painted in code: a subtle dark plaque with a tiered metallic numeral.
+  function drawRankNumbers(ctx, T) {
+    const nums = [
+      { rank: 1, cx: 765, cy: 560, c1: '#ffd54a', c2: '#b8860b', stroke: '#7a5a12' },
+      { rank: 2, cx: 395, cy: 655, c1: '#e8edf4', c2: '#8a93a3', stroke: '#5a6270' },
+      { rank: 3, cx: 1160, cy: 668, c1: '#e8b08a', c2: '#8a5a30', stroke: '#5e3c1e' }
+    ];
     ctx.save();
-    // TRANSPARENT title (no ribbon/background) — floating directly over the scene
-    const pad = Math.round(24 * T);
+    for (const n of nums) {
+      const cx = n.cx * T, cy = n.cy * T;
+      const r = Math.round(42 * T);
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6;
+      // dark plaque disc
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      const pg = ctx.createRadialGradient(cx - r * .3, cy - r * .4, 2, cx, cy, r);
+      pg.addColorStop(0, 'rgba(45,42,55,.92)'); pg.addColorStop(1, 'rgba(18,16,24,.94)');
+      ctx.fillStyle = pg; ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = n.stroke + 'aa'; ctx.lineWidth = Math.max(1.5, 2.2 * T); ctx.stroke();
+      // metallic numeral
+      const fs = Math.round(46 * T);
+      const fg = ctx.createLinearGradient(cx - fs / 2, cy - fs, cx + fs / 2, cy + fs);
+      fg.addColorStop(0, n.c1); fg.addColorStop(1, n.c2);
+      ctx.font = `900 ${fs}px "Segoe UI Black", "Arial Black", Arial, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = fg;
+      ctx.fillText(String(n.rank), cx, cy + 2);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // Event banner across the top: event name + the game/mode it was played in (mapName)
+  // Top title: NO background — floats over the sky.
+  // Line 1 (gold): MAP NAME. Line 2 (white): GAME / EVENT NAME.
+  function drawEventBanner(ctx, ev, W, T) {
+    const map = (ev.mapName || '').trim().slice(0, 48);
+    const game = (ev.title || '').trim().slice(0, 60);
+    ctx.save();
     const by = Math.round(40 * T);
     ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
-    // trophy + title (main line)
-    ctx.font = `bold ${Math.round(27 * T)}px "Segoe UI", Arial, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#ffd54a';
-    ctx.fillText(title, W / 2, mode ? by + Math.round(30 * T) : by);
-    // game mode line (sub line)
-    if (mode) {
+    // Line 1 — Map name (gold, main)
+    if (map) {
+      ctx.font = `bold ${Math.round(27 * T)}px "Segoe UI", Arial, sans-serif`;
+      ctx.fillStyle = '#ffd54a';
+      ctx.fillText(map, W / 2, game ? by + Math.round(30 * T) : by);
+    }
+    // Line 2 — game / event name (white, sub)
+    if (game) {
       ctx.font = `${Math.round(16 * T)}px "Segoe UI", Arial, sans-serif`;
       ctx.fillStyle = '#e9edf5';
-      ctx.fillText(`Map / Mode: ${mode}`, W / 2, by + Math.round(53 * T));
+      ctx.fillText(game, W / 2, map ? by + Math.round(53 * T) : by);
+    } else if (!map) {
+      ctx.font = `bold ${Math.round(27 * T)}px "Segoe UI", Arial, sans-serif`;
+      ctx.fillStyle = '#ffd54a';
+      ctx.fillText('WINNERS PODIUM', W / 2, by);
     }
     ctx.restore();
   }

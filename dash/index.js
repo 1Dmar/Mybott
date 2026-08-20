@@ -91,8 +91,18 @@ app.get('/health', (req, res) => {
 // ── Rate limiting (anti brute-force / anti flood) ──────────────────
 app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 120, message: { success: false, error: 'Too many requests, please slow down' } }));
 
-// Strict CORS — only our own domain (was open to everyone)
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'https://promcbot.dev', credentials: true }));
+// Strict CORS — production allows only promcbot.dev; localhost dev origins are also
+// whitelisted so authenticated assets (crown/medals/template) load cleanly with
+// crossOrigin='anonymous' in local development (canvas image rendering).
+const DEV_CORS_ORIGINS = ['http://localhost:3999', 'http://127.0.0.1:3999', 'http://localhost:3000', 'http://127.0.0.1:3000'];
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);
+    const prod = process.env.CORS_ORIGIN || 'https://promcbot.dev';
+    cb(null, origin === prod || DEV_CORS_ORIGINS.includes(origin) ? origin : false);
+  },
+  credentials: true
+}));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
