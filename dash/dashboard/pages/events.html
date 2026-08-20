@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=26">
+  <link rel="stylesheet" href="/shared.css?v=28">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -201,8 +201,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=26"></script>
-  <script src="/shared.js?v=26"></script>
+  <script src="/i18n.js?v=28"></script>
+  <script src="/shared.js?v=28"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -528,6 +528,9 @@
     }));
 
     // Draw each winner: player standing ON his block, stats card in front of the block
+    // Champion crown remembered here (declared outside the map scope!) and drawn LAST so
+    // it sits ABOVE the skin with the highest z-order (in front of everything)
+    let crownPos = null;
     await Promise.all(resolved.map(async w => {
       const c = colByPlace[w.rank];
       if (!c) return;
@@ -555,15 +558,14 @@
         }
       }
 
-      // Champion: the real 3D crown — BIGGER, sitting ON TOP of the champion's head
+      // Champion crown position: remembered now, drawn LAST (after particles/stats)
+      // so it sits ABOVE the skin with highest z-order (in front of everything)
       if (w.rank === 1 && crownImg.naturalWidth > 0) {
-        const crownW = Math.round(Math.min(playerW * 0.85, 130 * T));
-        const crownH = Math.round(crownW * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
-        const headY = Math.round(feetY - playerH + playerH * 0.01);
-        const crownY = Math.round(headY - crownH * 0.25 - 2 * T);
-        ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(crownImg, cx - crownW / 2, crownY, crownW, crownH);
-        ctx.imageSmoothingEnabled = false;
+        crownPos = {
+          cx, crownW: Math.round(Math.min(playerW * 0.85, 130 * T)),
+          headY: Math.round(feetY - playerH + playerH * 0.01),
+          playerH
+        };
       }
 
       // Draw player sunk into his block (lower half inside the stone, naturally hidden by template)
@@ -599,96 +601,144 @@
         ctx.fillText('MC', cx, feetY - playerH / 2);
       }
 
-      // ── Score inside the block, UNDER the rank number (blends into game background) ──
+      // ── Score + stats strip inside the block, UNDER the rank number ──
       drawBlockScore(ctx, w, c, T, ev);
       // ── Winner name pill under the block ──
       drawNamePill(ctx, w, c, T);
     }));
 
-    // ── Event title banner at the TOP ──
+    // ── Champion crown: drawn LAST so it has the highest z-order —
+    // it sits ABOVE (in front of) the skin, never hidden behind it ──
+    if (crownPos && crownImg.naturalWidth > 0) {
+      const crownH = Math.round(crownPos.crownW * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
+      // crown rests ABOVE the head (clearly over it, not buried in the skin)
+      const crownY = Math.round(crownPos.headY - crownH * 0.75 - 3 * T);
+      ctx.imageSmoothingEnabled = true;
+      // soft gold glow behind the crown for visibility
+      const cg = ctx.createRadialGradient(crownPos.cx, crownY + crownH * 0.3, 4, crownPos.cx, crownY + crownH * 0.3, crownPos.crownW * 0.75);
+      cg.addColorStop(0, 'rgba(255,213,74,.35)'); cg.addColorStop(1, 'transparent');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(crownPos.cx, crownY + crownH * 0.3, crownPos.crownW * 0.75, 0, Math.PI * 2); ctx.fill();
+      ctx.drawImage(crownImg, crownPos.cx - crownPos.crownW / 2, crownY, crownPos.crownW, crownH);
+      ctx.imageSmoothingEnabled = false;
+    }
+
+    // ── Event title banner at the TOP (event name + game mode/map) ──
     drawEventBanner(ctx, ev, W, T);
 
-    // ── Celebration particles around the champion ──
+    // ── Celebration particles around the champion (more visible, dense) ──
     drawParticles(ctx, W, T);
 
-    // ── Footer ──
+    // ── Footer: copyright centered ──
     ctx.font = '15px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#f8e9c4';
-    ctx.fillText(`© ${new Date().getFullYear()} ${ev.title ? ev.title + ' · ' : ''}ProMcBot — promcbot.dev`, W / 2, H - 14);
+    ctx.textAlign = 'center';
+    ctx.fillText(`© ${new Date().getFullYear()} ProMcBot — promcbot.dev`, W / 2, H - 14);
+    ctx.textAlign = 'left';
   }
 
   // Score plaque inside each block: a dark glass strip with the winner's score,
   // placed directly UNDER the rank number so it reads as part of the game block.
   function drawBlockScore(ctx, w, c, T, ev) {
-    const score = w.score ?? w.elo ?? (w.statWins != null ? Math.round(w.statWins * 10) : null);
-    const scoreText = score !== null && score !== undefined ? String(score) : '—';
-    const plaqueBottomY = c.top + Math.round((w.rank === 1 ? 175 : 178) * T); // below plaque numbers
-    const stripW = Math.min(c.w * 0.72, 190);
-    const stripH = 30;
+    // Rich stats strip: the exact fields filled in the event (ELO / W / L / K / D / Streak / Score)
+    const stats = [
+      { k: 'elo', label: 'ELO', v: w.elo },
+      { k: 'statWins', label: 'W', v: w.statWins },
+      { k: 'statLosses', label: 'L', v: w.statLosses },
+      { k: 'statKills', label: 'K', v: w.statKills },
+      { k: 'statDeaths', label: 'D', v: w.statDeaths },
+      { k: 'statStreak', label: 'STK', v: w.statStreak },
+      { k: 'score', label: 'SCORE', v: w.score }
+    ].filter(s => s.v !== null && s.v !== undefined && String(s.v).trim() !== '');
+    const plaqueBottomY = c.top + Math.round((w.rank === 1 ? 175 : 178) * T); // below plaque numbers — pushed down so the rank number stays visible
+    const stripW = Math.min(c.w * 0.86, 245);
+    const lineH = 17; // one row per field
+    const pad = 8;
+    const stripH = Math.max(26, stats.length * lineH + pad * 2);
     const sx = c.cx - stripW / 2;
-    const sy = plaqueBottomY + Math.round(8 * T);
+    const sy = plaqueBottomY + Math.round(14 * T); // lower offset so the '1' number fully shows above
+    const col = w.rank === 1 ? '#ffd54a' : w.rank === 2 ? '#c9d1de' : '#e0a87a';
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 4;
     const gg = ctx.createLinearGradient(sx, sy, sx, sy + stripH);
-    const col = w.rank === 1 ? '#ffd54a' : w.rank === 2 ? '#c9d1de' : '#e0a87a';
-    gg.addColorStop(0, 'rgba(16,18,31,.82)'); gg.addColorStop(1, 'rgba(16,18,31,.68)');
+    gg.addColorStop(0, 'rgba(16,18,31,.86)'); gg.addColorStop(1, 'rgba(16,18,31,.70)');
     ctx.fillStyle = gg;
     drawRounded(ctx, sx, sy, stripW, stripH, 12); ctx.fill();
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     ctx.strokeStyle = col + '66'; ctx.lineWidth = 1.2;
     drawRounded(ctx, sx, sy, stripW, stripH, 12); ctx.stroke();
-    // score value + label
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = col;
-    ctx.fillText(scoreText, c.cx - 14, sy + 20);
-    ctx.font = '9px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#8b98af';
-    ctx.fillText('SCORE', c.cx + 42, sy + 20);
+    // gold top accent
+    ctx.beginPath(); ctx.moveTo(sx + 14, sy + 2); ctx.lineTo(sx + stripW - 14, sy + 2);
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+    // rows: LABEL ... value
+    let y = sy + pad + 13;
+    for (const s of stats) {
+      ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = '#8b98af';
+      ctx.textAlign = 'left';
+      ctx.fillText(s.label, sx + 14, y);
+      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+      ctx.fillStyle = col;
+      ctx.textAlign = 'right';
+      ctx.fillText(String(s.v), sx + stripW - 14, y);
+      y += lineH;
+    }
     ctx.restore();
   }
 
-  // Event title banner across the top of the podium image (game-style)
+  // Event banner across the top: event name + the game/mode it was played in (mapName)
   function drawEventBanner(ctx, ev, W, T) {
     const title = (ev.title || 'WINNERS PODIUM').slice(0, 60);
+    const mode = ev.mapName ? ev.mapName.slice(0, 40) : '';
+    const subtitle = mode ? `${title} — ${i18n('ev.map') || 'Mode'}: ${mode}` : title;
     ctx.save();
     // dark ribbon behind text
-    ctx.font = `bold ${Math.round(30 * T)}px "Segoe UI", Arial, sans-serif`;
+    ctx.font = `bold ${Math.round(28 * T)}px "Segoe UI", Arial, sans-serif`;
     const tw = ctx.measureText(title).width;
-    const pad = Math.round(26 * T);
-    const bx = W / 2 - tw / 2 - pad;
-    const by = Math.round(18 * T);
-    const bh = Math.round(54 * T);
+    ctx.font = `${Math.round(16 * T)}px "Segoe UI", Arial, sans-serif`;
+    const sw = mode ? ctx.measureText(` · ${i18n('ev.map') || 'Mode'}: ${mode}`).width : 0;
+    const fullW = Math.max(tw, tw + sw);
+    const pad = Math.round(24 * T);
+    const bx = W / 2 - fullW / 2 - pad;
+    const by = Math.round(16 * T);
+    const bh = mode ? Math.round(64 * T) : Math.round(50 * T);
     ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4;
     const bg = ctx.createLinearGradient(bx, by, bx, by + bh);
-    bg.addColorStop(0, 'rgba(10,12,22,.78)'); bg.addColorStop(1, 'rgba(10,12,22,.62)');
+    bg.addColorStop(0, 'rgba(10,12,22,.82)'); bg.addColorStop(1, 'rgba(10,12,22,.64)');
     ctx.fillStyle = bg;
-    drawRounded(ctx, bx, by, tw + pad * 2, bh, 14); ctx.fill();
+    drawRounded(ctx, bx, by, fullW + pad * 2, bh, 14); ctx.fill();
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
     // gold top line
-    ctx.beginPath(); ctx.moveTo(bx + 14, by + 2); ctx.lineTo(bx + tw + pad * 2 - 14, by + 2);
+    ctx.beginPath(); ctx.moveTo(bx + 14, by + 2); ctx.lineTo(bx + fullW + pad * 2 - 14, by + 2);
     ctx.strokeStyle = '#ffd54a'; ctx.lineWidth = 2; ctx.stroke();
-    // trophy + title
-    ctx.font = `bold ${Math.round(26 * T)}px "Segoe UI", Arial, sans-serif`;
+    // trophy + title (main line)
+    ctx.font = `bold ${Math.round(25 * T)}px "Segoe UI", Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#ffd54a';
-    ctx.fillText(title, W / 2, by + bh / 2 + Math.round(9 * T));
+    ctx.fillText(title, W / 2, mode ? by + Math.round(30 * T) : by + bh / 2 + Math.round(9 * T));
+    // game mode line (sub line)
+    if (mode) {
+      ctx.font = `${Math.round(16 * T)}px "Segoe UI", Arial, sans-serif`;
+      ctx.fillStyle = '#c9d1de';
+      ctx.fillText(`Map / Mode: ${mode}`, W / 2, by + Math.round(53 * T));
+    }
     ctx.restore();
   }
 
-  // Small golden celebration particles floating around the champion
+  // Dense golden celebration particles AROUND THE CHAMPION only (clearly visible)
   function drawParticles(ctx, W, T) {
     const seed = 1337;
     const rng = () => { let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; };
     const rand = rng();
     ctx.save();
-    const cx = W * 0.44, cy = W * 0.30; // around the champion
-    for (let i = 0; i < 26; i++) {
-      const x = cx + (rand() - 0.5) * W * 0.30;
-      const y = cy + (rand() - 0.5) * W * 0.22;
-      const r = Math.round(1.5 + rand() * 3.5);
-      const a = 0.35 + rand() * 0.55;
-      ctx.fillStyle = rand() > 0.5 ? `rgba(255,213,74,${a})` : `rgba(255,255,255,${a * 0.7})`;
+    // champion cluster: around block-1 area (center of the podium)
+    const cx = W * 0.44, cy = W * 0.30;
+    for (let i = 0; i < 64; i++) {
+      const x = cx + (rand() - 0.5) * W * 0.26;
+      const y = cy + (rand() - 0.5) * W * 0.20;
+      const r = Math.round(2 + rand() * 5);
+      const a = 0.45 + rand() * 0.55; // brighter
+      ctx.fillStyle = rand() > 0.45 ? `rgba(255,213,74,${a})` : `rgba(255,255,255,${a * 0.8})`;
       ctx.beginPath();
       // 4-point star sparkle
       ctx.moveTo(x, y - r * 2); ctx.lineTo(x + r * 0.5, y - r * 0.5);
@@ -696,6 +746,13 @@
       ctx.lineTo(x, y + r * 2); ctx.lineTo(x - r * 0.5, y + r * 0.5);
       ctx.lineTo(x - r * 2, y); ctx.lineTo(x - r * 0.5, y - r * 0.5);
       ctx.closePath(); ctx.fill();
+      // extra dot ring for density
+      if (i < 30) {
+        ctx.beginPath();
+        ctx.arc(x + (rand() - 0.5) * 14, y + (rand() - 0.5) * 14, Math.round(1.5 + rand() * 2.5), 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,213,74,${0.5 + rand() * 0.5})`;
+        ctx.fill();
+      }
     }
     ctx.restore();
   }
