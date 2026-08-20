@@ -6,18 +6,25 @@
     <title data-i18n="pg.settings">Server Settings</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/shared.css?v=18">
-    <script src="/i18n.js?v=18"></script>
+    <link rel="stylesheet" href="/shared.css?v=20">
+    <script src="/i18n.js?v=20"></script>
 </head>
 <body>
     <!-- NAVBAR -->
   <nav class="navbar">
-        <div class="logo_item">
-            <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
-            <span class="logo_text">ProMcBot</span>
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="mobile-toggle" id="sidebarToggle">
+                <i class='bx bx-menu'></i>
+            </div>
+            <a href="/dashboard" class="logo_item">
+                <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+                <span class="brand-name">ProMcBot</span>
+            </a>
         </div>
         <div class="navbar_content">
-            <div id="darkLight" class="nav-icon-btn" title="Toggle theme"><i class='bx bx-moon'></i></div>
+            <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+                <i class='bx bx-sun'></i>
+            </div>
             <div class="dropdown">
                 <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
                     <i class='bx bx-bell'></i>
@@ -25,12 +32,25 @@
                 </div>
                 <div class="dropdown-content notification-dropdown" id="notificationDropdown">
                     <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title">Notifications</span></div>
-                    <div id="notificationList"></div>
+                    <div class="notification-item">
+                        <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
+                        <div class="notification-content">
+                            <div class="notification-title" data-i18n="not.welcome">Welcome to ProMcBot!</div>
+                            <div class="notification-desc" data-i18n="not.empty">You have no new notifications.</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-footer" data-i18n="not.title">Notifications</div>
                 </div>
             </div>
             <div class="dropdown">
                 <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="user-avatar" id="userBtn" data-user-avatar>
-                <div class="dropdown-content" id="userDropdown"></div>
+                <div class="dropdown-content" id="userDropdown">
+                    <div class="dropdown-header"><i class='bx bx-user'></i> <span id="navUserName" data-i18n="pg.loading">Loading...</span></div>
+                    <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="nav.profile">My Profile</span></a>
+                    <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="nav.my_servers">My Servers</span></a>
+                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                    <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout">Logout</span></a>
+                </div>
             </div>
         </div>
     </nav>
@@ -291,6 +311,6 @@
 
         load();
     </script>
-    <script src="/shared.js?v=18"></script>
+    <script src="/shared.js?v=20"></script>
 </body>
 </html>

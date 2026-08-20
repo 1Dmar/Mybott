@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loyalty — ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css?v=20">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- NAVBAR (unified, same as all dashboard pages) -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle">
+        <i class='bx bx-menu'></i>
+      </div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme">
+        <i class='bx bx-sun'></i>
+      </div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-menu" id="notifMenu"></div>
+      </div>
+      <div class="dropdown">
+        <select class="nav-icon-btn lang-select" id="langSelect" style="appearance:none;background:transparent;border:none;cursor:pointer;color:var(--text)" title="Language">
+          <option value="en">🇬🇧 EN</option>
+          <option value="ar">🇸🇦 AR</option>
+          <option value="es">🇪🇸 ES</option>
+        </select>
+      </div>
+      <div class="dropdown">
+        <img id="userBtn" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+        <div class="dropdown-menu" style="min-width: 200px;">
+          <div class="dropdown-header">
+            <img id="navUserAvatar" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+            <div>
+              <div id="navUserName" data-i18n="pg.loading">Loading...</div>
+            </div>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <!-- SIDEBAR (auto-built by shared.js) -->
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn">
+        <i class='bx bx-chevron-left'></i>
+        <span data-i18n="nav.collapse">Collapse</span>
+      </div>
+    </div>
+  </nav>
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="page-breadcrumb">
+      <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.loyalty">Loyalty</span>
+    </div>
+    <div class="server-page-header">
+      <div class="server-page-icon" id="serverIconContainer">
+        <span id="serverIconText">...</span>
+      </div>
+      <div class="server-page-info">
+        <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server">Loading...</h1>
+        <div class="server-page-meta">
+          <div class="bot-status-badge"><i class='bx bxs-star'></i> <span data-i18n="sb.loyalty">Streak &amp; Loyalty</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon gold"><i class='bx bxs-flame'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="lg.title">Streak &amp; Loyalty</h2>
+          <p class="card-subtitle" data-i18n="lg.subtitle">Reward members who show up every day — streaks, points, tiers and milestones keep your community alive.</p>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" id="lgRefreshBtn"><i class='bx bx-refresh'></i> <span data-i18n="lg.refresh">Refresh</span></button>
+        <select id="lgSort" class="form-control" style="max-width:180px">
+          <option value="points" data-i18n="lg.sort_points">Sort: Points</option>
+          <option value="currentStreak" data-i18n="lg.sort_streak">Sort: Current Streak</option>
+          <option value="bestStreak" data-i18n="lg.sort_best">Sort: Best Streak</option>
+          <option value="messagesAllTime" data-i18n="lg.sort_messages">Sort: Messages</option>
+          <option value="voiceMinutesAllTime" data-i18n="lg.sort_voice">Sort: Voice Time</option>
+        </select>
+        <button class="btn btn-outline" id="lgSettingsBtn"><i class='bx bx-slider-alt'></i> <span data-i18n="lg.settings">Settings</span></button>
+      </div>
+    </div>
+
+    <div class="stat-cards" id="lgStats">
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bx-group'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="lg.tracked">Tracked members</span><span class="stat-value" id="lgTotal">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bxs-flame'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="lg.active_streaks">Active streaks</span><span class="stat-value" id="lgActive">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bxs-trophy'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="lg.top_streak">Top streak</span><span class="stat-value" id="lgTop">—</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon"><i class='bx bxs-diamond'></i></div>
+        <div class="stat-info"><span class="stat-label" data-i18n="lg.tiers">Tiers (D/M)</span><span class="stat-value" id="lgTiers">—</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="card-icon blue"><i class='bx bxs-star'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="lg.leaders">Loyalty Leaders</h2>
+          <p class="card-subtitle" data-i18n="lg.leaders_hint">Top members by loyalty points. Bot tracks activity automatically when connected.</p>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dt-table" id="lgTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th data-i18n="lg.member">Member</th>
+              <th data-i18n="lg.tier">Tier</th>
+              <th data-i18n="lg.points">Points</th>
+              <th data-i18n="lg.streak">Streak</th>
+              <th data-i18n="lg.best">Best</th>
+              <th data-i18n="lg.messages">Messages</th>
+              <th data-i18n="lg.voice">Voice (min)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lgBody"></tbody>
+        </table>
+      </div>
+      <div id="lgEmpty" style="display:none;padding:28px;text-align:center;color:var(--text-muted)">
+        <i class='bx bx-star' style="font-size:30px;opacity:.4"></i>
+        <p data-i18n="lg.no_data">No tracked members yet — activity tracking starts once the bot is in your server.</p>
+      </div>
+    </div>
+  </main>
+  <script src="/i18n.js?v=20"></script>
+  <script src="/shared.js?v=20"></script>
+  <script>
+    const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+    if (!guildId) { Swal.fire('Error', 'Server ID not found in the URL.', 'error'); throw new Error('Page guard: missing context'); }
+    document.addEventListener('DOMContentLoaded', async () => {
+      const storedName = localStorage.getItem('guild_name_' + guildId) || guildId;
+      document.getElementById('breadServerName').textContent = storedName;
+      document.getElementById('serverName').textContent = storedName;
+      const iconContainer = document.getElementById('serverIconContainer');
+      const storedIcon = localStorage.getItem('guild_icon_' + guildId);
+      iconContainer.innerHTML = (storedIcon && storedIcon !== 'null')
+        ? `<img src="${storedIcon}" alt="Server Icon">`
+        : storedName.charAt(0).toUpperCase();
+      loadLoyalty();
+      document.getElementById('lgRefreshBtn').addEventListener('click', loadLoyalty);
+      document.getElementById('lgSort').addEventListener('change', loadLoyalty);
+      document.getElementById('lgSettingsBtn').addEventListener('click', lgSettings);
+      if (window.__pmc_i18n && window.__pmc_i18n.applyAll) window.__pmc_i18n.applyAll();
+    });
+    const tk = (k) => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+    function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    const TIER_ICONS = { bronze: 'bx bx-circle', silver: 'bx bxs-circle', gold: 'bxs bxs-star', diamond: 'bxs bxs-diamond', master: 'bxs bxs-crown' };
+    const TIER_COLORS = { bronze: '#B45309', silver: '#9CA3AF', gold: '#F59E0B', diamond: '#3B82F6', master: '#8B5CF6' };
+    async function loadLoyalty() {
+      try {
+        const sort = document.getElementById('lgSort').value;
+        const res = await fetch(`/api/server/${guildId}/loyalty?sort=${sort}`);
+        const j = await res.json();
+        if (!j.success) return;
+        document.getElementById('lgTotal').textContent = j.total;
+        document.getElementById('lgActive').textContent = j.activeStreaks;
+        document.getElementById('lgTop').textContent = j.topStreak + ' ' + tk('lg.days');
+        document.getElementById('lgTiers').textContent = `${j.tiers.diamond || 0} / ${j.tiers.master || 0}`;
+        const tbody = document.getElementById('lgBody');
+        tbody.innerHTML = '';
+        const empty = document.getElementById('lgEmpty');
+        if (!j.rows.length) { empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        j.rows.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><b>${i + 1}</b></td>
+            <td>${esc(r.displayName || r.userId)}</td>
+            <td><span class="stat-chip" style="color:${TIER_COLORS[r.tier] || '#888'}"><i class='${TIER_ICONS[r.tier] || 'bx bx-circle'}'></i> ${esc(tk('lg.tier_' + r.tier) || r.tier)}</span></td>
+            <td><b>${r.points.toLocaleString()}</b></td>
+            <td><i class='bx bxs-flame' style="color:#F59E0B"></i> ${r.currentStreak}</td>
+            <td>${r.bestStreak}</td>
+            <td>${r.messagesAllTime.toLocaleString()}</td>
+            <td>${r.voiceMinutesAllTime.toLocaleString()}</td>
+            <td><button class="btn btn-outline" style="padding:4px 8px;font-size:12px" data-uid="${esc(r.userId)}" onclick="lgReset(this.dataset.uid, this)"><i class='bx bx-refresh'></i></button></td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { console.error(e); }
+    }
+    window.lgReset = async (uid, btn) => {
+      const ok = await Swal.fire({ title: tk('lg.reset_confirm_title'), text: tk('lg.reset_confirm_text'), icon: 'warning', showCancelButton: true, confirmButtonText: tk('lg.reset_confirm_yes'), cancelButtonText: tk('lg.reset_confirm_no') });
+      if (!ok.isConfirmed) return;
+      try {
+        const res = await fetch(`/api/server/${guildId}/loyalty/${encodeURIComponent(uid)}/reset`, { method: 'POST' });
+        const j = await res.json();
+        if (j.success) { Swal.fire({ icon: 'success', title: tk('lg.reset_done'), timer: 1500 }); loadLoyalty(); }
+        else Swal.fire({ icon: 'error', title: 'Error', text: j.error });
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    };
+    async function lgSettings() {
+      const res = await fetch(`/api/server/${guildId}/loyalty/settings`);
+      const j = await res.json();
+      const c = j.config || {};
+      const { value } = await Swal.fire({
+        title: tk('lg.settings'),
+        html: `
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><input type="checkbox" id="sw-enabled" ${c.enabled !== false ? 'checked' : ''}> <b>${tk('lg.enabled')}</b></label>
+          <label style="display:block;margin:6px 0"><b>${tk('lg.points_msg')}</b><br><input type="number" class="form-control" id="sw-ppm" value="${c.pointsPerMessage ?? 2}" style="margin-top:4px"></label>
+          <label style="display:block;margin:6px 0"><b>${tk('lg.points_voice')}</b><br><input type="number" class="form-control" id="sw-ppv" value="${c.pointsPerVoiceMinute ?? 1}" style="margin-top:4px"></label>
+          <label style="display:block;margin:6px 0"><b>${tk('lg.streak_bonus')}</b><br><input type="number" class="form-control" id="sw-streak" value="${c.streakBonus ?? 5}" style="margin-top:4px"></label>`,
+        showCancelButton: true, confirmButtonText: tk('common.save') || 'Save'
+      });
+      if (!value) return;
+      try {
+        const res2 = await fetch(`/api/server/${guildId}/loyalty/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ enabled: document.getElementById('sw-enabled').checked, pointsPerMessage: +document.getElementById('sw-ppm').value, pointsPerVoiceMinute: +document.getElementById('sw-ppv').value, streakBonus: +document.getElementById('sw-streak').value }) });
+        const j2 = await res2.json();
+        Swal.fire({ icon: j2.success ? 'success' : 'error', title: j2.success ? (tk('common.saved') || 'Saved') : j2.error, timer: 2000 });
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    }
+  </script>
+  <style>
+    .card-icon.gold { background: rgba(245, 158, 11, .15); color: #F59E0B; }
+    @media (max-width: 760px) { .stat-cards { grid-template-columns: repeat(2, 1fr) !important; } }
+  </style>
+</body>
+</html>

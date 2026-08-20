@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Center — ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css?v=20">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- NAVBAR (unified) -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle"><i class='bx bx-menu'></i></div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-menu" id="notifMenu"></div>
+      </div>
+      <div class="dropdown">
+        <select class="nav-icon-btn lang-select" id="langSelect" style="appearance:none;background:transparent;border:none;cursor:pointer;color:var(--text)" title="Language">
+          <option value="en">🇬🇧 EN</option><option value="ar">🇸🇦 AR</option><option value="es">🇪🇸 ES</option>
+        </select>
+      </div>
+      <div class="dropdown">
+        <img id="userBtn" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+        <div class="dropdown-menu" style="min-width:200px">
+          <div class="dropdown-header">
+            <img id="navUserAvatar" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+            <div><div id="navUserName" data-i18n="pg.loading">Loading...</div></div>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span data-i18n="nav.collapse">Collapse</span></div>
+    </div>
+  </nav>
+  <main class="main-content">
+    <div class="page-breadcrumb">
+      <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.security">Security Center</span>
+    </div>
+    <div class="server-page-header">
+      <div class="server-page-icon" id="serverIconContainer"><span id="serverIconText">...</span></div>
+      <div class="server-page-info">
+        <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server">Loading...</h1>
+        <div class="server-page-meta">
+          <div class="bot-status-badge"><i class='bx bxs-shield-alt-2'></i> <span data-i18n="sb.security">Security Center</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon red"><i class='bx bxs-shield-alt-2'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="sc.title">Security Center</h2>
+          <p class="card-subtitle" data-i18n="sc.subtitle">Raid detection, anti-nuke stats, ban watchlist and a health score — one place to see every threat against your server.</p>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-primary" id="scReportBtn"><i class='bx bx-plus'></i> <span data-i18n="sc.report">Report Event</span></button>
+        <button class="btn btn-outline" id="scWatchlistBtn"><i class='bx bx-user-x'></i> <span data-i18n="sc.watchlist">Watchlist</span></button>
+        <button class="btn" style="background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.4)" id="scLockdownBtn"><i class='bx bx-lock-alt'></i> <span data-i18n="sc.lockdown">Emergency Lockdown</span></button>
+        <button class="btn btn-outline" id="scRefreshBtn"><i class='bx bx-refresh'></i></button>
+      </div>
+    </div>
+
+    <div class="stat-cards" id="scStats">
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-shield'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_score">Security Score</span><span class="stat-value" id="scScore">—</span></div></div>
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bx-bug'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_week">Events (7d)</span><span class="stat-value" id="scWeek">—</span></div></div>
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-error-alt'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_unresolved">Unresolved</span><span class="stat-value" id="scUnresolved">—</span></div></div>
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-star'></i></div><div class="stat-info"><span class="stat-label" data-i18n="sc.h_critical">Critical open</span><span class="stat-value" id="scCritical">—</span></div></div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="card-icon blue"><i class='bx bx-line-chart'></i></div>
+        <div><h2 class="card-title" data-i18n="sc.history">Score History (14 days)</h2><p class="card-subtitle" data-i18n="sc.history_hint">Daily security score computed from raids, bans and join surges.</p></div>
+      </div>
+      <div id="scHistoryChart" style="height:150px;display:flex;align-items:flex-end;gap:4px;padding:10px 18px"></div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="card-icon red"><i class='bx bx-bug'></i></div>
+        <div><h2 class="card-title" data-i18n="sc.events">Security Events</h2><p class="card-subtitle" data-i18n="sc.events_hint">Latest events — raids, mass joins, bans and watchlist hits.</p></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dt-table">
+          <thead><tr><th data-i18n="sc.h_time">Time</th><th data-i18n="sc.h_type">Type</th><th data-i18n="sc.h_severity">Severity</th><th data-i18n="sc.h_detail">Detail</th><th data-i18n="sc.h_count">Count</th><th></th></tr></thead>
+          <tbody id="scEventsBody"></tbody>
+        </table>
+      </div>
+      <div id="scEventsEmpty" style="display:none;padding:22px;text-align:center;color:var(--text-muted)">
+        <i class='bx bx-check-shield' style="font-size:30px;opacity:.4"></i>
+        <p data-i18n="sc.no_events">No security events recorded — your server looks clean.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="card-icon purple"><i class='bx bx-user-x'></i></div>
+        <div><h2 class="card-title" data-i18n="sc.watchlist_title">Ban Watchlist</h2><p class="card-subtitle" data-i18n="sc.watchlist_hint">Flag users to be alerted (or auto-banned) when they join your server.</p></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dt-table">
+          <thead><tr><th data-i18n="sc.h_user">User</th><th data-i18n="sc.h_reason">Reason</th><th data-i18n="sc.h_alert">Alert</th><th data-i18n="sc.h_autoban">Auto-ban</th><th></th></tr></thead>
+          <tbody id="scWatchBody"></tbody>
+        </table>
+      </div>
+      <div id="scWatchEmpty" style="display:none;padding:22px;text-align:center;color:var(--text-muted)">
+        <p data-i18n="sc.no_watch">Watchlist is empty — add users you want to track.</p>
+      </div>
+    </div>
+  </main>
+  <script src="/i18n.js?v=20"></script>
+  <script src="/shared.js?v=20"></script>
+  <script>
+    const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+    if (!guildId) { Swal.fire('Error', 'Server ID not found in the URL.', 'error'); throw new Error('Page guard: missing context'); }
+    const tk = (k) => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+    function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    const SEV_COLOR = { info: '#3B82F6', warning: '#F59E0B', critical: '#EF4444' };
+    // Run after shared.js DOMContentLoaded handler (order of script tags: shared.js before this one, but listeners fire in registration order — shared.js listener was registered first)
+    document.addEventListener('DOMContentLoaded', () => {
+      const n = localStorage.getItem('guild_name_' + guildId) || guildId;
+      document.getElementById('breadServerName').textContent = n;
+      document.getElementById('serverName').textContent = n;
+      const ic = document.getElementById('serverIconContainer');
+      const icon = localStorage.getItem('guild_icon_' + guildId);
+      ic.innerHTML = (icon && icon !== 'null') ? `<img src="${icon}" alt="Server Icon">` : n.charAt(0).toUpperCase();
+      try { loadSecurity(); } catch (e) { console.error('loadSecurity failed', e); }
+      document.getElementById('scRefreshBtn').addEventListener('click', loadSecurity);
+      document.getElementById('scReportBtn').addEventListener('click', reportEvent);
+      document.getElementById('scWatchlistBtn').addEventListener('click', watchlistForm);
+      document.getElementById('scLockdownBtn').addEventListener('click', lockdown);
+      if (window.__pmc_i18n && window.__pmc_i18n.applyAll) window.__pmc_i18n.applyAll();
+    });
+    async function loadSecurity() {
+      try {
+        const res = await fetch(`/api/server/${guildId}/security`);
+        const j = await res.json();
+        if (!j.success) return;
+        const scoreEl = document.getElementById('scScore');
+        scoreEl.textContent = j.score;
+        scoreEl.style.color = j.score >= 80 ? '#10B981' : j.score >= 50 ? '#F59E0B' : '#EF4444';
+        document.getElementById('scWeek').textContent = j.weekEvents;
+        document.getElementById('scUnresolved').textContent = j.unresolved;
+        document.getElementById('scCritical').textContent = j.critical;
+        // history bars
+        const hist = (j.history || []).slice().reverse();
+        const chart = document.getElementById('scHistoryChart');
+        chart.innerHTML = hist.length ? '' : `<div style="width:100%;text-align:center;color:var(--text-muted);font-size:13px;padding-top:50px">${tk('sc.no_history') || 'No history yet'}</div>`;
+        hist.forEach(h => {
+          const bar = document.createElement('div');
+          bar.style.cssText = `flex:1;border-radius:6px 6px 0 0;background:${h.score >= 80 ? '#10B981' : h.score >= 50 ? '#F59E0B' : '#EF4444'};opacity:.75;height:${Math.max(6, h.score * 1.2)}px`;
+          bar.title = `${h.day}: ${h.score}`;
+          chart.appendChild(bar);
+        });
+        // events
+        const tbody = document.getElementById('scEventsBody');
+        tbody.innerHTML = '';
+        document.getElementById('scEventsEmpty').style.display = j.events.length ? 'none' : 'block';
+        j.events.forEach(e => {
+          const tr = document.createElement('tr');
+          if (e.severity === 'critical' && !e.resolved) tr.style.background = 'rgba(239,68,68,.07)';
+          tr.innerHTML = `
+            <td style="white-space:nowrap">${new Date(e.createdAt).toLocaleString()}</td>
+            <td><span class="stat-chip" style="font-size:11px">${esc(tk('sc.type_' + e.type) || e.type)}</span></td>
+            <td style="color:${SEV_COLOR[e.severity]}"><b>${esc(e.severity)}</b></td>
+            <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.detail || '')}">${esc(e.detail || '—')}</td>
+            <td>${e.count || 0}</td>
+            <td>${e.resolved ? '<i class="bx bx-check-circle" style="color:#10B981"></i>' : `<button class="btn btn-outline" style="padding:3px 7px;font-size:11px" onclick='scResolve("${e._id}")'>${tk('sc.resolve')}</button>`}</td>`;
+          tbody.appendChild(tr);
+        });
+        // watchlist
+        const wbody = document.getElementById('scWatchBody');
+        wbody.innerHTML = '';
+        document.getElementById('scWatchEmpty').style.display = j.watchlist.length ? 'none' : 'block';
+        j.watchlist.forEach(w => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${esc(w.userName || w.userId)}</td>
+            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(w.reason || '')}">${esc(w.reason || '—')}</td>
+            <td>${w.alertOnJoin ? '<i class="bx bxs-bell-ring" style="color:#F59E0B"></i>' : '—'}</td>
+            <td>${w.autoBan ? '<i class="bx bxs-lock-alt" style="color:#EF4444"></i>' : '—'}</td>
+            <td><button class="btn btn-outline" style="padding:3px 7px;font-size:11px;color:var(--danger)" onclick='scWatchDelete("${w._id}")'><i class='bx bx-trash'></i></button></td>`;
+          wbody.appendChild(tr);
+        });
+      } catch (e) { console.error(e); }
+    }
+    async function reportEvent() {
+      const { value } = await Swal.fire({
+        title: tk('sc.report'), width: 500,
+        html: `
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_type')}</b><br><select class="form-control" id="f-type" style="margin-top:4px">
+            <option value="raid_detected">${tk('sc.type_raid_detected')}</option>
+            <option value="mass_join">${tk('sc.type_mass_join')}</option>
+            <option value="mass_ban">${tk('sc.type_mass_ban')}</option>
+            <option value="mass_kick">${tk('sc.type_mass_kick')}</option>
+            <option value="permission_abuse">${tk('sc.type_permission_abuse')}</option>
+            <option value="suspicious_bot">${tk('sc.type_suspicious_bot')}</option>
+            <option value="manual">${tk('sc.type_manual')}</option></select></label>
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_severity')}</b><br><select class="form-control" id="f-sev" style="margin-top:4px">
+            <option value="info">Info</option><option value="warning" selected>Warning</option><option value="critical">Critical</option></select></label>
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_actor')}</b><br><input class="form-control" id="f-actor" placeholder="user id or name" style="margin-top:4px"></label>
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_detail')}</b><br><textarea class="form-control" id="f-detail" rows="3" maxlength="1000" style="margin-top:4px"></textarea></label>`,
+        showCancelButton: true, confirmButtonText: tk('common.save') || 'Save'
+      });
+      if (!value) return;
+      try {
+        const res = await fetch(`/api/server/${guildId}/security/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: document.getElementById('f-type').value, severity: document.getElementById('f-sev').value,
+            actorName: document.getElementById('f-actor').value, detail: document.getElementById('f-detail').value }) });
+        const j = await res.json();
+        Swal.fire({ icon: j.success ? 'success' : 'error', title: j.success ? (tk('sc.reported') || 'Reported') : j.error, timer: 2000 });
+        loadSecurity();
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    }
+    async function scResolve(id) {
+      try {
+        const res = await fetch(`/api/server/${guildId}/security/events/${id}/resolve`, { method: 'POST' });
+        const j = await res.json();
+        if (j.success) loadSecurity();
+      } catch (e) { console.error(e); }
+    }
+    window.scResolve = scResolve;
+    async function watchlistForm() {
+      const { value } = await Swal.fire({
+        title: tk('sc.watchlist_add'), width: 500,
+        html: `
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_user')}</b><br><input class="form-control" id="w-uid" placeholder="Discord user ID" style="margin-top:4px"></label>
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_name')}</b><br><input class="form-control" id="w-uname" style="margin-top:4px"></label>
+          <label style="display:block;margin:6px 0"><b>${tk('sc.f_reason')}</b><br><textarea class="form-control" id="w-reason" rows="2" maxlength="500" style="margin-top:4px"></textarea></label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="w-alert" checked> <b>${tk('sc.alert_join')}</b></label>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="w-autoban"> <b style="color:#EF4444">${tk('sc.autoban')}</b></label>`,
+        showCancelButton: true, confirmButtonText: tk('common.save') || 'Save'
+      });
+      if (!value) return;
+      if (!document.getElementById('w-uid').value) { Swal.fire({ icon: 'error', title: 'User ID required' }); return; }
+      try {
+        const res = await fetch(`/api/server/${guildId}/security/watchlist`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: document.getElementById('w-uid').value, userName: document.getElementById('w-uname').value,
+            reason: document.getElementById('w-reason').value, alertOnJoin: document.getElementById('w-alert').checked, autoBan: document.getElementById('w-autoban').checked }) });
+        const j = await res.json();
+        Swal.fire({ icon: j.success ? 'success' : 'error', title: j.success ? (tk('sc.added') || 'Added') : j.error, timer: 2000 });
+        loadSecurity();
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    }
+    async function scWatchDelete(id) {
+      try {
+        const res = await fetch(`/api/server/${guildId}/security/watchlist/${id}`, { method: 'DELETE' });
+        const j = await res.json();
+        if (j.success) loadSecurity();
+      } catch (e) { console.error(e); }
+    }
+    window.scWatchDelete = scWatchDelete;
+    async function lockdown() {
+      const ok = await Swal.fire({
+        title: tk('sc.lockdown_title'), text: tk('sc.lockdown_text'), icon: 'warning',
+        showCancelButton: true, confirmButtonText: tk('sc.lockdown_confirm'), cancelButtonText: tk('common.cancel') || 'Cancel',
+        confirmButtonColor: '#EF4444'
+      });
+      if (!ok.isConfirmed) return;
+      try {
+        const res = await fetch(`/api/server/${guildId}/security/lockdown`, { method: 'POST' });
+        const j = await res.json();
+        Swal.fire({ icon: j.success ? 'success' : 'error', title: j.success ? (tk('sc.lockdown_done') || 'Lockdown logged') : j.error });
+        loadSecurity();
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    }
+  </script>
+  <style>
+    .card-icon.red { background: rgba(239,68,68,.15); color: #EF4444; }
+    .card-icon.purple { background: rgba(139,92,246,.15); color: #8B5CF6; }
+    @media (max-width: 760px) { .stat-cards { grid-template-columns: repeat(2, 1fr) !important; } }
+  </style>
+</body>
+</html>

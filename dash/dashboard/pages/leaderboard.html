@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboards — ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css?v=20">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <!-- NAVBAR (unified) -->
+  <nav class="navbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="mobile-toggle" id="sidebarToggle"><i class='bx bx-menu'></i></div>
+      <a href="/dashboard" class="logo_item">
+        <img src="/dashboard/logo.png" alt="ProMcBot Logo" class="logo_image" onerror="this.onerror=null;this.src='/public/images/logo.svg';">
+        <span class="brand-name">ProMcBot</span>
+      </a>
+    </div>
+    <div class="navbar_content">
+      <div class="nav-icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
+      <div class="dropdown">
+        <div class="nav-icon-btn" id="notificationBtn" title="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+        </div>
+        <div class="dropdown-menu" id="notifMenu"></div>
+      </div>
+      <div class="dropdown">
+        <select class="nav-icon-btn lang-select" id="langSelect" style="appearance:none;background:transparent;border:none;cursor:pointer;color:var(--text)" title="Language">
+          <option value="en">🇬🇧 EN</option><option value="ar">🇸🇦 AR</option><option value="es">🇪🇸 ES</option>
+        </select>
+      </div>
+      <div class="dropdown">
+        <img id="userBtn" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+        <div class="dropdown-menu" style="min-width:200px">
+          <div class="dropdown-header">
+            <img id="navUserAvatar" class="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar">
+            <div><div id="navUserName" data-i18n="pg.loading">Loading...</div></div>
+          </div>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
+          <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
+          <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <nav class="sidebar" id="sidebar">
+    <div class="menu_content"></div>
+    <div class="sidebar-footer">
+      <div class="collapse-btn"><i class='bx bx-chevron-left'></i><span data-i18n="nav.collapse">Collapse</span></div>
+    </div>
+  </nav>
+  <main class="main-content">
+    <div class="page-breadcrumb">
+      <a href="/my-servers" data-i18n="not.servers">Servers</a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading">Loading...</span> <span class="sep">/</span> <span data-i18n="sb.leaderboard">Leaderboard</span>
+    </div>
+    <div class="server-page-header">
+      <div class="server-page-icon" id="serverIconContainer"><span id="serverIconText">...</span></div>
+      <div class="server-page-info">
+        <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server">Loading...</h1>
+        <div class="server-page-meta">
+          <div class="bot-status-badge"><i class='bx bxs-crown'></i> <span data-i18n="sb.leaderboard">Live Leaderboards</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon gold"><i class='bx bxs-crown'></i></div>
+        <div>
+          <h2 class="card-title" data-i18n="lb.title">Live Leaderboards</h2>
+          <p class="card-subtitle" data-i18n="lb.subtitle">Automatic ranking boards — weekly, monthly and all-time. Turn your community into a competition everyone wants to win.</p>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="lbMetric" class="form-control" style="max-width:170px">
+          <option value="messages" data-i18n="lb.m_messages">Messages</option>
+          <option value="voice" data-i18n="lb.m_voice">Voice Time</option>
+          <option value="playtime" data-i18n="lb.m_playtime">Playtime</option>
+          <option value="kills" data-i18n="lb.m_kills">Kills</option>
+          <option value="events" data-i18n="lb.m_events">Event Wins</option>
+          <option value="streak" data-i18n="lb.m_streak">Streaks</option>
+        </select>
+        <select id="lbPeriod" class="form-control" style="max-width:150px">
+          <option value="alltime" data-i18n="lb.p_alltime">All time</option>
+          <option value="week" data-i18n="lb.p_week">This week</option>
+          <option value="month" data-i18n="lb.p_month">This month</option>
+        </select>
+        <button class="btn btn-primary" id="lbRefreshBtn"><i class='bx bx-refresh'></i> <span data-i18n="lb.refresh">Refresh</span></button>
+        <button class="btn btn-outline" id="lbSettingsBtn"><i class='bx bx-slider-alt'></i> <span data-i18n="lb.settings">Metrics</span></button>
+      </div>
+    </div>
+
+    <div class="stat-cards" id="lbStats">
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bx-user-check'></i></div><div class="stat-info"><span class="stat-label" data-i18n="lb.ranked_members">Ranked members</span><span class="stat-value" id="lbMembers">—</span></div></div>
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bxs-star'></i></div><div class="stat-info"><span class="stat-label" data-i18n="lb.total_score">Total score</span><span class="stat-value" id="lbTotal">—</span></div></div>
+      <div class="stat-card"><div class="stat-card-icon"><i class='bx bx-calendar'></i></div><div class="stat-info"><span class="stat-label" data-i18n="lb.bucket">Current bucket</span><span class="stat-value" id="lbBucket">—</span></div></div>
+    </div>
+
+    <!-- Top 3 podium (mini) -->
+    <div class="card" style="margin-top:24px" id="lbPodiumCard">
+      <div class="card-header">
+        <div class="card-icon gold"><i class='bx bxs-trophy'></i></div>
+        <div><h2 class="card-title" data-i18n="lb.top3">Top 3 Champions</h2></div>
+      </div>
+      <div style="display:flex;align-items:flex-end;justify-content:center;gap:16px;padding:20px 10px 6px" id="lbPodium">
+        <div style="text-align:center;flex:1"><div id="lbP2" class="lb-podium-box" style="background:rgba(156,163,175,.12);border:1px solid rgba(156,163,175,.35);height:90px"></div><div style="padding-top:6px;font-weight:800;color:#9CA3AF">🥈</div><div id="lbP2n" style="font-size:12px;margin-top:2px"></div><div id="lbP2s" style="font-size:11px;color:var(--text-muted)"></div></div>
+        <div style="text-align:center;flex:1"><div id="lbP1" class="lb-podium-box" style="background:rgba(245,158,11,.14);border:1px solid rgba(245,158,11,.45);height:130px"></div><div style="padding-top:6px;font-weight:800;color:#F59E0B">🥇</div><div id="lbP1n" style="font-size:12px;margin-top:2px"></div><div id="lbP1s" style="font-size:11px;color:var(--text-muted)"></div></div>
+        <div style="text-align:center;flex:1"><div id="lbP3" class="lb-podium-box" style="background:rgba(180,83,9,.12);border:1px solid rgba(180,83,9,.35);height:60px"></div><div style="padding-top:6px;font-weight:800;color:#B45309">🥉</div><div id="lbP3n" style="font-size:12px;margin-top:2px"></div><div id="lbP3s" style="font-size:11px;color:var(--text-muted)"></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-header">
+        <div class="card-icon blue"><i class='bx bx-list-ol'></i></div>
+        <div><h2 class="card-title" data-i18n="lb.full_board">Full Board</h2><p class="card-subtitle" data-i18n="lb.full_hint">Top 100 members for the selected metric and period.</p></div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="dt-table">
+          <thead><tr><th>#</th><th data-i18n="lb.h_member">Member</th><th data-i18n="lb.h_score">Score</th><th data-i18n="lb.h_share">Share</th></tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </div>
+      <div id="lbEmpty" style="display:none;padding:28px;text-align:center;color:var(--text-muted)">
+        <i class='bx bx-bar-chart-alt-2' style="font-size:30px;opacity:.4"></i>
+        <p data-i18n="lb.no_data">No rankings yet — bot collects activity automatically when connected.</p>
+      </div>
+    </div>
+  </main>
+  <script src="/i18n.js?v=20"></script>
+  <script src="/shared.js?v=20"></script>
+  <script>
+    const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
+    if (!guildId) { Swal.fire('Error', 'Server ID not found in the URL.', 'error'); throw new Error('Page guard: missing context'); }
+    const tk = (k) => (window.__pmc_i18n && window.__pmc_i18n.get) ? window.__pmc_i18n.get(k) : k;
+    function esc(s) { return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    const podName = (i, r) => { document.getElementById('lbP'+i+'n').textContent = esc(r.displayName || r.userId); document.getElementById('lbP'+i+'s').textContent = Number(r.score).toLocaleString(); };
+    document.addEventListener('DOMContentLoaded', () => {
+      const n = localStorage.getItem('guild_name_' + guildId) || guildId;
+      document.getElementById('breadServerName').textContent = n;
+      document.getElementById('serverName').textContent = n;
+      const ic = document.getElementById('serverIconContainer');
+      const icon = localStorage.getItem('guild_icon_' + guildId);
+      ic.innerHTML = (icon && icon !== 'null') ? `<img src="${icon}" alt="Server Icon">` : n.charAt(0).toUpperCase();
+      loadBoard();
+      document.getElementById('lbRefreshBtn').addEventListener('click', loadBoard);
+      document.getElementById('lbMetric').addEventListener('change', loadBoard);
+      document.getElementById('lbPeriod').addEventListener('change', loadBoard);
+      document.getElementById('lbSettingsBtn').addEventListener('click', lbSettings);
+      if (window.__pmc_i18n && window.__pmc_i18n.applyAll) window.__pmc_i18n.applyAll();
+    });
+    async function loadBoard() {
+      const metric = document.getElementById('lbMetric').value;
+      const period = document.getElementById('lbPeriod').value;
+      try {
+        const res = await fetch(`/api/server/${guildId}/leaderboard?metric=${metric}&period=${period}`);
+        const j = await res.json();
+        if (!j.success) return;
+        document.getElementById('lbMembers').textContent = j.members;
+        document.getElementById('lbTotal').textContent = Number(j.total).toLocaleString();
+        document.getElementById('lbBucket').textContent = j.bucket === 'all' ? (tk('lb.p_alltime') || 'All time') : j.bucket;
+        const rows = j.rows || [];
+        document.getElementById('lbEmpty').style.display = rows.length ? 'none' : 'block';
+        if (rows.length >= 1) podName(1, rows[0]); else { document.getElementById('lbP1n').textContent = '—'; document.getElementById('lbP1s').textContent = ''; }
+        if (rows.length >= 2) podName(2, rows[1]); else { document.getElementById('lbP2n').textContent = '—'; document.getElementById('lbP2s').textContent = ''; }
+        if (rows.length >= 3) podName(3, rows[2]); else { document.getElementById('lbP3n').textContent = '—'; document.getElementById('lbP3s').textContent = ''; }
+        const tbody = document.getElementById('lbBody');
+        tbody.innerHTML = '';
+        rows.forEach((r, i) => {
+          const tr = document.createElement('tr');
+          const share = j.total > 0 ? Math.round(r.score / j.total * 100) : 0;
+          const medal = i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+          tr.innerHTML = `<td><b>${medal}${i + 1}</b></td><td>${esc(r.displayName || r.userId)}</td><td><b>${Number(r.score).toLocaleString()}</b></td><td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;max-width:140px;height:8px;border-radius:99px;background:rgba(128,128,128,.15)"><div style="width:${share}%;height:100%;border-radius:99px;background:var(--accent,#6366F1)"></div></div><span style="font-size:12px;color:var(--text-muted)">${share}%</span></div></td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (e) { console.error(e); }
+    }
+    async function lbSettings() {
+      try {
+        const res = await fetch(`/api/server/${guildId}/leaderboard/settings`);
+        const j = await res.json();
+        const c = j.config || { metrics: ['messages', 'voice', 'playtime'] };
+        const allMetrics = ['messages', 'voice', 'playtime', 'kills', 'events', 'streak'];
+        const html = allMetrics.map(m => `<label style="display:flex;align-items:center;gap:8px;margin:5px 0"><input type="checkbox" value="${m}" ${c.metrics.includes(m) ? 'checked' : ''}> ${esc(tk('lb.m_' + m) || m)}</label>`).join('');
+        const { value } = await Swal.fire({
+          title: tk('lb.settings'), width: 420,
+          html: `<label style="display:block;margin-bottom:8px"><b>${tk('lb.active_metrics')}</b></label>${html}<label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="sw-en" ${c.enabled !== false ? 'checked' : ''}> <b>${tk('lg.enabled')}</b></label>`,
+          showCancelButton: true, confirmButtonText: tk('common.save') || 'Save'
+        });
+        if (!value) return;
+        const metrics = [...document.querySelectorAll('#swal2-content input[type=checkbox]')].filter(i => i.id !== 'sw-en' && i.checked).map(i => i.value);
+        const res2 = await fetch(`/api/server/${guildId}/leaderboard/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ metrics, enabled: document.getElementById('sw-en').checked }) });
+        const j2 = await res2.json();
+        Swal.fire({ icon: j2.success ? 'success' : 'error', title: j2.success ? (tk('common.saved') || 'Saved') : j2.error, timer: 2000 });
+      } catch (e) { Swal.fire({ icon: 'error', title: 'Error' }); }
+    }
+  </script>
+  <style>
+    .card-icon.gold { background: rgba(245,158,11,.15); color: #F59E0B; }
+    .lb-podium-box { border-radius: 12px 12px 0 0; display:flex; align-items:center; justify-content:center; font-size:22px }
+    @media (max-width: 760px) { .stat-cards { grid-template-columns: repeat(2, 1fr) !important; } }
+  </style>
+</body>
+</html>

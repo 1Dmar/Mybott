@@ -89,7 +89,12 @@
           { href: `/my-servers/${guildId}/serverpage`,     icon: 'bx-globe',       text: 'sb.server_page' },
           { href: `/my-servers/${guildId}/events`,         icon: 'bx-trophy',      text: 'sb.events', tag: { text: 'ev.new', cls: 'tag-new' } },
           { href: `/my-servers/${guildId}/players`,        icon: 'bx-user-plus',   text: 'sb.players',  },
-          { href: `/my-servers/${guildId}/monitoring`,     icon: 'bx-pulse',       text: 'sb.monitoring', tag: { text: 'mon.new', cls: 'tag-new' } },
+                    { href: `/my-servers/${guildId}/monitoring`,     icon: 'bx-pulse',      text: 'sb.monitoring', tag: { text: 'mon.new', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/loyalty`,        icon: 'bx-flame',       text: 'sb.loyalty', tag: { text: 'lg.new', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/advanced-tickets`, icon: 'bx-conversation', text: 'sb.advanced_tickets', tag: { text: 'at.new_tag', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/leaderboard`,    icon: 'bx-medal',       text: 'sb.leaderboard', tag: { text: 'lb.new', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/announcements`,  icon: 'bx-megaphone',   text: 'sb.announcements', tag: { text: 'an.new_tag', cls: 'tag-new' } },
+          { href: `/my-servers/${guildId}/security`,       icon: 'bx-shield-alt-2', text: 'sb.security', tag: { text: 'sc.new', cls: 'tag-new' } },
           { href: `/my-servers/${guildId}/settings`,       icon: 'bx-cog',         text: 'sb.settings' },
         ]
       },

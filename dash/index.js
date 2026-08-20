@@ -44,6 +44,15 @@ const Membership     = require('../bot/Models/User');
 const AutoResponder  = require('../bot/Models/AutoResponder');
 const Mentions       = require('../bot/Models/Mentions');
 const Language       = require('../bot/Models/Langs');
+
+// ── Session 13 new features ──
+const LoyaltyStreak    = require('../bot/Models/LoyaltyStreak');
+const AdvancedTicket   = require('../bot/Models/AdvancedTicket');
+const Leaderboard      = require('../bot/Models/Leaderboard');
+const AutoAnnouncement = require('../bot/Models/AutoAnnouncement');
+const SecurityEvent    = require('../bot/Models/SecurityLog').SecurityEvent;
+const Watchlist        = require('../bot/Models/SecurityLog').Watchlist;
+const SecurityScore    = require('../bot/Models/SecurityLog').SecurityScore;
 const ApiKey         = require('../bot/Models/Api');
 const BumpedServer   = require('../bot/Models/bumpedServer');
 const Notification   = require('../bot/Models/Notification');
@@ -482,6 +491,11 @@ function serveServerPage(filename) {
 app.get('/my-servers/:guildId/overview',       ...serveServerPage('overview.html'));
 app.get('/my-servers/:guildId/settings',       ...serveServerPage('settings.html'));
 app.get('/my-servers/:guildId/monitoring',       ...serveServerPage('monitoring.html'));
+app.get('/my-servers/:guildId/loyalty',        ...serveServerPage('loyalty.html'));
+app.get('/my-servers/:guildId/advanced-tickets', ...serveServerPage('advanced-tickets.html'));
+app.get('/my-servers/:guildId/leaderboard',      ...serveServerPage('leaderboard.html'));
+app.get('/my-servers/:guildId/announcements',    ...serveServerPage('announcements.html'));
+app.get('/my-servers/:guildId/security',         ...serveServerPage('security.html'));
 app.get('/my-servers/:guildId/moderation',     ...serveServerPage('moderation.html'));
 app.get('/my-servers/:guildId/roles',          ...serveServerPage('roles.html'));
 app.get('/my-servers/:guildId/logs',           ...serveServerPage('logs.html'));
@@ -2295,6 +2309,463 @@ setInterval(async () => {
     console.error('[notif watcher] error:', err.message);
   }
 }, NOTIF_INTERVAL_MS);
+
+// ════════════════════════════════════════════════════════════════════
+//  NEW FEATURES (Session 13): Loyalty, Advanced Tickets, Leaderboards,
+//  Auto-Announcements, Security Center
+// ════════════════════════════════════════════════════════════════════
+// (this file is inserted before the 404 handler in dash/index.js)
+
+// ── Model requires (append near other model requires) ──────────────
+
+
+
+
+
+
+
+
+// ════════════════════════════════════════════════════════════════════
+//  1) STREAK & LOYALTY
+// ════════════════════════════════════════════════════════════════════
+// Dashboard view: list members by streak/points
+app.get('/api/server/:guildId/loyalty', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const { sort = 'points', limit = 100 } = req.query;
+    const sortKey = ['currentStreak', 'bestStreak', 'points', 'messagesAllTime', 'voiceMinutesAllTime'].includes(sort) ? sort : 'points';
+    const rows = await LoyaltyStreak.find({ guildId: req.params.guildId })
+      .sort({ [sortKey]: -1 })
+      .limit(Math.min(parseInt(limit) || 100, 500))
+      .lean();
+    // aggregate stats
+    const total = await LoyaltyStreak.countDocuments({ guildId: req.params.guildId });
+    const activeStreaks = rows.filter(r => r.currentStreak > 0).length;
+    const topStreak = rows.length ? rows[0].currentStreak : 0;
+    const tiers = { bronze: 0, silver: 0, gold: 0, diamond: 0, master: 0 };
+    rows.forEach(r => { if (tiers[r.tier] !== undefined) tiers[r.tier]++; });
+    res.json({ success: true, rows, total, activeStreaks, topStreak, tiers });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Toggle loyalty tracking on/off + settings
+app.get('/api/server/:guildId/loyalty/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await BotConfig.findOne({ guildId: req.params.guildId, key: 'loyalty' }).lean();
+    res.json({ success: true, config: doc ? doc.value : { enabled: true, pointsPerMessage: 2, pointsPerVoiceMinute: 1, streakBonus: 5 } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/loyalty/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const { enabled, pointsPerMessage, pointsPerVoiceMinute, streakBonus } = req.body || {};
+    await BotConfig.updateOne(
+      { guildId: req.params.guildId, key: 'loyalty' },
+      { $set: { guildId: req.params.guildId, key: 'loyalty', value: { enabled: enabled !== false, pointsPerMessage, pointsPerVoiceMinute, streakBonus }, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: 'Updated loyalty settings' }); } catch (_) {}
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Reset a member's streak (staff action)
+app.post('/api/server/:guildId/loyalty/:userId/reset', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const r = await LoyaltyStreak.findOneAndUpdate(
+      { guildId: req.params.guildId, userId: req.params.userId },
+      { $set: { currentStreak: 0, points: 0, messagesAllTime: 0, voiceMinutesAllTime: 0 } }
+    );
+    res.json({ success: true, streak: r ? r.currentStreak : 0 });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  2) ADVANCED TICKETS
+// ════════════════════════════════════════════════════════════════════
+app.get('/api/server/:guildId/advanced-tickets', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const { status, category, priority, q } = req.query;
+    const filter = { guildId: req.params.guildId };
+    if (status) filter.status = status;
+    if (category) filter.category = category;
+    if (priority) filter.priority = priority;
+    if (q) filter.$or = [{ subject: new RegExp(q, 'i') }, { userName: new RegExp(q, 'i') }, { ticketId: new RegExp(q, 'i') }];
+    const tickets = await AdvancedTicket.find(filter).sort({ openedAt: -1 }).limit(300).lean();
+    // sla breach check
+    const now = Date.now();
+    const openOnes = tickets.filter(t => ['open', 'in-progress'].includes(t.status));
+    openOnes.forEach(t => {
+      if (t.slaDeadline && new Date(t.slaDeadline).getTime() < now && !t.slaBreached) {
+        AdvancedTicket.updateOne({ _id: t._id }, { $set: { slaBreached: true } }).catch(() => {});
+        t.slaBreached = true;
+      }
+    });
+    // counts per status
+    const counts = await AdvancedTicket.aggregate([
+      { $match: { guildId: req.params.guildId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    res.json({ success: true, tickets, counts: Object.fromEntries(counts.map(c => [c._id, c.count])) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/server/:guildId/advanced-tickets/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const t = await AdvancedTicket.findOne({ guildId: req.params.guildId, ticketId: req.params.id }).lean();
+    if (!t) return res.status(404).json({ success: false, error: 'TICKET_NOT_FOUND' });
+    res.json({ success: true, ticket: t });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Create advanced ticket from dashboard
+app.post('/api/server/:guildId/advanced-tickets', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const b = req.body || {};
+    const subject = escapeHtml(String(b.subject || '').slice(0, 200));
+    if (!b.userId || !subject) return res.status(400).json({ success: false, error: 'userId + subject required' });
+    // next ticketId
+    const last = await AdvancedTicket.findOne({ guildId: req.params.guildId }).sort({ ticketId: -1 }).lean();
+    const num = last ? (parseInt(last.ticketId.replace('#', '')) || 0) + 1 : 1;
+    const deadline = AdvancedTicket.computeDeadline(b.priority || 'medium');
+    const doc = await AdvancedTicket.create({
+      guildId: req.params.guildId,
+      ticketId: `#${String(num).padStart(4, '0')}`,
+      userId: String(b.userId),
+      userName: escapeHtml(String(b.userName || '').slice(0, 80)),
+      category: ['bug', 'appeal', 'purchase', 'question', 'report', 'other'].includes(b.category) ? b.category : 'other',
+      priority: ['low', 'medium', 'high', 'critical'].includes(b.priority) ? b.priority : 'medium',
+      subject,
+      firstMessage: escapeHtml(String(b.firstMessage || '').slice(0, 2000)),
+      assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo.map(String) : [],
+      tags: Array.isArray(b.tags) ? b.tags.map(t => escapeHtml(String(t).slice(0, 40))) : [],
+      slaDeadline: deadline,
+      status: 'open',
+      openedAt: new Date()
+    });
+    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Created advanced ticket ${doc.ticketId}` }); } catch (_) {}
+    res.json({ success: true, ticket: doc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Update status / priority / assignment / add internal note
+app.patch('/api/server/:guildId/advanced-tickets/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const t = await AdvancedTicket.findOne({ guildId: req.params.guildId, ticketId: req.params.id });
+    if (!t) return res.status(404).json({ success: false, error: 'TICKET_NOT_FOUND' });
+    const b = req.body || {};
+    const set = {};
+    if (b.status && ['open', 'waiting', 'in-progress', 'resolved', 'closed'].includes(b.status)) {
+      set.status = b.status;
+      if (b.status === 'resolved') { set.resolvedAt = new Date(); set.resolvedBy = req.user.id; set.resolvedByUser = req.user.username; }
+      if (b.status === 'closed') set.closedAt = new Date();
+    }
+    if (b.priority && ['low', 'medium', 'high', 'critical'].includes(b.priority)) { set.priority = b.priority; set.slaDeadline = AdvancedTicket.computeDeadline(b.priority); }
+    if (b.waitingReason !== undefined) set.waitingReason = escapeHtml(String(b.waitingReason).slice(0, 300));
+    if (Array.isArray(b.assignedTo)) set.assignedTo = b.assignedTo.map(String);
+    if (Array.isArray(b.tags)) set.tags = b.tags.map(x => escapeHtml(String(x).slice(0, 40)));
+    if (b.resolutionNote !== undefined) set.resolutionNote = escapeHtml(String(b.resolutionNote).slice(0, 1000));
+    if (b.note) {
+      set.$push = { internalNotes: { by: req.user.id, byName: req.user.username, note: escapeHtml(String(b.note).slice(0, 1000)), at: new Date() } };
+    }
+    Object.assign(set, b.$push || {});
+    await AdvancedTicket.updateOne({ _id: t._id }, set);
+    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Updated advanced ticket ${req.params.id}` }); } catch (_) {}
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  3) LIVE LEADERBOARDS
+// ════════════════════════════════════════════════════════════════════
+app.get('/api/server/:guildId/leaderboard', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const metric = ['messages', 'voice', 'kills', 'playtime', 'events', 'streak'].includes(req.query.metric) ? req.query.metric : 'messages';
+    const period = ['week', 'month', 'alltime'].includes(req.query.period) ? req.query.period : 'alltime';
+    const bucket = period === 'alltime' ? 'all' : (period === 'week' ? Leaderboard.weekBucket() : Leaderboard.monthBucket());
+    const rows = await Leaderboard.find({ guildId: req.params.guildId, metric, period, bucket })
+      .sort({ score: -1 }).limit(100).lean();
+    // totals for the whole server (period agnostic) — used in summary cards
+    const totals = await Leaderboard.aggregate([
+      { $match: { guildId: req.params.guildId, metric, period, bucket } },
+      { $group: { _id: null, total: { $sum: '$score' }, members: { $sum: 1 } } }
+    ]);
+    res.json({ success: true, rows, total: totals[0]?.total || 0, members: totals[0]?.members || 0, bucket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Leaderboard settings (which metrics active, reset history)
+app.get('/api/server/:guildId/leaderboard/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await BotConfig.findOne({ guildId: req.params.guildId, key: 'leaderboard' }).lean();
+    res.json({ success: true, config: doc ? doc.value : { metrics: ['messages', 'voice', 'playtime'], enabled: true } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/leaderboard/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const { metrics, enabled } = req.body || {};
+    await BotConfig.updateOne(
+      { guildId: req.params.guildId, key: 'leaderboard' },
+      { $set: { guildId: req.params.guildId, key: 'leaderboard', value: { metrics: Array.isArray(metrics) ? metrics : ['messages', 'voice', 'playtime'], enabled: enabled !== false }, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  4) AUTO-ANNOUNCEMENTS
+// ════════════════════════════════════════════════════════════════════
+app.get('/api/server/:guildId/announcements', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const docs = await AutoAnnouncement.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).lean();
+    // ensure nextRunAt exists
+    for (const d of docs) {
+      if (!d.nextRunAt) {
+        const next = AutoAnnouncement.nextRunFrom(d);
+        AutoAnnouncement.updateOne({ _id: d._id }, { $set: { nextRunAt: next } }).catch(() => {});
+        d.nextRunAt = next;
+      }
+    }
+    const totals = docs.reduce((a, d) => a + (d.sendCount || 0), 0);
+    res.json({ success: true, announcements: docs, totalSends: totals });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/announcements', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!b.name || !b.content || !(b.channels || []).length) {
+      return res.status(400).json({ success: false, error: 'name + content + at least one channel required' });
+    }
+    const doc = await AutoAnnouncement.create({
+      guildId: req.params.guildId,
+      name: escapeHtml(String(b.name).slice(0, 120)),
+      content: String(b.content).slice(0, 2000),
+      embedTitle: b.embedTitle ? escapeHtml(String(b.embedTitle).slice(0, 200)) : null,
+      channels: b.channels.map(String),
+      scheduleType: ['daily', 'weekly', 'custom', 'interval'].includes(b.scheduleType) ? b.scheduleType : 'daily',
+      time: /^\d{1,2}:\d{2}$/.test(b.time) ? b.time : '18:00',
+      weekdays: Array.isArray(b.weekdays) ? b.weekdays.filter(x => x >= 0 && x <= 6) : [],
+      intervalMin: Math.max(5, Math.min(43200, parseInt(b.intervalMin) || 60)),
+      createdBy: req.user.id,
+      createdByLabel: req.user.username
+    });
+    doc.nextRunAt = AutoAnnouncement.nextRunFrom(doc);
+    await doc.save();
+    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Created auto-announcement "${doc.name}"` }); } catch (_) {}
+    res.json({ success: true, announcement: doc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.patch('/api/server/:guildId/announcements/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await AutoAnnouncement.findById(req.params.id);
+    if (!doc || doc.guildId !== req.params.guildId) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    const b = req.body || {};
+    const set = {};
+    if (b.name !== undefined) set.name = escapeHtml(String(b.name).slice(0, 120));
+    if (b.content !== undefined) set.content = String(b.content).slice(0, 2000);
+    if (b.embedTitle !== undefined) set.embedTitle = b.embedTitle ? escapeHtml(String(b.embedTitle).slice(0, 200)) : null;
+    if (Array.isArray(b.channels) && b.channels.length) set.channels = b.channels.map(String);
+    if (['daily', 'weekly', 'custom', 'interval'].includes(b.scheduleType)) set.scheduleType = b.scheduleType;
+    if (/^\d{1,2}:\d{2}$/.test(b.time)) set.time = b.time;
+    if (Array.isArray(b.weekdays)) set.weekdays = b.weekdays.filter(x => x >= 0 && x <= 6);
+    if (b.intervalMin) set.intervalMin = Math.max(5, Math.min(43200, parseInt(b.intervalMin)));
+    if (b.enabled !== undefined) set.enabled = !!b.enabled;
+    const doc2 = await AutoAnnouncement.findByIdAndUpdate(doc._id, { $set: set }, { new: true });
+    if (doc2) doc2.nextRunAt = AutoAnnouncement.nextRunFrom(doc2);
+    if (doc2) await doc2.save();
+    res.json({ success: true, announcement: doc2 });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/server/:guildId/announcements/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await AutoAnnouncement.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!doc) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    await AutoAnnouncement.deleteOne({ _id: doc._id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Send a test announcement right now (dry-run shows rendered content)
+app.post('/api/server/:guildId/announcements/:id/send-now', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await AutoAnnouncement.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!doc) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    const rendered = String(doc.content)
+      .replace(/\{server\}/gi, '')
+      .replace(/\{time\}/gi, new Date().toLocaleString());
+    // Bot-side dispatch (if DashboardBridge is available)
+    let sent = 0;
+    try {
+      if (DashboardBridge && typeof DashboardBridge.sendAnnouncement === 'function') {
+        sent = await DashboardBridge.sendAnnouncement(req.params.guildId, { content: rendered, embedTitle: doc.embedTitle, channels: doc.channels });
+      }
+    } catch (_) { /* bot may be offline; dashboard flow still valid */ }
+    doc.lastSentAt = new Date();
+    doc.sendCount = (doc.sendCount || 0) + 1;
+    await doc.save();
+    res.json({ success: true, sent, rendered, preview: rendered.slice(0, 500) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  5) SECURITY CENTER
+// ════════════════════════════════════════════════════════════════════
+// Overview stats
+app.get('/api/server/:guildId/security', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getTime() - 7 * 86400000);
+    const [events, weekEvents, watchlist, todayScore, weekScores] = await Promise.all([
+      SecurityEvent.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50).lean(),
+      SecurityEvent.countDocuments({ guildId: req.params.guildId, createdAt: { $gte: weekAgo } }),
+      Watchlist.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(100).lean(),
+      SecurityScore.findOne({ guildId: req.params.guildId, day: today }).lean(),
+      SecurityScore.find({ guildId: req.params.guildId }).sort({ day: -1 }).limit(14).lean()
+    ]);
+    const unresolved = events.filter(e => !e.resolved).length;
+    const critical = events.filter(e => e.severity === 'critical' && !e.resolved).length;
+    const score = todayScore ? todayScore.score : (weekScores[0] ? weekScores[0].score : 100);
+    res.json({ success: true, events, weekEvents, watchlist, unresolved, critical, score, history: weekScores });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Report a security event (dashboard or bot)
+app.post('/api/server/:guildId/security/events', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const b = req.body || {};
+    const doc = await SecurityEvent.create({
+      guildId: req.params.guildId,
+      type: b.type || 'manual',
+      severity: ['info', 'warning', 'critical'].includes(b.severity) ? b.severity : 'warning',
+      actorId: b.actorId || null,
+      actorName: b.actorName ? escapeHtml(String(b.actorName).slice(0, 80)) : null,
+      detail: b.detail ? escapeHtml(String(b.detail).slice(0, 1000)) : null,
+      count: Math.max(0, parseInt(b.count) || 0),
+      mitigated: !!b.mitigated,
+      mitigationNote: b.mitigationNote ? escapeHtml(String(b.mitigationNote).slice(0, 300)) : null
+    });
+    // Notify server owner when critical
+    if (doc.severity === 'critical') {
+      try { notifyUserOnce(req.user.id, { type: 'error', title: `Security alert: ${doc.type}`, message: String(b.detail || 'A critical security event was recorded in your server dashboard.').slice(0, 500), createdByLabel: 'Security Center', source: 'system' }).catch(() => {}); } catch (_) {}
+    }
+    res.json({ success: true, event: doc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Mark event resolved
+app.post('/api/server/:guildId/security/events/:id/resolve', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const doc = await SecurityEvent.findOne({ _id: req.params.id, guildId: req.params.guildId });
+    if (!doc) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
+    doc.resolved = true;
+    doc.resolvedBy = req.user.id;
+    doc.resolvedAt = new Date();
+    await doc.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── Watchlist ──
+app.get('/api/server/:guildId/security/watchlist', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const rows = await Watchlist.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).lean();
+    res.json({ success: true, rows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/server/:guildId/security/watchlist', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    const b = req.body || {};
+    if (!b.userId) return res.status(400).json({ success: false, error: 'userId required' });
+    const doc = await Watchlist.create({
+      guildId: req.params.guildId,
+      userId: String(b.userId),
+      userName: b.userName ? escapeHtml(String(b.userName).slice(0, 80)) : null,
+      reason: b.reason ? escapeHtml(String(b.reason).slice(0, 500)) : null,
+      alertOnJoin: b.alertOnJoin !== false,
+      autoBan: !!b.autoBan,
+      addedBy: req.user.id,
+      addedByLabel: req.user.username,
+      expiresAt: b.expiresAt ? new Date(b.expiresAt) : null
+    });
+    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Added ${b.userId} to security watchlist` }); } catch (_) {}
+    res.json({ success: true, entry: doc });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/server/:guildId/security/watchlist/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    await Watchlist.deleteOne({ _id: req.params.id, guildId: req.params.guildId });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Quick actions: emergency lockdown (log + notify)
+app.post('/api/server/:guildId/security/lockdown', [isAuthenticated, verifyGuildAccess], async (req, res) => {
+  try {
+    await SecurityEvent.create({
+      guildId: req.params.guildId,
+      type: 'manual',
+      severity: 'critical',
+      actorName: req.user.username,
+      detail: 'Emergency lockdown triggered from dashboard by staff.',
+      mitigated: false
+    });
+    try { notifyUserOnce(req.user.id, { type: 'error', title: 'Emergency lockdown recorded', message: 'A manual security lockdown was logged. Coordinate with your mod team.', createdByLabel: 'Security Center', source: 'system' }).catch(() => {}); } catch (_) {}
+    res.json({ success: true, message: 'Lockdown event logged. Bot-side enforcement activates if ProMcSecure is connected.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 app.use((req, res) => {
   const notFoundPage = path.join(dashDir, '404', 'index.html');
