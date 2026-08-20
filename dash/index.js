@@ -47,9 +47,6 @@ const Language       = require('../bot/Models/Langs');
 
 // ── Session 13 new features ──
 const LoyaltyStreak    = require('../bot/Models/LoyaltyStreak');
-const AdvancedTicket   = require('../bot/Models/AdvancedTicket');
-const Leaderboard      = require('../bot/Models/Leaderboard');
-const AutoAnnouncement = require('../bot/Models/AutoAnnouncement');
 const SecurityEvent    = require('../bot/Models/SecurityLog').SecurityEvent;
 const Watchlist        = require('../bot/Models/SecurityLog').Watchlist;
 const SecurityScore    = require('../bot/Models/SecurityLog').SecurityScore;
@@ -492,9 +489,6 @@ app.get('/my-servers/:guildId/overview',       ...serveServerPage('overview.html
 app.get('/my-servers/:guildId/settings',       ...serveServerPage('settings.html'));
 app.get('/my-servers/:guildId/monitoring',       ...serveServerPage('monitoring.html'));
 app.get('/my-servers/:guildId/loyalty',        ...serveServerPage('loyalty.html'));
-app.get('/my-servers/:guildId/advanced-tickets', ...serveServerPage('advanced-tickets.html'));
-app.get('/my-servers/:guildId/leaderboard',      ...serveServerPage('leaderboard.html'));
-app.get('/my-servers/:guildId/announcements',    ...serveServerPage('announcements.html'));
 app.get('/my-servers/:guildId/security',         ...serveServerPage('security.html'));
 app.get('/my-servers/:guildId/moderation',     ...serveServerPage('moderation.html'));
 app.get('/my-servers/:guildId/roles',          ...serveServerPage('roles.html'));
@@ -1587,7 +1581,7 @@ app.get('/api/admin/me', isAuthenticated, (req, res) => {
 // ── In-app Notifications (dashboard navbar bell inbox) ─────────────────
 // Users see notifications INSIDE the dashboard. NOT Discord messages. ──
 
-// Admin: list all created announcements
+// Admin: list all sent in-app notifications
 app.get('/api/admin/notifications', isAdmin, async (req, res) => {
   try {
     const notifications = await Notification.find({ createdBy: { $ne: null } })
@@ -2387,264 +2381,7 @@ app.post('/api/server/:guildId/loyalty/:userId/reset', [isAuthenticated, verifyG
   }
 });
 
-// ════════════════════════════════════════════════════════════════════
-//  2) ADVANCED TICKETS
-// ════════════════════════════════════════════════════════════════════
-app.get('/api/server/:guildId/advanced-tickets', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const { status, category, priority, q } = req.query;
-    const filter = { guildId: req.params.guildId };
-    if (status) filter.status = status;
-    if (category) filter.category = category;
-    if (priority) filter.priority = priority;
-    if (q) filter.$or = [{ subject: new RegExp(q, 'i') }, { userName: new RegExp(q, 'i') }, { ticketId: new RegExp(q, 'i') }];
-    const tickets = await AdvancedTicket.find(filter).sort({ openedAt: -1 }).limit(300).lean();
-    // sla breach check
-    const now = Date.now();
-    const openOnes = tickets.filter(t => ['open', 'in-progress'].includes(t.status));
-    openOnes.forEach(t => {
-      if (t.slaDeadline && new Date(t.slaDeadline).getTime() < now && !t.slaBreached) {
-        AdvancedTicket.updateOne({ _id: t._id }, { $set: { slaBreached: true } }).catch(() => {});
-        t.slaBreached = true;
-      }
-    });
-    // counts per status
-    const counts = await AdvancedTicket.aggregate([
-      { $match: { guildId: req.params.guildId } },
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-    res.json({ success: true, tickets, counts: Object.fromEntries(counts.map(c => [c._id, c.count])) });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/api/server/:guildId/advanced-tickets/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const t = await AdvancedTicket.findOne({ guildId: req.params.guildId, ticketId: req.params.id }).lean();
-    if (!t) return res.status(404).json({ success: false, error: 'TICKET_NOT_FOUND' });
-    res.json({ success: true, ticket: t });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Create advanced ticket from dashboard
-app.post('/api/server/:guildId/advanced-tickets', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const b = req.body || {};
-    const subject = escapeHtml(String(b.subject || '').slice(0, 200));
-    if (!b.userId || !subject) return res.status(400).json({ success: false, error: 'userId + subject required' });
-    // next ticketId
-    const last = await AdvancedTicket.findOne({ guildId: req.params.guildId }).sort({ ticketId: -1 }).lean();
-    const num = last ? (parseInt(last.ticketId.replace('#', '')) || 0) + 1 : 1;
-    const deadline = AdvancedTicket.computeDeadline(b.priority || 'medium');
-    const doc = await AdvancedTicket.create({
-      guildId: req.params.guildId,
-      ticketId: `#${String(num).padStart(4, '0')}`,
-      userId: String(b.userId),
-      userName: escapeHtml(String(b.userName || '').slice(0, 80)),
-      category: ['bug', 'appeal', 'purchase', 'question', 'report', 'other'].includes(b.category) ? b.category : 'other',
-      priority: ['low', 'medium', 'high', 'critical'].includes(b.priority) ? b.priority : 'medium',
-      subject,
-      firstMessage: escapeHtml(String(b.firstMessage || '').slice(0, 2000)),
-      assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo.map(String) : [],
-      tags: Array.isArray(b.tags) ? b.tags.map(t => escapeHtml(String(t).slice(0, 40))) : [],
-      slaDeadline: deadline,
-      status: 'open',
-      openedAt: new Date()
-    });
-    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Created advanced ticket ${doc.ticketId}` }); } catch (_) {}
-    res.json({ success: true, ticket: doc });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Update status / priority / assignment / add internal note
-app.patch('/api/server/:guildId/advanced-tickets/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const t = await AdvancedTicket.findOne({ guildId: req.params.guildId, ticketId: req.params.id });
-    if (!t) return res.status(404).json({ success: false, error: 'TICKET_NOT_FOUND' });
-    const b = req.body || {};
-    const set = {};
-    if (b.status && ['open', 'waiting', 'in-progress', 'resolved', 'closed'].includes(b.status)) {
-      set.status = b.status;
-      if (b.status === 'resolved') { set.resolvedAt = new Date(); set.resolvedBy = req.user.id; set.resolvedByUser = req.user.username; }
-      if (b.status === 'closed') set.closedAt = new Date();
-    }
-    if (b.priority && ['low', 'medium', 'high', 'critical'].includes(b.priority)) { set.priority = b.priority; set.slaDeadline = AdvancedTicket.computeDeadline(b.priority); }
-    if (b.waitingReason !== undefined) set.waitingReason = escapeHtml(String(b.waitingReason).slice(0, 300));
-    if (Array.isArray(b.assignedTo)) set.assignedTo = b.assignedTo.map(String);
-    if (Array.isArray(b.tags)) set.tags = b.tags.map(x => escapeHtml(String(x).slice(0, 40)));
-    if (b.resolutionNote !== undefined) set.resolutionNote = escapeHtml(String(b.resolutionNote).slice(0, 1000));
-    if (b.note) {
-      set.$push = { internalNotes: { by: req.user.id, byName: req.user.username, note: escapeHtml(String(b.note).slice(0, 1000)), at: new Date() } };
-    }
-    Object.assign(set, b.$push || {});
-    await AdvancedTicket.updateOne({ _id: t._id }, set);
-    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Updated advanced ticket ${req.params.id}` }); } catch (_) {}
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
 //  3) LIVE LEADERBOARDS
-// ════════════════════════════════════════════════════════════════════
-app.get('/api/server/:guildId/leaderboard', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const metric = ['messages', 'voice', 'kills', 'playtime', 'events', 'streak'].includes(req.query.metric) ? req.query.metric : 'messages';
-    const period = ['week', 'month', 'alltime'].includes(req.query.period) ? req.query.period : 'alltime';
-    const bucket = period === 'alltime' ? 'all' : (period === 'week' ? Leaderboard.weekBucket() : Leaderboard.monthBucket());
-    const rows = await Leaderboard.find({ guildId: req.params.guildId, metric, period, bucket })
-      .sort({ score: -1 }).limit(100).lean();
-    // totals for the whole server (period agnostic) — used in summary cards
-    const totals = await Leaderboard.aggregate([
-      { $match: { guildId: req.params.guildId, metric, period, bucket } },
-      { $group: { _id: null, total: { $sum: '$score' }, members: { $sum: 1 } } }
-    ]);
-    res.json({ success: true, rows, total: totals[0]?.total || 0, members: totals[0]?.members || 0, bucket });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Leaderboard settings (which metrics active, reset history)
-app.get('/api/server/:guildId/leaderboard/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const doc = await BotConfig.findOne({ guildId: req.params.guildId, key: 'leaderboard' }).lean();
-    res.json({ success: true, config: doc ? doc.value : { metrics: ['messages', 'voice', 'playtime'], enabled: true } });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/server/:guildId/leaderboard/settings', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const { metrics, enabled } = req.body || {};
-    await BotConfig.updateOne(
-      { guildId: req.params.guildId, key: 'leaderboard' },
-      { $set: { guildId: req.params.guildId, key: 'leaderboard', value: { metrics: Array.isArray(metrics) ? metrics : ['messages', 'voice', 'playtime'], enabled: enabled !== false }, updatedAt: new Date() } },
-      { upsert: true }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
-//  4) AUTO-ANNOUNCEMENTS
-// ════════════════════════════════════════════════════════════════════
-app.get('/api/server/:guildId/announcements', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const docs = await AutoAnnouncement.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).lean();
-    // ensure nextRunAt exists
-    for (const d of docs) {
-      if (!d.nextRunAt) {
-        const next = AutoAnnouncement.nextRunFrom(d);
-        AutoAnnouncement.updateOne({ _id: d._id }, { $set: { nextRunAt: next } }).catch(() => {});
-        d.nextRunAt = next;
-      }
-    }
-    const totals = docs.reduce((a, d) => a + (d.sendCount || 0), 0);
-    res.json({ success: true, announcements: docs, totalSends: totals });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/server/:guildId/announcements', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const b = req.body || {};
-    if (!b.name || !b.content || !(b.channels || []).length) {
-      return res.status(400).json({ success: false, error: 'name + content + at least one channel required' });
-    }
-    const doc = await AutoAnnouncement.create({
-      guildId: req.params.guildId,
-      name: escapeHtml(String(b.name).slice(0, 120)),
-      content: String(b.content).slice(0, 2000),
-      embedTitle: b.embedTitle ? escapeHtml(String(b.embedTitle).slice(0, 200)) : null,
-      channels: b.channels.map(String),
-      scheduleType: ['daily', 'weekly', 'custom', 'interval'].includes(b.scheduleType) ? b.scheduleType : 'daily',
-      time: /^\d{1,2}:\d{2}$/.test(b.time) ? b.time : '18:00',
-      weekdays: Array.isArray(b.weekdays) ? b.weekdays.filter(x => x >= 0 && x <= 6) : [],
-      intervalMin: Math.max(5, Math.min(43200, parseInt(b.intervalMin) || 60)),
-      createdBy: req.user.id,
-      createdByLabel: req.user.username
-    });
-    doc.nextRunAt = AutoAnnouncement.nextRunFrom(doc);
-    await doc.save();
-    try { logActivity(req.params.guildId, { user: `${req.user.username}`, action: `Created auto-announcement "${doc.name}"` }); } catch (_) {}
-    res.json({ success: true, announcement: doc });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.patch('/api/server/:guildId/announcements/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const doc = await AutoAnnouncement.findById(req.params.id);
-    if (!doc || doc.guildId !== req.params.guildId) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
-    const b = req.body || {};
-    const set = {};
-    if (b.name !== undefined) set.name = escapeHtml(String(b.name).slice(0, 120));
-    if (b.content !== undefined) set.content = String(b.content).slice(0, 2000);
-    if (b.embedTitle !== undefined) set.embedTitle = b.embedTitle ? escapeHtml(String(b.embedTitle).slice(0, 200)) : null;
-    if (Array.isArray(b.channels) && b.channels.length) set.channels = b.channels.map(String);
-    if (['daily', 'weekly', 'custom', 'interval'].includes(b.scheduleType)) set.scheduleType = b.scheduleType;
-    if (/^\d{1,2}:\d{2}$/.test(b.time)) set.time = b.time;
-    if (Array.isArray(b.weekdays)) set.weekdays = b.weekdays.filter(x => x >= 0 && x <= 6);
-    if (b.intervalMin) set.intervalMin = Math.max(5, Math.min(43200, parseInt(b.intervalMin)));
-    if (b.enabled !== undefined) set.enabled = !!b.enabled;
-    const doc2 = await AutoAnnouncement.findByIdAndUpdate(doc._id, { $set: set }, { new: true });
-    if (doc2) doc2.nextRunAt = AutoAnnouncement.nextRunFrom(doc2);
-    if (doc2) await doc2.save();
-    res.json({ success: true, announcement: doc2 });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.delete('/api/server/:guildId/announcements/:id', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const doc = await AutoAnnouncement.findOne({ _id: req.params.id, guildId: req.params.guildId });
-    if (!doc) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
-    await AutoAnnouncement.deleteOne({ _id: doc._id });
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Send a test announcement right now (dry-run shows rendered content)
-app.post('/api/server/:guildId/announcements/:id/send-now', [isAuthenticated, verifyGuildAccess], async (req, res) => {
-  try {
-    const doc = await AutoAnnouncement.findOne({ _id: req.params.id, guildId: req.params.guildId });
-    if (!doc) return res.status(404).json({ success: false, error: 'NOT_FOUND' });
-    const rendered = String(doc.content)
-      .replace(/\{server\}/gi, '')
-      .replace(/\{time\}/gi, new Date().toLocaleString());
-    // Bot-side dispatch (if DashboardBridge is available)
-    let sent = 0;
-    try {
-      if (DashboardBridge && typeof DashboardBridge.sendAnnouncement === 'function') {
-        sent = await DashboardBridge.sendAnnouncement(req.params.guildId, { content: rendered, embedTitle: doc.embedTitle, channels: doc.channels });
-      }
-    } catch (_) { /* bot may be offline; dashboard flow still valid */ }
-    doc.lastSentAt = new Date();
-    doc.sendCount = (doc.sendCount || 0) + 1;
-    await doc.save();
-    res.json({ success: true, sent, rendered, preview: rendered.slice(0, 500) });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════
-//  5) SECURITY CENTER
 // ════════════════════════════════════════════════════════════════════
 // Overview stats
 app.get('/api/server/:guildId/security', [isAuthenticated, verifyGuildAccess], async (req, res) => {

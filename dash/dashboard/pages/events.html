@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Events — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css?v=20">
+  <link rel="stylesheet" href="/shared.css?v=22">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
@@ -159,7 +159,7 @@
           <button class="btn btn-ghost" id="evPodiumClose" style="padding:8px 14px;"><i class='bx bx-x'></i></button>
         </div>
         <div style="display:flex;justify-content:center;background:rgba(255,255,255,.02);border-radius:16px;padding:16px;">
-          <canvas id="evPodiumCanvas" width="1200" height="760" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
+          <canvas id="evPodiumCanvas" width="1200" height="800" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;justify-content:center;">
           <button class="btn btn-primary" id="evDownloadBtn"><i class='bx bx-download'></i> <span data-i18n="ev.download">Download Podium Image</span></button>
@@ -195,8 +195,8 @@
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
   </style>
-  <script src="/i18n.js?v=20"></script>
-  <script src="/shared.js?v=20"></script>
+  <script src="/i18n.js?v=22"></script>
+  <script src="/shared.js?v=22"></script>
   <script>
 (function () {
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
@@ -417,7 +417,7 @@
   async function loadSkinHead(name) {
     // UUID via our own server (Mojang API has no CORS headers — direct fetch always fails in browser)
     try {
-      const r = await fetch(`/api/mc-profile/${encodeURIComponent(name)}`);
+      const r = await fetch(`/api/mc-profile/${encodeURIComponent(name)}`, { credentials: 'include' });
       if (!r.ok) return null;
       const j = await r.json();
       return { uuid: j.uuid || j.id, name: j.name };
@@ -468,215 +468,35 @@
     const accent = ev.accent || '#FF512F';
 
     // ══════════════════════════════════════════════════════════
-    // REFERENCE-MATCHING BACKDROP — fantasy MC world at golden sunset
-    // (cherry blossom peaks, golden sun, glassy lake, grassy field)
+    // STATIC TEMPLATE — the official podium art stays untouched
+    // (cherry village, sunset, pagoda castle, lanterns, block podiums
+    //  with number plaques). Only winners are rendered on top.
     // ══════════════════════════════════════════════════════════
-
-    // ── Sky: deep blue top → golden orange horizon (sunset) ──
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#5b9bd8');
-    sky.addColorStop(0.3, '#8fc1e8');
-    sky.addColorStop(0.55, '#f7c98e');
-    sky.addColorStop(0.75, '#f2a45f');
-    sky.addColorStop(0.92, '#efa060');
-    sky.addColorStop(1, '#f8dcad');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-
-    const px = Math.max(2, Math.round(W / 200)); // block size
-
-    // ── Large golden square sun low behind the right mountain (strong sunset) ──
-    const sunS = 76, sunX = W * 0.845, sunY = H * 0.36;
-    const sunG = ctx.createRadialGradient(sunX, sunY, sunS * 0.3, sunX, sunY, sunS * 3.6);
-    sunG.addColorStop(0, 'rgba(255,248,215,.75)'); sunG.addColorStop(0.4, 'rgba(255,215,140,.35)'); sunG.addColorStop(1, 'rgba(255,190,100,0)');
-    ctx.fillStyle = sunG; ctx.fillRect(sunX - sunS * 3.6, sunY - sunS * 3.6, sunS * 7.2, sunS * 7.2);
-    ctx.fillStyle = '#fff8dc';
-    mcRect(ctx, sunX - sunS / 2, sunY - sunS / 2, sunS);
-    ctx.fillStyle = '#ffe9a8';
-    mcRect(ctx, sunX - sunS / 2, sunY - sunS / 2 + sunS - px * 4, sunS, px * 4);
-
-    // ── Blocky MC clouds (soft white) ──
-    const cloudPx = Math.max(3, Math.round(W / 120));
-    const clouds = [[0.06, 0.14, 9], [0.22, 0.07, 11], [0.5, 0.12, 8], [0.68, 0.05, 10], [0.9, 0.16, 7]];
-    clouds.forEach(([cx, cy, cw]) => {
-      ctx.fillStyle = 'rgba(255,255,255,.85)';
-      for (let i = 0; i < cw; i++) {
-        const top = (i === 0 || i === cw - 1) ? 1 : 0;
-        mcRect(ctx, cx * W + i * cloudPx, cy * H - top * cloudPx, cloudPx);
-      }
-      mcRect(ctx, cx * W, cy * H + cloudPx, cw * cloudPx);
+    const TMPL = document.createElement('img');
+    TMPL.src = '/dashboard/assets/podium-template.png';
+    await new Promise(res => {
+      TMPL.onload = () => res();
+      TMPL.onerror = () => res();
     });
+    if (TMPL.naturalWidth > 0) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(TMPL, 0, 0, W, H);
+      ctx.imageSmoothingEnabled = false;
+    }
 
-    // ── Distant mountains (deep blue blocky silhouettes) ──
-    const mt = (baseY) => {
-      ctx.fillStyle = baseY < H * 0.5 ? '#4a6b9c' : '#3f5a85';
-      return baseY;
+    // ── Podium top surfaces (in template coordinates, then scaled) ──
+    // Template: 1536x1024. Canvas now matches the 3:2 ratio (1200x800).
+    const T = W / 1536; // uniform scale
+    // rank 1: center (tallest block), surface ~y497, center ~x765
+    // rank 2: left block, surface ~y612, center ~x395
+    // rank 3: right block, surface ~y625, center ~x1160
+    // Block geometry (template coords 1536x1024): x = left edge, w = width, top = block top surface y
+    const BLOCKS = {
+      1: { x: 605 * T, w: 320 * T, top: 497 * T, cx: 765 * T, label: '1' },
+      2: { x: 245 * T, w: 300 * T, top: 612 * T, cx: 395 * T, label: '2' },
+      3: { x: 1010 * T, w: 300 * T, top: 625 * T, cx: 1160 * T, label: '3' }
     };
-    const mz = H * 0.52; // ground-horizon behind lake
-    function drawMountain(x, w, peakY, c1, c2) {
-      const steps = Math.round(w / px);
-      for (let i = 0; i < steps; i++) {
-        const t = i / steps;
-        const yy = peakY + Math.abs(t - 0.5) * 2 * (mz - peakY);
-        const col = ((i / 3) % 2) ? c1 : c2;
-        ctx.fillStyle = col;
-        ctx.fillRect(Math.round(x + i * px), Math.round(yy), px, Math.round(mz - yy));
-      }
-    }
-    drawMountain(W * 0.02, W * 0.24, H * 0.16, '#5a6d99', '#7a8db5');
-    drawMountain(W * 0.2, W * 0.32, H * 0.08, '#4f6188', '#6d7fab');
-    drawMountain(W * 0.55, W * 0.34, H * 0.12, '#6e7fa5', '#5a6d99');
-    drawMountain(W * 0.84, W * 0.2, H * 0.2, '#4f6188', '#6e7fa5');
-    // Cherry blossom tints on mountain sides (reference: pink-dusted peaks)
-    drawMountain(W * 0.32, W * 0.26, H * 0.22, '#9d6a8f', '#b5879f');
-    drawMountain(W * 0.68, W * 0.26, H * 0.26, '#a87088', '#c08fa5');
-
-    // ── Cherry blossom trees (left & right) ──
-    function drawCherryTree(tx, ty, scale) {
-      const s = Math.max(8, Math.round(px * scale));
-      // trunk
-      for (let i = 0; i < 4; i++) mcRect(ctx, tx, ty - i * s, s, '#6b4a30');
-      mcRect(ctx, tx - s, ty - 3 * s, s, '#6b4a30');
-      mcRect(ctx, tx + s, ty - 2 * s, s, '#6b4a30');
-      // canopy (pink blossoms)
-      const pink = ['#ff9ec7', '#ffb6d5', '#ffa5cc', '#ff8fbf', '#ffc4dd'];
-      const canopy = [
-        [-3, -5], [-2, -5], [-1, -5], [0, -5], [1, -5], [2, -5], [3, -5],
-        [-3, -4], [-2, -4], [-1, -4], [0, -4], [1, -4], [2, -4], [3, -4],
-        [-4, -3], [-3, -3], [-2, -3], [-1, -3], [0, -3], [1, -3], [2, -3], [3, -3], [4, -3],
-        [-4, -2], [-3, -2], [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], [3, -2], [4, -2]
-      ];
-      canopy.forEach(([bx, by], idx) => {
-        mcRect(ctx, tx + bx * s, ty + by * s, s, pink[idx % pink.length]);
-      });
-    }
-    drawCherryTree(W * 0.07, mz + px * 2, 4.2);
-    drawCherryTree(W * 0.16, mz + px * 3, 3);
-    drawCherryTree(W * 0.88, mz + px * 2, 3.4);
-    drawCherryTree(W * 0.96, mz + px * 3, 2.4);
-
-    // ── Glassy lake (center background, reflective blue) ──
-    const lakeY = mz, lakeH = H * 0.12;
-    const lake = ctx.createLinearGradient(0, lakeY, 0, lakeY + lakeH);
-    lake.addColorStop(0, '#7ec8e3'); lake.addColorStop(0.5, '#5fb3d9'); lake.addColorStop(1, '#4a9bc9');
-    ctx.fillStyle = lake;
-    ctx.fillRect(W * 0.28, lakeY, W * 0.5, lakeH);
-    // sun reflection on the lake
-    ctx.fillStyle = 'rgba(255,240,200,.6)';
-    for (let i = 0; i < 5; i++) mcRect(ctx, sunX - 22 + i * 14, lakeY + 8 + (i % 2) * 10, 10);
-
-    // ── Grassy field (foreground, deep green) ──
-    const FLOOR = H - 130;
-    const groundTop = mz + lakeH;
-    ctx.fillStyle = '#4a8f2f'; ctx.fillRect(0, groundTop, W, H - groundTop);
-    for (let gx = 0; gx < W; gx += px) {
-      ctx.fillStyle = ((gx / px) % 2) ? '#53a43a' : '#418529';
-      ctx.fillRect(gx, groundTop, px, px);
-    }
-    // grass blades
-    for (let i = 0; i < 14; i++) {
-      const gx = ((Math.sin(i * 33.3) + 1) / 2) * W;
-      mcRect(ctx, gx, groundTop - px, px * 2, '#66b94a');
-      mcRect(ctx, gx + px, groundTop - px * 2, px, '#75c958');
-    }
-    // wooden path tiles in front of the podium
-    const pathW = W * 0.62, pathX = (W - pathW) / 2;
-    for (let i = 0; i < 8; i++) {
-      ctx.fillStyle = (i % 2) ? '#8a6436' : '#9c7444';
-      mcRect(ctx, pathX + i * (pathW / 8), FLOOR + 4, pathW / 8 - 2, px * 2);
-    }
-
-    // ── Lanterns glowing at the base of the podium (5 lanterns like reference) ──
-    const lanternY = FLOOR - px * 16;
-    const lanternPos = [W * 0.105, W * 0.345, W * 0.59, W * 0.745, W * 0.885];
-    lanternPos.forEach((lx, i) => {
-      const ls = Math.max(4, px * 3);
-      // wide warm glow
-      const lg = ctx.createRadialGradient(lx, lanternY + ls, ls * 0.4, lx, lanternY + ls, ls * 5);
-      lg.addColorStop(0, 'rgba(255,215,130,.85)'); lg.addColorStop(0.5, 'rgba(255,180,90,.3)'); lg.addColorStop(1, 'rgba(255,160,70,0)');
-      ctx.fillStyle = lg; ctx.fillRect(lx - ls * 5, lanternY - ls * 3, ls * 10, ls * 9);
-      // lantern body (dark iron frame + warm glowing core)
-      ctx.fillStyle = '#262626';
-      mcRect(ctx, lx - ls * 0.8, lanternY, ls * 1.6, ls * 1.6);
-      mcRect(ctx, lx - ls * 0.45, lanternY - ls * 0.7, ls * 0.9, ls * 0.7);
-      ctx.fillStyle = '#ffd27a';
-      mcRect(ctx, lx - ls * 0.4, lanternY + ls * 0.3, ls * 0.8, ls * 0.8);
-      ctx.fillStyle = '#b8860b';
-      mcRect(ctx, lx - ls * 0.9, lanternY + ls * 1.4, ls * 1.8, ls * 0.4);
-    });
-
-    // ── Title (with a small trophy crown beside it, matching reference) ──
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 40px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = 'rgba(30,40,70,.55)'; ctx.lineWidth = 5;
-    ctx.strokeText(ev.title || 'Event Winners', W / 2, 72);
-    ctx.fillText(ev.title || 'Event Winners', W / 2, 72);
-    ctx.font = '600 19px "Segoe UI", Arial, sans-serif';
-    ctx.strokeStyle = 'rgba(30,40,70,.55)';
-    ctx.strokeText('Official Podium · ProMcBot', W / 2, 104);
-    ctx.fillStyle = '#fdeecd';
-    ctx.fillText('Official Podium · ProMcBot', W / 2, 104);
-
-    // ══════════════════════════════════════════════════════════
-    // REAL MINECRAFT-BLOCK PODIUM — stone / golden oak / dark oak
-    // ══════════════════════════════════════════════════════════
-    const cols = [
-      { place: 2, x: W * 0.115, w: W * 0.235, top: FLOOR - 180, label: '2', base: '#9aa2ad', topBlock: '#c2cad4', sign: '#8a919c' },
-      { place: 1, x: W * 0.382, w: W * 0.235, top: FLOOR - 310, label: '1', base: '#c8a24a', topBlock: '#e3c066', sign: '#a8842e' },
-      { place: 3, x: W * 0.65, w: W * 0.235, top: FLOOR - 120, label: '3', base: '#5e4128', topBlock: '#7a5738', sign: '#452f1d' }
-    ];
-    // Floor shadow line
-    ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(W * 0.06, FLOOR + 2); ctx.lineTo(W * 0.94, FLOOR + 2); ctx.stroke();
-
-    cols.forEach(c => {
-      // Soft shadow under the block
-      const fg = ctx.createRadialGradient(c.x + c.w / 2, FLOOR + 4, 4, c.x + c.w / 2, FLOOR + 4, c.w * 0.65);
-      fg.addColorStop(0, 'rgba(0,0,0,.5)'); fg.addColorStop(1, 'transparent');
-      ctx.fillStyle = fg; ctx.fillRect(c.x - c.w * 0.15, FLOOR - 10, c.w * 1.3, 34);
-
-      // ── Block columns (MC brick textures) ──
-      const bpx = Math.max(4, Math.round(c.w / 30));
-      const rows = Math.round((FLOOR - c.top) / bpx);
-      for (let r = 0; r < rows; r++) {
-        for (let k = 0; k < Math.round(c.w / bpx); k++) {
-          const n = Math.sin((c.x + k * bpx) * 13.7 + (c.top + r * bpx) * 19.3) * 43758.5453 % 1;
-          const rowBase = (r / 3) % 2 === 0 ? c.base : shadeColor(c.base, -10);
-          const shift = n > 0.5 ? 10 : n > -0.4 ? 0 : -10;
-          ctx.fillStyle = shadeColor(rowBase, shift);
-          ctx.fillRect(Math.round(c.x + k * bpx), Math.round(c.top + r * bpx), bpx, bpx);
-          // mortar line
-          if (r % 3 === 0) ctx.fillRect(Math.round(c.x + k * bpx), Math.round(c.top + r * bpx), bpx, 1);
-        }
-      }
-      // Column top face (lighter slab)
-      ctx.fillStyle = c.topBlock;
-      ctx.fillRect(c.x, c.top, c.w, bpx * 2);
-      ctx.fillStyle = shadeColor(c.topBlock, 12);
-      ctx.fillRect(c.x, c.top, c.w, Math.round(bpx * 0.6));
-
-      // ── Rank sign plate (wooden plaque with the number) ──
-      const signW = bpx * 13, signH = bpx * 8.5;
-      const signX = c.x + c.w / 2 - signW / 2;
-      const signY = c.top + (FLOOR - c.top) / 2 - signH / 2;
-      // metal border plate (prominent, like reference)
-      ctx.fillStyle = '#111111';
-      ctx.fillRect(Math.round(signX - bpx * 0.5), Math.round(signY - bpx * 0.5), signW + bpx, signH + bpx);
-      ctx.fillStyle = c.sign;
-      ctx.fillRect(Math.round(signX), Math.round(signY), signW, signH);
-      // bevel highlights
-      ctx.fillStyle = 'rgba(255,255,255,.28)';
-      ctx.fillRect(Math.round(signX), Math.round(signY), signW, Math.round(bpx * 0.5));
-      ctx.fillRect(Math.round(signX), Math.round(signY), Math.round(bpx * 0.5), signH);
-      ctx.fillStyle = 'rgba(0,0,0,.3)';
-      ctx.fillRect(Math.round(signX), Math.round(signY + signH - bpx * 0.5), signW, Math.round(bpx * 0.5));
-      ctx.fillRect(Math.round(signX + signW - bpx * 0.5), Math.round(signY), Math.round(bpx * 0.5), signH);
-      ctx.font = 'bold 72px "Segoe UI", Arial, sans-serif';
-      ctx.fillStyle = 'rgba(0,0,0,.5)';
-      ctx.fillText(c.label, signX + signW / 2, signY + signH / 2 + 20);
-      ctx.fillStyle = '#f4ecd8';
-      ctx.fillText(c.label, signX + signW / 2 - 2, signY + signH / 2 + 18);
-    });
+    const cols = [BLOCKS[2], BLOCKS[1], BLOCKS[3]];
 
     // ── Winners ──
     // Pose per rank: 1st = jump (celebrating), 2nd = side-left, 3rd = front — same as the reference image
@@ -684,43 +504,44 @@
     const winners = (ev.winners || []).slice().sort((a, b) => (a.rank || 9) - (b.rank || 9)).slice(0, 3);
     const colByPlace = { 1: cols[1], 2: cols[0], 3: cols[2] };
 
-    // Resolve skins in parallel
+    // Resolve skins in parallel — mc-heads accepts either uuid or name
     const resolved = await Promise.all(winners.map(async w => {
       const skin = await loadSkinHead(w.name);
-      return { ...w, uuid: skin ? skin.uuid : null, resolvedName: skin ? skin.name : w.name };
+      const ident = (skin && skin.uuid) ? skin.uuid : w.name;
+      return { ...w, ident, uuid: skin ? skin.uuid : null, resolvedName: skin ? skin.name : w.name };
     }));
 
     // Draw each winner: player standing ON his block, stats card in front of the block
     await Promise.all(resolved.map(async w => {
       const c = colByPlace[w.rank];
       if (!c) return;
-      const cx = c.x + c.w / 2;
+      const cx = c.cx;
       const feetY = c.top; // stands on top of block
 
-      // Player image (full body, pose per rank) — big and prominent like the reference
-      let playerW = 220, playerH = 270;
-      let skinImg = null;
-      const pose = POSE[w.rank] || '2x';
-      if (w.uuid) {
+      // Player image (full body, pose per rank) — sized to the template blocks
+      // A standing MC player is 2 blocks tall; one block ≈ 62px in the 1536-wide template.
+      const playerH = Math.round(2.6 * 62 * T);
+      let playerW = playerH, skinImg = null;
+      const pose = POSE[w.rank] || 'front';
+      if (w.ident) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         await new Promise(res => {
           img.onload = () => res();
           img.onerror = () => res();
-          img.src = `https://mc-heads.net/body/${w.uuid}/${pose}.png`;
+          img.src = `https://mc-heads.net/body/${encodeURIComponent(w.ident)}/${pose}.png`;
         });
         skinImg = img;
         if (img.naturalWidth > 0) {
-          playerH = 270;
           playerW = Math.round(img.naturalWidth / img.naturalHeight * playerH);
         }
       }
 
-      // Champion: tiny floating crown above the head (reference keeps a subtle crown)
-      if (w.rank === 1 && skinImg) {
-        const crownW = Math.min(playerW * 0.72, 86);
-        const crownY = feetY - playerH - crownW * 0.55 - 10;
-        drawCrown(ctx, cx - crownW / 2, crownY, crownW);
+      // Champion: Minecraft-vanilla crown (gold blocks) floating above the head
+      if (w.rank === 1) {
+        const crownW = Math.min(playerW * 0.9, Math.round(110 * T));
+        const crownY = feetY - playerH - crownW * 0.55 - Math.round(14 * T);
+        drawMcCrown(ctx, cx - crownW / 2, crownY, crownW);
       }
 
       // Draw player on his block with a soft shadow under the feet
@@ -763,11 +584,11 @@
         ctx.fillText('MC', cx, feetY - playerH / 2);
       }
 
-      // ── Stats glass card: sits in FRONT of the block, above the floor (like the reference) ──
+      // ── Stats glass card: sits in FRONT of the block, above the floor ──
       const cardW = Math.min(W * 0.23, 260);
       const cardH = 94;
       const cardX = cx - cardW / 2;
-      const cardY = FLOOR - cardH - 16;
+      const cardY = H - Math.round(130 * T) - cardH - 16;
       drawGlassCard(ctx, cardX, cardY, cardW, cardH, w, c);
     }));
 
@@ -785,29 +606,32 @@
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
-  function drawCrown(ctx, x, y, w) {
-    const h = w * 0.55;
+  // Minecraft-vanilla crown: built from gold-block units (like a gold block / ingot crown)
+  function drawMcCrown(ctx, x, y, w) {
+    const s = Math.max(2, Math.round(w / 6)); // block unit
     ctx.save();
-    const cg = ctx.createLinearGradient(x, y, x, y + h);
-    cg.addColorStop(0, '#ffe98a'); cg.addColorStop(1, '#d9a415');
-    ctx.fillStyle = cg;
-    ctx.beginPath();
-    ctx.moveTo(x, y + h);
-    ctx.lineTo(x, y + h * 0.45);
-    ctx.lineTo(x + w * 0.18, y + h * 0.72);
-    ctx.lineTo(x + w * 0.5, y + h * 0.15);
-    ctx.lineTo(x + w * 0.82, y + h * 0.72);
-    ctx.lineTo(x + w, y + h * 0.45);
-    ctx.lineTo(x + w, y + h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#b8860b'; ctx.lineWidth = 2; ctx.stroke();
-    // Gems
-    ctx.fillStyle = '#e74c3c';
-    ctx.beginPath(); ctx.arc(x + w * 0.5, y + h * 0.55, w * 0.075, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#3498db';
-    ctx.beginPath(); ctx.arc(x + w * 0.22, y + h * 0.6, w * 0.055, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(x + w * 0.78, y + h * 0.6, w * 0.055, 0, Math.PI * 2); ctx.fill();
+    ctx.imageSmoothingEnabled = false;
+    // base band (2 units wide, 1 unit tall)
+    ctx.fillStyle = '#f5cc2f';
+    ctx.fillRect(x, y + s * 2, w, s);
+    ctx.fillStyle = '#d4a017';
+    ctx.fillRect(x, y + s * 3 - 1, w, 1);
+    // three points (1 unit each, with gaps)
+    for (let i = 0; i < 3; i++) {
+      const bx = x + w * (i * 0.5) - s * 0.15;
+      ctx.fillStyle = '#f5cc2f';
+      ctx.fillRect(Math.round(bx), y + s, Math.round(s * 1.3), s);
+      ctx.fillStyle = '#d4a017';
+      ctx.fillRect(Math.round(bx), y + s * 2 - 1, Math.round(s * 1.3), 1);
+      // top nuggets
+      ctx.fillStyle = '#ffe27a';
+      ctx.fillRect(Math.round(bx + 1), y + s - 1, Math.max(2, Math.round(s * 0.55)), 1);
+    }
+    // gem dots (rubies) on the band
+    ctx.fillStyle = '#c0392b';
+    for (let i = 0; i < 2; i++) {
+      ctx.fillRect(Math.round(x + w * (0.25 + i * 0.5)) - 1, y + s * 2 + Math.round(s * 0.15), 2, 2);
+    }
     ctx.restore();
   }
 
