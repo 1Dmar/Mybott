@@ -156,11 +156,11 @@
     .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; margin-bottom: 22px; }
     .stat {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
-      padding: 18px 18px;
+      padding: 18px 18px; min-width: 0; overflow: hidden;
     }
     .stat i { font-size: 18px; color: var(--primary); margin-bottom: 8px; display: block; }
-    .stat .v { font-size: 24px; font-weight: 800; color: var(--text); }
-    .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: .2px; }
+    .stat .v { font-size: 24px; font-weight: 800; color: var(--text); overflow-wrap: anywhere; word-break: break-word; line-height: 1.15; }
+    .stat .l { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: .2px; overflow-wrap: anywhere; }
 
     /* actions */
     .actions { display: flex; gap: 11px; flex-wrap: wrap; margin-bottom: 22px; }
@@ -214,6 +214,15 @@
       .hero-content { padding: 40px 20px 34px; }
       .topbar { padding: 0 1rem; }
       .topbar-right .back-btn span { display: none; }
+      .actions { justify-content: center; }
+    }
+    @media (max-width: 480px) {
+      .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+      .stat { padding: 14px 12px; }
+      .stat .v { font-size: 19px; }
+      .stat .l { font-size: 11px; }
+      .server-name { font-size: 19px; }
+      .players-list { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -230,7 +239,7 @@
         <option value="es">🇪🇸 ES</option>
       </select>
       <div class="icon-btn" id="darkLight" title="Toggle theme"><i class='bx bx-sun'></i></div>
-      <a class="back-btn" href="/servers"><i class='bx bx-left-arrow-alt'></i><span id="backText">Back</span></a>
+      <a class="back-btn" href="/guilds"><i class='bx bx-left-arrow-alt'></i><span id="backText">Back</span></a>
     </div>
   </div>
 
@@ -259,7 +268,7 @@
         growth: 'Player growth · last 48h', peaks: 'Peak hours (UTC)',
         join: 'Join Discord', copy_ip: 'Copy server IP', copied: 'IP copied!',
         offline: 'Offline', online: 'Online', top_badge: 'Bumped server',
-        featured_badge: 'Featured', no_players: 'No players online right now',
+        featured_badge: 'Featured', no_players: 'No players online right now', players_online_now: 'players online',
         vote_btn: 'Vote for this server', boost_btn: 'Boost 24h',
         voted_ok: 'Thanks for your vote! You can vote again in 12 hours.',
         voted_already: 'You already voted for this server. You can vote again in 12 hours.',
@@ -284,7 +293,7 @@
         growth: 'نمو اللاعبين · آخر 48 ساعة', peaks: 'ساعات الذروة (UTC)',
         join: 'انضم للديسكورد', copy_ip: 'نسخ آي بي السيرفر', copied: 'تم النسخ!',
         offline: 'غير متصل', online: 'متصل', top_badge: 'سيرفر مرفوع',
-        featured_badge: 'مميز', no_players: 'لا يوجد لاعبون متصلون حاليًا',
+        featured_badge: 'مميز', no_players: 'لا يوجد لاعبون متصلون حاليًا', players_online_now: 'لاعب متصل',
         vote_btn: 'صوّت لهذا السيرفر', boost_btn: 'تعزيز 24 ساعة',
         voted_ok: 'شكرًا لتصويتك! يمكنك التصويت مجددًا خلال 12 ساعة.',
         voted_already: 'لقد صوّت لهذا السيرفر من قبل. يمكنك التصويت مجددًا خلال 12 ساعة.',
@@ -309,7 +318,7 @@
         growth: 'Crecimiento de jugadores · últimas 48h', peaks: 'Horas pico (UTC)',
         join: 'Unirse a Discord', copy_ip: 'Copiar IP del servidor', copied: '¡IP copiada!',
         offline: 'Desconectado', online: 'En línea', top_badge: 'Servidor destacado',
-        featured_badge: 'Destacado', no_players: 'No hay jugadores en línea ahora mismo',
+        featured_badge: 'Destacado', no_players: 'No hay jugadores en línea ahora mismo', players_online_now: 'jugadores en línea',
         vote_btn: 'Votar por este servidor', boost_btn: 'Impulso 24h',
         voted_ok: '¡Gracias por tu voto! Puedes votar de nuevo en 12 horas.',
         voted_already: 'Ya votaste por este servidor. Puedes votar de nuevo en 12 horas.',
@@ -464,10 +473,17 @@
             const r = await fetch('https://api.mcsrvstat.us/3/' + server.javaIP + ':' + server.javaPort);
             const dd = await r.json();
             const list = dd.players?.sample || [];
-            here.innerHTML = list.length
-              ? '<div class="players-list">' + list.map(p =>
-                  `<div class="player-chip"><img src="https://mc-heads.net/avatar/${encodeURIComponent(p)}/26">${escapeHtml(p)}</div>`).join('') + '</div>'
-              : `<div class="empty">${svT('no_players')}</div>`;
+            const onlineCount = dd.players?.online ?? 0;
+            let listHtml = '';
+            if (list.length) {
+              listHtml = '<div class="players-list">' + list.map(p =>
+                `<div class="player-chip"><img src="https://mc-heads.net/avatar/${encodeURIComponent(p)}/26">${escapeHtml(p)}</div>`).join('') + '</div>';
+            } else if (onlineCount > 0) {
+              listHtml = '<div class="empty">' + escapeHtml(String(onlineCount)) + ' ' + svT('players_online_now') + '</div>';
+            } else {
+              listHtml = '<div class="empty">' + svT('no_players') + '</div>';
+            }
+            here.innerHTML = listHtml;
           } catch (_) { here.innerHTML = `<div class="empty">${svT('no_players')}</div>`; }
         }
         })();
@@ -485,14 +501,12 @@
           y: { ticks: { color: tickColor, font: { size: 11 } }, grid: { color: gridColor } }
         }
       };
-      const gc = document.getElementById('growthChart');
-      if (gc) gc.remove();
-      const pc = document.getElementById('peakChart');
-      if (pc) pc.remove();
-      const growthArea = document.getElementById('growthTitle').parentElement.querySelector('.chart-wrap');
-      const peakArea = document.getElementById('peakTitle').parentElement.querySelector('.chart-wrap');
-      growthArea.insertAdjacentHTML('beforeend', '<canvas id="growthChart"></canvas>');
-      peakArea.insertAdjacentHTML('beforeend', '<canvas id="peakChart"></canvas>');
+      const growthCanvas = document.getElementById('growthChart');
+      const peakCanvas = document.getElementById('peakChart');
+      if (!growthCanvas || !peakCanvas) return;
+      // destroy old chart instances to prevent canvas reuse errors
+      Chart.getChart?.(growthCanvas)?.destroy();
+      Chart.getChart?.(peakCanvas)?.destroy();
 
       if (growth && growth.length > 1) {
         document.getElementById('growthEmpty').style.display = 'none';

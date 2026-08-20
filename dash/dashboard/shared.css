@@ -1,7 +1,7 @@
 /*
  * ProMcBot Dashboard - Shared Stylesheet
  * Unified design system for all dashboard pages
- * Version: 17.0
+ * Version: 18.0
  */
 
 /* ============================================================
@@ -1896,6 +1896,13 @@ html[dir="rtl"] .toast-container { right: auto; left: 24px; }
 }
 @media screen and (max-width: 640px) {
   .card > .stat-cards { grid-template-columns: 1fr; }
+  .stat-cards { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media screen and (max-width: 400px) {
+  .stat-card { padding: 14px 14px; gap: 12px; }
+  .stat-card-value { font-size: 21px; }
+  .stat-value { font-size: 17px; }
+  .stat-card-label { font-size: 12px; }
 }
 .stat-card {
   background: var(--surface);
@@ -1904,6 +1911,29 @@ html[dir="rtl"] .toast-container { right: auto; left: 24px; }
   padding: 22px 24px;
   display: flex; align-items: center; gap: 16px;
   transition: var(--transition-base);
+  min-width: 0;
+  overflow: hidden;
+}
+.stat-info {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.stat-card-value, .stat-value {
+  font-weight: 700;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.15;
+  max-width: 100%;
+}
+.stat-card-label, .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.35;
+  margin-top: 4px;
+  max-width: 100%;
 }
 .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .stat-card-icon {
@@ -1918,9 +1948,10 @@ html[dir="rtl"] .toast-container { right: auto; left: 24px; }
 .stat-card-icon.purple { background: rgba(99,91,255,0.12);  color: var(--accent); }
 .stat-card-icon.orange { background: rgba(245,158,11,0.12); color: var(--warning); }
 .stat-card-icon.gold { background: rgba(255,215,0,0.12); color: #ffd700; }
-.stat-card-value { font-size: 28px; font-weight: 700; color: var(--text); line-height: 1; }
-.stat-card-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-
+.stat-card-value { font-size: 28px; }
+@media screen and (max-width: 480px) {
+  .stat-card-value { font-size: 21px; }
+}
 /* ── Timeline (logs) ── */
 .timeline { position: relative; padding-left: 32px; }
 .timeline::before {
@@ -2223,7 +2254,8 @@ html[dir="rtl"] .form-grid { direction: rtl; }
 .lang-select {
     appearance: none;
     -webkit-appearance: none;
-    background: var(--primary-light, rgba(64,112,244,0.12));
+    -moz-appearance: none;
+    background: var(--surface, rgba(255,255,255,0.05));
     border: 1px solid var(--border);
     color: var(--text, #e2e8f0);
     border-radius: var(--radius-md, 12px);
@@ -2249,4 +2281,8 @@ html[dir="rtl"] .form-grid { direction: rtl; }
 html[dir="rtl"] .lang-select {
     background-position: left 8px center;
     padding: 6px 12px 6px 26px;
+}
+@media screen and (max-width: 480px) {
+    .lang-select { font-size: 12px; padding: 6px 22px 6px 10px; max-width: 96px; }
+    html[dir="rtl"] .lang-select { padding: 6px 10px 6px 22px; }
 }
