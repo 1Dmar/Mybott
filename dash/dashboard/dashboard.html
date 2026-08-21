@@ -9,7 +9,7 @@
   <style>
     /* ── Elite Profile Page Styles ── */
     .profile-banner {
-      background: linear-gradient(135deg, #1e1b4b 0%, #311026 50%, #111827 100%);
+      background: var(--gradient-primary);
       border: 1px solid var(--border);
       border-radius: var(--radius-xl);
       padding: 40px;
@@ -29,7 +29,7 @@
       width: 300px;
       height: 300px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 81, 47, 0.25) 0%, transparent 70%);
+      background: radial-gradient(circle, var(--primary-light) 0%, transparent 70%);
       top: -100px;
       right: -60px;
       pointer-events: none;
@@ -46,7 +46,7 @@
       border-radius: 50%;
       border: 4px solid rgba(255, 255, 255, 0.2);
       object-fit: cover;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+      box-shadow: var(--shadow-xl);
     }
 
     .online-dot {
@@ -56,9 +56,9 @@
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background: #10B981;
-      border: 4px solid #111827;
-      box-shadow: 0 0 12px #10B981;
+      background: var(--success);
+      border: 4px solid var(--bg);
+      box-shadow: 0 0 12px var(--success);
     }
 
     .profile-info-header {
@@ -79,7 +79,7 @@
     .profile-info-header .badge-verified {
       font-size: 11px;
       background: rgba(16,185,129,0.15);
-      color: #10B981;
+      color: var(--success);
       padding: 4px 12px;
       border-radius: 999px;
       font-weight: 700;
@@ -110,7 +110,7 @@
       font-size: 24px;
       font-weight: 800;
       display: block;
-      color: #fff;
+      color: var(--text);
     }
 
     .profile-stat .lbl {
@@ -168,7 +168,7 @@
 
     /* API card */
     .api-section {
-      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      background: var(--gradient-mc);
       border-radius: var(--radius-xl);
       padding: 32px;
       color: white;
@@ -222,7 +222,7 @@
       padding: 10px 14px;
       font-family: monospace;
       font-size: 14px;
-      color: #fff;
+      color: var(--text);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -253,10 +253,10 @@
     }
 
     .api-btn:hover { background: rgba(255, 255, 255, 0.35); transform: translateY(-2px); }
-    .api-btn.copy  { background: #10B981; }
-    .api-btn.copy:hover { background: #059669; }
-    .api-btn.regen { background: #111827; color: white; }
-    .api-btn.regen:hover { background: #1f2937; }
+    .api-btn.copy  { background: var(--success); }
+    .api-btn.copy:hover { opacity: 0.85; }
+    .api-btn.regen { background: var(--card-2); color: var(--text); border: 1px solid var(--border); }
+    .api-btn.regen:hover { background: var(--surface-2); }
 
     .api-usage {
       display: flex;
@@ -309,7 +309,7 @@
     
     .current-badge {
       font-size: 10px;
-      background: #10B981;
+      background: var(--success);
       color: white;
       padding: 2px 6px;
       border-radius: 4px;
@@ -371,7 +371,7 @@
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -404,11 +404,11 @@
             <span class="lbl">Connected Servers</span>
           </div>
           <div class="profile-stat">
-            <span class="val" id="planBadge" style="color:#10B981">Verified</span>
+            <span class="val" id="planBadge" style="color:var(--success-color)">Verified</span>
             <span class="lbl">Account Status</span>
           </div>
           <div class="profile-stat">
-            <span class="val" style="color:#10B981">Secure</span>
+            <span class="val" style="color:var(--success-color)">Secure</span>
             <span class="lbl">OAuth Status</span>
           </div>
         </div>
@@ -420,7 +420,7 @@
       <!-- Personal Info -->
       <div class="card animated">
         <div class="card-header">
-          <div class="card-icon" style="background:rgba(255,81,47,0.12);color:#FF512F"><i class='bx bx-user-circle'></i></div>
+          <div class="card-icon" style="background:var(--primary-light);color:var(--primary)"><i class='bx bx-user-circle'></i></div>
           <div>
             <div class="card-title">Personal Information</div>
             <div class="card-subtitle">Verified Discord account credentials</div>
@@ -441,7 +441,7 @@
           </div>
           <div class="info-field">
             <div class="info-field-label"><i class='bx bx-shield-alt-2'></i> Session Security</div>
-            <div class="info-field-value"><span>TLS 1.3 Encrypted</span> <i class='bx bx-check-shield' style="color:#10B981;font-size:18px"></i></div>
+            <div class="info-field-value"><span>TLS 1.3 Encrypted</span> <i class='bx bx-check-shield' style="color:var(--success-color);font-size:18px"></i></div>
           </div>
         </div>
       </div>
@@ -449,7 +449,7 @@
       <!-- Quick Links & Actions -->
       <div class="card animated">
         <div class="card-header">
-          <div class="card-icon" style="background:rgba(16,185,129,0.12);color:#10B981"><i class='bx bx-bolt-circle'></i></div>
+          <div class="card-icon" style="background:var(--success-light);color:var(--success)"><i class='bx bx-bolt-circle'></i></div>
           <div>
             <div class="card-title">Quick Actions</div>
             <div class="card-subtitle">Immediate control center shortcuts</div>
@@ -457,13 +457,13 @@
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <a href="/my-servers" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-server' style="font-size:18px;color:#FF512F"></i> Manage Connected Servers
+            <i class='bx bx-server' style="font-size:18px;color:var(--primary)"></i> Manage Connected Servers
           </a>
           <a href="/server-status" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;">
-            <i class='bx bx-pulse' style="font-size:18px;color:#3b82f6"></i> Service & Server Status
+            <i class='bx bx-pulse' style="font-size:18px;color:var(--blue-color)"></i> Service & Server Status
           </a>
           <a href="/invitebot" class="btn btn-secondary" style="width:100%;justify-content:flex-start;padding:12px 16px;" target="_blank">
-            <i class='bx bx-cube-alt' style="font-size:18px;color:#10B981"></i> Invite ProMcBot to New Server
+            <i class='bx bx-cube-alt' style="font-size:18px;color:var(--success)"></i> Invite ProMcBot to New Server
           </a>
         </div>
       </div>
@@ -474,7 +474,7 @@
       <!-- Banner Customization -->
       <div class="card animated">
         <div class="card-header">
-          <div class="card-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><i class='bx bx-palette'></i></div>
+          <div class="card-icon" style="background:var(--blue-light);color:var(--blue-color)"><i class='bx bx-palette'></i></div>
           <div>
             <div class="card-title">تخصيص البنر (Banner Customization)</div>
             <div class="card-subtitle">تغيير مظهر ملفك الشخصي للآخرين</div>
@@ -503,7 +503,7 @@
       <!-- Security & Sessions -->
       <div class="card animated">
         <div class="card-header">
-          <div class="card-icon" style="background:rgba(239,68,68,0.12);color:#ef4444"><i class='bx bx-shield-quarter'></i></div>
+          <div class="card-icon" style="background:var(--danger-light);color:var(--danger-color)"><i class='bx bx-shield-quarter'></i></div>
           <div>
             <div class="card-title">إدارة الجلسات والأمان (Security & Sessions)</div>
             <div class="card-subtitle">الأجهزة النشطة حالياً المرتبطة بحسابك</div>
@@ -516,7 +516,7 @@
             </div>
           </div>
         </div>
-        <button id="revokeOthersBtn" class="btn btn-secondary" style="width:100%;color:var(--danger);border-color:var(--danger)">تسجيل الخروج من جميع الأجهزة الأخرى</button>
+        <button id="revokeOthersBtn" class="btn btn-secondary" style="width:100%;color:var(--danger-color);border-color:var(--danger-color)">تسجيل الخروج من جميع الأجهزة الأخرى</button>
       </div>
     </div>
 
@@ -682,57 +682,91 @@
 
       loadProfile();
       loadSessions();
-    });
-  </script>
-</body>  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Load server count
-    fetch('/api/guilds').then(r => r.json()).then(d => {
-      if (d.success) document.getElementById('serverCount').textContent = d.guilds.length;
-    }).catch(() => {
-      document.getElementById('serverCount').textContent = '4';
-    });
+      // Additional UI logic
+      document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Load membership plan
-    fetch('/api/user/membership').then(r => r.json()).then(d => {
-      if (d.success) {
-        document.getElementById('planBadge').textContent =
-          d.membership.plan === 'premium' ? 'Premium' : 'Verified';
+      // Load server count
+      fetch('/api/guilds').then(r => r.json()).then(d => {
+        if (d.success) document.getElementById('serverCount').textContent = d.guilds.length;
+      }).catch(() => {
+        const el = document.getElementById('serverCount');
+        if (el) el.textContent = '4';
+      });
+
+      // Load membership plan
+      fetch('/api/user/membership').then(r => r.json()).then(d => {
+        if (d.success) {
+          const el = document.getElementById('planBadge');
+          if (el) el.textContent = d.membership.plan === 'premium' ? 'Premium' : 'Verified';
+        }
+      }).catch(() => {
+        const el = document.getElementById('planBadge');
+        if (el) el.textContent = 'Verified';
+      });
+
+      // API Key toggle visibility
+      let keyVisible = false;
+      const keyValEl = document.getElementById('apiKeyVal');
+      const visIconEl = document.getElementById('visIcon');
+      
+      // Initialize as hidden
+      if (keyValEl) keyValEl.textContent = 'pmb_live_sk_••••••••••••••••••••••••••••••••';
+      if (visIconEl) visIconEl.className = 'bx bx-hide';
+
+      const toggleBtn = document.getElementById('toggleKeyVis');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', async function() {
+          keyVisible = !keyVisible;
+          if (keyVisible) {
+            try {
+              const res = await fetch('/api/user/api-key');
+              const data = await res.json();
+              if (data.success) {
+                if (keyValEl) keyValEl.textContent = data.apiKey;
+                if (visIconEl) visIconEl.className = 'bx bx-show';
+              }
+            } catch (e) { window.showToast?.('فشل تحميل المفتاح', 'error'); }
+          } else {
+            if (keyValEl) keyValEl.textContent = 'pmb_live_sk_••••••••••••••••••••••••••••••••';
+            if (visIconEl) visIconEl.className = 'bx bx-hide';
+          }
+        });
       }
-    }).catch(() => {
-      document.getElementById('planBadge').textContent = 'Verified';
-    });
 
-    // API Key toggle visibility
-    let keyVisible = true;
-    const realKey = 'pmb_live_sk_89f7a4b2e1d0c39485761029384756bf';
-    document.getElementById('toggleKeyVis').addEventListener('click', function() {
-      keyVisible = !keyVisible;
-      const valEl = document.getElementById('apiKeyVal');
-      const iconEl = document.getElementById('visIcon');
-      if (keyVisible) {
-        valEl.textContent = realKey;
-        iconEl.className = 'bx bx-show';
-      } else {
-        valEl.textContent = 'pmb_live_sk_••••••••••••••••••••••••••••••••';
-        iconEl.className = 'bx bx-hide';
+      // API Key copy
+      const copyBtn = document.getElementById('copyKey');
+      if (copyBtn) {
+        copyBtn.addEventListener('click', async function() {
+          try {
+            const res = await fetch('/api/user/api-key');
+            const data = await res.json();
+            if (data.success) {
+              window.copyToClipboard(data.apiKey, 'API Key');
+              const orig = this.innerHTML;
+              this.innerHTML = '<i class="bx bx-check"></i> Key Copied!';
+              setTimeout(() => this.innerHTML = orig, 2000);
+            }
+          } catch (e) { window.showToast?.('فشل نسخ المفتاح', 'error'); }
+        });
       }
-    });
 
-    // API Key copy
-    document.getElementById('copyKey').addEventListener('click', function() {
-      window.copyToClipboard(realKey, 'API Key');
-      const orig = this.innerHTML;
-      this.innerHTML = '<i class="bx bx-check"></i> Key Copied!';
-      setTimeout(() => this.innerHTML = orig, 2000);
-    });
-
-    // API Key regen
-    document.getElementById('regenKey').addEventListener('click', function() {
-      window.showToast('New secure API key generated successfully!', 'success');
-      const newKey = 'pmb_live_sk_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-      document.getElementById('apiKeyVal').textContent = newKey;
+      // API Key regen
+      const regenBtn = document.getElementById('regenKey');
+      if (regenBtn) {
+        regenBtn.addEventListener('click', async function() {
+          if (confirm('هل أنت متأكد من رغبتك في إنشاء مفتاح جديد؟ المفتاح القديم سيتوقف عن العمل.')) {
+            try {
+              const res = await fetch('/api/user/api-key/regen', { method: 'POST' });
+              const data = await res.json();
+              if (data.success) {
+                window.showToast('تم إنشاء مفتاح جديد بنجاح!', 'success');
+                if (keyVisible && keyValEl) keyValEl.textContent = data.apiKey;
+              }
+            } catch (e) { window.showToast?.('فشل إنشاء المفتاح', 'error'); }
+          }
+        });
+      }
     });
   </script>
 </body>

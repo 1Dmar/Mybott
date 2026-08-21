@@ -829,5 +829,6 @@
     SUPPORTED, DICT,
     get, setLanguage, applyTranslations, initLanguage,
     getLangCookie, setLangCookie,
+    updatePage: applyTranslations
   };
 })();

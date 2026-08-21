@@ -31,15 +31,15 @@
           <span class="notification-badge" id="notifBadge" style="display:none">0</span>
         </div>
         <div class="dropdown-content notification-dropdown" id="notificationDropdown">
-          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title"><span></div>
+          <div class="dropdown-header"><i class='bx bx-bell'></i> <span data-i18n="not.title"></span></div>
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -48,12 +48,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
-          <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="not.my_profile"><span></a>
-          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="not.my_servers"><span></a>
+          <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="not.my_profile"></span></a>
+          <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="not.my_servers"></span></a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="not.logout"><span></a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout"></span></a>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -73,7 +73,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="not.overview"><span>
+            <a href="/my-servers" data-i18n="not.servers"></a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"></span> <span class="sep">/</span> <span data-i18n="not.overview"></span>
         </div>
         
         <div class="server-page-header">
@@ -81,7 +81,7 @@
                 <span id="serverIconText">...</span>
             </div>
             <div class="server-page-info">
-                <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server"><h1>
+                <h1 class="server-page-name" id="serverName" data-i18n="pg.loading_server"></h1>
                 <div class="server-page-meta">
                     <div class="bot-status-badge" id="botStatusBadge">
                         <i class='bx bx-loader-alt bx-spin'></i> Loading bot status...
@@ -152,7 +152,7 @@
             <div class="card-header">
                 <div class="card-icon orange"><i class='bx bx-game'></i></div>
                 <div>
-                    <h2X class="card-title" data-i18n="not.mc_server">Minecraft Server</h2>
+                    <h2 class="card-title" data-i18n="not.mc_server">Minecraft Server</h2>
                     <p class="card-subtitle" data-i18n="not.mc_server_sub">Server connection info saved for this Discord server</p>
                 </div>
                 <a href="/my-servers/${guildId}/players" id="mcPlayersLink" class="btn-primary" style="margin-left: auto;"><i class='bx bx-user-plus'></i> <span data-i18n="not.player_lookup">Player Lookup</span></a>
@@ -306,10 +306,11 @@
             const ctx = document.getElementById('activityChart');
             const accent = getComputedStyle(document.body).getPropertyValue('--primary').trim() || '#FF512F';
             const border = getComputedStyle(document.body).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.07)';
+            const textColor = getComputedStyle(document.body).getPropertyValue('--text-muted').trim() || 'rgba(255,255,255,0.55)';
             window.__pmc_chart = new Chart(ctx, {
               type: 'line',
               data: { labels: days.map(x => x.label), datasets: [{ label: 'Events', data: days.map(x => x.count), borderColor: accent, backgroundColor: 'rgba(255,81,47,0.15)', fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: accent }] },
-              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: border }, ticks: { color: 'rgba(255,255,255,0.55)', font: { size: 11 } } }, y: { beginAtZero: true, grid: { color: border }, ticks: { color: 'rgba(255,255,255,0.55)', precision: 0, font: { size: 11 } } } } }
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: border }, ticks: { color: textColor, font: { size: 11 } } }, y: { beginAtZero: true, grid: { color: border }, ticks: { color: textColor, precision: 0, font: { size: 11 } } } } }
             });
           } catch (err) { console.warn('activity chart failed', err); }
         }

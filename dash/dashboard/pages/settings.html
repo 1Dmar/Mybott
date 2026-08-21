@@ -305,8 +305,9 @@
         });
 
         function showToast(msg, type = 'info') {
-            if (typeof window.showNotificationToast === 'function') window.showNotificationToast(msg, type);
-            else Swal ? Swal.fire({ title: msg, timer: 2500, toast: true, position: 'top-end', icon: type === 'success' ? 'success' : type === 'error' ? 'error' : 'info', showConfirmButton: false }) : alert(msg);
+            if (typeof window.showToast === 'function') window.showToast(msg, type);
+            else if (typeof Swal !== 'undefined') Swal.fire({ title: msg, timer: 2500, toast: true, position: 'top-end', icon: type === 'success' ? 'success' : type === 'error' ? 'error' : 'info', showConfirmButton: false });
+            else alert(msg);
         }
 
         load();

@@ -41,9 +41,9 @@
         .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 
         /* Discord preview */
-        .dc-preview { background: #313338; border-radius: 12px; padding: 16px; font-family: 'gg sans', 'Whitney', 'Inter', sans-serif; }
-        .dc-embed { background: #2b2d31; border-left: 4px solid var(--primary); border-radius: 4px; padding: 12px; }
-        .dc-embed-title { font-weight: 700; color: #00a8fc; font-size: 15px; margin-bottom: 8px; }
+        .dc-preview { background: var(--discord-darker); border-radius: 12px; padding: 16px; font-family: 'gg sans', 'Whitney', 'Inter', sans-serif; color: #fff; }
+        .dc-embed { background: var(--discord-dark); border-left: 4px solid var(--primary); border-radius: 4px; padding: 12px; }
+        .dc-embed-title { font-weight: 700; color: var(--blue-color); font-size: 15px; margin-bottom: 8px; }
         .dc-embed-desc { color: #dcddde; font-size: 13px; white-space: pre-wrap; }
         .dc-embed-img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
         .dc-embed-field-name { font-weight: 700; color: #e8eaf6; font-size: 13px; margin-top: 8px; }
@@ -81,11 +81,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -94,12 +94,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -110,7 +110,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -227,7 +227,7 @@
                     err.textContent = 'Unable to load channels: ' + (data.error || 'Bot may be offline');
                     err.style.display = 'block';
                     sel.innerHTML = '<option value="">Failed</option>';
-                    throw new Error('Page guard triggered: missing context.');
+                    throw new Error('Failed to load guild channels.');
                 }
                 err.style.display = 'none';
                 sel.innerHTML = '<option value="">Choose channel…</option>' +

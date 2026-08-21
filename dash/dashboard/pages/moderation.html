@@ -27,6 +27,7 @@
         .filter-info p { margin: 0; font-size: 12px; color: var(--text-secondary); }
         .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--text); }
         .select-input { width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background-color: var(--surface-2); color: var(--text); font-family: inherit; font-size: 14px; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236b7280\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'m6 9 6 6 6-6\'/></svg>'); background-repeat: no-repeat; background-position: right 14px center; }
+        body.light .select-input { background-color: var(--input-bg); border-color: var(--input-border); }
     </style>
 </head>
 <body>
@@ -56,11 +57,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -69,12 +70,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -85,7 +86,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -94,7 +95,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="nav.moderation"><span>
+            <a href="/my-servers" data-i18n="not.servers"></a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"></span> <span class="sep">/</span> <span data-i18n="nav.moderation"></span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-shield-quarter'></i></div>
@@ -200,8 +201,11 @@
 
     <!-- Save Bar -->
     <div class="save-bar" id="saveBar">
-        <span class="save-bar-text" data-i18n="pg.unsaved"><span>
-        <button class="btn btn-primary" onclick="saveSettings()" data-i18n="pg.save_changes"><button>
+        <span class="save-bar-text" data-i18n="save.unsaved">You have unsaved changes</span>
+        <div class="save-bar-actions">
+            <button class="btn btn-ghost" onclick="hideSaveBar(); loadData();" data-i18n="save.discard">Discard</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
+        </div>
     </div>
 
     <script src="/i18n.js?v=25"></script>
@@ -266,11 +270,11 @@
         }
 
         function showSaveBar() {
-            document.getElementById('saveBar').classList.add('show');
+            document.getElementById('saveBar').classList.add('visible');
         }
 
         function hideSaveBar() {
-            document.getElementById('saveBar').classList.remove('show');
+            document.getElementById('saveBar').classList.remove('visible');
         }
 
         async function saveSettings() {

@@ -7,697 +7,262 @@
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/shared.css?v=25">
     <style>
-        /* User Profile Styles */
-
         .profile-container {
-
             max-width: 1200px;
-
             margin: 0 auto;
-
             padding: 20px;
-
         }
-
-        
-
         .profile-banner {
-
             height: 200px;
-
-            background-color: var(--discord-dark);
-
-            border-radius: 15px 15px 0 0;
-
+            background-color: var(--bg-2);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
             position: relative;
-
             background-size: cover;
-
             background-position: center;
-
+            border: 1px solid var(--border);
+            border-bottom: none;
         }
-
-        
-
         .profile-header {
-
             display: flex;
-
             padding: 20px;
-
-            background: var(--surface);
-
-            border-radius: 0 0 15px 15px;
-
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-
-            border: 1px solid var(--grey-color-light);
-
+            background: var(--card-bg);
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--card-border);
             position: relative;
-
             margin-bottom: 30px;
-
+            backdrop-filter: blur(10px);
         }
-
-        
-
-        body.dark .profile-header {
-
-            background: var(--surface);
-
-            border-color: #36393f;
-
-        }
-
-        
-
         .profile-avatar {
-
             position: relative;
-
             margin-top: -90px;
-
             margin-right: 25px;
-
         }
-
-        
-
         .avatar-image {
-
             width: 150px;
-
             height: 150px;
-
             border-radius: 50%;
-
-            border: 5px solid var(--surface);
-
+            border: 5px solid var(--card-bg);
             object-fit: cover;
-
-            background-color: var(--discord-blurple);
-
+            background-color: var(--primary);
         }
-
-        
-
-        body.dark .avatar-image {
-
-            border-color: var(--surface);
-
-        }
-
-        
-
+        body.light .avatar-image { border-color: #fff; }
         .profile-info {
-
             flex: 1;
-
             padding: 20px 0;
-
         }
-
-        
-
         .username-row {
-
             display: flex;
-
             align-items: center;
-
             margin-bottom: 10px;
-
             flex-wrap: wrap;
-
+            gap: 12px;
         }
-
-        
-
         .global-name {
-
             font-size: 2.2rem;
-
             font-weight: 700;
-
-            margin-right: 15px;
-
             color: var(--text);
-
         }
-
-        
-
         .username {
-
             font-size: 1.5rem;
-
-            color: var(--grey-color-light);
-
+            color: var(--text-secondary);
             font-weight: 500;
-
-            margin-right: 15px;
-
         }
-
-        
-
         .user-id {
-
-            background: var(--discord-darker);
-
-            color: var(--grey-color-light);
-
-            padding: 4px 10px;
-
-            border-radius: 15px;
-
-            font-size: 0.9rem;
-
-            font-family: monospace;
-
-        }
-
-        
-
-        .badge-container {
-
-            display: flex;
-
-            gap: 10px;
-
-            margin: 15px 0;
-
-            flex-wrap: wrap;
-
-        }
-
-        
-
-        .badge {
-
-            display: flex;
-
-            align-items: center;
-
-            background: rgba(88, 101, 242, 0.1);
-
-            padding: 6px 12px;
-
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            padding: 4px 12px;
             border-radius: 20px;
-
             font-size: 0.9rem;
-
+            font-family: monospace;
+            border: 1px solid var(--border);
         }
-
-        
-
+        .badge-container {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: flex;
+            align-items: center;
+            background: var(--surface-2);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
         .badge-icon {
-
             width: 20px;
-
             height: 20px;
-
             margin-right: 8px;
-
             border-radius: 4px;
-
         }
-
-        
-
         .profile-stats {
-
             display: flex;
-
             gap: 30px;
-
             margin-top: 20px;
-
             flex-wrap: wrap;
-
         }
-
-        
-
         .stat-card {
-
-            background: var(--surface);
-
-            border-radius: 12px;
-
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             padding: 20px;
-
             flex: 1;
-
             min-width: 250px;
-
-            border: 1px solid var(--grey-color-light);
-
+            border: 1px solid var(--card-border);
         }
-
-        
-
-        body.dark .stat-card {
-
-            background: var(--surface);
-
-            border-color: #36393f;
-
-        }
-
-        
-
         .stat-title {
-
             font-size: 1rem;
-
-            color: var(--grey-color-light);
-
+            color: var(--text-secondary);
             margin-bottom: 15px;
-
             display: flex;
-
             align-items: center;
-
             gap: 8px;
-
         }
-
-        
-
         .stat-value {
-
             font-size: 2.2rem;
-
             font-weight: 700;
-
-            color: var(--blue-color);
-
+            color: var(--primary);
             margin-bottom: 10px;
-
         }
-
-        
-        // Expand sidebar
-        sidebar.addEventListener('click', (e) => {
-            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
-                sidebar.classList.remove('active');
-            }
-        });
-            color: var(--text);
-
-            line-height: 1.5;
-// Theme toggle
-        darkLight.addEventListener('click', () => {
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                localStorage.setItem('theme', 'light');
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-        }
-
-        
-
         .info-card {
-
-            background: var(--surface);
-
-            border-radius: 12px;
-
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
             padding: 25px;
-
-            border: 1px solid var(--grey-color-light);
-
+            border: 1px solid var(--card-border);
         }
-
-        
-
-        body.dark .info-card {
-
-            background: var(--surface);
-
-            border-color: #36393f;
-
-        }
-
-        
-
         .card-title {
-
             font-size: 1.3rem;
-
-            color: var(--blue-color);
-
+            color: var(--primary);
             margin-bottom: 20px;
-
             padding-bottom: 12px;
-
-            border-bottom: 1px solid var(--grey-color-light);
-
+            border-bottom: 1px solid var(--border);
         }
-
-        
-
         .info-item {
-
             display: flex;
-
             margin-bottom: 18px;
-
             align-items: flex-start;
-
         }
-
-        
-
         .info-icon {
-
             min-width: 36px;
-
             height: 36px;
-
-            background: rgba(88, 101, 242, 0.1);
-
+            background: var(--surface-2);
             border-radius: 50%;
-
             display: flex;
-
             align-items: center;
-
             justify-content: center;
-
             margin-right: 15px;
-
-            color: var(--blue-color);
-
+            color: var(--primary);
             font-size: 18px;
-
+            border: 1px solid var(--border);
         }
-
-        
-
         .info-content {
-
             flex: 1;
-
         }
-
-        
-
         .info-label {
-
             font-size: 0.9rem;
-
-            color: var(--grey-color-light);
-
+            color: var(--text-secondary);
             margin-bottom: 4px;
-
         }
-
-        
-
         .info-value {
-
             font-size: 1.1rem;
-
             color: var(--text);
-
             font-weight: 500;
-
         }
-
-        
-
         .badges-card {
-
             display: flex;
-
             flex-wrap: wrap;
-
             gap: 15px;
-
             margin-top: 10px;
-
         }
-
-        
-
         .badge-item {
-
-            background: rgba(88, 101, 242, 0.1);
-
+            background: var(--surface-2);
             border-radius: 12px;
-
             padding: 12px;
-
             text-align: center;
-
             min-width: 100px;
-
             transition: all 0.3s;
-
+            border: 1px solid var(--border);
         }
-
-        
-
         .badge-item:hover {
-
             transform: translateY(-5px);
-
-            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
         }
-
-        
-
         .badge-item-icon {
-
             width: 50px;
-
             height: 50px;
-
             margin: 0 auto 10px;
-
             border-radius: 8px;
-
         }
-
-        
-
         .badge-item-name {
-
             font-size: 0.9rem;
-
             color: var(--text);
-
             font-weight: 500;
-
         }
-
-        
-
-        /* Loading animation */
-
         .loading {
-
             display: flex;
-
             justify-content: center;
-
             padding: 50px;
-
         }
-
-        
-
         .loading-spinner {
-
             width: 50px;
-
             height: 50px;
-
-            border: 5px solid rgba(88, 101, 242, 0.1);
-
+            border: 5px solid var(--border);
             border-radius: 50%;
-
-            border-top-color: var(--blue-color);
-
+            border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
-
         }
-
-        
-
+        body.light .loading-spinner { border-color: var(--grey-color-light); border-top-color: var(--primary); }
         .error-message {
-
-            background: var(--danger-color);
-
+            background: var(--danger);
             color: white;
-
             padding: 20px;
-
             border-radius: 12px;
-
             text-align: center;
-
             margin: 30px auto;
-
             max-width: 600px;
-
         }
-
-        
-
         @keyframes spin {
-
             to { transform: rotate(360deg); }
-
         }
-
-        
-
         @keyframes fadeIn {
-
             from { opacity: 0; transform: translateY(10px); }
-
             to { opacity: 1; transform: translateY(0); }
-
         }
 
         
 
-        /* Responsive Design */
-
+                /* Responsive Design */
         @media screen and (max-width: 992px) {
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            .profile-avatar {
-
-                margin: -90px 0 20px 0;
-
-            }
-
-            
-
-            .username-row {
-
-                justify-content: center;
-
-            }
-
-            
-
-            .badge-container {
-
-                justify-content: center;
-
-            }
-
-        }
-
-        
-
-        @media screen and (max-width: 768px) {
-
-            .search_bar {
-
-                display: none;
-
-            }
-
-            
-
-            .notification-dropdown {
-
-                min-width: 300px;
-
-                right: -50px;
-
-            }
-
-            
-
-            .profile-stats {
-
+            .profile-header {
                 flex-direction: column;
-
+                align-items: center;
+                text-align: center;
+                padding-top: 0;
             }
-
-            
-
-            .global-name {
-
-                font-size: 1.8rem;
-
+            .profile-avatar {
+                margin: -75px 0 20px 0;
             }
-
-            
-
-            .username {
-
-                font-size: 1.2rem;
-
+            .username-row {
+                justify-content: center;
             }
-
+            .badge-container {
+                justify-content: center;
+            }
+            .profile-stats {
+                flex-direction: column;
+            }
         }
-
-        
-
         @media screen and (max-width: 576px) {
-
-            
-
-            
-
-            .notification-dropdown {
-
-                min-width: 280px;
-
-                right: -80px;
-
-            }
-
-            
-
             .info-grid {
-
                 grid-template-columns: 1fr;
-
             }
-
         }
-
-
     </style>
 </head>
 <body>
@@ -726,11 +291,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -739,12 +304,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -755,7 +320,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -814,7 +379,7 @@
 
                         <div class="username-row">
 
-                            <h1 class="global-name" id="user-global-name" data-i18n="pg.loading"><h1>
+                            <h1 class="global-name" id="user-global-name" data-i18n="pg.loading"></h1>
 
                             <div class="username" id="user-username">@username</div>
 
@@ -1263,177 +828,9 @@
 
         
 
-        // Mobile sidebar toggle
-
-        const sidebar = document.getElementById('sidebar');
-
-        
-
-        
-
-        const collapseBtn = document.querySelector('.expand_sidebar');
-
-        
-
-        // Auto-close sidebar after 0.5 seconds on desktop
-
-        setTimeout(() => {
-
-            if (window.innerWidth > 992) {
-
-                sidebar.classList.add('auto-close');
-
-                setTimeout(() => {
-
-                    sidebar.classList.add('close');
-
-                }, 1000);
-
-            }
-
-        }, 500);
-
-        
-
-        // Toggle sidebar
-
-        
-
-        // Collapse sidebar
-
-        collapseBtn.addEventListener('click', () => {
-
-            sidebar.classList.add('auto-close');
-
-            setTimeout(() => {
-
-                sidebar.classList.add('close');
-
-            }, 400);
-
-        });
-
-        
-
-        // Expand sidebar
-
-        sidebar.addEventListener('click', (e) => {
-            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
-                sidebar.classList.remove('active');
-            }
-        });
-
-// Theme toggle
-        darkLight.addEventListener('click', () => {
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                localStorage.setItem('theme', 'light');
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-
-        // Apply saved theme
-
+                // Initialize profile page
         document.addEventListener('DOMContentLoaded', () => {
-
-            const savedTheme = localStorage.getItem('theme');
-
-            if (savedTheme === 'dark') {
-
-                document.body.classList.add('dark');
-
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-
-            }
-
-            
-
-            // Close sidebar on mobile by default
-
-            if (window.innerWidth <= 992) {
-
-                sidebar.classList.remove('active');
-
-            }
-
-            
-
-            // Initialize profile page
-
-            initProfilePage();
-
-        });
-
-        
-
-        // Dropdown functionality
-
-        const notificationBtn = document.getElementById('notificationBtn');
-
-        const notificationDropdown = document.getElementById('notificationDropdown');
-
-        const userBtn = document.getElementById('userBtn');
-
-        const userDropdown = document.getElementById('userDropdown');
-
-        
-
-        notificationBtn.addEventListener('click', (e) => {
-
-            e.stopPropagation();
-
-            notificationDropdown.classList.toggle('show');
-
-            userDropdown.classList.remove('show');
-
-        });
-
-        
-
-        userBtn.addEventListener('click', (e) => {
-
-            e.stopPropagation();
-
-            userDropdown.classList.toggle('show');
-
-            notificationDropdown.classList.remove('show');
-
-        });
-
-        
-
-        // Close dropdowns when clicking outside
-
-        document.addEventListener('click', (e) => {
-
-            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
-
-                notificationDropdown.classList.remove('show');
-
-            }
-
-            if (!userBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-
-                userDropdown.classList.remove('show');
-
-            }
-
-        });
-
-        
-
-        // Handle resize
-
-        window.addEventListener('resize', () => {
-
-            if (window.innerWidth > 992) {
-
-                sidebar.classList.remove('active');
-
-            }
-
+            if (typeof initProfilePage === 'function') initProfilePage();
         });
 
     </script>

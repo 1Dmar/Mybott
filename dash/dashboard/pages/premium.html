@@ -21,6 +21,7 @@
             -webkit-text-fill-color: transparent;
             line-height: 1.2;
         }
+        body.light .premium-header h1 { background: var(--primary); -webkit-background-clip: text; }
         
         .premium-header p {
             font-size: 1.25rem;
@@ -55,7 +56,7 @@
             display: block;
             width: 80px;
             height: 4px;
-            background: var(--blue-color);
+            background: var(--primary);
             margin: 20px auto;
             border-radius: 2px;
         }
@@ -70,20 +71,20 @@
         }
         
         .tier-card {
-            background: var(--white-color);
+            background: var(--card-bg);
             border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-md);
             width: 360px;
             transition: all 0.3s ease;
-            border: 1px solid var(--grey-color-light);
+            border: 1px solid var(--border);
             position: relative;
             z-index: 1;
         }
         
         body.dark .tier-card {
-            background: var(--dark-card);
-            border-color: #2a3947;
+            background: var(--surface);
+            border-color: var(--border);
         }
         
         .tier-card:hover {
@@ -134,8 +135,8 @@
             position: absolute;
             top: 20px;
             right: -35px;
-            background: var(--gold);
-            color: #333;
+            background: var(--warning-color);
+            color: black;
             font-weight: 700;
             padding: 8px 40px;
             transform: rotate(45deg);
@@ -154,7 +155,7 @@
         
         .feature-list li {
             padding: 14px 0;
-            border-bottom: 1px dashed var(--grey-color-light);
+            border-bottom: 1px dashed var(--border);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -168,11 +169,11 @@
         }
         
         .tier1 .feature-list li i {
-            color: #ff7e5f;
+            color: var(--primary);
         }
         
         .tier2 .feature-list li i {
-            color: #8A2BE2;
+            color: var(--discord-blurple);
         }
         
         .tier-button {
@@ -221,18 +222,18 @@
         }
         
         .feature-card {
-            background: var(--white-color);
+            background: var(--card-bg);
             border-radius: 15px;
             padding: 35px 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            box-shadow: var(--shadow-sm);
             transition: all 0.3s;
-            border: 1px solid var(--grey-color-light);
+            border: 1px solid var(--border);
             text-align: center;
         }
         
         body.dark .feature-card {
-            background: var(--dark-card);
-            border-color: #2a3947;
+            background: var(--surface);
+            border-color: var(--border);
         }
         
         .feature-card:hover {
@@ -252,13 +253,13 @@
         }
         
         .tier1 .feature-icon {
-            background: rgba(255, 126, 95, 0.12);
-            color: #ff7e5f;
+            background: var(--primary-light);
+            color: var(--primary);
         }
         
         .tier2 .feature-icon {
-            background: rgba(138, 43, 226, 0.12);
-            color: #8A2BE2;
+            background: var(--blue-color-light);
+            color: var(--blue-color);
         }
         
         .feature-card h3 {
@@ -285,12 +286,12 @@
             margin-bottom: 20px;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
-            border: 1px solid var(--grey-color-light);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
         }
         
         body.dark .faq-item {
-            border-color: #2a3947;
+            border-color: var(--border);
         }
         
         .faq-question {
@@ -306,7 +307,7 @@
         }
         
         body.dark .faq-question {
-            background: var(--dark-bg);
+            background: var(--surface-2);
         }
         
         .faq-answer {
@@ -314,13 +315,13 @@
             max-height: 0;
             overflow: hidden;
             transition: all 0.4s ease;
-            background: var(--white-color);
-            color: var(--grey-color);
+            background: var(--surface);
+            color: var(--text);
             line-height: 1.7;
         }
         
         body.dark .faq-answer {
-            background: var(--dark-card);
+            background: var(--surface);
         }
         
         .faq-answer.active {
@@ -330,16 +331,16 @@
         
         /* Footer */
         .footer {
-            background: var(--white-color);
+            background: var(--surface-2);
             padding: 40px 20px;
             text-align: center;
-            border-top: 1px solid var(--grey-color-light);
+            border-top: 1px solid var(--border);
             margin-top: 50px;
         }
         
         body.dark .footer {
-            background: var(--dark-card);
-            border-color: #2a3947;
+            background: var(--surface);
+            border-color: var(--border);
         }
         
         .footer-links {
@@ -544,11 +545,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -557,12 +558,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -573,7 +574,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -681,7 +682,7 @@
                     <div class="feature-icon">
                         <i class='bx bx-bot'></i>
                     </div>
-                    <h3 data-i18n="nav.auto_responder"><h3>
+                    <h3 data-i18n="nav.auto_responder">Auto Responder</h3>
                     <p>Set up automatic responses to common questions and commands, saving you time and providing instant support to your community.</p>
                 </div>
                 

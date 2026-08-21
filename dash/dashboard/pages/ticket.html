@@ -35,11 +35,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -48,12 +48,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -73,7 +73,7 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="nav.tickets"><span>
+            <a href="/my-servers" data-i18n="not.servers"></a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"></span> <span class="sep">/</span> <span data-i18n="nav.ticket"></span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-support'></i></div>
@@ -87,7 +87,7 @@
             <div class="card-header">
                 <div class="card-icon"><i class='bx bx-cog'></i></div>
                 <div>
-                    <h2 class="card-title" data-i18n="pg.general_settings"><h2>
+                    <h2 class="card-title" data-i18n="pg.general_settings"></h2>
                     <p class="card-subtitle">Set up where users can create tickets.</p>
                 </div>
             </div>
@@ -96,7 +96,7 @@
                 <div class="form-group">
                     <label class="form-label">Ticket Channel <span class="required">*</span></label>
                     <select class="form-select-styled" id="channelId" onchange="markUnsaved()">
-                        <option value="" data-i18n="pg.select_channel"><option>
+                        <option value="" data-i18n="pg.select_channel"></option>
                         <!-- Channels injected here -->
                     </select>
                 </div>
@@ -118,12 +118,25 @@
 
     <!-- Save Bar -->
     <div class="save-bar" id="saveBar">
-        <span class="save-bar-text" data-i18n="pg.unsaved"><span>
-        <button class="btn btn-primary" onclick="saveSettings()" id="saveBtn"><i class='bx bx-save'></i> Save Changes</button>
+        <span class="save-bar-text" data-i18n="save.unsaved">You have unsaved changes</span>
+        <div class="save-bar-actions">
+            <button class="btn btn-ghost" onclick="document.getElementById('saveBar').classList.remove('visible'); loadConfig();" data-i18n="save.discard">Discard</button>
+            <button class="btn btn-primary" onclick="saveSettings()" id="saveBtn"><i class='bx bx-save'></i> <span data-i18n="save.save">Save</span></button>
+        </div>
     </div>
 
     <script src="/i18n.js?v=25"></script>
   <script src="/shared.js?v=25"></script>
+  <style>
+    body.light .form-select-styled { background-color: var(--input-bg) !important; border-color: var(--input-border) !important; }
+    .toggle { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--surface-2); transition: .4s; border-radius: 34px; }
+    body.light .toggle-slider { background-color: var(--surface-2); }
+    .toggle-slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    .toggle input:checked + .toggle-slider { background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+  </style>
     <script>
         const guildId = window.getGuildIdFromPath() || (window.location.pathname.match(/\/my-servers\/(\d+)/) || [])[1] || '';
         if (!guildId) {

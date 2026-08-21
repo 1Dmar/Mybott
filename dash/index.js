@@ -1499,6 +1499,36 @@ app.post('/api/user/profile/banner', isAuthenticated, async (req, res) => {
   }
 });
 
+// ── API Key Management ───────────────────────────────────────────────
+app.get('/api/user/api-key', isAuthenticated, async (req, res) => {
+  try {
+    let profile = await UserProfile.findOne({ userId: req.user.id });
+    if (!profile) profile = await UserProfile.create({ userId: req.user.id });
+    
+    if (!profile.apiKey) {
+      profile.apiKey = 'pmb_live_sk_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+      await profile.save();
+    }
+    res.json({ success: true, apiKey: profile.apiKey });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/user/api-key/regen', isAuthenticated, async (req, res) => {
+  try {
+    const newKey = 'pmb_live_sk_' + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+    const profile = await UserProfile.findOneAndUpdate(
+      { userId: req.user.id },
+      { apiKey: newKey, updatedAt: Date.now() },
+      { upsert: true, new: true }
+    );
+    res.json({ success: true, apiKey: profile.apiKey });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── Session Management ───────────────────────────────────────────────
 app.get('/api/user/sessions', isAuthenticated, async (req, res) => {
   try {

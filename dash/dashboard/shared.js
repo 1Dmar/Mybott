@@ -13,7 +13,7 @@
   // Premium design: DARK is the default. A 'light' class activates light mode.
   // Legacy 'pmcbot_theme=dark' values are mapped to the default (no class).
   function initTheme() {
-    const savedTheme = localStorage.getItem('pmcbot_theme') || 'dark';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') document.body.classList.add('light');
     updateThemeIcon();
   }
@@ -21,17 +21,18 @@
   function updateThemeIcon() {
     const icon = document.getElementById('darkLight');
     if (!icon) return;
+    const i = icon.querySelector('i') || icon;
     if (document.body.classList.contains('light')) {
-      icon.classList.remove('bx-moon'); icon.classList.add('bx-sun');
+      i.classList.remove('bx-moon'); i.classList.add('bx-sun');
     } else {
-      icon.classList.remove('bx-sun'); icon.classList.add('bx-moon');
+      i.classList.remove('bx-sun'); i.classList.add('bx-moon');
     }
   }
 
   function toggleTheme() {
     document.body.classList.toggle('light');
     const isLight = document.body.classList.contains('light');
-    localStorage.setItem('pmcbot_theme', isLight ? 'light' : 'dark');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
     updateThemeIcon();
   }
 
@@ -204,7 +205,7 @@
     sections.forEach(section => {
       html += `<ul class="menu_items"><div class="menu_title"><span>${itemLabel(section.label)}</span></div>`;
       section.items.forEach(item => {
-        const isActive = currentPath === item.href || (item.href !== '/my-servers' && currentPath.startsWith(item.href));
+        const isActive = currentPath === item.href || (item.href !== '/my-servers' && item.href !== '/dashboard' && item.href !== '/admin' && currentPath.startsWith(item.href));
         const activeClass = isActive ? ' active' : '';
         const extraClass = item.cls ? ` ${item.cls}` : '';
         const tagHtml = item.tag ? `<span class="tag ${item.tag.cls}">${itemLabel(item.tag.text)}</span>` : '';
@@ -330,7 +331,7 @@
         <div class="dropdown-header"><i class="bx bx-user"></i> <span data-i18n="nav.my_account">${itemLabel('nav.my_account')}</span></div>
         <a href="/dashboard"><i class="bx bx-user-circle"></i> <span data-i18n="nav.profile">${itemLabel('nav.profile')}</span></a>
         <a href="/my-servers"><i class="bx bx-server"></i> <span data-i18n="nav.my_servers">${itemLabel('nav.my_servers')}</span></a>
-        <a href="/api/logout" onclick="event.preventDefault(); navigator.sendBeacon('/api/logout'); location.href='/';"><i class="bx bx-log-out"></i> <span data-i18n="nav.logout">${itemLabel('nav.logout')}</span></a>`;
+        <a href="/api/logout" class="logout-link"><i class="bx bx-log-out"></i> <span data-i18n="nav.logout">${itemLabel('nav.logout')}</span></a>`;
       const nav = document.querySelector('.navbar');
       (nav || userBtn.parentElement)?.appendChild(userDropdown);
     }
@@ -618,6 +619,26 @@
     if (window.__pmc_i18n) {
       window.__pmc_i18n.applyTranslations();
     }
+
+    // Robust Logout Handler
+    document.addEventListener('click', async (e) => {
+      const logoutBtn = e.target.closest('.logout-link') || (e.target.closest('a') && e.target.closest('a').href.endsWith('/api/logout'));
+      if (logoutBtn) {
+        e.preventDefault();
+        try {
+          window.showToast?.('جاري تسجيل الخروج...', 'info');
+          const resp = await fetch('/api/logout', { method: 'GET', credentials: 'same-origin' });
+          if (resp.ok || resp.redirected) {
+            window.location.href = '/';
+          } else {
+            // Fallback for non-standard responses
+            window.location.href = '/api/logout';
+          }
+        } catch (err) {
+          window.location.href = '/api/logout';
+        }
+      }
+    });
   });
 
 })();

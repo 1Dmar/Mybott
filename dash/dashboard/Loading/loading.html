@@ -245,8 +245,8 @@
   <div class="foot-strip">© 2026 ProMcBot — <span id="ft_rights">All rights reserved.</span></div>
 
   <script>
-    // ── Theme (shared pmc_theme key) ──
-    const savedTheme = localStorage.getItem('pmc_theme') || 'dark';
+    // ── Theme (shared 'theme' key) ──
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') document.body.classList.add('light');
     document.addEventListener('DOMContentLoaded', () => {
       const dl = document.getElementById('darkLight');
@@ -254,7 +254,7 @@
         dl.querySelector('i').className = savedTheme === 'light' ? 'bx bx-moon' : 'bx bx-sun';
         dl.addEventListener('click', () => {
           const isLight = document.body.classList.toggle('light');
-          localStorage.setItem('pmc_theme', isLight ? 'light' : 'dark');
+          localStorage.setItem('theme', isLight ? 'light' : 'dark');
           dl.querySelector('i').className = isLight ? 'bx bx-moon' : 'bx bx-sun';
         });
       }

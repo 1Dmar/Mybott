@@ -22,13 +22,14 @@
         }
         .responder-response {
             font-size: 13px;
-            color: var(--text-secondary);
+            color: var(--text-2);
             background: var(--surface-2);
             padding: 10px;
             border-radius: var(--radius-sm);
             margin-bottom: 16px;
             flex: 1;
             white-space: pre-wrap;
+            border: 1px solid var(--border);
         }
     </style>
 </head>
@@ -59,11 +60,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -72,12 +73,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -88,7 +89,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -97,12 +98,12 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <a href="/my-servers" data-i18n="not.servers"><a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"><span> <span class="sep">/</span> <span data-i18n="nav.auto_responder"><span>
+            <a href="/my-servers" data-i18n="not.servers"></a> <span class="sep">/</span> <span id="breadServerName" data-i18n="pg.loading"></span> <span class="sep">/</span> <span data-i18n="nav.auto_responder"></span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-message-dots'></i></div>
             <div>
-                <h1 class="page-title" data-i18n="nav.auto_responder"><h1>
+                <h1 class="page-title" data-i18n="nav.auto_responder"></h1>
                 <p class="page-subtitle">Automatically reply to specific trigger words or phrases.</p>
             </div>
         </div>
@@ -178,7 +179,7 @@
                             </div>
                         </div>
                     `;
-                    throw new Error('Page guard triggered: missing context.');
+                    return;
                 }
 
                 responders.forEach(r => {
@@ -191,7 +192,7 @@
                             <div class="responder-trigger"><i class='bx bx-purchase-tag'></i> ${r.trigger}</div>
                             <div class="responder-response">${r.response}</div>
                         </div>
-                        <button class="btn btn-danger btn-sm" onclick="deleteResponder('${rId}')">
+                        <button class="btn btn-danger btn-sm" style="color:white;" onclick="deleteResponder('${rId}')">
                             <i class='bx bx-trash'></i> Delete
                         </button>
                     `;

@@ -59,18 +59,18 @@
       font-size: 22px;
       flex-shrink: 0;
     }
-    .status-icon.online { background: rgba(16,185,129,0.12); color: #10B981; }
-    .status-icon.offline { background: rgba(239,68,68,0.12); color: #EF4444; }
-    .status-icon.checking { background: rgba(107,114,128,0.12); color: #6B7280; }
+    .status-icon.online { background: var(--success-light); color: var(--success); }
+    .status-icon.offline { background: var(--danger-light); color: var(--danger); }
+    .status-icon.checking { background: var(--surface-2); color: var(--text-2); }
     .status-info { flex: 1; min-width: 0; }
     .status-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
     .status-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
-    .status-text.online { color: #10B981; font-weight: 700; }
-    .status-text.offline { color: #EF4444; font-weight: 700; }
+    .status-text.online { color: var(--success); font-weight: 700; }
+    .status-text.offline { color: var(--danger); font-weight: 700; }
     .status-bar { height: 6px; border-radius: 6px; background: rgba(107,114,128,0.15); overflow: hidden; }
     .status-bar > span { display: block; height: 100%; border-radius: 6px; transition: width 0.4s ease, background 0.3s ease; }
-    .bar-online { background: #10B981; }
-    .bar-offline { background: #EF4444; }
+    .bar-online { background: var(--success); }
+    .bar-offline { background: var(--danger); }
 
     .refresh-bar {
       display: flex;
@@ -130,11 +130,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -143,12 +143,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -159,7 +159,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>

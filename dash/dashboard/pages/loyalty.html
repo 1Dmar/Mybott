@@ -52,7 +52,7 @@
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -191,9 +191,9 @@
           tr.innerHTML = `
             <td><b>${i + 1}</b></td>
             <td>${esc(r.displayName || r.userId)}</td>
-            <td><span class="stat-chip" style="color:${TIER_COLORS[r.tier] || '#888'}"><i class='${TIER_ICONS[r.tier] || 'bx bx-circle'}'></i> ${esc(tk('lg.tier_' + r.tier) || r.tier)}</span></td>
+            <td><span class="stat-chip" style="color:${TIER_COLORS[r.tier] || 'var(--text-muted)'}"><i class='${TIER_ICONS[r.tier] || 'bx bx-circle'}'></i> ${esc(tk('lg.tier_' + r.tier) || r.tier)}</span></td>
             <td><b>${r.points.toLocaleString()}</b></td>
-            <td><i class='bx bxs-flame' style="color:#F59E0B"></i> ${r.currentStreak}</td>
+            <td><i class='bx bxs-flame' style="color:var(--primary)"></i> ${r.currentStreak}</td>
             <td>${r.bestStreak}</td>
             <td>${r.messagesAllTime.toLocaleString()}</td>
             <td>${r.voiceMinutesAllTime.toLocaleString()}</td>
@@ -236,23 +236,31 @@
   <style>
     /* ── Loyalty: Royal Gold identity ────────────────────────────────────── */
     .loy-hero { position: relative; overflow: hidden; border-radius: 16px; border: 1px solid rgba(245,190,60,.35); background: linear-gradient(135deg, rgba(40,28,8,.92), rgba(30,20,12,.9)); margin-bottom: 20px; box-shadow: 0 0 0 1px rgba(245,190,60,.1), 0 8px 32px rgba(180,120,20,.18); }
+    body.light .loy-hero { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; box-shadow: 0 10px 25px rgba(245,158,11,0.2); }
     .loy-hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 80% 10%, rgba(250,210,90,.22), transparent 60%), radial-gradient(ellipse 55% 50% at 10% 95%, rgba(212,140,30,.16), transparent 60%); }
     .loy-hero-bg::after { content: ''; position: absolute; inset: 0; background-image: radial-gradient(rgba(250,215,100,.1) 1px, transparent 1.5px); background-size: 22px 22px; }
     .loy-hero-content { position: relative; padding: 20px 22px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .loy-hero-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; background: linear-gradient(135deg, #F6C34A, #C8860E); color: #3a2605; box-shadow: 0 0 24px rgba(246,195,74,.55); }
     .loy-hero-title { font-size: 22px; font-weight: 800; color: #FDF6E3; letter-spacing: -.2px; }
+    body.light .loy-hero-title { color: #fff; }
     .loy-hero-sub { font-size: 13.5px; color: rgba(253,246,227,.6); margin-top: 2px; max-width: 470px; }
+    body.light .loy-hero-sub { color: rgba(255,255,255,.9); }
     .loy-hero-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
     .loy-btn-gold { background: linear-gradient(135deg, #E0A41C, #B8860B); color: #fff; box-shadow: 0 0 16px rgba(224,164,28,.45); border: 1px solid rgba(250,220,120,.5); }
     .loy-btn-gold:hover { background: linear-gradient(135deg, #E8B233, #C49416); }
     .loy-btn-ghost { background: rgba(253,246,227,.07); border: 1px solid rgba(253,246,227,.18); color: #FDF6E3; }
+    body.light .loy-btn-ghost { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.3); color: #fff; }
     .loy-btn-ghost:hover { background: rgba(253,246,227,.14); }
+    body.light .loy-btn-ghost:hover { background: rgba(255,255,255,.3); }
     .loy-sort-bar { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 22px 12px; }
     .loy-sort-select { background: rgba(0,0,0,.3); border: 1px solid rgba(245,190,60,.3); color: #FDF6E3; border-radius: 10px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+    body.light .loy-sort-select { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.3); color: #fff; }
     .loy-sort-select option { background: #2a1d08; color: #FDF6E3; }
+    body.light .loy-sort-select option { background: #d97706; color: #fff; }
 
     .loy-stat-royal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .loy-stat-card { position: relative; overflow: hidden; border-radius: 14px; padding: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.22); }
+    .loy-stat-card { position: relative; overflow: hidden; border-radius: 14px; padding: 16px; box-shadow: var(--shadow-sm); background: var(--surface); border: 1px solid var(--border); }
+    body.light .loy-stat-card { background: #fff; }
     .loy-stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     .loy-stat-card.bronze { background: linear-gradient(160deg, rgba(35,24,10,.85), rgba(30,20,10,.85)); border: 1px solid rgba(180,120,50,.3); }
     .loy-stat-card.bronze::before { background: linear-gradient(90deg, #B45309, #D97706); }
@@ -270,8 +278,10 @@
     .loy-stat-info { display: flex; flex-direction: column; gap: 3px; }
     .loy-stat-value { font-size: 21px; font-weight: 800; color: var(--text); letter-spacing: -.4px; }
 
-    .loy-leaders-card { background: linear-gradient(160deg, rgba(30,22,10,.85), rgba(26,18,8,.85)); border: 1px solid rgba(245,190,60,.24); border-radius: 14px; margin-top: 20px; box-shadow: 0 4px 20px rgba(0,0,0,.22); overflow: hidden; }
-    .loy-leaders-header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid rgba(245,190,60,.18); background: rgba(0,0,0,.22); }
+    .loy-leaders-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-top: 20px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    body.light .loy-leaders-card { background: #fff; }
+    .loy-leaders-header { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.05); }
+    body.light .loy-leaders-header { background: rgba(0,0,0,0.02); }
     .loy-leaders-tag { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 19px; background: rgba(245,190,60,.15); color: #F6C34A; flex-shrink: 0; }
 
     @media (max-width: 900px) { .loy-stat-royal { grid-template-columns: repeat(2, 1fr) !important; } .loy-hero-actions { margin-left: 0; } }

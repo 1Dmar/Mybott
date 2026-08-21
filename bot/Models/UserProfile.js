@@ -7,6 +7,7 @@ module.exports = model(
     banner: { type: String, default: "" }, // URL or Color
     bannerType: { type: String, default: "color" }, // "color" or "image"
     customStatus: { type: String, default: "" },
+    apiKey: { type: String, default: "" },
     updatedAt: { type: Date, default: Date.now }
   })
 );

@@ -21,12 +21,12 @@
             padding: 24px;
         }
         .preview-container {
-            background: #f6f9fc;
+            background: var(--surface-2);
             padding: 20px;
             border-radius: 8px;
             min-height: 400px;
             height: 100%;
-            border: 1px solid #e1e8ed;
+            border: 1px solid var(--border);
             overflow: hidden;
         }
         .preview-iframe {
@@ -98,11 +98,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -111,12 +111,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -127,7 +127,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -154,7 +154,7 @@
                         <label for="templateSelect">Template</label>
                         <select id="templateSelect" class="form-control">
                             <option value="custom">Custom</option>
-                            <option value="welcome" data-i18n="nav.welcome"><option>
+                            <option value="welcome" data-i18n="nav.welcome"></option>
                             <option value="verify">Verify Email</option>
                             <option value="reset">Reset Password</option>
                             <option value="premium_act">Premium Activated</option>
@@ -213,10 +213,10 @@
   <script src="/shared.js?v=25"></script>
     <script>
         const templates = {
-            welcome: { subject: 'Welcome to ProMcBot! 🚀', body: '<h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Welcome aboard, {{username}}!</h2><p style="color:#555;line-height:1.6;">We are thrilled to have you. Click the button below to get started.</p>' },
-            verify: { subject: 'Verify Your Email Address', body: '<h2 style="font-size:20px;font-weight:700;">Verify your email</h2><p style="color:#555;">Your verification code is:</p><div style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:16px;background:#f1f5f9;border-radius:8px;margin:16px 0;">{{code}}</div>' },
-            reset: { subject: 'Reset Your Password', body: '<h2 style="font-size:20px;font-weight:700;">Password Reset Request</h2><p style="color:#555;">Click the button below to reset your password. This link expires in 1 hour.</p>' },
-            premium_act: { subject: 'Premium Activated! 🎉', body: '<h2 style="font-size:20px;font-weight:700;">Your Premium is now active!</h2><p style="color:#555;">Thank you for upgrading to {{premium_plan}}. Enjoy all premium features!</p>' },
+            welcome: { subject: 'Welcome to ProMcBot! 🚀', body: '<h2 style="font-size:20px;font-weight:700;margin-bottom:16px;">Welcome aboard, {{username}}!</h2><p style="color:var(--text-secondary);line-height:1.6;">We are thrilled to have you. Click the button below to get started.</p>' },
+            verify: { subject: 'Verify Your Email Address', body: '<h2 style="font-size:20px;font-weight:700;">Verify your email</h2><p style="color:var(--text-secondary);">Your verification code is:</p><div style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center;padding:16px;background:var(--surface-2);border-radius:8px;margin:16px 0;">{{code}}</div>' },
+            reset: { subject: 'Reset Your Password', body: '<h2 style="font-size:20px;font-weight:700;">Password Reset Request</h2><p style="color:var(--text-secondary);">Click the button below to reset your password. This link expires in 1 hour.</p>' },
+            premium_act: { subject: 'Premium Activated! 🎉', body: '<h2 style="font-size:20px;font-weight:700;">Your Premium is now active!</h2><p style="color:var(--text-secondary);">Thank you for upgrading to {{premium_plan}}. Enjoy all premium features!</p>' },
             custom: { subject: '', body: '' }
         };
 
@@ -245,13 +245,13 @@
             <html>
             <head>
                 <style>
-                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f6f9fc; margin: 0; padding: 40px 0; }
-                    .email-wrapper { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-                    .email-header { background: #5865F2; padding: 24px; text-align: center; color: white; }
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; padding: 40px 0; }
+                    .email-wrapper { max-width: 600px; margin: 0 auto; background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+                    .email-header { background: var(--primary); padding: 24px; text-align: center; color: white; }
                     .email-header h1 { margin: 0; font-size: 24px; font-weight: 600; }
-                    .email-body { padding: 32px; color: #333333; }
-                    .email-footer { background: #f8f9fa; padding: 24px; text-align: center; color: #888888; font-size: 14px; border-top: 1px solid #eeeeee; }
-                    .btn-action { display: inline-block; background: #5865F2; color: white; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 600; margin-top: 16px; }
+                    .email-body { padding: 32px; color: var(--text); }
+                    .email-footer { background: var(--surface-2); padding: 24px; text-align: center; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); }
+                    .btn-action { display: inline-block; background: var(--primary); color: white; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 600; margin-top: 16px; }
                 </style>
             </head>
             <body>
@@ -298,8 +298,7 @@
                 const res = await fetch('/api/email/send', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ to, name, subject, html, from_name, from_email })
                 });

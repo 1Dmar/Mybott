@@ -47,7 +47,7 @@
           <a href="/dashboard"><i class='bx bx-user-circle'></i> <span data-i18n="nav.profile">My Profile</span></a>
           <a href="/my-servers"><i class='bx bx-server'></i> <span data-i18n="nav.my_servers">My Servers</span></a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout">Logout</span></a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger)"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout">Logout</span></a>
         </div>
       </div>
     </div>
@@ -204,14 +204,14 @@
     .ev-card-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .ev-cat-badge { font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; color:#fff; }
     .ev-status-badge { font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; }
-    .ev-status-live { background:rgba(34,197,94,.15); color:#4ade80; }
-    .ev-status-upcoming { background:rgba(64,112,244,.15); color:#7da4ff; }
-    .ev-status-finished { background:rgba(255,255,255,.08); color:var(--text-muted); }
+    .ev-status-live { background:var(--success-light); color:var(--success); }
+    .ev-status-upcoming { background:var(--primary-light); color:var(--primary); }
+    .ev-status-finished { background:var(--border); color:var(--text-muted); }
     .ev-meta { color:var(--text-2); font-size:13px; margin-top:8px; }
     .ev-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-    .ev-chip { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid var(--border); color:var(--text); font-size:12.5px; padding:5px 10px; border-radius:999px; }
+    .ev-chip { display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border); color:var(--text); font-size:12.5px; padding:5px 10px; border-radius:999px; }
     .ev-chip img { width:16px; height:16px; border-radius:4px; }
-    .ev-player-item { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.05); border:1px solid var(--border); padding:6px 12px; border-radius:999px; font-size:13px; }
+    .ev-player-item { display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border); padding:6px 12px; border-radius:999px; font-size:13px; }
     .ev-player-item button { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:0 2px; }
     .ev-player-item button:hover { color:var(--primary); }
     .ev-pick-row { margin-top:12px; }
@@ -228,7 +228,7 @@
     .tmpl-item span { display:block; padding:6px; text-align:center; font-size:12px; font-weight:600; color:var(--text-muted); }
     .tmpl-item:hover { border-color:var(--primary); }
     .tmpl-item:hover img { opacity:1; }
-    .tmpl-item.active { border-color:var(--primary); box-shadow:0 0 0 3px rgba(64,112,244,.2); }
+    .tmpl-item.active { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-light); }
     .tmpl-item.active img { opacity:1; }
     .tmpl-item.active span { color:var(--primary); }
     .tmpl-item.active::after { content:'\eb7a'; font-family:'boxicons'; position:absolute; top:6px; right:6px; background:var(--primary); color:#fff; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; }
@@ -240,10 +240,10 @@
   const guildId = location.pathname.split('/my-servers/')[1]?.split('/')[0] || '';
   const $ = id => document.getElementById(id);
   const CAT_META = {
-    pvp:     { label: 'ev.pvp',     color: '#FF512F', icon: 'bx-sword' },
-    build:   { label: 'ev.build',   color: '#4070f4', icon: 'bx-buildings' },
-    parkour: { label: 'ev.parkour', color: '#22c55e', icon: 'bx-run' },
-    quiz:    { label: 'ev.quiz',    color: '#f59e0b', icon: 'bx-question-mark' },
+    pvp:     { label: 'ev.pvp',     color: 'var(--danger)', icon: 'bx-sword' },
+    build:   { label: 'ev.build',   color: 'var(--blue-color)', icon: 'bx-buildings' },
+    parkour: { label: 'ev.parkour', color: 'var(--warning)', icon: 'bx-run' },
+    quiz:    { label: 'ev.quiz',    color: 'var(--primary)', icon: 'bx-question-mark' },
     spleef:  { label: 'ev.spleef',  color: '#a855f7', icon: 'bx-bleach' },
     speedrun:{ label: 'ev.speedrun',color: '#06b6d4', icon: 'bx-stopwatch' },
     minigame:{ label: 'ev.minigame',color: '#ec4899', icon: 'bx-game' },

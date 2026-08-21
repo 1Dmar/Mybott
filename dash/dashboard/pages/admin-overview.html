@@ -16,7 +16,7 @@
         }
         .action-card {
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
@@ -24,17 +24,17 @@
             transition: all 0.3s ease;
             text-decoration: none;
             display: block;
-            color: var(--text-color);
+            color: var(--text);
         }
         .action-card:hover {
             transform: translateY(-5px);
-            border-color: var(--primary-color);
+            border-color: var(--primary);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .action-card i {
             font-size: 32px;
             margin-bottom: 10px;
-            color: var(--primary-color);
+            color: var(--primary);
         }
         .action-card h3 {
             font-size: 16px;
@@ -69,11 +69,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -82,12 +82,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -98,7 +98,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -107,47 +107,47 @@
     <main class="main-content">
         <!-- Page Header -->
         <div class="page-breadcrumb">
-            <span>Admin</span> <span class="sep">/</span> <span data-i18n="not.overview"><span>
+            <span>Admin</span> <span class="sep">/</span> <span>Overview</span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-shield-quarter'></i></div>
             <div>
-                <h1 class="page-title">Admin Panel</h1>
-                <p class="page-subtitle">Overview of bot statistics and quick administrative actions.</p>
+                <h1 class="page-title">Admin Dashboard</h1>
+                <p class="page-subtitle">Bot-wide statistics and management.</p>
             </div>
         </div>
 
         <div class="stat-cards">
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;"><i class='bx bx-group'></i></div>
+                <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);"><i class='bx bx-group'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Users</p>
                     <h3 class="stat-value" id="statUsers">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(111, 66, 193, 0.1); color: #6f42c1;"><i class='bx bx-server'></i></div>
+                <div class="stat-icon" style="background: var(--blue-color-light); color: var(--blue-color);"><i class='bx bx-server'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Servers</p>
                     <h3 class="stat-value" id="statServers">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(40, 167, 69, 0.1); color: #28a745;"><i class='bx bx-support'></i></div>
+                <div class="stat-icon" style="background: var(--success-light); color: var(--success);"><i class='bx bx-support'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Tickets</p>
                     <h3 class="stat-value" id="statTickets">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(253, 126, 20, 0.1); color: #fd7e14;"><i class='bx bx-list-ul'></i></div>
+                <div class="stat-icon" style="background: var(--warning-light); color: var(--warning);"><i class='bx bx-list-ul'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Logs</p>
                     <h3 class="stat-value" id="statLogs">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(40, 167, 69, 0.1); color: #28a745;"><i class='bx bx-time'></i></div>
+                <div class="stat-icon" style="background: var(--success-light); color: var(--success);"><i class='bx bx-time'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Uptime</p>
                     <h3 class="stat-value" id="statUptime">...</h3>
@@ -179,7 +179,7 @@
             </a>
             <a href="/admin/notifications" class="action-card">
                 <i class='bx bx-bell'></i>
-                <h3 data-i18n="not.title"><h3>
+                <h3 data-i18n="not.title"></h3>
             </a>
         </div>
     </main>
@@ -201,14 +201,10 @@
 
         async function loadStats() {
             try {
-                const response = await fetch('/api/admin/stats', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                
+                const response = await fetch('/api/admin/stats');
                 if (response.ok) {
                     const data = await response.json();
                     const stats = data.stats || {};
-                    
                     document.getElementById('statUsers').textContent = stats.totalUsers || 0;
                     document.getElementById('statServers').textContent = stats.totalServers || 0;
                     document.getElementById('statTickets').textContent = stats.totalTickets || 0;

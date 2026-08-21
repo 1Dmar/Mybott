@@ -22,13 +22,15 @@
     #prefix {
       padding: 10px;
       border-radius: 5px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
     }
  #save-prefix[disabled] {
       padding: 10px 20px;
       border-radius: 5px;
       border: none;
-      background-color: #007bff69;
+      background-color: var(--primary-light);
       color: white;
       margin-left: 10px;
         cursor: not-allowed;
@@ -37,7 +39,7 @@
       padding: 10px 20px;
       border-radius: 5px;
       border: none;
-      background-color: #007bff;
+      background-color: var(--primary);
       color: white;
       margin-left: 10px;
       cursor: pointer;
@@ -50,7 +52,8 @@
     }
 
     .card {
-      background-color: #17212b;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
       border-radius: 10px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       padding: 20px;
@@ -62,9 +65,9 @@
     }
 
     .card.custom-command {
-      background-color: #1a1a1a;
+      background-color: var(--discord-dark);
       color: white;
-      border: 2px solid gold;
+      border: 2px solid var(--warning-color);
       position: relative;
       overflow: hidden;
       padding: 20px;
@@ -89,14 +92,14 @@
     .card.custom-command h3 {
       margin: 0;
       font-size: 1.5em;
-      color: gold;
+      color: var(--warning);
     }
 
     .card.custom-command .membership-tag {
       position: absolute;
       top: 10px;
       right: 10px;
-      background: rgba(255, 215, 0, 0.7);
+      background: var(--warning);
       color: black;
       padding: 5px 10px;
       border-radius: 5px;
@@ -111,7 +114,7 @@
 
     .card p {
       font-size: 1em;
-      color: #666;
+      color: var(--text-muted);
     }
 
     .card .settings {
@@ -123,22 +126,21 @@
     .settings button {
       padding: 5px 10px;
       border: none;
-     /* background-color: #007bff;*/
-          background-color: #007bff69;
-                  cursor: not-allowed;
+      background-color: var(--primary-light);
+      cursor: not-allowed;
       color: white;
       border-radius: 5px;
-      /*cursor: pointer;*/
     }
 
     .settings .toggle-switch {
       position: relative;
       width: 40px;
       height: 20px;
-      background-color: #ccc;
+      background-color: var(--surface-2);
       border-radius: 20px;
       cursor: pointer;
       transition: background-color 0.3s;
+      border: 1px solid var(--border);
     }
 
     .settings .toggle-switch::before {
@@ -153,14 +155,13 @@
       transition: transform 0.3s;
     }
       .settings .toggle-switch.active {
-      background-color: #007bff69;
-                  cursor: not-allowed;
-
+      background-color: var(--primary-light);
+      cursor: not-allowed;
 }
 
    /* .settings .toggle-switch.active {
-      background-color: #007bff;
-    }*/
+	      background-color: var(--primary);
+	    }*/
 
     .settings .toggle-switch.active::before {
       transform: translateX(20px);
@@ -194,11 +195,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -207,12 +208,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -223,7 +224,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>

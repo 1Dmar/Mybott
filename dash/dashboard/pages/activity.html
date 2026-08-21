@@ -10,493 +10,23 @@
 
     <title>ProMcBot - Server Activity</title>
 
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-
+        <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/shared.css?v=25">
     <style>
-
-        /* Import Google font - Poppins */
-
-        
-
-        
-
-        * {
-
-            margin: 0;
-
-            padding: 0;
-
-            box-sizing: border-box;
-
-            font-family: "Poppins", sans-serif;
-
+        .activity-header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        
-
-        
-
-        
-
-        body {
-
-            background-color: var(--ggff);
-
-            transition: all 0.5s ease;
-
-            color: var(--grey-color);
-
-            min-height: 100vh;
-
-            display: flex;
-
-            flex-direction: column;
-
-        }
-
-        
-
-        
-
-        /* Navbar - Fixed */
-
-        // Expand sidebar
-        sidebar.addEventListener('click', (e) => {
-            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
-                sidebar.classList.remove('active');
-            }
-        });
-
-            align-items: center;
-
-// Theme toggle
-        darkLight.addEventListener('click', () => {
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                localStorage.setItem('theme', 'light');
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-        
-
-        .search_bar {
-
-            height: 47px;
-
-            max-width: 430px;
-
-            width: 100%;
-
-        }
-
-        
-
-        .search_bar input {
-
-            height: 100%;
-
-            width: 100%;
-
-            border-radius: 25px;
-
-            font-size: 18px;
-
-            outline: none;
-
-            background-color: var(--white-color);
-
-            color: var(--grey-color);
-
-            border: 1px solid var(--grey-color-light);
-
-            padding: 0 20px;
-
-        }
-
-        
-
-        
-
-        
-
-        
-
-        
-
-        .mobile-toggle {
-
-            display: none;
-
-            cursor: pointer;
-
-            font-size: 24px;
-
-            color: var(--grey-color);
-
-        }
-
-        
-
-        /* Notification badge */
-
-        .notification-badge {
-
-            position: absolute;
-
-            top: -5px;
-
-            right: -5px;
-
-            background: var(--danger-color);
-
-            color: white;
-
-            font-size: 10px;
-
-            width: 18px;
-
-            height: 18px;
-
-            border-radius: 50%;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-        }
-
-        /* Dropdown menus */
-
-        .dropdown {
-
-            position: relative;
-
-            display: inline-block;
-
-        }
-
-        
-
-        .dropdown-content {
-
-            display: none;
-
-            position: absolute;
-
-            right: 0;
-
-            background-color: var(--white-color);
-
-            min-width: 220px;
-
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-
-            z-index: 1100;
-
-            border-radius: 10px;
-
-            overflow: hidden;
-
-            transition: all 0.3s ease;
-
-        }
-
-        
-
-        body.dark .dropdown-content {
-
-            background-color: var(--dark-card);
-
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
-
-        }
-
-        
-
-        .dropdown-content a {
-
-            color: var(--grey-color);
-
-            padding: 12px 16px;
-
-            text-decoration: none;
-
-            display: block;
-
-            transition: all 0.2s;
-
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-
-        }
-
-        
-
-        body.dark .dropdown-content a {
-
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-
-        }
-
-        
-
-        .dropdown-content a:hover {
-
-            background-color: rgba(88, 101, 242, 0.1);
-
-            color: var(--blue-color);
-
-        }
-
-        
-
-        .dropdown-content a i {
-
-            margin-right: 10px;
-
-            width: 20px;
-
-            text-align: center;
-
-        }
-
-        
-
-        .dropdown-header {
-
-            padding: 15px 16px;
-
-            font-weight: 600;
-
-            background: rgba(88, 101, 242, 0.1);
-
-            color: var(--blue-color);
-
-            border-bottom: 1px solid rgba(88, 101, 242, 0.2);
-
-        }
-
-        
-
-        body.dark .dropdown-header {
-
-            background: rgba(88, 101, 242, 0.2);
-
-        }
-
-        
-
-        .show {
-
-            display: block;
-
-            animation: fadeIn 0.3s ease-out;
-
-        }
-
-        
-
-        .notification-dropdown {
-
-            min-width: 350px;
-
-        }
-
-        
-
-        .notification-item {
-
-            display: flex;
-
-            padding: 12px 16px;
-
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-
-            cursor: pointer;
-
-            transition: all 0.2s;
-
-        }
-
-        
-
-        body.dark .notification-item {
-
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-
-        }
-
-        
-
-        .notification-item:hover {
-
-            background-color: rgba(88, 101, 242, 0.05);
-
-        }
-
-        
-
-        .notification-icon {
-
-            width: 40px;
-
-            height: 40px;
-
-            border-radius: 50%;
-
-            background: rgba(88, 101, 242, 0.1);
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            margin-right: 15px;
-
-            color: var(--blue-color);
-
-            font-size: 18px;
-
-        }
-
-        
-
-        .notification-content {
-
-            flex: 1;
-
-        }
-
-        
-
-        .notification-title {
-
-            font-weight: 600;
-
-            margin-bottom: 4px;
-
-        }
-
-        
-
-        .notification-time {
-
-            font-size: 12px;
-
-            color: var(--grey-color);
-
-        }
-
-        
-
-        .view-all {
-
-            text-align: center;
-
-            padding: 12px;
-
-            font-weight: 600;
-
-            color: var(--blue-color);
-
-            cursor: pointer;
-
-        }
-
-        
-
-        /* Sidebar - Fixed Styles */
-
-        
-
-        
-
-        /* Fixed tag styling */
-
-        .navlink-container {
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            width: 100%;
-
-        }
-
-        
-
-        .tag {
-
-            display: inline-block;
-
-            padding: 3px 8px;
-
-            border-radius: 12px;
-
-            font-size: 0.75rem;
-
-            font-weight: 600;
-
-            margin-left: 8px;
-
-            vertical-align: middle;
-
-            line-height: 1.4;
-
-        }
-
-        
-
-        .tag-new {
-
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
-
-            color: white;
-
-        }
-
-        
-
-        .tag-pro {
-
-            background: linear-gradient(135deg, #ffd700, #ff9800);
-
-            color: #333;
-
-        }
-
-        
-
-        .tag-lg {
-
-            font-size: 0.8rem;
-
-        }
-
-        
-
-        
-
-        
-
-        
-
-        
-
-        .menu_content {
-
-            position: relative;
-
-        }
-
-        
-
+        body.light .activity-header h1 { background: var(--blue-color); -webkit-background-clip: text; }
+        body.light .activity-list { background: var(--card-bg); border-color: var(--border); }
+        body.light .search-input, body.light .select-filter { background: var(--card-bg); border-color: var(--border); color: var(--text); }
+        body.light .activity-item { border-bottom-color: var(--border); }
+        body.light .activity-item:hover { background: rgba(0,0,0,0.02); }
+        body.light .action-text .details { color: var(--text-secondary); }
+        body.light .activity-list-header { background: rgba(0,0,0,0.03); color: var(--text); border-bottom-color: var(--border); }
         .menu_title {
 
             margin: 20px 0 10px;
@@ -624,23 +154,14 @@
         
 
         .bottom {
-
             display: flex;
-
             align-items: center;
-
             justify-content: space-between;
-
             padding: 12px 15px;
-
-            color: var(--grey-color);
-
-            border-top: 1px solid var(--grey-color-light);
-
-            background-color: var(--white-color);
-
+            color: var(--text);
+            border-top: 1px solid var(--border);
+            background-color: var(--surface-2);
             border-radius: 8px;
-
         }
 
         
@@ -707,7 +228,7 @@
 
             margin-bottom: 15px;
 
-            background: linear-gradient(90deg, var(--blue-color), #9b59b6);
+            background: linear-gradient(90deg, var(--blue-color), var(--primary));
 
             -webkit-background-clip: text;
 
@@ -764,61 +285,35 @@
         
 
         .search-input {
-
             padding: 12px 20px;
-
             border-radius: 30px;
-
-            border: 1px solid var(--grey-color-light);
-
-            background: var(--white-color);
-
-            color: var(--grey-color);
-
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
             font-size: 1rem;
-
             min-width: 250px;
-
         }
 
         
 
         body.dark .search-input {
-
-            background: var(--dark-card);
-
-            border-color: #36393f;
-
+            background: var(--surface-2);
+            border-color: var(--border);
         }
-
-        
 
         .select-filter {
-
             padding: 12px 15px;
-
             border-radius: 30px;
-
-            border: 1px solid var(--grey-color-light);
-
-            background: var(--white-color);
-
-            color: var(--grey-color);
-
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
             font-size: 1rem;
-
             cursor: pointer;
-
         }
 
-        
-
         body.dark .select-filter {
-
-            background: var(--dark-card);
-
-            border-color: #36393f;
-
+            background: var(--surface-2);
+            border-color: var(--border);
         }
 
         
@@ -876,11 +371,8 @@
         
 
         body.dark .activity-list {
-
-            background: var(--dark-card);
-
-            border-color: #36393f;
-
+            background: var(--surface);
+            border-color: var(--border);
         }
 
         
@@ -930,9 +422,7 @@
         
 
         body.dark .activity-item {
-
-            border-bottom: 1px solid #36393f;
-
+            border-bottom: 1px solid var(--border);
         }
 
         
@@ -1161,7 +651,7 @@
 
             background: var(--dark-card);
 
-            border-color: #36393f;
+            border-color: var(--border);
 
         }
 
@@ -1393,11 +883,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -1406,12 +896,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+            <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> <span data-i18n="nav.logout">Logout</span></a>
         </div>
       </div>
     </div>
@@ -1422,7 +912,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -1552,113 +1042,9 @@
     </section>
 
     <script>
-
-        // Mobile sidebar toggle
-
-        const sidebar = document.getElementById('sidebar');
-
-        
-
-        
-
-        const collapseBtn = document.querySelector('.expand_sidebar');
-
-        
-
-        // Auto-close sidebar after 0.5 seconds on desktop
-
-        setTimeout(() => {
-
-            if (window.innerWidth > 992) {
-
-                sidebar.classList.add('auto-close');
-
-                setTimeout(() => {
-
-                    sidebar.classList.add('close');
-
-                }, 1000);
-
-            }
-
-        }, 500);
-
-        
-
-        // Toggle sidebar
-
-        
-
-        // Collapse sidebar
-
-        collapseBtn.addEventListener('click', () => {
-
-            sidebar.classList.add('auto-close');
-
-            setTimeout(() => {
-
-                sidebar.classList.add('close');
-
-            }, 400);
-
-        });
-
-        
-
-        // Expand sidebar
-
-        sidebar.addEventListener('click', (e) => {
-            if (!e.target.closest('.bottom_content') && !e.target.closest('.mobile-toggle')) {
-                sidebar.classList.remove('active');
-            }
-        });
-
-// Theme toggle
-        darkLight.addEventListener('click', () => {
-            if (document.body.classList.contains('dark')) {
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-                localStorage.setItem('theme', 'light');
-            } else {
-                darkLight.classList.replace('bx-moon', 'bx-sun');
-                localStorage.setItem('theme', 'dark');
-            }
-        });
-
-        // Apply saved theme
-
         document.addEventListener('DOMContentLoaded', () => {
-
-            const savedTheme = localStorage.getItem('theme');
-
-            if (savedTheme === 'dark') {
-
-                document.body.classList.add('dark');
-
-                darkLight.classList.replace('bx-sun', 'bx-moon');
-
-            }
-
-            
-
-            // Close sidebar on mobile by default
-
-            if (window.innerWidth <= 992) {
-
-                sidebar.classList.remove('active');
-
-            }
-
-            
-
-            // Load activities when page loads
-
             fetchActivities();
-
         });
-
-        
-
-        // Dropdown functionality
 
         const notificationBtn = document.getElementById('notificationBtn');
 
@@ -1918,15 +1304,8 @@
                     <div class="activity-reason">${activity.reason}</div>
 
                     <div class="activity-timestamp">
-
-                        <div>
-
-                            <div>${formattedTime}</div>
-
-                            <div class="time-ago">${timeAgo}</div>
-
-                        </div>
-
+                        <div class="main-time">${formattedTime}</div>
+                        <div class="time-ago">${timeAgo}</div>
                     </div>
 
                 `;

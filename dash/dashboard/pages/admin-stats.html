@@ -10,7 +10,7 @@
     <style>
         .system-info-card {
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
             margin-top: 24px;
@@ -22,10 +22,10 @@
             margin-top: 16px;
         }
         .info-item {
-            background: var(--input-bg);
+            background: var(--surface-2);
             padding: 16px;
             border-radius: 8px;
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
         }
         .info-label {
             font-size: 13px;
@@ -37,18 +37,18 @@
         .info-value {
             font-size: 16px;
             font-weight: 500;
-            color: var(--text-color);
+            color: var(--text);
         }
         .members-table-container {
             margin-top: 24px;
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
         }
         .table-header {
             padding: 20px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
         }
         .table-header h3 {
             margin: 0;
@@ -83,11 +83,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -96,12 +96,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger-color)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -112,7 +112,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -133,28 +133,28 @@
 
         <div class="stat-cards">
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;"><i class='bx bx-group'></i></div>
+                <div class="stat-icon" style="background: var(--primary-light); color: var(--primary);"><i class='bx bx-group'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Users</p>
                     <h3 class="stat-value" id="statUsers">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(111, 66, 193, 0.1); color: #6f42c1;"><i class='bx bx-server'></i></div>
+                <div class="stat-icon" style="background: var(--blue-color-light); color: var(--blue-color);"><i class='bx bx-server'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Servers</p>
                     <h3 class="stat-value" id="statServers">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(40, 167, 69, 0.1); color: #28a745;"><i class='bx bx-support'></i></div>
+                <div class="stat-icon" style="background: var(--success-light); color: var(--success-color);"><i class='bx bx-support'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Tickets</p>
                     <h3 class="stat-value" id="statTickets">...</h3>
                 </div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon" style="background: rgba(253, 126, 20, 0.1); color: #fd7e14;"><i class='bx bx-list-ul'></i></div>
+                <div class="stat-icon" style="background: var(--warning-light); color: var(--warning-color);"><i class='bx bx-list-ul'></i></div>
                 <div class="stat-info">
                     <p class="stat-label">Total Logs</p>
                     <h3 class="stat-value" id="statLogs">...</h3>
@@ -227,49 +227,36 @@
 
         async function loadStats() {
             try {
-                // You could try fetching from both endpoints, we fetch from /api/admin/stats for these examples
-                const response = await fetch('/api/admin/stats', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                
+                const response = await fetch('/api/admin/stats');
                 if (response.ok) {
                     const data = await response.json();
                     const stats = data.stats || {};
-                    
                     document.getElementById('statUsers').textContent = stats.totalUsers || 0;
                     document.getElementById('statServers').textContent = stats.totalServers || 0;
                     document.getElementById('statTickets').textContent = stats.totalTickets || 0;
                     document.getElementById('statLogs').textContent = stats.totalLogs || 0;
                     document.getElementById('infoUptime').textContent = formatUptime(stats.uptime);
                 }
-            } catch (error) {
-                console.error("Failed to fetch admin stats:", error);
-            }
+            } catch (error) { console.error("Failed to fetch admin stats:", error); }
         }
 
         async function loadRecentUsers() {
             try {
-                const response = await fetch('/api/admin/users?limit=10', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-                });
-                
+                const response = await fetch('/api/admin/users?limit=10');
                 if (response.ok) {
-                    const users = await response.json();
+                    const data = await response.json();
+                    const users = data.users || [];
                     const tbody = document.getElementById('recentUsersBody');
-                    
-                    if (!users || users.length === 0) {
+                    if (!users.length) {
                         tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px;">No recent users found.</td></tr>';
-                        throw new Error('Page guard triggered: missing context.');
+                        return;
                     }
-                    
                     tbody.innerHTML = '';
                     users.forEach(user => {
                         const tr = document.createElement('tr');
-                        
                         const avatarUrl = user.avatar 
-                            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` 
+                            ? `https://cdn.discordapp.com/avatars/${user.discordId}/${user.avatar}.png` 
                             : 'https://cdn.discordapp.com/embed/avatars/0.png';
-                            
                         tr.innerHTML = `
                             <td>
                                 <div class="member-info">
@@ -277,8 +264,8 @@
                                     <span class="member-name">${user.username || 'Unknown'}</span>
                                 </div>
                             </td>
-                            <td>${user.id || 'N/A'}</td>
-                            <td>${user.serversCount || 0}</td>
+                            <td>${user.discordId || 'N/A'}</td>
+                            <td>${user.plan || 'Verified'}</td>
                         `;
                         tbody.appendChild(tr);
                     });

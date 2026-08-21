@@ -18,8 +18,8 @@
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 5px; }
         .notif-input, .notif-select, .notif-textarea {
-            width: 100%; background: var(--input-bg, #0d1117); color: var(--text-color, #e6edf3);
-            border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none;
+            width: 100%; background: var(--input-bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none;
             transition: border-color 0.2s;
         }
         .notif-input:focus, .notif-select:focus, .notif-textarea:focus { border-color: var(--primary-color); }
@@ -29,7 +29,7 @@
         .target-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .target-chip {
             padding: 7px 12px; font-size: 12px; font-weight: 600; border-radius: 8px;
-            background: var(--input-bg, #0d1117); border: 1px solid var(--border-color); color: var(--text-secondary);
+            background: var(--input-bg); border: 1px solid var(--border); color: var(--text-secondary);
             cursor: pointer; transition: all 0.2s;
         }
         .target-chip.active { background: rgba(0, 123, 255, 0.15); border-color: var(--primary-color); color: var(--primary-color); }
@@ -39,12 +39,12 @@
 
         .notif-btn {
             width: 100%; padding: 11px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
-            background: linear-gradient(135deg, #007bff, #fd7e14); color: #fff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--gradient-mc); color: #fff; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
         }
         .notif-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 123, 255, 0.35); }
 
         .hist-list { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; padding-right: 6px; }
-        .hist-item { border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; background: var(--input-bg, #0d1117); }
+        .hist-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--input-bg); }
         .hist-item.pinned { border-color: var(--primary-color); }
         .hist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
         .hist-title { font-size: 13px; font-weight: 700; color: var(--text-color); display: flex; align-items: center; gap: 6px; }
@@ -57,7 +57,7 @@
             font-size: 11px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
         }
         .hist-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
-        .hist-btn.danger:hover { border-color: #dc3545; color: #dc3545; }
+        .hist-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
         .empty-hist { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 30px 0; }
     </style>
 </head>
@@ -88,11 +88,11 @@
           <div class="notification-item">
             <div class="notification-icon"><i class='bx bx-info-circle'></i></div>
             <div class="notification-content">
-              <div class="notification-title" data-i18n="not.welcome"><div>
-              <div class="notification-desc" data-i18n="not.empty"><div>
+              <div class="notification-title" data-i18n="not.welcome"></div>
+              <div class="notification-desc" data-i18n="not.empty"></div>
             </div>
           </div>
-          <div class="dropdown-footer" data-i18n="not.title"><div>
+          <div class="dropdown-footer" data-i18n="not.title"></div>
         </div>
       </div>
       <div class="dropdown">
@@ -101,12 +101,12 @@
         <div class="dropdown-content" id="userDropdown">
           <div class="dropdown-header">
             <i class='bx bx-user'></i>
-            <span id="navUserName" data-i18n="pg.loading"><span>
+            <span id="navUserName" data-i18n="pg.loading"></span>
           </div>
           <a href="/dashboard"><i class='bx bx-user-circle'></i> My Profile</a>
           <a href="/my-servers"><i class='bx bx-server'></i> My Servers</a>
           <div style="border-top:1px solid var(--border);margin:4px 0"></div>
-          <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
+          <a href="/api/logout" class="logout-link" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
         </div>
       </div>
     </div>
@@ -117,7 +117,7 @@
     <div class="sidebar-footer">
       <div class="collapse-btn">
         <i class='bx bx-chevron-left'></i>
-        <span data-i18n="nav.collapse"><span>
+        <span data-i18n="nav.collapse"></span>
       </div>
     </div>
   </nav>
@@ -125,7 +125,7 @@
 <!-- Main -->
     <main class="main-content">
         <div class="page-breadcrumb">
-            <span>Admin</span> <span class="sep">/</span> <span data-i18n="not.title"><span>
+            <span>Admin</span> <span class="sep">/</span> <span data-i18n="not.title"></span>
         </div>
         <div class="page-title-row">
             <div class="page-title-icon"><i class='bx bx-bell'></i></div>

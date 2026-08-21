@@ -65,9 +65,9 @@
         var expires = new Date(Date.now() + days*864e5).toUTCString();
         document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
       }
-      // Dark mode init
+      // Dark mode init (mapped to ProMcBot shared theme)
       var root = document.documentElement;
-      var theme = getCookie('theme') || 'light';
+      var theme = localStorage.getItem('theme') || 'dark';
       root.setAttribute('data-theme', theme);
       var dmToggle = document.getElementById('dm-toggle');
       dmToggle.textContent = theme === 'light' ? '🌙' : '☀️';
@@ -75,7 +75,7 @@
         var current = root.getAttribute('data-theme');
         var next = current === 'light' ? 'dark' : 'light';
         root.setAttribute('data-theme', next);
-        setCookie('theme', next);
+        localStorage.setItem('theme', next);
         dmToggle.textContent = next === 'light' ? '🌙' : '☀️';
       });
 

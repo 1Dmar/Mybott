@@ -88,8 +88,8 @@
       transition: .25s ease;
     }
     .lang-select:hover { border-color: var(--border-hi); color: var(--text); }
-    .lang-select option { background: #101523; color: #e2e8f0; }
-    body.light .lang-select option { background: #ffffff; color: #1a1f2e; }
+    .lang-select option { background: var(--bg-2); color: var(--text); }
+    body.light .lang-select option { background: var(--bg-2); color: var(--text); }
     .icon-btn {
       width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface);
@@ -144,11 +144,11 @@
       border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2);
       display: inline-flex; align-items: center; gap: 6px;
     }
-    .badge.online { border-color: rgba(16, 185, 129, .4); color: var(--green); background: rgba(16, 185, 129, .1); }
-    .badge.offline { border-color: rgba(239, 68, 68, .4); color: var(--red); background: rgba(239, 68, 68, .1); }
-    .badge.top { border-color: rgba(240, 181, 57, .5); color: var(--primary-2); background: rgba(240, 181, 57, .1); }
-    .badge.votes { border-color: rgba(255, 107, 63, .45); color: #FF9A64; background: rgba(255, 107, 63, .1); }
-    .btn.voted { background: rgba(16, 185, 129, .14); color: var(--green); border: 1px solid rgba(16, 185, 129, .4); }
+    .badge.online { border-color: var(--success); color: var(--success); background: var(--success-light); }
+    .badge.offline { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
+    .badge.top { border-color: var(--warning); color: var(--warning); background: var(--warning-light); }
+    .badge.votes { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+    .btn.voted { background: var(--success-light); color: var(--success); border: 1px solid var(--success); }
     .btn.voted:hover { transform: none; box-shadow: none; opacity: 1; }
     .badge i { font-size: 13px; }
 
@@ -170,7 +170,7 @@
       border: 1px solid transparent; transition: .25s ease;
     }
     .btn-primary {
-      background: linear-gradient(135deg, #FF7A3F, #F0B539); color: #1a0f08;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #000;
     }
     .btn-primary:hover { opacity: .92; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255, 107, 63, .3); }
     .btn-ghost { background: var(--surface); border: 1px solid var(--border); color: var(--text-2); }
@@ -351,8 +351,8 @@
       rerender();
     }
 
-    /* ── Theme (shared pmc_theme key) ── */
-    const savedTheme = localStorage.getItem('pmc_theme') || 'dark';
+    /* ── Theme (shared theme key) ── */
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') document.body.classList.add('light');
     document.addEventListener('DOMContentLoaded', () => {
       const dl = document.getElementById('darkLight');
@@ -360,8 +360,10 @@
         dl.querySelector('i').className = savedTheme === 'light' ? 'bx bx-moon' : 'bx bx-sun';
         dl.addEventListener('click', () => {
           const isLight = document.body.classList.toggle('light');
-          localStorage.setItem('pmc_theme', isLight ? 'light' : 'dark');
+          localStorage.setItem('theme', isLight ? 'light' : 'dark');
           dl.querySelector('i').className = isLight ? 'bx bx-moon' : 'bx bx-sun';
+          // Rerender charts to update colors
+          if (typeof rerender === 'function') rerender();
         });
       }
     });
