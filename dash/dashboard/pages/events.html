@@ -554,8 +554,8 @@
       const cx = c.cx;
       // Player stands ON his block: feet AT the block top surface with a slight
       // natural overlap so the legs look planted (like the reference image)
-      // v61: rank 1 down to touch slab, rank 3 kept at 68
-      const sink = w.rank === 1 ? 46 : (w.rank === 3 ? 68 : 30);
+      // v62: rank 1 up (slab-on-slab), rank 3 down (firmly planted)
+      const sink = w.rank === 1 ? 28 : (w.rank === 3 ? 74 : 30);
       const feetY = c.top + Math.round(sink * T);
 
       // Player image — standing on the block, reference-matching scale (1st slightly taller)
@@ -588,11 +588,8 @@
             // Champion crown: remembered here, drawn ON THE SAME offscreen canvas as the skin
       // so it rotates/tilts EXACTLY with the head — worn like a real Minecraft player
       const isChamp = w.rank === 1 && crownImg.naturalWidth > 0;
-      // WORN crown: the crown keeps its NATURAL proportions (as sent by the user)
-      // and sits ON the head — the band overlaps the upper forehead so it truly
-      // looks worn, not floating. Width ≈ head width, lowered so the band rim
-      // cuts across the top of the head block.
-      const crownWpx = isChamp ? Math.round(playerW * 1.15) : 0;
+      // WORN crown: v62 - shrink slightly (1.08x instead of 1.15x)
+      const crownWpx = isChamp ? Math.round(playerW * 1.08) : 0;
       const crownHpx = isChamp ? Math.round(crownWpx * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth)) : 0;
       // Draw player sunk into his block (lower half inside the stone, naturally hidden by template)
       if (skinImg) {
@@ -632,9 +629,9 @@
           ctx.rotate(-0.10); // gentle tilt matching the head lean
           // The crown's bottom rim cuts ACROSS the head block (forehead level)
           // so Notch genuinely looks like he's WEARING the crown.
-          // v60: nudge left (-4T) and down (lower by +4T, so rim at -54T)
+          // v62: nudge left more (-8T) and keep depth (+54T)
           ctx.drawImage(crownImg,
-            Math.round(-crownWpx / 2 - 4 * T), Math.round(-(crownHpx - 54 * T)),
+            Math.round(-crownWpx / 2 - 8 * T), Math.round(-(crownHpx - 54 * T)),
             crownWpx, crownHpx);
           ctx.restore();
         }
