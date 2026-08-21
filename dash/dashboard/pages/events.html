@@ -586,10 +586,11 @@
             // Champion crown: remembered here, drawn ON THE SAME offscreen canvas as the skin
       // so it rotates/tilts EXACTLY with the head — worn like a real Minecraft player
       const isChamp = w.rank === 1 && crownImg.naturalWidth > 0;
-      // WORN crown: the band's lower rim sits exactly on the head's top surface
-      // (sprite y = 0 IS the head top). The whole crown rises above the head —
-      // face/hair fully visible, band hugging the flat head top like a real ring.
-      const crownWpx = isChamp ? Math.round(Math.min(playerW * 1.55, 320 * T)) : 0;
+      // WORN crown: the crown keeps its NATURAL proportions (as sent by the user)
+      // and sits ON the head — the band overlaps the upper forehead so it truly
+      // looks worn, not floating. Width ≈ head width, lowered so the band rim
+      // cuts across the top of the head block.
+      const crownWpx = isChamp ? Math.round(playerW * 1.15) : 0;
       const crownHpx = isChamp ? Math.round(crownWpx * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth)) : 0;
       // Draw player sunk into his block (lower half inside the stone, naturally hidden by template)
       if (skinImg) {
@@ -627,12 +628,10 @@
           const headTopY = py0; // sprite y=0 IS the head block's top surface
           ctx.translate(headCX, headTopY);
           ctx.rotate(-0.10); // gentle tilt matching the head lean
-          // Band bottom (asset last row) anchored exactly at the head top; the
-          // entire crown body rises above the head — face 100% visible.
-          // empirical: the crown's visible band rim is ~20px above the asset's
-          // bottom edge (perspective tilt), so drop the image by that amount
+          // The crown's bottom rim cuts ACROSS the head block (forehead level)
+          // so Notch genuinely looks like he's WEARING the crown.
           ctx.drawImage(crownImg,
-            Math.round(-crownWpx / 2), Math.round(-(crownHpx - 20 * T)),
+            Math.round(-crownWpx / 2), Math.round(-(crownHpx - 50 * T)),
             crownWpx, crownHpx);
           ctx.restore();
         }
