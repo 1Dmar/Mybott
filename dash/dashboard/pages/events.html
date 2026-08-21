@@ -520,12 +520,12 @@
     await new Promise(res => {
       crownImg.onload = () => res();
       crownImg.onerror = () => res();
-      crownImg.src = '/dashboard/assets/crown.webp';
+      crownImg.src = '/dashboard/assets/crown_new_full.png';
     });
 
     // Rank-specific medal icons (gold crown / silver shield / bronze shield)
     const ICONS = {
-      1: '/dashboard/assets/crown_300.webp',
+      1: '/dashboard/assets/crown_new_300.webp',
       2: '/dashboard/assets/medal_silver.webp',
       3: '/dashboard/assets/medal_bronze.webp'
     };
@@ -553,7 +553,7 @@
       const cx = c.cx;
       // Player stands ON his block: feet AT the block top surface with a slight
       // natural overlap so the legs look planted (like the reference image)
-      const feetY = c.top + Math.round(30 * T); // feet planted firmly into the block top surface
+      const feetY = c.top + Math.round((30 + (w.rank === 3 ? 28 : 0)) * T); // rank 3 (right block) standing surface sits higher than plaque — extra sink
 
       // Player image — standing on the block, reference-matching scale (1st slightly taller)
       const playerH = Math.round((w.rank === 1 ? 4.5 : 3.9) * 62 * T);
@@ -587,7 +587,9 @@
       const isChamp = w.rank === 1 && crownImg.naturalWidth > 0;
       let crownWpx = 0, crownHpx = 0;
       if (isChamp) {
-        crownWpx = Math.round(Math.min(playerW * 0.85, 130 * T));
+        // The new crown is a wide 3D ring (perspective view): band spans the
+        // head plus clearance so the head visibly enters the ring — worn look
+        crownWpx = Math.round(Math.min(playerW * 1.75, 260 * T));
         crownHpx = Math.round(crownWpx * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
       }
       // Draw player sunk into his block (lower half inside the stone, naturally hidden by template)
@@ -615,21 +617,22 @@
           octx.scale(1, -1);
         }
         octx.drawImage(skinImg, 0, 0, playerW, playerH);
-        // ── Champion crown TILTED onto the head: rotate it so it rides the head
-        //    like the player is actually wearing it. Head top = small fraction of
-        //    the sprite; crown overlaps ~35% of the head and tilts with it.
+        // ── Champion crown WORN on the head: the new crown is a 3D ring viewed
+        //    in perspective, so its band sits ON the head top like a hat — the
+        //    lower band disappears inside the head and only the spires/jewels
+        //    show above it, exactly like the player is wearing it.
         if (isChamp) {
-          const headTop = playerH * 0.08; // top of the head inside sprite
+          const headTop = playerH * 0.20; // head top line inside sprite
           const headCX = playerW / 2;
           octx.translate(headCX, headTop);
-          octx.rotate(-0.22); // slight tilt matching the head lean
-          // bottom 45% of the crown dips INTO the head (worn, not hovering)
+          octx.rotate(-0.12); // gentle tilt matching the head lean
+          // the crown's lower ~52% hides inside the head — the head enters the ring
           octx.drawImage(crownImg,
-            Math.round(-crownWpx / 2), Math.round(-crownHpx * 0.45),
+            Math.round(-crownWpx / 2), Math.round(-crownHpx * 0.52),
             crownWpx, crownHpx);
         }
         octx.restore();
-        ctx.drawImage(off, px0, py0 - Math.round(crownHpx * 0.55), off.width, off.height);
+        ctx.drawImage(off, px0, py0 - Math.round(crownHpx * 0.52), off.width, off.height);
       } else {
         ctx.fillStyle = '#3a3f52';
         drawRounded(ctx, cx - playerW / 2, feetY - playerH, playerW, playerH, 14); ctx.fill();
