@@ -587,9 +587,10 @@
       const isChamp = w.rank === 1 && crownImg.naturalWidth > 0;
       let crownWpx = 0, crownHpx = 0;
       if (isChamp) {
-        // WORN crown: roughly the head's width (slightly wider than the head
-        // block). The 3D ring's band sits across the hairline; spires rise above.
-        crownWpx = Math.round(Math.min(playerW * 1.04, 150 * T));
+        // WORN crown: the band wraps around the head (a bit wider than the head
+        // in perspective), its lower rim resting on the hairline — head face
+        // fully visible, band + spires rising above the head like a real hat.
+        crownWpx = Math.round(Math.min(playerW * 0.92, 300 * T));
         crownHpx = Math.round(crownWpx * crownImg.naturalHeight / Math.max(1, crownImg.naturalWidth));
       }
       // Draw player sunk into his block (lower half inside the stone, naturally hidden by template)
@@ -608,7 +609,7 @@
         const off = document.createElement('canvas');
         // extra space on top for the crown spires
         off.width = playerW;
-        off.height = playerH + Math.round(crownHpx * 0.80);
+        off.height = playerH + Math.round(crownHpx * 0.90);
         const octx = off.getContext('2d');
         octx.imageSmoothingEnabled = false;
         octx.save();
@@ -622,18 +623,20 @@
         //    lower band disappears inside the head and only the spires/jewels
         //    show above it, exactly like the player is wearing it.
         if (isChamp) {
-          const headTop = playerH * 0.29; // hairline line inside sprite (head block top ~29% down for this head model)
+          const headTop = playerH * 0.29; // hairline: head block occupies the top ~29% of the sprite
           const headCX = playerW / 2;
           octx.translate(headCX, headTop);
           octx.rotate(-0.10); // gentle tilt matching the head lean
-          // crown band dips INTO the head ~58% — lower band edge hidden behind the
-          // hairline, only the spires + gems show above — truly worn look
+          // Hat placement: the band's lower rim (asset rows ~620-651) sits ON the
+          // hairline dipping ~12% — head face/hair fully visible below, band + gems
+          // + spires visible above the head. The crown is a perspective ring so the
+          // band covers the whole sprite height; lower edge anchors on the head.
           octx.drawImage(crownImg,
-            Math.round(-crownWpx / 2), Math.round(-crownHpx * 0.58),
+            Math.round(-crownWpx / 2), Math.round(-crownHpx * 0.88),
             crownWpx, crownHpx);
         }
         octx.restore();
-        ctx.drawImage(off, px0, py0 - Math.round(crownHpx * 0.58), off.width, off.height);
+        ctx.drawImage(off, px0, py0 - Math.round(crownHpx * 0.88), off.width, off.height);
       } else {
         ctx.fillStyle = '#3a3f52';
         drawRounded(ctx, cx - playerW / 2, feetY - playerH, playerW, playerH, 14); ctx.fill();
