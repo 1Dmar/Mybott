@@ -54,6 +54,8 @@ module.exports = model(
     // Map/mode details shown on the page
     mapName: { type: String },
     maxParticipants: { type: Number },
+    // Podium template choice: "sunset", "desert", "cherry", "night"
+    template: { type: String, default: "sunset" },
     // Custom theme accent (any hex)
     accent: { type: String },
     // Event reminder (sent 1h before the event starts)

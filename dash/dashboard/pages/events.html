@@ -115,6 +115,28 @@
           <input class="form-input" id="evAccent" type="color" value="#FF512F" style="height:46px;">
         </div>
         <div class="form-group full">
+          <label class="form-label"><i class='bx bx-image'></i> <span data-i18n="ev.template">Podium Template</span></label>
+          <div class="template-grid">
+            <div class="tmpl-item active" data-tmpl="sunset">
+              <img src="/dashboard/assets/templates/sunset.png" loading="lazy">
+              <span>Sunset Village</span>
+            </div>
+            <div class="tmpl-item" data-tmpl="desert">
+              <img src="/dashboard/assets/templates/desert.png" loading="lazy">
+              <span>Desert Oasis</span>
+            </div>
+            <div class="tmpl-item" data-tmpl="cherry">
+              <img src="/dashboard/assets/templates/cherry.png" loading="lazy">
+              <span>Cherry Pagoda</span>
+            </div>
+            <div class="tmpl-item" data-tmpl="night">
+              <img src="/dashboard/assets/templates/night.png" loading="lazy">
+              <span>Mystic Night</span>
+            </div>
+          </div>
+          <input type="hidden" id="evTemplate" value="sunset">
+        </div>
+        <div class="form-group full">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" id="evReminder" style="width:18px;height:18px;accent-color:var(--primary);">
             <span style="font-size:14px;color:var(--text);"><i class='bx bx-bell'></i> <span data-i18n="ev.reminder">Auto reminder — notify me 1 hour before the event starts</span></span>
@@ -200,6 +222,16 @@
     .ev-stat-cell label { font-size:11px; margin-bottom:4px; }
     .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; }
     .modal-card { background:var(--bg-2); border:1px solid var(--border-hi); border-radius:18px; padding:24px; max-height:92vh; overflow:auto; }
+    .template-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; margin-top:8px; }
+    .tmpl-item { cursor:pointer; border:2px solid var(--border); border-radius:12px; overflow:hidden; transition:all .2s; position:relative; background:var(--surface); }
+    .tmpl-item img { width:100%; height:80px; object-fit:cover; display:block; opacity:.7; }
+    .tmpl-item span { display:block; padding:6px; text-align:center; font-size:12px; font-weight:600; color:var(--text-muted); }
+    .tmpl-item:hover { border-color:var(--primary); }
+    .tmpl-item:hover img { opacity:1; }
+    .tmpl-item.active { border-color:var(--primary); box-shadow:0 0 0 3px rgba(64,112,244,.2); }
+    .tmpl-item.active img { opacity:1; }
+    .tmpl-item.active span { color:var(--primary); }
+    .tmpl-item.active::after { content:'\eb7a'; font-family:'boxicons'; position:absolute; top:6px; right:6px; background:var(--primary); color:#fff; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; }
   </style>
   <script src="/i18n.js?v=32"></script>
   <script src="/shared.js?v=32"></script>
@@ -229,6 +261,16 @@
     wrap.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { formPlayers.splice(+b.dataset.i, 1); renderFormPlayers(); }));
   }
   function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  
+  // Template selection
+  document.querySelectorAll('.tmpl-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.tmpl-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      $('evTemplate').value = el.dataset.tmpl;
+    });
+  });
+
   $('evAddPlayerBtn').addEventListener('click', () => {
     const name = $('evNewPlayer').value.trim();
     if (!name) return;
@@ -311,6 +353,10 @@
     $('evFormTitle').querySelector('span').textContent = i18n('ev.create');
     $('evName').value = ''; $('evDesc').value = ''; $('evMap').value = '';
     $('evMax').value = ''; $('evScheduled').value = ''; $('evAccent').value = '#FF512F';
+    $('evTemplate').value = 'sunset';
+    document.querySelectorAll('.tmpl-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.tmpl === 'sunset');
+    });
     $('evReminder').checked = false;
     $('evCategory').value = 'pvp';
     formPlayers = [];
@@ -329,6 +375,10 @@
     $('evMax').value = ev.maxParticipants || '';
     $('evCategory').value = ev.category || 'pvp';
     $('evAccent').value = ev.accent || '#FF512F';
+    $('evTemplate').value = ev.template || 'sunset';
+    document.querySelectorAll('.tmpl-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.tmpl === (ev.template || 'sunset'));
+    });
     $('evReminder').checked = !!ev.reminderEnabled;
     if (ev.scheduledAt) $('evScheduled').value = ev.scheduledAt.slice(0, 16);
     formPlayers = (ev.participants || []).map(p => p.name);
@@ -402,6 +452,7 @@
       maxParticipants: $('evMax').value ? +$('evMax').value : undefined,
       scheduledAt: $('evScheduled').value ? new Date($('evScheduled').value).toISOString() : undefined,
       accent: $('evAccent').value,
+      template: $('evTemplate').value,
       reminderEnabled: $('evReminder').checked,
       participants: formPlayers.map(n => ({ name: n }))
     };
@@ -480,7 +531,14 @@
     //  with number plaques). Only winners are rendered on top.
     // ══════════════════════════════════════════════════════════
     const TMPL = document.createElement('img');
-    TMPL.src = '/dashboard/assets/podium-template.webp';
+    const templateName = ev.template || 'sunset';
+    const tmplPaths = {
+      sunset: '/dashboard/assets/templates/sunset.png',
+      desert: '/dashboard/assets/templates/desert.png',
+      cherry: '/dashboard/assets/templates/cherry.png',
+      night:  '/dashboard/assets/templates/night.png'
+    };
+    TMPL.src = tmplPaths[templateName] || tmplPaths.sunset;
     await new Promise(res => {
       TMPL.onload = () => res();
       TMPL.onerror = () => res();

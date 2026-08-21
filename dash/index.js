@@ -2081,6 +2081,7 @@ app.post('/api/server/:guildId/events', [isAuthenticated, verifyGuildAccess], as
       accent: (req.body.accent || '#FF512F').slice(0, 10),
       participants: (req.body.participants || []).slice(0, 200).map(p => ({ name: String(typeof p === 'string' ? p : (p.name || '')).trim().slice(0, 40) })).filter(p => p.name),
       reminderEnabled: req.body.reminderEnabled === true || req.body.reminderEnabled === 'true',
+      template: (req.body.template || 'sunset').slice(0, 30),
       reminderSent: false,
       status: 'upcoming',
     });
@@ -2103,6 +2104,7 @@ app.patch('/api/server/:guildId/events/:id', [isAuthenticated, verifyGuildAccess
     if (b.maxParticipants !== undefined) ev.maxParticipants = Math.min(200, Math.max(2, Number(b.maxParticipants) || 16));
     if (b.scheduledAt !== undefined) ev.scheduledAt = b.scheduledAt ? new Date(b.scheduledAt) : null;
     if (b.accent !== undefined) ev.accent = String(b.accent).slice(0, 10);
+    if (b.template !== undefined) ev.template = String(b.template).slice(0, 30);
     if (b.status !== undefined && ['upcoming', 'live', 'finished'].includes(b.status)) ev.status = b.status;
     if (b.reminderEnabled !== undefined) { ev.reminderEnabled = !!b.reminderEnabled; if (!ev.reminderEnabled) ev.reminderSent = false; }
     if (b.reminderSent !== undefined && ev.status === 'upcoming') ev.reminderSent = !!b.reminderSent;
