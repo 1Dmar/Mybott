@@ -166,7 +166,7 @@
           <button class="btn btn-ghost" id="evPodiumClose" style="padding:8px 14px;"><i class='bx bx-x'></i></button>
         </div>
         <div style="display:flex;justify-content:center;background:rgba(255,255,255,.02);border-radius:16px;padding:16px;">
-          <canvas id="evPodiumCanvas" width="1200" height="800" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
+          <canvas id="evPodiumCanvas" width="1536" height="1024" style="max-width:100%;height:auto;border-radius:12px;"></canvas>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;justify-content:center;">
           <button class="btn btn-primary" id="evDownloadBtn"><i class='bx bx-download'></i> <span data-i18n="ev.download">Download Podium Image</span></button>
@@ -492,16 +492,19 @@
     }
 
     // ── Podium top surfaces (in template coordinates, then scaled) ──
-    // Template: 1536x1024. Canvas now matches the 3:2 ratio (1200x800).
-    const T = W / 1536; // uniform scale
+    // Template: 1536x1024. Canvas renders at FULL template resolution (1536x1024)
+    // so the exported podium image matches the reference image exactly.
+    const T = W / 1536; // uniform scale (=1 at 1536x1024)
     // rank 1: center (tallest block), surface ~y497, center ~x765
     // rank 2: left block, surface ~y612, center ~x395
     // rank 3: right block, surface ~y625, center ~x1160
     // Block geometry (template coords 1536x1024): x = left edge, w = width, top = block top surface y
     const BLOCKS = {
-      1: { x: 605 * T, w: 320 * T, top: 497 * T, cx: 765 * T, label: '1' },
-      2: { x: 245 * T, w: 300 * T, top: 612 * T, cx: 395 * T, label: '2' },
-      3: { x: 1010 * T, w: 300 * T, top: 625 * T, cx: 1160 * T, label: '3' }
+      // measured from the actual template: these are the brick standing SURFACES
+      // (not the plaques) — players' feet must rest on them
+      1: { x: 605 * T, w: 320 * T, top: 600 * T, cx: 765 * T, label: '1' },
+      2: { x: 250 * T, w: 300 * T, top: 685 * T, cx: 355 * T, label: '2' },
+      3: { x: 985 * T, w: 300 * T, top: 628 * T, cx: 1135 * T, label: '3' }
     };
     const cols = [BLOCKS[2], BLOCKS[1], BLOCKS[3]];
 
@@ -548,13 +551,12 @@
       const c = colByPlace[w.rank];
       if (!c) return;
       const cx = c.cx;
-      // Player stands IN his block (sunk into the stone, feet hidden) — not hovering.
-      const sink = w.rank === 1 ? Math.round(62 * T) : Math.round(48 * T);
-      const feetY = c.top + sink; // below the block top surface, embedded in the block
+      // Player stands ON his block: feet AT the block top surface with a slight
+      // natural overlap so the legs look planted (like the reference image)
+      const feetY = c.top + Math.round(30 * T); // feet planted firmly into the block top surface
 
-      // Player image — LARGER and sunk: 1st ≈ 4.2 blocks visible above + 1 block buried,
-      // 2nd/3rd ≈ 3.6 blocks visible above + buried base. Big, grounded, dominant.
-      const playerH = Math.round((w.rank === 1 ? 4.2 : 3.6) * 62 * T);
+      // Player image — standing on the block, reference-matching scale (1st slightly taller)
+      const playerH = Math.round((w.rank === 1 ? 4.5 : 3.9) * 62 * T);
       let playerW = playerH, skinImg = null;
       const pose = POSE[w.rank] || 'front';
       if (w.ident) {
@@ -662,7 +664,7 @@
     const col = { 1: '#ffd54a', 2: '#c9d1de', 3: '#e0a87a' };
     for (const w of winners) {
       const cx = { 1: 765, 2: 395, 3: 1160 }[w.rank];
-      const base = { 1: 745, 2: 700, 3: 695 }[w.rank]; // just below each block base
+      const base = { 1: 895, 2: 900, 3: 905 }[w.rank]; // below the blocks at ground level (reference style)
       const accent = col[w.rank];
       const name = String(w.resolvedName || w.name).slice(0, 16);
       ctx.save();
@@ -744,31 +746,52 @@
     ctx.restore();
   }
 
-  // Event banner across the top: event name + the game/mode it was played in (mapName)
-  // Top title: NO background — floats over the sky.
-  // Line 1 (gold): MAP NAME. Line 2 (white): GAME / EVENT NAME.
+  // Event banner across the top — EXACTLY the reference style:
+  //   Line 1: EVENT NAME in big bold gold, flanked by two thin gold side lines
+  //   Line 2: "Map / Mode:" in white + map name in gold
+  // No background — text floats over the sky.
   function drawEventBanner(ctx, ev, W, T) {
     const map = (ev.mapName || '').trim().slice(0, 48);
-    const game = (ev.title || '').trim().slice(0, 60);
+    const title = (ev.title || '').trim().slice(0, 60);
+    const text = title || 'WINNERS PODIUM';
     ctx.save();
-    const by = Math.round(40 * T);
-    ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
     ctx.textAlign = 'center';
-    // Line 1 — Map name (gold, main)
+    ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
+
+    // Line 1 — event title: big bold gold, centered (raised to match reference)
+    const tFS = Math.round(54 * T);
+    ctx.font = `800 ${tFS}px "Segoe UI", Arial, sans-serif`;
+    const tg = ctx.createLinearGradient(W / 2 - 320 * T, 0, W / 2 + 320 * T, 0);
+    tg.addColorStop(0, '#ffb82a'); tg.addColorStop(0.45, '#ffd54a'); tg.addColorStop(1, '#fff0b0');
+    ctx.fillStyle = tg;
+    const ty = Math.round(40 * T);
+    ctx.fillText(text, W / 2, ty);
+
+    // thin gold side lines flanking the title (same look as the reference)
+    const tm = ctx.measureText(text);
+    const hw = tm.width / 2;
+    const lw = Math.round(120 * T), ly = ty - Math.round(16 * T); // vertically centered on the title
+    ctx.strokeStyle = '#ffd54a';
+    ctx.lineWidth = Math.max(2, Math.round(3 * T));
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(W / 2 - hw - 26 * T - lw, ly); ctx.lineTo(W / 2 - hw - 26 * T, ly); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W / 2 + hw + 26 * T, ly); ctx.lineTo(W / 2 + hw + 26 * T + lw, ly); ctx.stroke();
+
+    // Line 2 — "Map / Mode: <map>" (white label + gold value), centered as one block
     if (map) {
-      ctx.font = `bold ${Math.round(27 * T)}px "Segoe UI", Arial, sans-serif`;
+      const subY = ty + Math.round(36 * T);
+      const lbl = 'Map / Mode:';
+      ctx.textAlign = 'left';
+      ctx.font = `${Math.round(24 * T)}px "Segoe UI", Arial, sans-serif`;
+      const lblW = ctx.measureText(lbl).width;
+      const gap = 22 * T;
+      ctx.font = `600 ${Math.round(26 * T)}px "Segoe UI", Arial, sans-serif`;
+      const valW = ctx.measureText(map).width;
+      const startX = W / 2 - (lblW + gap + valW) / 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(lbl, startX, subY);
       ctx.fillStyle = '#ffd54a';
-      ctx.fillText(map, W / 2, game ? by + Math.round(30 * T) : by);
-    }
-    // Line 2 — game / event name (white, sub)
-    if (game) {
-      ctx.font = `${Math.round(16 * T)}px "Segoe UI", Arial, sans-serif`;
-      ctx.fillStyle = '#e9edf5';
-      ctx.fillText(game, W / 2, map ? by + Math.round(53 * T) : by);
-    } else if (!map) {
-      ctx.font = `bold ${Math.round(27 * T)}px "Segoe UI", Arial, sans-serif`;
-      ctx.fillStyle = '#ffd54a';
-      ctx.fillText('WINNERS PODIUM', W / 2, by);
+      ctx.fillText(map, startX + lblW + gap, subY);
     }
     ctx.restore();
   }
