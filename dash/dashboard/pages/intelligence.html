@@ -18,6 +18,7 @@
     .ok { color:#22c55e; } .pending { color:#f59e0b; }
     .signal { padding:.75rem; border-left:3px solid var(--primary); background:var(--bg); margin:.5rem 0; border-radius:4px; }
     .signal strong { color:var(--text); } .signal p { margin:.25rem 0 0; color:var(--text-muted); }
+    .feature-lock { background:var(--bg); border:1px dashed var(--border); border-radius:10px; padding:1rem; } .feature-lock h3 { margin:0 0 .35rem; color:var(--text); } .feature-lock p { color:var(--text-muted); min-height:2.5rem; } .feature-lock-badge { color:#f59e0b; font-size:.75rem; font-weight:700; display:block; margin:.4rem 0; } .feature-lock-action { color:var(--primary); font-weight:600; }
     select,input,button { font:inherit; } select,input { width:100%; padding:.7rem; margin:.35rem 0 .75rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
     button.primary { padding:.7rem 1rem; border:0; border-radius:8px; background:var(--primary); color:white; cursor:pointer; }
     pre { white-space:pre-wrap; overflow:auto; background:#111827; color:#d1fae5; padding:1rem; border-radius:8px; font-size:.8rem; }
@@ -38,9 +39,10 @@
       <section class="intel-card"><h2>Analysis</h2><div id="analysis"><p class="muted">Analysis requires two comparable telemetry windows.</p></div></section>
       <section class="intel-card"><h2>Recommendations</h2><div id="recommendations"><p class="muted">Recommendations appear only when evidence supports them.</p></div></section>
     </div>
+    <section class="intel-card" style="margin-top:1rem"><h2>Advanced modules</h2><div id="premiumLocks" class="intel-grid"></div></section>
     <section class="intel-card" style="margin-top:1rem"><h2>Secure Minecraft connection</h2><p class="muted">Provision one-time credentials for a plugin instance. Store them only in the plugin config.yml; they are never displayed again by the backend.</p><form id="provisionForm"><label>Instance ID<input id="instanceId" value="primary" pattern="[A-Za-z0-9._-]{3,64}" required></label><button class="primary" type="submit">Generate one-time plugin credentials</button></form><pre id="provisionResult" hidden></pre></section>
   </main>
-  <script src="/dashboard/shared.js"></script>
+  <script src="/dashboard/shared.js"></script><script src="/dashboard/premium-lock.js"></script>
   <script>
     const $ = id => document.getElementById(id);
     let currentGuild = '';
@@ -57,7 +59,8 @@
     }
     async function loadServers() { try { const data = await json('/api/guilds'); const select = $('serverSelect'); select.innerHTML = ''; (data.guilds || []).forEach(guild => { const option = document.createElement('option'); option.value = guild.id; option.textContent = guild.name || guild.id; select.append(option); }); if (select.value) { $('serverMeta').textContent = `${data.guilds.length} server(s) available`; loadGuild(select.value); } else $('serverMeta').textContent = 'No accessible servers were returned by Discord.'; select.addEventListener('change', () => loadGuild(select.value)); } catch (error) { $('serverMeta').textContent = error.message; } }
     $('provisionForm').addEventListener('submit', async event => { event.preventDefault(); $('provisionResult').hidden = false; $('provisionResult').textContent = 'Generating…'; try { const result = await json(`/api/guilds/${currentGuild}/plugin/provision`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ instanceId:$('instanceId').value }) }); $('provisionResult').textContent = JSON.stringify(result.oneTimeConfig, null, 2) + '\n\n' + result.warning; } catch (error) { $('provisionResult').textContent = error.message; } });
-    loadServers();
+    function renderLocks() { const target = $('premiumLocks'); if (!window.renderFeatureLock) return; [['Player Retention','Pro','Understand where players stop returning.','retention.advanced'],['Advanced Reports','Pro','Compare measured trends over longer history.','reports.advanced'],['Network Intelligence','Ultimate','Compare multiple Minecraft instances and network health.','network.intelligence']].forEach(([title, plan, description, feature]) => target.append(window.renderFeatureLock({ title, requiredPlan: plan, description, feature }))); }
+    renderLocks(); loadServers();
   </script>
 </body>
 </html>

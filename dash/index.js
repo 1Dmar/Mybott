@@ -34,13 +34,29 @@ const { authenticatePluginRequest, encryptSecret, hashToken } = require('../bot/
 const AutomationRule = require('../bot/Models/AutomationRule');
 const AutomationExecution = require('../bot/Models/AutomationExecution');
 const { summarizeTelemetry, WINDOW_MS } = require('../bot/utils/intelligenceEngine');
+const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
+const { summarizeNetwork } = require('../bot/utils/networkIntelligenceEngine');
+const { interpretEvidence, available: aiAvailable } = require('../bot/utils/aiInterpretationEngine');
 const { runEnabledRules } = require('../bot/utils/automationEngine');
-const { PLANS, getPlan } = require('../bot/utils/entitlements');
+const { PLANS, getPlan, getEntitlement, hasFeature, PLAN_ORDER } = require('../bot/utils/entitlements');
+const Subscription = require('../bot/Models/Subscription');
+const Payment = require('../bot/Models/Payment');
+const Invoice = require('../bot/Models/Invoice');
+const BillingEvent = require('../bot/Models/BillingEvent');
+const Report = require('../bot/Models/Report');
+const Notification = require('../bot/Models/Notification');
+const SecurityEvent = require('../bot/Models/SecurityEvent');
+const AuditLog = require('../bot/Models/AuditLog');
+const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
+const { verifyStripeSignature, providerConfigured, processVerifiedEvent } = require('../bot/utils/billingService');
+const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
+const { listNotifications, markRead } = require('../bot/utils/notificationService');
+const { recordSecurityEvent } = require('../bot/utils/securityEventService');
+const { recordAudit } = require('../bot/utils/auditLogService');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
 const GuildSettings  = require('../bot/Models/GuildSettings');
-const UserProfile    = require('../bot/Models/UserProfile');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -49,7 +65,7 @@ app.use(cors());
 app.use(express.json({
   limit: '512kb',
   verify: (req, res, buffer) => {
-    if (req.path === '/api/v1/telemetry/events') req.rawBody = Buffer.from(buffer);
+    if (req.path === '/api/v1/telemetry/events' || req.path === '/api/v1/plugin/capabilities' || req.path.startsWith('/api/billing/webhook/')) req.rawBody = Buffer.from(buffer);
   }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -72,11 +88,42 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Provider webhooks are verified from the exact raw body before changing subscription state.
+app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max: 60 }), async (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase();
+  if (provider !== 'stripe') return res.status(501).json({ success: false, error: 'billing_provider_not_implemented' });
+  if (!providerConfigured(provider)) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
+  const verification = verifyStripeSignature(req.rawBody, req.get('stripe-signature'), process.env.STRIPE_WEBHOOK_SECRET);
+  if (!verification.valid) return res.status(400).json({ success: false, error: verification.reason });
+  try {
+    const result = await processVerifiedEvent(provider, req.body);
+    res.status(200).json({ received: true, ...result });
+  } catch (error) {
+    await BillingEvent.updateOne({ provider, eventId: req.body?.id }, { $set: { status: 'failed', error: String(error.message).slice(0, 500) } }).catch(() => null);
+    console.error('[billing webhook] error:', error.message);
+    res.status(400).json({ success: false, error: 'billing_event_rejected' });
+  }
+});
+
 // First-party Minecraft plugin telemetry. Signature verification uses the exact raw body.
-app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }), async (req, res) => {
+app.get('/api/v1/plugin/capabilities', rateLimit({ windowMs: 60 * 1000, max: 120 }), async (req, res) => {
   try {
     const auth = await authenticatePluginRequest(req, req.rawBody || Buffer.from(''));
     if (!auth.ok) return res.status(auth.status).json({ success: false, error: auth.error });
+    const entitlement = await getForGuild(auth.serverId);
+    const body = JSON.stringify({ success: true, protocolVersion: auth.protocolVersion, serverId: auth.serverId, instanceId: auth.instanceId, plan: entitlement.plan, features: entitlement.features, limits: entitlement.limits, expiresAt: entitlement.currentPeriodEnd || null });
+    const response = res.status(200).json(JSON.parse(body));
+    void response;
+  } catch (error) { console.error('[plugin capabilities] error:', error.message); res.status(500).json({ success: false, error: 'capabilities_failed' }); }
+});
+
+app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }), async (req, res) => {
+  try {
+    const auth = await authenticatePluginRequest(req, req.rawBody || Buffer.from(''));
+    if (!auth.ok) {
+      if (['invalid_signature', 'replayed_request', 'plugin_not_provisioned'].includes(auth.error)) await recordSecurityEvent({ guildId: req.get('x-promcbot-server') || 'unknown', instanceId: req.get('x-promcbot-instance') || null, event: auth.error, severity: auth.error === 'invalid_signature' ? 'high' : 'medium', evidence: { source: 'plugin_protocol', timestamp: req.get('x-promcbot-timestamp') || null }, action: 'review_or_revoke' }).catch(() => null);
+      return res.status(auth.status).json({ success: false, error: auth.error });
+    }
     const incoming = Array.isArray(req.body?.events) ? req.body.events.slice(0, 250) : [];
     if (!incoming.length) return res.status(400).json({ success: false, error: 'events_required' });
     const now = Date.now();
@@ -89,7 +136,8 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
     });
     await TelemetryEvent.insertMany(documents, { ordered: false });
     const latestCount = documents.map(d => d.type === 'player_count' ? Number(d.data.onlinePlayers) : NaN).find(Number.isFinite);
-    await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === undefined ? {} : { lastOnlinePlayers: Math.max(0, latestCount) }) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
+    const headerValue = name => String(req.get(name) || '').trim().slice(0, 120) || null;
+    await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === undefined ? {} : { lastOnlinePlayers: Math.max(0, latestCount) }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
     res.status(202).json({ success: true, accepted: documents.length, serverId: auth.serverId, instanceId: auth.instanceId });
   } catch (error) {
     if (error?.code === 11000) return res.status(202).json({ success: true, accepted: 0, duplicate: true });
@@ -217,18 +265,60 @@ app.get('/api/user/sessions', isAuthenticated, (req, res) => {
 
 app.get('/api/user/membership', isAuthenticated, async (req, res) => {
   try {
-    const profile = await UserProfile.findOne({ userId: req.user.id });
-    const isPremium = !!(profile && profile.premiumUntil > Date.now());
-    res.json({ success: true, membership: { plan: isPremium ? 'premium' : 'free' } });
-  } catch (e) {
-    res.json({ success: true, membership: { plan: 'free' } });
-  }
+    const guildIds = (req.user.guilds || []).map(guild => guild.id).filter(Boolean);
+    const subscriptions = guildIds.length ? await Subscription.find({ guildId: { $in: guildIds } }).lean() : [];
+    const entitlements = subscriptions.map(subscription => getEntitlement(subscription));
+    const best = entitlements.sort((a, b) => PLAN_ORDER.indexOf(b.plan) - PLAN_ORDER.indexOf(a.plan))[0] || getEntitlement(null);
+    res.json({ success: true, membership: { plan: best.plan, status: best.status, source: 'subscription_authority' } });
+  } catch (e) { res.json({ success: true, membership: { plan: 'free', status: 'active', source: 'subscription_authority' } }); }
 });
 
 app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildManager, async (req, res) => {
-  const settings = await GuildSettings.findOne({ guildId: req.params.guildId }).lean().catch(() => null);
-  const plan = getPlan(settings?.plan || 'free');
-  res.json({ success: true, plan, availablePlans: Object.values(PLANS), billing: { implemented: false, note: 'Entitlements are currently configuration-based; payment processing is not implemented.' } });
+  await ensureFreeSubscription(req.params.guildId);
+  const entitlement = await getForGuild(req.params.guildId);
+  res.json({ success: true, entitlement, availablePlans: Object.values(PLANS), authority: 'server_subscription' });
+});
+
+app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  const period = new Date().toISOString().slice(0, 7);
+  const usage = await require('../bot/Models/UsageCounter').find({ guildId: req.params.guildId, period }).lean();
+  const byFeature = Object.fromEntries(usage.map(item => [item.feature, { used: item.used, limit: entitlement.limits?.[item.feature] ?? null }]));
+  res.json({ success: true, period, plan: entitlement.plan, limits: entitlement.limits, usage: byFeature });
+});
+
+app.get('/api/billing/config', isAuthenticated, (req, res) => {
+  res.json({ success: true, plans: Object.values(PLANS), provider: process.env.STRIPE_PUBLISHABLE_KEY ? 'stripe' : null, checkoutAvailable: !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_PRO_PRICE_ID && !!process.env.STRIPE_ULTIMATE_PRICE_ID, webhookConfigured: !!process.env.STRIPE_WEBHOOK_SECRET });
+});
+
+app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, async (req, res) => {
+  const [entitlement, subscription, invoices, payments] = await Promise.all([getForGuild(req.params.guildId), Subscription.findOne({ guildId: req.params.guildId }).lean(), Invoice.find({ guildId: req.params.guildId }).sort({ issuedAt: -1 }).limit(50).lean(), Payment.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50).lean()]);
+  res.json({ success: true, entitlement, subscription: subscription || { guildId: req.params.guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' }, invoices, payments, provider: { name: process.env.STRIPE_SECRET_KEY ? 'stripe' : null, checkoutAvailable: !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_PRO_PRICE_ID && !!process.env.STRIPE_ULTIMATE_PRICE_ID } });
+});
+
+app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildManager, async (req, res) => {
+  const plan = String(req.body?.plan || '').toLowerCase();
+  if (!['pro', 'ultimate'].includes(plan)) return res.status(400).json({ success: false, error: 'invalid_paid_plan' });
+  const priceId = plan === 'pro' ? process.env.STRIPE_PRO_PRICE_ID : process.env.STRIPE_ULTIMATE_PRICE_ID;
+  if (!process.env.STRIPE_SECRET_KEY || !priceId) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
+  try {
+    const params = new URLSearchParams({ mode: 'subscription', 'line_items[0][price]': priceId, 'line_items[0][quantity]': '1', client_reference_id: req.params.guildId, 'metadata[guildId]': req.params.guildId, 'metadata[plan]': plan, success_url: `${process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`}/premium?billing=success`, cancel_url: `${process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`}/premium?billing=cancelled` });
+    const response = await axios.post('https://api.stripe.com/v1/checkout/sessions', params.toString(), { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'success', source: 'dashboard', target: plan });
+    res.json({ success: true, checkoutUrl: response.data?.url || null });
+  } catch (error) { console.error('[billing checkout] provider error:', error.response?.status || error.message); res.status(502).json({ success: false, error: 'billing_checkout_failed' }); }
+});
+
+app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildManager, async (req, res) => {
+  const subscription = await Subscription.findOne({ guildId: req.params.guildId }).lean();
+  if (!subscription?.providerSubscriptionId) return res.status(409).json({ success: false, error: 'no_provider_subscription' });
+  if (subscription.provider !== 'stripe' || !process.env.STRIPE_SECRET_KEY) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
+  try {
+    await axios.post(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscription.providerSubscriptionId)}`, new URLSearchParams({ cancel_at_period_end: 'true' }).toString(), { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 });
+    await Subscription.updateOne({ guildId: req.params.guildId }, { $set: { renewalState: 'will_cancel', cancellationAt: new Date() } });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'dashboard', target: subscription.providerSubscriptionId });
+    res.json({ success: true, renewalState: 'will_cancel' });
+  } catch (error) { console.error('[billing cancel] provider error:', error.response?.status || error.message); res.status(502).json({ success: false, error: 'billing_cancel_failed' }); }
 });
 
 // ── Guild API ─────────────────────────────────────────────────────
@@ -278,6 +368,8 @@ app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dash
 app.get('/servers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
 app.get('/intelligence', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
 app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
+app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
+app.get('/premium', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'premium.html')));
 
 // Dynamic Server Pages
 const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence'];
@@ -318,6 +410,80 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
   } catch (error) { res.status(500).json({ success: false, error: 'activation_status_failed' }); }
 });
 
+app.get('/api/guilds/:guildId/players', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const entitlement = await getForGuild(req.params.guildId);
+    const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - entitlement.historyDays * 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(25000).lean();
+    res.json({ success: true, entitlement: { plan: entitlement.plan, historyDays: entitlement.historyDays }, players: analyzePlayers(events), source: 'telemetry' });
+  } catch (error) { res.status(500).json({ success: false, error: 'player_intelligence_failed' }); }
+});
+
+app.get('/api/guilds/:guildId/retention', isAuthenticated, requireGuildManager, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  if (!hasFeature(entitlement, 'retention.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'retention.advanced', requiredPlan: 'pro', message: 'Advanced retention analysis requires Pro. Basic player activity remains available.' });
+  const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - entitlement.historyDays * 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(50000).lean();
+  res.json({ success: true, retention: analyzePlayers(events).retention, journey: analyzePlayers(events).journey, sample: analyzePlayers(events).sample });
+});
+
+app.get('/api/guilds/:guildId/network', isAuthenticated, requireGuildManager, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  if (!hasFeature(entitlement, 'network.intelligence')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', feature: 'network.intelligence', requiredPlan: 'ultimate', message: 'Network intelligence requires Ultimate. Server-level intelligence remains available.' });
+  const networkId = String(req.query.networkId || '').trim().slice(0, 64) || null;
+  const instanceQuery = { serverId: req.params.guildId, ...(networkId ? { networkId } : {}) };
+  const instances = await PluginInstance.find(instanceQuery).lean();
+  const instanceIds = instances.map(instance => instance.instanceId);
+  const events = await TelemetryEvent.find({ serverId: req.params.guildId, ...(instanceIds.length ? { instanceId: { $in: instanceIds } } : { instanceId: '__none__' }), occurredAt: { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), $lt: new Date() }, type: 'player_count' }).limit(50000).lean();
+  res.json({ success: true, networkId, network: summarizeNetwork(instances, events), source: 'telemetry' });
+});
+
+app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildManager, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  if (!hasFeature(entitlement, 'security.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', feature: 'security.advanced', requiredPlan: 'ultimate', message: 'Advanced security intelligence requires Ultimate.' });
+  const events = await SecurityEvent.find({ guildId: req.params.guildId }).sort({ time: -1 }).limit(100).lean();
+  res.json({ success: true, events });
+});
+
+app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const entitlement = await getForGuild(req.params.guildId);
+    const report = await generateWeeklyReport(req.params.guildId, entitlement.plan);
+    res.json({ success: true, report, entitlement: { plan: entitlement.plan } });
+  } catch (error) { res.status(500).json({ success: false, error: 'weekly_report_failed' }); }
+});
+
+app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const [intel, notifications] = await Promise.all([TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry), listNotifications(req.params.guildId, 50)]);
+    const actions = intel.recommendations.map((recommendation, index) => ({ id: `recommendation-${index}`, title: recommendation.what, impact: recommendation.why, evidence: recommendation.why, executable: false, action: null }));
+    res.json({ success: true, issues: actions, notifications, message: actions.length ? null : 'No evidence-backed action is required right now.' });
+  } catch (error) { res.status(500).json({ success: false, error: 'action_center_failed' }); }
+});
+
+app.get('/api/guilds/:guildId/audit', isAuthenticated, requireGuildManager, async (req, res) => {
+  const logs = await AuditLog.find({ guildId: req.params.guildId }).sort({ timestamp: -1 }).limit(100).lean();
+  res.json({ success: true, logs });
+});
+
+app.get('/api/guilds/:guildId/notifications', isAuthenticated, requireGuildManager, async (req, res) => {
+  res.json({ success: true, notifications: await listNotifications(req.params.guildId, Number(req.query.limit) || 50) });
+});
+
+app.patch('/api/guilds/:guildId/notifications/:notificationId/read', isAuthenticated, requireGuildManager, async (req, res) => {
+  const notification = await markRead(req.params.guildId, req.params.notificationId);
+  if (!notification) return res.status(404).json({ success: false, error: 'notification_not_found' });
+  res.json({ success: true, notification });
+});
+
+app.get('/api/guilds/:guildId/intelligence/explanation', isAuthenticated, requireGuildManager, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  if (!hasFeature(entitlement, 'server.intelligence.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', requiredPlan: 'pro', message: 'Evidence interpretation requires Pro.' });
+  try {
+    const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean();
+    const deterministic = summarizeTelemetry(events);
+    res.json({ success: true, aiConfigured: aiAvailable(), interpretation: await interpretEvidence(deterministic), deterministic });
+  } catch (error) { res.status(500).json({ success: false, error: 'intelligence_explanation_failed' }); }
+});
+
 app.get('/api/guilds/:guildId/intelligence', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean();
@@ -331,10 +497,15 @@ app.post('/api/guilds/:guildId/plugin/provision', isAuthenticated, requireGuildM
     if (!process.env.PLUGIN_ENCRYPTION_KEY) return res.status(503).json({ success: false, error: 'plugin_provisioning_not_configured' });
     const instanceId = String(req.body?.instanceId || '').trim().slice(0, 64);
     if (!/^[A-Za-z0-9._-]{3,64}$/.test(instanceId)) return res.status(400).json({ success: false, error: 'invalid_instance_id' });
+    const networkId = String(req.body?.networkId || '').trim().slice(0, 64) || null;
+    const minecraftServerId = String(req.body?.minecraftServerId || '').trim().slice(0, 64) || instanceId;
+    const serverName = String(req.body?.serverName || '').trim().slice(0, 120) || null;
     const accessToken = `pmc_${crypto.randomBytes(32).toString('base64url')}`;
     const signingSecret = crypto.randomBytes(32).toString('base64url');
     await PluginCredential.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { serverId: req.params.guildId, instanceId, accessTokenHash: hashToken(accessToken), encryptedSigningSecret: encryptSecret(signingSecret), protocolVersion: '1', revokedAt: null, lastRotatedAt: new Date() }, { upsert: true, new: true, setDefaultsOnInsert: true });
-    res.status(201).json({ success: true, oneTimeConfig: { baseUrl: `${req.protocol}://${req.get('host')}`, serverId: req.params.guildId, instanceId, accessToken, signingSecret, protocolVersion: '1' }, warning: 'Store these credentials in the plugin config.yml. They are not returned again.' });
+    await PluginInstance.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { $set: { networkId, minecraftServerId, serverName, protocolVersion: '1', status: 'offline', revokedAt: null }, $setOnInsert: { firstSeenAt: new Date(), lastSeenAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'plugin_provisioned', feature: 'plugin.connection', result: 'success', source: 'dashboard', target: instanceId, metadata: { networkId, minecraftServerId } });
+    res.status(201).json({ success: true, oneTimeConfig: { baseUrl: `${req.protocol}://${req.get('host')}`, serverId: req.params.guildId, instanceId, networkId, minecraftServerId, serverName, accessToken, signingSecret, protocolVersion: '1' }, warning: 'Store these credentials in the plugin config.yml. They are not returned again.' });
   } catch (error) { console.error('[plugin provision] error:', error.message); res.status(500).json({ success: false, error: 'plugin_provision_failed' }); }
 });
 
@@ -342,6 +513,7 @@ app.delete('/api/guilds/:guildId/plugin/:instanceId', isAuthenticated, requireGu
   const instanceId = String(req.params.instanceId || '').slice(0, 64);
   const result = await PluginCredential.updateOne({ serverId: req.params.guildId, instanceId, revokedAt: null }, { $set: { revokedAt: new Date() } });
   await PluginInstance.updateOne({ serverId: req.params.guildId, instanceId }, { $set: { status: 'offline', revokedAt: new Date() } });
+  await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'plugin_revoked', feature: 'plugin.connection', result: result.modifiedCount > 0 ? 'success' : 'failure', source: 'dashboard', target: instanceId });
   res.json({ success: true, revoked: result.modifiedCount > 0 });
 });
 
@@ -354,15 +526,22 @@ app.get('/api/observability', isAuthenticated, async (req, res) => {
   try {
     const isOwner = String(process.env.OWNER_ID || '').split(',').includes(req.user?.id);
     if (!isOwner) return res.status(403).json({ success: false, error: 'owner_required' });
-    res.json({ success: true, service: 'promcbot', uptimeSeconds: Math.floor(process.uptime()), mongoReadyState: mongoose.connection.readyState, telemetry24h: await TelemetryEvent.countDocuments({ receivedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), pluginInstances: await PluginInstance.countDocuments({ revokedAt: null }), automationRules: await AutomationRule.countDocuments({ enabled: true }), timestamp: new Date().toISOString() });
+    res.json({ success: true, service: 'promcbot', uptimeSeconds: Math.floor(process.uptime()), mongoReadyState: mongoose.connection.readyState, telemetry24h: await TelemetryEvent.countDocuments({ receivedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), pluginInstances: await PluginInstance.countDocuments({ revokedAt: null }), automationRules: await AutomationRule.countDocuments({ enabled: true }), auditLogs24h: await AuditLog.countDocuments({ timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), securityEvents24h: await SecurityEvent.countDocuments({ time: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), timestamp: new Date().toISOString() });
   } catch (error) { res.status(500).json({ success: false, error: 'observability_failed' }); }
 });
 
 app.post('/api/guilds/:guildId/automation', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const body = req.body || {};
-    const rule = await AutomationRule.create({ serverId: req.params.guildId, name: String(body.name || 'Activity decline alert').slice(0, 120), enabled: body.enabled !== false, trigger: body.trigger === 'weekly_summary' ? 'weekly_summary' : 'activity_decline', thresholdPercent: Number.isFinite(Number(body.thresholdPercent)) ? Number(body.thresholdPercent) : -5, action: 'discord_message', channelId: String(body.channelId || '').slice(0, 32), messageTemplate: String(body.messageTemplate || 'ProMcBot detected a measured activity decline: {{activityChange}}.').slice(0, 1500), cooldownMinutes: Math.min(43200, Math.max(60, Number(body.cooldownMinutes) || 1440)), createdBy: req.user.id });
-    res.status(201).json({ success: true, rule });
+    const trigger = body.trigger === 'weekly_summary' ? 'weekly_summary' : 'activity_decline';
+    const entitlement = await getForGuild(req.params.guildId);
+    const required = trigger === 'weekly_summary' ? 'automation.advanced' : 'automation.basic';
+    if (!hasFeature(entitlement, required)) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: required, requiredPlan: 'pro', message: 'This automation requires Pro; basic server alerts remain available.' });
+    const usage = await consumeUsage(req.params.guildId, 'automation');
+    if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', feature: 'automation', used: usage.used, limit: usage.limit, plan: entitlement.plan });
+    const rule = await AutomationRule.create({ serverId: req.params.guildId, name: String(body.name || 'Activity decline alert').slice(0, 120), enabled: body.enabled !== false, trigger, thresholdPercent: Number.isFinite(Number(body.thresholdPercent)) ? Number(body.thresholdPercent) : -5, action: 'discord_message', channelId: String(body.channelId || '').slice(0, 32), messageTemplate: String(body.messageTemplate || 'ProMcBot detected a measured activity decline: {{activityChange}}.').slice(0, 1500), cooldownMinutes: Math.min(43200, Math.max(60, Number(body.cooldownMinutes) || 1440)), createdBy: req.user.id });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'automation_created', feature: required, result: 'success', source: 'dashboard', target: String(rule._id), metadata: { trigger } });
+    res.status(201).json({ success: true, rule, usage });
   } catch (error) { res.status(400).json({ success: false, error: 'automation_rule_invalid' }); }
 });
 

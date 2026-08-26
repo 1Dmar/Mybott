@@ -103,6 +103,8 @@
         <li class="item"><a href="/dashboard" class="nav_link ${currentPath === '/dashboard' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-user"></i></span><span class="navlink">Profile</span></a></li>
         <li class="item"><a href="/servers" class="nav_link ${currentPath === '/servers' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My Servers</span></a></li>
         <li class="item"><a href="/intelligence" class="nav_link ${currentPath === '/intelligence' || currentPath === '/onboarding' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-line-chart"></i></span><span class="navlink">Intelligence</span></a></li>
+        <li class="item"><a href="/actions" class="nav_link ${currentPath === '/actions' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-square"></i></span><span class="navlink">Action Center</span></a></li>
+        <li class="item"><a href="/premium" class="nav_link ${currentPath === '/premium' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium Center</span></a></li>
       </ul>
     `;
 
@@ -115,6 +117,7 @@
           <li class="item"><a href="/servers/${gId}/settings" class="nav_link ${currentPath.includes('/settings') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-cog"></i></span><span class="navlink">Settings</span></a></li>
           <li class="item"><a href="/servers/${gId}/modules" class="nav_link ${currentPath.includes('/modules') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-extension"></i></span><span class="navlink">Modules</span></a></li>
           <li class="item"><a href="/servers/${gId}/logs" class="nav_link ${currentPath.includes('/logs') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-list-ul"></i></span><span class="navlink">Audit Logs</span></a></li>
+          <li class="item"><a href="/servers/${gId}/premium" class="nav_link ${currentPath.includes('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
         </ul>
       `;
     }

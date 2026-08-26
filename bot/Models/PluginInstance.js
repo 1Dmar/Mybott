@@ -2,6 +2,9 @@ const mongoose = require('mongoose');
 
 const pluginInstanceSchema = new mongoose.Schema({
   serverId: { type: String, required: true, index: true },
+  networkId: { type: String, default: null, index: true, maxlength: 64 },
+  minecraftServerId: { type: String, default: null, index: true, maxlength: 64 },
+  serverName: { type: String, default: null, maxlength: 120 },
   instanceId: { type: String, required: true },
   protocolVersion: { type: String, required: true, maxlength: 32 },
   pluginVersion: { type: String, maxlength: 32 },

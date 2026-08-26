@@ -15,12 +15,10 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public final class ProMcBotPlugin extends JavaPlugin implements Listener, CommandExecutor {
     private final Map<UUID, Instant> sessions = new ConcurrentHashMap<>();
@@ -30,12 +28,16 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private int snapshotTask = -1;
     private int heartbeatTask = -1;
     private volatile int lastOnlineCount;
+    private volatile boolean entitlementAvailable;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         String serverId = getConfig().getString("backend.server-id", "");
         String instanceId = getConfig().getString("backend.instance-id", "");
+        String networkId = getConfig().getString("backend.network-id", "");
+        String minecraftServerId = getConfig().getString("backend.minecraft-server-id", instanceId);
+        String serverName = getConfig().getString("backend.server-name", "");
         String baseUrl = getConfig().getString("backend.base-url", "");
         String accessToken = getConfig().getString("backend.access-token", "");
         String signingSecret = getConfig().getString("backend.signing-secret", "");
@@ -47,13 +49,14 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         telemetryQueue = new TelemetryQueue(maxQueue);
 
         try {
-            backend = new BackendClient(baseUrl, serverId, instanceId, accessToken, signingSecret,
-                    protocolVersion, telemetryQueue);
+            backend = new BackendClient(baseUrl, serverId, instanceId, networkId, minecraftServerId,
+                    serverName, accessToken, signingSecret, protocolVersion, telemetryQueue);
         } catch (IllegalArgumentException error) {
             getLogger().severe("Backend configuration is incomplete or unsafe: " + error.getMessage());
             getLogger().severe("The server remains playable; telemetry will stay offline until config.yml is completed.");
         }
 
+        if (backend != null) backend.refreshCapabilities().thenAccept(ok -> entitlementAvailable = ok);
         Bukkit.getPluginManager().registerEvents(this, this);
         if (getCommand("promcbot") != null) getCommand("promcbot").setExecutor(this);
 
@@ -124,7 +127,8 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
             sender.sendMessage("ProMcBot: queue=" + (telemetryQueue == null ? 0 : telemetryQueue.size())
                     + ", dropped=" + (telemetryQueue == null ? 0 : telemetryQueue.dropped())
-                    + ", backend=" + (backend != null && backend.isOnline() ? "online" : "offline"));
+                    + ", backend=" + (backend != null && backend.isOnline() ? "online" : "offline")
+                    + ", capabilities=" + (entitlementAvailable ? "available" : "degraded"));
             return true;
         }
         sender.sendMessage("Usage: /promcbot status");

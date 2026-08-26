@@ -40,7 +40,6 @@
     "express-session": "^1.18.2",
     "express-slow-down": "^2.1.0",
     "fs": "^0.0.1-security",
-    "get-image-colors": "^4.0.1",
     "greenlock-express": "^4.0.3",
     "helmet": "^8.1.0",
     "i": "^0.3.7",

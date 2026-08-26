@@ -1,133 +1,58 @@
 const express = require('express');
-const { verifyPremiumKey } = require('../utils/premiumCode');
 const ServerInfo = require('../Models/Server');
+const TelemetryEvent = require('../Models/TelemetryEvent');
+const PluginInstance = require('../Models/PluginInstance');
+const { getForGuild } = require('../utils/entitlementService');
+const { hasFeature } = require('../utils/entitlements');
+const { summarizeTelemetry, WINDOW_MS } = require('../utils/intelligenceEngine');
 
 const router = express.Router();
 
-// ══════════════════════════════════════════════════════════════
-//  Public Route: مسار ترحيبي لا يتطلب توثيق
-// ══════════════════════════════════════════════════════════════
 router.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'ProMcBot API is active. Documentation: /docs',
-        endpoints: {
-            status: 'GET /bot/status',
-            player: 'GET /bot/player/:ign',
-            command: 'POST /bot/command'
-        }
-    });
+  res.json({ success: true, message: 'ProMcBot API is active.', endpoints: { status: 'GET /bot/status', player: 'GET /bot/player/:ign', intelligence: 'GET /bot/intelligence', command: 'POST /bot/command' } });
 });
 
-// ══════════════════════════════════════════════════════════════
-//  Middleware: يشترط الـ headers التالية على كل endpoint:
-//    Authorization: Bearer <token-from-config>
-//    X-Premium-Key: <encrypted-premium-key>
-// ══════════════════════════════════════════════════════════════
 router.use(async (req, res, next) => {
-    // 1. Check Authorization header
-    const authHeader = req.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({
-            success: false,
-            error: 'Missing or invalid Authorization header. Expected: Authorization: Bearer <token>'
-        });
-    }
-    const bearerToken = authHeader.slice(7); // Remove "Bearer " prefix
-
-    // 2. Check X-Premium-Key header
-    const premiumKey = req.headers['x-premium-key'];
-    if (!premiumKey) {
-        return res.status(401).json({
-            success: false,
-            error: 'Missing X-Premium-Key header. This endpoint requires a valid premium code.'
-        });
-    }
-
-    // 3. Verify the premium key signature + expiry
-    const verification = verifyPremiumKey(premiumKey);
-    if (!verification || !verification.valid) {
-        return res.status(403).json({
-            success: false,
-            error: 'Invalid or expired premium key. Please re-claim a new code with /claim.'
-        });
-    }
-
-    // 4. Validate that the premium key is actually saved in DB for the server matching the API port
-    try {
-        const serverConfig = await ServerInfo.findOne({ premiumKey: premiumKey });
-        if (!serverConfig) {
-            return res.status(403).json({
-                success: false,
-                error: 'Premium key not registered to any server. Use /claim to register it first.'
-            });
-        }
-
-        // 5. Validate the Bearer token matches the server's apiToken
-        const expectedToken = serverConfig.apiToken
-            ? (serverConfig.apiToken.startsWith('Bearer ') ? serverConfig.apiToken.slice(7) : serverConfig.apiToken)
-            : null;
-
-        if (!expectedToken || bearerToken !== expectedToken) {
-            return res.status(403).json({
-                success: false,
-                error: 'Authorization token does not match the server config.'
-            });
-        }
-
-        // Attach useful info to request
-        req.premiumInfo = verification;
-        req.serverConfig = serverConfig;
-        next();
-    } catch (err) {
-        console.error('Error in premium middleware:', err);
-        return res.status(500).json({ success: false, error: 'Internal server error during verification.' });
-    }
+  const authHeader = String(req.headers.authorization || '');
+  if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ success: false, error: 'bearer_token_required' });
+  const bearerToken = authHeader.slice(7);
+  try {
+    const serverConfig = await ServerInfo.findOne({ apiToken: { $in: [bearerToken, `Bearer ${bearerToken}`] } }).lean();
+    if (!serverConfig) return res.status(403).json({ success: false, error: 'server_token_not_registered' });
+    const entitlement = await getForGuild(serverConfig.serverId);
+    req.serverConfig = serverConfig;
+    req.entitlement = entitlement;
+    next();
+  } catch (error) {
+    console.error('[bot api auth] error:', error.message);
+    res.status(500).json({ success: false, error: 'authorization_failed' });
+  }
 });
 
-// ══════════════════════════════════════════════════════════════
-//  GET /bot/player/:ign — جلب معلومات لاعب
-// ══════════════════════════════════════════════════════════════
-router.get('/player/:ign', (req, res) => {
-    const ign = req.params.ign;
-    res.json({
-        success: true,
-        player: ign,
-        message: 'Player data fetched successfully.',
-        serverPort: req.premiumInfo.port,
-        expiresAt: req.premiumInfo.expiresAt
-    });
+router.get('/status', async (req, res) => {
+  const [instance, latest] = await Promise.all([
+    PluginInstance.findOne({ serverId: req.serverConfig.serverId }).sort({ lastSeenAt: -1 }).lean(),
+    TelemetryEvent.findOne({ serverId: req.serverConfig.serverId, type: 'player_count' }).sort({ occurredAt: -1 }).lean(),
+  ]);
+  res.json({ success: true, serverId: req.serverConfig.serverId, serverName: req.serverConfig.serverName || null, plan: req.entitlement.plan, server: { connected: !!instance, status: instance?.status || 'offline', instanceId: instance?.instanceId || null, lastSeenAt: instance?.lastSeenAt || null, onlinePlayers: latest?.data?.onlinePlayers ?? null }, evidence: { latestPlayerCountAt: latest?.occurredAt || null } });
 });
 
-// ══════════════════════════════════════════════════════════════
-//  POST /bot/command — إرسال أمر للسيرفر
-// ══════════════════════════════════════════════════════════════
+router.get('/player/:ign', async (req, res) => {
+  const ign = String(req.params.ign || '').trim().slice(0, 32);
+  if (!/^[A-Za-z0-9_]{1,32}$/.test(ign)) return res.status(400).json({ success: false, error: 'invalid_player_name' });
+  const events = await TelemetryEvent.find({ serverId: req.serverConfig.serverId, type: { $in: ['player_join', 'player_leave'] }, $or: [{ 'data.username': ign }, { 'data.uuid': ign }] }).sort({ occurredAt: -1 }).limit(100).lean();
+  const sessionDurations = events.filter(event => event.type === 'player_leave' && Number.isFinite(Number(event.data?.sessionSeconds))).map(event => Number(event.data.sessionSeconds));
+  res.json({ success: true, player: ign, found: events.length > 0, observedEvents: events.length, lastSeenAt: events[0]?.occurredAt || null, sessionCount: sessionDurations.length, totalObservedSessionSeconds: sessionDurations.reduce((sum, seconds) => sum + seconds, 0), evidence: events.slice(0, 20).map(event => ({ type: event.type, occurredAt: event.occurredAt, sessionSeconds: event.data?.sessionSeconds ?? null })) });
+});
+
+router.get('/intelligence', async (req, res) => {
+  if (!hasFeature(req.entitlement, 'server.intelligence.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'server.intelligence.advanced', entitlement: { plan: req.entitlement.plan, requiredPlan: 'pro' }, message: 'This intelligence report requires Pro. Basic server status remains available.' });
+  const events = await TelemetryEvent.find({ serverId: req.serverConfig.serverId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean();
+  res.json({ success: true, intelligence: summarizeTelemetry(events) });
+});
+
 router.post('/command', (req, res) => {
-    const { command } = req.body;
-    if (!command) {
-        return res.status(400).json({ success: false, error: 'command field is required in the request body.' });
-    }
-    res.json({
-        success: true,
-        command,
-        message: 'Command executed successfully.',
-        serverPort: req.premiumInfo.port,
-        expiresAt: req.premiumInfo.expiresAt
-    });
-});
-
-// ══════════════════════════════════════════════════════════════
-//  GET /bot/status — حالة السيرفر
-// ══════════════════════════════════════════════════════════════
-router.get('/status', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Server endpoint is active and premium key is valid.',
-        serverPort: req.premiumInfo.port,
-        expiresAt: req.premiumInfo.expiresAt,
-        serverName: req.serverConfig.serverName || 'Unknown'
-    });
+  res.status(501).json({ success: false, error: 'minecraft_command_channel_not_implemented', message: 'No destructive Minecraft action is exposed until an explicit, permissioned control channel is implemented.' });
 });
 
 module.exports = router;
-

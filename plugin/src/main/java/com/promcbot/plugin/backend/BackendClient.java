@@ -22,6 +22,9 @@ public final class BackendClient {
     private final String baseUrl;
     private final String serverId;
     private final String instanceId;
+    private final String networkId;
+    private final String minecraftServerId;
+    private final String serverName;
     private final String accessToken;
     private final String signingSecret;
     private final String protocolVersion;
@@ -30,9 +33,18 @@ public final class BackendClient {
 
     public BackendClient(String baseUrl, String serverId, String instanceId, String accessToken,
                          String signingSecret, String protocolVersion, TelemetryQueue queue) {
+        this(baseUrl, serverId, instanceId, "", "", "", accessToken, signingSecret, protocolVersion, queue);
+    }
+
+    public BackendClient(String baseUrl, String serverId, String instanceId, String networkId,
+                         String minecraftServerId, String serverName, String accessToken,
+                         String signingSecret, String protocolVersion, TelemetryQueue queue) {
         this.baseUrl = trimBaseUrl(baseUrl);
         this.serverId = require(serverId, "serverId");
         this.instanceId = require(instanceId, "instanceId");
+        this.networkId = networkId == null ? "" : networkId;
+        this.minecraftServerId = minecraftServerId == null ? "" : minecraftServerId;
+        this.serverName = serverName == null ? "" : serverName;
         this.accessToken = require(accessToken, "accessToken");
         this.signingSecret = require(signingSecret, "signingSecret");
         this.protocolVersion = require(protocolVersion, "protocolVersion");
@@ -52,6 +64,9 @@ public final class BackendClient {
                 .header("X-ProMcBot-Server", serverId)
                 .header("X-ProMcBot-Instance", instanceId)
                 .header("X-ProMcBot-Version", protocolVersion)
+                .header("X-ProMcBot-Network", networkId)
+                .header("X-ProMcBot-Minecraft-Server", minecraftServerId)
+                .header("X-ProMcBot-Server-Name", serverName)
                 .header("X-ProMcBot-Timestamp", timestamp)
                 .header("X-ProMcBot-Nonce", nonce)
                 .header("X-ProMcBot-Signature", signature)
@@ -88,6 +103,27 @@ public final class BackendClient {
             return CompletableFuture.supplyAsync(() -> true, CompletableFuture.delayedExecutor(delaySeconds, TimeUnit.SECONDS))
                     .thenCompose(ignored -> sendBatchWithRetry(events, attemptsLeft - 1));
         });
+    }
+
+    public CompletableFuture<Boolean> refreshCapabilities() {
+        String body = "";
+        String timestamp = Long.toString(Instant.now().getEpochSecond());
+        String nonce = UUID.randomUUID().toString();
+        String signature = HmacSigner.sign(signingSecret, timestamp, nonce, body);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/plugin/capabilities"))
+                .timeout(Duration.ofSeconds(8))
+                .header("Authorization", "Bearer " + accessToken)
+                .header("X-ProMcBot-Server", serverId)
+                .header("X-ProMcBot-Instance", instanceId)
+                .header("X-ProMcBot-Version", protocolVersion)
+                .header("X-ProMcBot-Network", networkId)
+                .header("X-ProMcBot-Minecraft-Server", minecraftServerId)
+                .header("X-ProMcBot-Server-Name", serverName)
+                .header("X-ProMcBot-Timestamp", timestamp)
+                .header("X-ProMcBot-Nonce", nonce)
+                .header("X-ProMcBot-Signature", signature)
+                .build();
+        return http.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> response.statusCode() >= 200 && response.statusCode() < 300).exceptionally(error -> false);
     }
 
     public CompletableFuture<Boolean> sendHeartbeat(int onlinePlayers) {

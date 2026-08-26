@@ -9,13 +9,12 @@ const { PREFIX, apikey } = require("../settings/config");
 
 const User = require("../Models/User");
 const axios = require("axios");
-const db = require("pro.db");
 const crypto = require('crypto');
 const Jimp = require("jimp");
 const path = require('path');
 const fs = require('fs');
 const ServerInfo = require("../Models/Server");
-const Servermembership = require("../Models/User");
+const { getForGuild } = require('../utils/entitlementService');
 const { generateServerStatusImage, WALLPAPERS } = require("./interactionCreate");
 const WelcomeChannel = require("../Models/WelcomeChannel");
 const ApiKey = require('../Models/apiKey');
@@ -186,7 +185,7 @@ const handleMainMessage = async (client, message) => {
                     command,
                 ).toFixed()}\` Seconds`,
             });
-        } else if (command.membership && serverdb && !serverdb.ismembership) {
+        } else if (command.membership && !(await getForGuild(message.guild.id).then(entitlement => entitlement.plan !== 'free').catch(() => false))) {
             const replyMessage = await message.reply({
                 content: `> \`${message.guild.name}\`${EMOJIS.WARNING} Server is Not a Premium Server`,
             });
@@ -242,8 +241,8 @@ const handleMcMessage = async (client, message) => {
         }
         let emoji;
         // Check membership for custom servers
-        const membershipInfo = await Servermembership.findOne({ Id: serverId });
-        if (serverInfo.serverType === "custom" && !membershipInfo?.ismembership) {
+        const entitlement = await getForGuild(serverId).catch(() => ({ plan: 'free' }));
+        if (serverInfo.serverType === "custom" && entitlement.plan === 'free') {
             if (message) {
                 const membershipMessage = await message.channel.send(`${EMOJIS.WARNING} Premium not active for this server. Please contact the server owner.`);
                 setTimeout(() => {
