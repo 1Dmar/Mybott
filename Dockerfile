@@ -1,4 +1,4 @@
-FROM node:20.19.0-slim
+FROM node:22.13.0-slim
 
 # Install system dependencies for canvas and other native modules
 RUN apt-get update && apt-get install -y \

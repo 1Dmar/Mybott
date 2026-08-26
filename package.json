@@ -10,7 +10,7 @@
     "check": "node --check server.js && node --check dash/index.js"
   },
   "engines": {
-    "node": ">=20.19.0 <21"
+    "node": ">=22.13.0 <23"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
