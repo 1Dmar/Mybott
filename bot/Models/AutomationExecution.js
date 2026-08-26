@@ -5,6 +5,7 @@ const automationExecutionSchema = new mongoose.Schema({
   ruleId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProMcBotAutomationRule', required: true, index: true },
   trigger: { type: String, required: true },
   status: { type: String, enum: ['executed', 'skipped', 'failed', 'denied'], required: true },
+  dedupeKey: { type: String, default: null, index: true, maxlength: 180 },
   evidence: { type: mongoose.Schema.Types.Mixed, default: {} },
   message: { type: String, maxlength: 1500 },
   executedAt: { type: Date, default: Date.now, index: true },
@@ -12,5 +13,6 @@ const automationExecutionSchema = new mongoose.Schema({
 });
 
 automationExecutionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+automationExecutionSchema.index({ serverId: 1, ruleId: 1, dedupeKey: 1, status: 1 });
 
 module.exports = mongoose.models.ProMcBotAutomationExecution || mongoose.model('ProMcBotAutomationExecution', automationExecutionSchema);

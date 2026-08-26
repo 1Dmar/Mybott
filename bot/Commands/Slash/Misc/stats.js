@@ -5,7 +5,12 @@ const {
     AttachmentBuilder,
     ApplicationCommandOptionType,
 } = require("discord.js");
-const { createCanvas, loadImage } = require('canvas');
+let createCanvas;
+try {
+    ({ createCanvas } = require('canvas'));
+} catch (error) {
+    console.warn('⚠️ Stats chart renderer unavailable:', error.message);
+}
 const PlayerHistory = require('../../../Models/PlayerHistory');
 const Server = require('../../../Models/Server');
 
@@ -30,6 +35,13 @@ module.exports = {
     ],
 
     run: async (client, interaction) => {
+        if (typeof createCanvas !== 'function') {
+            return interaction.reply({
+                content: 'الرسم البياني غير متاح حاليًا لأن مكوّن الصور لم يُبنَ في بيئة التشغيل. يمكنك مراجعة الإحصائيات بعد تفعيل renderer.',
+                ephemeral: true,
+            });
+        }
+
         const type = interaction.options.getString("type");
         const guildId = interaction.guild.id;
 

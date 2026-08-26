@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,71 +7,43 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/dashboard/shared.css">
   <style>
-    .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-    .stat-card { background: var(--surface); padding: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 1rem; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 10px; background: rgba(88, 101, 242, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .stat-info h3 { font-size: 0.875rem; color: var(--text-muted); margin: 0; }
-    .stat-info p { font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--text); }
-    .profile-section { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-md); overflow: hidden; margin-bottom: 2rem; }
-    .profile-banner { height: 120px; background: linear-gradient(90deg, #5865f2, #7289da); position: relative; }
-    .profile-header { padding: 0 1.5rem 1.5rem; display: flex; align-items: flex-end; gap: 1.5rem; margin-top: -40px; position: relative; }
-    .profile-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--surface); background: var(--bg); }
-    .profile-info { padding-bottom: 10px; }
-    .profile-info h2 { margin: 0; font-size: 1.5rem; color: var(--text); }
-    .profile-info p { margin: 0; color: var(--text-muted); font-size: 0.875rem; }
-    .badge-premium { background: rgba(255, 171, 0, 0.1); color: #ffab00; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
-    .section-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
-    .session-list { list-style: none; padding: 0; margin: 0; }
-    .session-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border); }
-    .session-item:last-child { border-bottom: none; }
-    .session-meta { display: flex; align-items: center; gap: 1rem; }
-    .session-icon { font-size: 1.25rem; color: var(--text-muted); }
-    .session-details h4 { margin: 0; font-size: 0.9rem; color: var(--text); }
-    .session-details p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
-    .current-badge { font-size: 0.7rem; background: #22c55e; color: #fff; padding: 1px 6px; border-radius: 4px; margin-left: 5px; }
-    .btn-revoke { color: #ef4444; background: none; border: none; font-size: 0.875rem; cursor: pointer; }
-    .api-section { background: var(--surface); padding: 1.5rem; border-radius: 12px; box-shadow: var(--shadow-md); }
-    .api-key-box { background: var(--bg); padding: 1rem; border-radius: 8px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
-    .api-key-val { font-family: monospace; color: var(--text); }
-    .api-actions { display: flex; gap: 0.5rem; }
-    .icon-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; padding: 4px; border-radius: 4px; }
-    .icon-btn:hover { background: var(--border); color: var(--text); }
+    .dashboard-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:20px; }
+    .dashboard-intro h1 { margin:0 0 4px; }
+    .dashboard-intro p { margin:0; color:var(--text-muted); }
+    .dashboard-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .dashboard-actions a { display:inline-flex; align-items:center; gap:6px; padding:9px 12px; border-radius:10px; background:var(--primary); color:#fff; text-decoration:none; font-size:13px; font-weight:700; }
+    .dashboard-actions a.secondary { background:var(--surface); color:var(--primary); border:1px solid var(--border); }
+    .empty-state { padding:18px; border:1px dashed var(--border); border-radius:12px; color:var(--text-muted); background:var(--surface-2); }
+    @media (max-width:768px) { .dashboard-intro { display:block; } .dashboard-actions { margin-top:12px; } }
   </style>
 </head>
 <body>
-  <!-- Sidebar -->
-  <nav class="sidebar close" id="sidebar">
+  <nav class="sidebar close" id="sidebar" aria-label="Primary navigation">
     <div class="logo_items flex">
-      <span class="nav_image"><img src="/dashboard/logo.png" alt="logo"></span>
+      <span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot logo"></span>
       <span class="logo_name">ProMcBot</span>
-      <i class="bx bx-lock-alt" id="lock-icon" title="Unlock Sidebar"></i>
-      <i class="bx bx-x" id="sidebar-close"></i>
+      <i class="bx bx-lock-alt" id="lock-icon" title="Collapse sidebar" aria-hidden="true"></i>
+      <button class="bx bx-x" id="sidebar-close" type="button" aria-label="Close navigation"></button>
     </div>
     <div class="menu_container">
-      <div class="menu_content">
-        <!-- Sidebar items will be injected by shared.js -->
-      </div>
+      <div class="menu_content"></div>
       <div class="sidebar-footer">
         <div class="sidebar_profile flex">
-          <span class="nav_image"><img src="" alt="avatar" data-user-avatar></span>
-          <div class="data_text">
-            <span class="name" data-user-name>User</span>
-            <span class="email" data-user-id>ID</span>
-          </div>
+          <span class="nav_image"><img src="/dashboard/logo.png" alt="Account avatar" data-user-avatar></span>
+          <div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>Account</span></div>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- Navbar -->
-  <nav class="navbar flex">
-    <i class="bx bx-menu" id="sidebarToggle"></i>
+  <nav class="navbar flex" aria-label="Top navigation">
+    <button id="sidebarToggle" class="bx bx-menu" type="button" aria-label="Open navigation"></button>
     <div class="navbar_content flex">
-      <i class="bx bx-sun" id="darkLight"></i>
-      <div class="user_profile_nav" id="userBtn">
-        <img src="" alt="avatar" data-user-avatar>
+      <button id="darkLight" class="bx bx-sun" type="button" aria-label="Toggle theme"></button>
+      <div class="user_profile_nav" id="userBtn" tabindex="0" role="button" aria-expanded="false">
+        <img src="/dashboard/logo.png" alt="Account avatar" data-user-avatar>
         <span id="navUserName">User</span>
-        <i class="bx bx-chevron-down"></i>
+        <i class="bx bx-chevron-down" aria-hidden="true"></i>
         <div class="dropdown-menu" id="userDropdown">
           <a href="/dashboard"><i class="bx bx-user"></i> Profile</a>
           <a href="/api/logout" class="logout-link"><i class="bx bx-log-out"></i> Logout</a>
@@ -80,117 +52,103 @@
     </div>
   </nav>
 
-  <!-- Main Content -->
   <main class="main-content">
-    <div class="profile-section">
+    <section class="profile-section" aria-labelledby="profile-title">
       <div class="profile-banner" id="userBanner"></div>
       <div class="profile-header">
-        <img src="" alt="avatar" class="profile-avatar" id="userAvatar" data-user-avatar>
+        <img src="/dashboard/logo.png" alt="Account avatar" class="profile-avatar" id="userAvatar" data-user-avatar>
         <div class="profile-info">
-          <h2><span data-user-name>User</span><span class="badge-premium" id="planBadge">Free</span></h2>
-          <p>@<span data-user-username>username</span> • <span data-user-id>ID</span></p>
+          <h2 id="profile-title"><span data-user-name>User</span><span class="badge-premium" id="planBadge">FREE</span></h2>
+          <p>@<span data-user-username>username</span> <span aria-hidden="true">•</span> <span data-user-id>Account</span></p>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="dashboard-grid">
-      <div class="stat-card">
-        <div class="stat-icon"><i class="bx bx-server"></i></div>
-        <div class="stat-info">
-          <h3>Total Servers</h3>
-          <p id="serverCount">...</p>
-        </div>
+    <section class="dashboard-intro" aria-labelledby="overview-title">
+      <div>
+        <h1 id="overview-title">Overview</h1>
+        <p>Manage your connected servers and act on measured signals.</p>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon"><i class="bx bx-time-five"></i></div>
-        <div class="stat-info">
-          <h3>Member Since</h3>
-          <p>Aug 2026</p>
-        </div>
+      <div class="dashboard-actions">
+        <a href="/intelligence"><i class="bx bx-link-alt"></i> Connect Minecraft</a>
+        <a href="/servers" class="secondary"><i class="bx bx-server"></i> View servers</a>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon"><i class="bx bx-bolt-circle"></i></div>
-        <div class="stat-info">
-          <h3>Global Rank</h3>
-          <p>Not measured</p>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <div class="section-title"><i class="bx bx-line-chart"></i> Server Intelligence</div>
-    <div class="api-section">
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Connect a Minecraft server, verify telemetry, and unlock evidence-backed activity insights.</p>
-      <a class="icon-btn" href="/intelligence" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--primary);">Open onboarding and intelligence <i class="bx bx-right-arrow-alt"></i></a>
-    </div>
+    <section class="dashboard-grid" aria-label="Account overview">
+      <article class="stat-card"><div class="stat-icon"><i class="bx bx-server"></i></div><div class="stat-info"><h3>Accessible Discord servers</h3><p id="serverCount" aria-live="polite">Loading…</p></div></article>
+      <article class="stat-card"><div class="stat-icon"><i class="bx bx-shield-quarter"></i></div><div class="stat-info"><h3>Current plan</h3><p id="planValue" aria-live="polite">FREE</p></div></article>
+    </section>
 
-    <div class="section-title" style="margin-top: 2rem;"><i class="bx bx-devices"></i> Active Sessions</div>
-    <div class="profile-section">
-      <ul class="session-list" id="sessionList">
-        <li class="session-item">Loading sessions...</li>
-      </ul>
-    </div>
+    <h2 class="section-title"><i class="bx bx-line-chart"></i> Server Intelligence</h2>
+    <section class="api-section">
+      <p>Connect a Minecraft server, verify telemetry, and receive evidence-backed activity insights. No metric appears until ProMcBot has measured it.</p>
+      <a class="icon-btn" href="/intelligence">Open onboarding and intelligence <i class="bx bx-right-arrow-alt"></i></a>
+    </section>
+
+    <h2 class="section-title"><i class="bx bx-devices"></i> Active Sessions</h2>
+    <section class="profile-section">
+      <ul class="session-list" id="sessionList"><li class="session-item">Loading sessions…</li></ul>
+    </section>
   </main>
 
-  <footer class="footer">
-    <p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p>
-  </footer>
+  <footer class="footer"><p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p></footer>
 
   <script src="/dashboard/shared.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      const $ = id => document.getElementById(id);
+      const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
+      const planLabel = plan => ({ free:'FREE', pro:'PRO', ultimate:'ULTIMATE' }[String(plan || '').toLowerCase()] || 'FREE');
+
       async function loadProfile() {
         try {
-          const res = await fetch('/api/user/profile');
-          const data = await res.json();
-          if (data.success) {
-            if (data.user.accent_color) {
-              document.getElementById('userBanner').style.background = data.user.accent_color;
-            }
-          }
-        } catch (e) { console.error('Failed to load profile', e); }
+          const response = await fetch('/api/user/profile');
+          const data = await response.json();
+          if (data.success && data.user.accent_color) $('userBanner').style.background = data.user.accent_color;
+        } catch (error) { console.warn('Profile details unavailable:', error.message); }
       }
 
       async function loadSessions() {
         try {
-          const res = await fetch('/api/user/sessions');
-          const data = await res.json();
-          const list = document.getElementById('sessionList');
-          if (data.success) {
-            list.innerHTML = data.sessions.map(s => `
-              <li class="session-item">
-                <div class="session-meta">
-                  <i class="bx bx-desktop session-icon"></i>
-                  <div class="session-details">
-                    <h4>${s.device} ${s.current ? '<span class="current-badge">Current</span>' : ''}</h4>
-                    <p>${s.ip} • Last active: Just now</p>
-                  </div>
-                </div>
-                ${!s.current ? `<button class="btn-revoke" onclick="revokeSession('${s.id}')">Revoke</button>` : ''}
-              </li>
-            `).join('');
+          const response = await fetch('/api/user/sessions');
+          const data = await response.json();
+          const list = $('sessionList');
+          if (!data.success || !Array.isArray(data.sessions) || data.sessions.length === 0) {
+            list.innerHTML = '<li class="session-item"><div class="empty-state">No active sessions were returned.</div></li>';
+            return;
           }
-        } catch (e) { console.error('Failed to load sessions', e); }
+          list.innerHTML = data.sessions.map(session => `
+            <li class="session-item">
+              <div class="session-meta"><i class="bx bx-desktop session-icon"></i><div class="session-details">
+                <h4>${escapeHTML(session.device)} ${session.current ? '<span class="current-badge">Current</span>' : ''}</h4>
+                <p>${escapeHTML(session.ip)} · Active session</p>
+              </div></div>
+              ${!session.current ? `<button class="btn-revoke" data-session-id="${escapeHTML(session.id)}">Revoke</button>` : ''}
+            </li>`).join('');
+          list.querySelectorAll('[data-session-id]').forEach(button => button.addEventListener('click', () => window.showToast('Session revocation is not enabled for this session type.', 'error')));
+        } catch (error) { $('sessionList').innerHTML = '<li class="session-item"><div class="empty-state">Sessions could not be loaded.</div></li>'; }
       }
 
+      async function loadOverview() {
+        try {
+          const [guildResponse, membershipResponse] = await Promise.all([fetch('/api/guilds'), fetch('/api/user/membership')]);
+          const guilds = await guildResponse.json();
+          const membership = await membershipResponse.json();
+          $('serverCount').textContent = Array.isArray(guilds.guilds) ? guilds.guilds.length : '0';
+          const label = membership.success ? planLabel(membership.membership?.plan) : 'FREE';
+          $('planBadge').textContent = label;
+          $('planValue').textContent = label;
+        } catch (error) {
+          $('serverCount').textContent = '—';
+          $('planValue').textContent = '—';
+        }
+      }
+
+      $('year').textContent = new Date().getFullYear();
       loadProfile();
       loadSessions();
-
-      // UI Logic
-      document.getElementById('year').textContent = new Date().getFullYear();
-
-      // Load server count
-      fetch('/api/guilds').then(r => r.json()).then(d => {
-        if (d.success) document.getElementById('serverCount').textContent = d.guilds.length;
-      }).catch(() => { document.getElementById('serverCount').textContent = '0'; });
-
-      // Load membership plan
-      fetch('/api/user/membership').then(r => r.json()).then(d => {
-        if (d.success) {
-          document.getElementById('planBadge').textContent = 
-            d.membership.plan === 'premium' ? '⭐ Enterprise Pro' : 'Elite Free';
-        }
-      });
-
+      loadOverview();
     });
   </script>
 </body>

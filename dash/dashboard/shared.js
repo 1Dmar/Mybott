@@ -43,14 +43,19 @@
   }
 
   function updateUserUI() {
-    const user = state.user;
-    document.querySelectorAll('[data-user-name]').forEach(el => el.innerText = user.global_name);
-    document.querySelectorAll('[data-user-avatar]').forEach(el => el.src = user.avatar);
-    document.querySelectorAll('[data-user-id]').forEach(el => el.innerText = user.id);
-    document.querySelectorAll('[data-user-username]').forEach(el => el.innerText = user.username);
-    
+    const user = state.user || {};
+    const displayName = user.global_name || user.username || 'User';
+    const avatar = user.avatar || '/dashboard/logo.png';
+    document.querySelectorAll('[data-user-name]').forEach(el => el.textContent = displayName);
+    document.querySelectorAll('[data-user-avatar]').forEach(el => {
+      el.src = avatar;
+      el.onerror = () => { el.onerror = null; el.src = '/dashboard/logo.png'; };
+    });
+    document.querySelectorAll('[data-user-id]').forEach(el => el.textContent = user.id || '—');
+    document.querySelectorAll('[data-user-username]').forEach(el => el.textContent = user.username || displayName);
+
     const navName = document.getElementById('navUserName');
-    if (navName) navName.innerText = user.global_name;
+    if (navName) navName.textContent = displayName;
   }
 
   // ── Theme Management ─────────────────────────────────────────
@@ -60,7 +65,7 @@
   }
 
   function updateThemeIcon() {
-    const icon = document.querySelector('#darkLight i');
+    const icon = document.querySelector('#darkLight i') || document.querySelector('#darkLight');
     if (!icon) return;
     icon.className = state.theme === 'dark' ? 'bx bx-sun' : 'bx bx-moon';
   }
@@ -129,11 +134,32 @@
     buildSidebar();
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle && sidebar) {
-      sidebarToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('close');
-      });
+    if (!sidebar) return;
+
+    let backdrop = document.querySelector('.sidebar-backdrop');
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'sidebar-backdrop';
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(backdrop);
     }
+
+    const closeMobileSidebar = () => {
+      sidebar.classList.add('close');
+      backdrop.classList.remove('show');
+    };
+    const toggleSidebar = () => {
+      sidebar.classList.toggle('close');
+      backdrop.classList.toggle('show', !sidebar.classList.contains('close'));
+    };
+
+    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+    const closeButton = document.getElementById('sidebar-close');
+    if (closeButton) closeButton.addEventListener('click', closeMobileSidebar);
+    backdrop.addEventListener('click', closeMobileSidebar);
+    sidebar.addEventListener('click', event => {
+      if (event.target.closest('.nav_link') && window.matchMedia('(max-width: 768px)').matches) closeMobileSidebar();
+    });
   }
 
   // ── Dropdowns ────────────────────────────────────────────────

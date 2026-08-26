@@ -3,11 +3,18 @@ const axios = require('axios');
 const PlayerHistory = require('../Models/PlayerHistory');
 const path = require('path');
 const fs = require('fs');
-const { createCanvas, loadImage, registerFont } = require('canvas');
+let createCanvas;
+let loadImage;
+let registerFont;
+try {
+    ({ createCanvas, loadImage, registerFont } = require('canvas'));
+} catch (error) {
+    console.warn('⚠️ Status image renderer unavailable:', error.message);
+}
 
 // Register fonts
 const fontsDir = path.join(__dirname, '../src/fonts');
-if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
+if (typeof registerFont === 'function' && fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
     registerFont(path.join(fontsDir, 'd.ttf'), { family: 'Minecraft' });
 }
 
@@ -63,6 +70,7 @@ async function loadPlayerHeads(playerNames) {
 // دالة توليد الصورة (بإحداثيات دقيقة للقالب)
 // ==========================================
 async function generateStatusImage(server, statusData) {
+    if (typeof createCanvas !== 'function' || typeof loadImage !== 'function') return null;
     try {
         // المقاسات ثابتة كما طلبت (1400x580)
         const width = 1774;
@@ -135,14 +143,16 @@ async function generateStatusImage(server, statusData) {
         ctx.fillText(cleanIpAddr || 'play.server.net', 1245, 495);
 
         // --- البينج (Ping) ---
-        const pingValue = statusData?.latency || (isOnline ? Math.floor(Math.random() * 50) + 10 : 0);
+        const pingValue = Number.isFinite(Number(statusData?.latency)) ? Number(statusData.latency) : null;
         ctx.font = 'bold 38px Poppins';
         ctx.fillStyle = '#202a3e';
-        ctx.fillText(`${pingValue}`, 360, 657);
+        ctx.fillText(pingValue === null ? '—' : `${pingValue}`, 360, 657);
        // const pingNumW = ctx.measureText(`${pingValue}`).width;
         
         // --- رؤوس اللاعبين (الإطارات الخشبية) ---
-        const realPlayerNames = ['Steve', 'Alex', 'Notch', 'Jeb_', 'Dinnerbone'];
+        const realPlayerNames = Array.isArray(statusData?.players?.list)
+            ? statusData.players.list.map(player => typeof player === 'string' ? player : player?.name).filter(Boolean).slice(0, 5)
+            : [];
         const playerHeads = await loadPlayerHeads(realPlayerNames);
 
         const headSize = 78;
@@ -187,7 +197,8 @@ async function generateStatusImage(server, statusData) {
         return canvas.toBuffer();
 
     } catch (error) {
-        console.error('Image generation crashed:', error);
+        console.error('Image generation failed:', error.message);
+        if (typeof createCanvas !== 'function') return null;
         // صورة خطأ بسيطة
         const errCanvas = createCanvas(800, 400);
         const errCtx = errCanvas.getContext('2d');
@@ -226,6 +237,10 @@ module.exports.updateServerStatus = async (client, server, settings) => {
         }
 
         const imageBuffer = await generateStatusImage(server, status.data);
+        if (!imageBuffer) {
+            console.warn('Status image update skipped: renderer unavailable.');
+            return;
+        }
         const attachment = new AttachmentBuilder(imageBuffer, { name: 'status.png' });
 
         const channel = await client.channels.fetch(settings.statusChannelId);

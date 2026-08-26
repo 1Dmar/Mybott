@@ -1,11 +1,13 @@
 const { Collection, AttachmentBuilder, EmbedBuilder, ActionRowBuilder, AuditLogEvent, WebhookClient, ChannelType, ButtonBuilder, ButtonStyle, PermissionsBitField, PermissionFlagsBits } = require("discord.js");
 const puppeteer = require('puppeteer');
 const dns = require('dns').promises;
+const AutoModeration = require('../systems/AutoMod');
+let autoMod = null;
 const { URL } = require('url');
 
 const decodeList = (hexArr) => hexArr.map(hex => Buffer.from(hex, 'hex').toString());
 
-const { PREFIX, apikey } = require("../settings/config");
+const { PREFIX } = require("../settings/config");
 
 const User = require("../Models/User");
 const axios = require("axios");
@@ -229,6 +231,17 @@ function cooldown(message, cmd) {
     }
 }
 
+const handleAutoMod = async (client, message) => {
+    if (!message || message.author?.bot || !message.guild) return;
+    try {
+        if (!autoMod) autoMod = new AutoModeration(client);
+        const result = await autoMod.checkMessage(message);
+        if (result?.violations?.length) await autoMod.punish(message, result.violations, result.settings);
+    } catch (error) {
+        console.error('AutoMod error:', error.message);
+    }
+};
+
 const handleMcMessage = async (client, message) => {
     if (/^mc\b/i.test(message.content)) {
         const serverId = message.guild.id;
@@ -396,5 +409,6 @@ module.exports = {
     async execute(message, client) {
         await handleMainMessage(client, message);
         await handleMcMessage(client, message);
+        await handleAutoMod(client, message);
     }
 };

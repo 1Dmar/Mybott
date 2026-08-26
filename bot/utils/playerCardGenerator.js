@@ -1,4 +1,15 @@
-const { createCanvas, loadImage, registerFont } = require('canvas');
+let createCanvas;
+let loadImage;
+let registerFont;
+let rendererAvailable = false;
+try {
+    ({ createCanvas, loadImage, registerFont } = require('canvas'));
+    rendererAvailable = typeof createCanvas === 'function' && typeof loadImage === 'function';
+} catch (error) {
+    // The bot can run without image rendering; only the optional player-card feature is unavailable.
+    console.warn('⚠️ Player card renderer unavailable:', error.message);
+}
+
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
@@ -418,6 +429,10 @@ function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
  * توليد بطاقة اللاعب بتصميم فخم
  */
 async function generatePlayerCard(ign, template = 'glass', serverConfig = null) {
+    if (!rendererAvailable) {
+        throw new Error('player_card_renderer_unavailable');
+    }
+
     const width = 1000;
     const height = 550;
     const canvas = createCanvas(width, height);
@@ -663,4 +678,4 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     return canvas.toBuffer();
 }
 
-module.exports = { getPlayerData, generatePlayerCard };
+module.exports = { getPlayerData, generatePlayerCard, rendererAvailable };

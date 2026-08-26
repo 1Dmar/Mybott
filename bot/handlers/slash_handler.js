@@ -1,165 +1,98 @@
-const { Collection } = require("discord.js");
-const { readdirSync, existsSync, statSync } = require("fs");
-const path = require("path");
-const { REST, Routes } = require("discord.js");
+'use strict';
 
-// Only load dotenv in development
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv-flow").config();
+const { Collection, REST, Routes, PermissionFlagsBits } = require('discord.js');
+const { loadCanonicalCommands, getCommandCatalog } = require('../commands/commandCatalog');
+
+if (process.env.NODE_ENV !== 'production') {
+  try { require('dotenv-flow').config(); } catch (_) {}
 }
 
-module.exports = async (client) => {
+function serializeCommand(command) {
+  const payload = {
+    name: command.name,
+    description: command.description,
+    options: Array.isArray(command.options) ? command.options : [],
+  };
+  if (command.userPermissions !== undefined) {
+    const permissions = typeof command.userPermissions === 'bigint'
+      ? command.userPermissions
+      : BigInt(command.userPermissions);
+    payload.default_member_permissions = permissions === 0n ? null : permissions.toString();
+  }
+  return payload;
+}
+
+function clearGuildCommands(rest, clientId, guildIds) {
+  return guildIds.reduce(async (previous, guildId) => {
+    await previous;
+    try {
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+      return { cleared: true, failed: false };
+    } catch (error) {
+      console.warn(`⚠️ Failed to clear legacy guild commands for ${guildId}: ${error.message}`);
+      return { cleared: false, failed: true };
+    }
+  }, Promise.resolve({ cleared: 0, failed: 0 }));
+}
+
+module.exports = async function registerSlashCommands(client) {
   try {
-    // ── 1. Verify token ──────────────────────────────────────────────────────
+    const commands = loadCanonicalCommands();
+    const names = commands.map(command => command.name);
+    const duplicateNames = names.filter((name, index) => names.indexOf(name) !== index);
+    if (duplicateNames.length) throw new Error(`Duplicate canonical command names: ${[...new Set(duplicateNames)].join(', ')}`);
+
+    client.scommands = new Collection(commands.map(command => [command.name, command]));
+    client.commandCatalog = getCommandCatalog();
+    console.log(`✅ Loaded ${client.scommands.size} canonical slash command groups: ${names.join(', ')}`);
+
     if (!process.env.BOT1_1_TOKEN) {
-      console.error("❌ ERROR: BOT1_1_TOKEN is not defined in environment variables!");
-      console.error("ℹ️  Solution: Add BOT1_1_TOKEN to your Railway environment variables.");
+      console.warn('⚠️ BOT1_1_TOKEN is not configured; command registry loaded locally but Discord synchronization is disabled.');
       return;
     }
 
-    client.scommands = new Collection();
+    client.once('ready', async () => {
+      const rest = new REST({ version: '10' }).setToken(process.env.BOT1_1_TOKEN);
+      const clientId = client.user?.id;
+      if (!clientId) {
+        console.error('❌ Cannot synchronize commands before Discord client identity is available.');
+        return;
+      }
 
-    /** @type {Map<string, object>} Use a Map to guarantee uniqueness by name */
-    const commandMap = new Map();
-
-    // ── 2. Load commands from folder ─────────────────────────────────────────
-    const loadCommands = () => {
+      const body = commands.map(serializeCommand);
       try {
-        const slashPath = path.join(__dirname, "..", "Commands", "Slash");
+        // PUT is authoritative: removed commands disappear from the global registry.
+        await rest.put(Routes.applicationCommands(clientId), { body });
+        console.log(`✅ Synchronized ${body.length} global command groups; removed commands are no longer registered.`);
+      } catch (error) {
+        console.error(`❌ Global command synchronization failed: ${error.message}`);
+        return;
+      }
 
-        if (!existsSync(slashPath)) {
-          console.warn("⚠️  Slash commands directory not found:", slashPath);
-          return;
-        }
-
-        for (const dir of readdirSync(slashPath)) {
-          const dirPath = path.join(slashPath, dir);
-          if (!statSync(dirPath).isDirectory()) continue;
-
-          for (const cmd of readdirSync(dirPath)) {
+      // Older releases registered every command per guild. Clear that stale layer
+      // so users see only the single global taxonomy and never duplicate commands.
+      if (process.env.COMMAND_SYNC_CLEAR_GUILDS !== 'false') {
+        try {
+          const guilds = await client.guilds.fetch();
+          let cleared = 0;
+          let failed = 0;
+          for (const [guildId] of guilds) {
             try {
-              const fullPath = path.join(dirPath, cmd);
-              if (statSync(fullPath).isDirectory()) continue;
-              if (!cmd.endsWith(".js")) continue;          // skip non-JS files
-
-              // Clear cache so hot-reloads work correctly
-              delete require.cache[require.resolve(fullPath)];
-              const command = require(fullPath);
-
-              if (!command?.name || !command?.description || !command?.run) {
-                console.warn(
-                  `${client.emojis?.WARNING ?? "⚠️"}  Command "${cmd}" is missing required fields (name / description / run) — skipped`
-                );
-                continue;
-              }
-
-              // ── Duplicate detection ───────────────────────────────────────
-              if (commandMap.has(command.name)) {
-                console.warn(
-                  `${client.emojis?.WARNING ?? "⚠️"}  Duplicate command name detected: "${command.name}" (from ${cmd}) — keeping first loaded copy`
-                );
-                continue;
-              }
-
-              const payload = {
-                name:                    command.name,
-                description:             command.description,
-                options:                 command.options ?? [],
-                default_member_permissions:
-                  command.userPermissions?.bitfield?.toString() ?? null,
-              };
-
-              commandMap.set(command.name, payload);
-              client.scommands.set(command.name, command);
-
-              console.log(
-                `${client.emojis?.SUCCESS ?? "✅"} Loaded command: ${command.name}`
-              );
-            } catch (cmdError) {
-              console.error(
-                `${client.emojis?.ERROR ?? "❌"} Error loading command "${cmd}":`,
-                cmdError.message
-              );
+              await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+              cleared += 1;
+            } catch (error) {
+              failed += 1;
+              console.warn(`⚠️ Failed to clear legacy guild commands for ${guildId}: ${error.message}`);
             }
           }
+          console.log(`🧹 Cleared legacy guild command registries: ${cleared} succeeded, ${failed} failed.`);
+        } catch (error) {
+          console.warn(`⚠️ Could not enumerate guilds for legacy command cleanup: ${error.message}`);
         }
-
-        console.log(
-          `${client.emojis?.SUCCESS ?? "✅"} Total loaded: ${client.scommands.size} unique slash commands`
-        );
-      } catch (error) {
-        console.error("❌ Error loading commands:", error.message);
-      }
-    };
-
-    loadCommands();
-
-    // Final deduplicated array (Map already guarantees uniqueness)
-    const allCommands = [...commandMap.values()];
-
-    if (allCommands.length === 0) {
-      console.warn("⚠️  No valid slash commands were loaded — skipping registration.");
-      return;
-    }
-
-    // ── 3. Register commands when bot is ready ───────────────────────────────
-    client.once("ready", async () => {
-      try {
-        if (!client.user?.id) {
-          throw new Error("Client user not available after ready event");
-        }
-
-        const rest     = new REST({ version: "10" }).setToken(process.env.BOT1_1_TOKEN);
-        const clientId = client.user.id;
-
-        console.log(`\n⏳ Starting command registration for client ${clientId}...`);
-        console.log(`📋 Commands to register (${allCommands.length}): ${allCommands.map(c => c.name).join(", ")}`);
-
-        // ── 3a. Guild registration (instant, per-guild) ──────────────────────
-        const guilds = await client.guilds.fetch();
-        console.log(`\n🏰 Attempting guild command registration for ${guilds.size} guilds...`);
-
-        let guildSuccess = 0;
-        let guildFail    = 0;
-
-        for (const [guildId, guild] of guilds) {
-          try {
-            await rest.put(
-              Routes.applicationGuildCommands(clientId, guildId),
-              { body: allCommands }
-            );
-            console.log(`✅ Registered ${allCommands.length} commands → ${guild.name} (${guildId})`);
-            guildSuccess++;
-          } catch (guildError) {
-            console.warn(
-              `⚠️  Failed to register commands for guild ${guildId}: ${guildError.message}`
-            );
-            guildFail++;
-          }
-        }
-
-        console.log(
-          `\n📊 Guild registration summary: ${guildSuccess} succeeded, ${guildFail} failed out of ${guilds.size} total`
-        );
-
-        // ── 3b. Global registration (propagates within ~1 hour) ──────────────
-        console.log("\n🌍 Starting global command registration...");
-        try {
-          await rest.put(
-            Routes.applicationCommands(clientId),
-            { body: allCommands }
-          );
-          console.log(`✅ Successfully registered ${allCommands.length} GLOBAL slash commands`);
-        } catch (globalError) {
-          console.error("❌ Global registration failed:", globalError.message);
-        }
-
-      } catch (error) {
-        console.error("💥 Critical error in command registration:", error);
       }
     });
-
   } catch (error) {
-    console.error("💥 Critical error in slash handler:", error);
+    console.error(`💥 Canonical slash command registry failed: ${error.message}`);
+    client.scommands = new Collection();
   }
 };

@@ -42,11 +42,11 @@ async function initDB() {
             return;
         }
 
-        const mainURI = process.env.MONGO_URL?.trim();
+        const mainURI = (process.env.MONGO_URL || process.env.MONGO_URI)?.trim();
         const secondaryURI = process.env.MONGO_URL_SECONDARY?.trim() || mainURI;
 
         if (!mainURI) {
-            throw new Error('MONGO_URL environment variable is not set. Database initialization aborted.');
+            throw new Error('MONGO_URL or MONGO_URI environment variable is not set. Database initialization aborted.');
         }
 
         try {

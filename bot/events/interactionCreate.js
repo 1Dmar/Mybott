@@ -8,7 +8,8 @@ const {
     ButtonBuilder,
     ButtonStyle,
     EmbedBuilder,
-    StringSelectMenuBuilder
+    StringSelectMenuBuilder,
+    PermissionsBitField
 } = require('discord.js');
 const path = require('path');
 const fs = require('fs');
@@ -476,6 +477,16 @@ async function generateWallpaperSelectionCard(wallpapers, interaction) {
     }
 }
 
+function hasRequiredPermission(interaction, requiredPermission) {
+    if (requiredPermission === undefined || requiredPermission === null) return true;
+    if (!interaction.guild || !interaction.memberPermissions) return false;
+    try {
+        return new PermissionsBitField(interaction.memberPermissions).has(requiredPermission);
+    } catch (_) {
+        return false;
+    }
+}
+
 const interactionCreateEvent = {
     name: 'interactionCreate',
     async execute(interaction, client) {
@@ -500,6 +511,12 @@ const interactionCreateEvent = {
                 }
 
                 try {
+                    if (!hasRequiredPermission(interaction, command.userPermissions)) {
+                        return await interaction.reply({ content: 'لا تملك الصلاحية المطلوبة لهذا الأمر في هذا السيرفر.', ephemeral: true });
+                    }
+                    if (command.botPermissions && interaction.appPermissions && !new PermissionsBitField(interaction.appPermissions).has(command.botPermissions)) {
+                        return await interaction.reply({ content: 'لا يملك ProMcBot الصلاحيات المطلوبة في هذا السيرفر.', ephemeral: true });
+                    }
                     if (command.deferReply) {
                         await interaction.deferReply({ ephemeral: command.ephemeral || false });
                     }

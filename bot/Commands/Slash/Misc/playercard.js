@@ -1,5 +1,5 @@
 const { ApplicationCommandType, PermissionFlagsBits, AttachmentBuilder } = require("discord.js");
-const { generatePlayerCard } = require('../../../utils/playerCardGenerator');
+const { generatePlayerCard, rendererAvailable } = require('../../../utils/playerCardGenerator');
 const Player = require('../../../Models/Player');
 const Server = require('../../../Models/Server');
 
@@ -28,6 +28,13 @@ module.exports = {
     }
   ],
   run: async (client, interaction) => {
+    if (!rendererAvailable) {
+      return interaction.reply({
+        content: 'ميزة بطاقة اللاعب غير متاحة حاليًا لأن مكوّن الصور لم يُبنَ في بيئة التشغيل. باقي وظائف ProMcBot تعمل بشكل طبيعي.',
+        ephemeral: true,
+      });
+    }
+
     const ign = interaction.options.getString("ign").trim();
     const template = interaction.options.getString("template") || "darkmode";
 

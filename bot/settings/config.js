@@ -7,10 +7,10 @@ if (process.env.NODE_ENV !== 'production') {
 module.exports = {
   TOKEN: process.env.BOT1_1_TOKEN,
   PREFIX: process.env.PREFIX || "!",
-  MONGO_URL: process.env.MONGO_URL,
-  apikey: process.env.API_KEY || "promc.default-key-change-in-production",
+  MONGO_URL: process.env.MONGO_URL || process.env.MONGO_URI,
+  apikey: process.env.API_KEY?.trim() || null,
   Slash: {
-    Global: process.env.SLASH_GLOBAL === 'true' || true,
+    Global: process.env.SLASH_GLOBAL !== 'false',
     GuildID: process.env.TEST_GUILD_ID || process.env.GuildID || "",
   },
   EMBED_COLORS: {

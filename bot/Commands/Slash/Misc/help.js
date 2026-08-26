@@ -1,133 +1,88 @@
+'use strict';
+
 const {
-  CommandInteraction,
   ApplicationCommandType,
   PermissionFlagsBits,
   EmbedBuilder,
-  Client,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   StringSelectMenuBuilder,
 } = require('discord.js');
 
-const COMMANDS = {
-  '⚔️ ماين كرافت': [
-    '`/mc-setup` — ربط سيرفر الماين كرافت',
-    '`/mc-player` — معلومات لاعب',
-    '`/mc-players` — اللاعبون المتصلون',
-    '`/mc-execute` — تنفيذ أمر (أدمن)',
-    '`/mc-info` — معلومات السيرفر',
-    '`/mc-leaderboard` — لوحة الصدارة',
-  ],
-  '🛡️ السيرفر': [
-    '`/setup_server` — إعداد سيرفر الماين كرافت',
-    '`/setup_log` — إعداد قنوات السجل',
-    '`/blacklist` — القائمة السوداء',
-    '`/language` — تغيير لغة البوت',
-    '`/bump` — ترقية السيرفر',
-    '`/generate-apikey` — توليد API Key',
-    '`/link-apikey` — ربط API Key',
-  ],
-  '🔧 الأتمتة': [
-    '`/automod settings` — إعدادات الأتمتة',
-    '`/automod toggle` — تفعيل/تعطيل',
-    '`/automod filter` — فلاتر الكلمات',
-    '`/automod action` — الإجراءات التلقائية',
-    '`/automod whitelist` — القائمة البيضاء',
-  ],
-  '📊 الإحصائيات': [
-    '`/status` — حالة البوت والسيرفر',
-    '`/statusbar setup` — شريط الحالة',
-    '`/stats` — إحصائيات اللاعبين',
-    '`/topservers` — أفضل السيرفرات',
-    '`/ping` — استجابة البوت',
-  ],
-  '🎮 متنوع': [
-    '`/help` — قائمة المساعدة',
-    '`/invite` — دعوة البوت',
-    '`/avatar` — عرض الصورة الرمزية',
-    '`/playercard` — بطاقة لاعب',
-    '`/support` — سيرفر الدعم',
-    '`/koth` — KOTH announcement',
-  ],
-};
+function getCatalog(client) {
+  const catalog = Array.isArray(client.commandCatalog) ? client.commandCatalog : [];
+  return catalog.length ? catalog : [{ name: 'help', description: 'عرض أوامر ProMcBot المنظمة', category: 'Utility', subcommands: [] }];
+}
+
+function commandLines(group) {
+  if (!group.subcommands?.length) return [`\`/${group.name}\` — ${group.description}`];
+  return group.subcommands.map(command => `\`/${group.name} ${command.name}\` — ${command.description}`);
+}
 
 module.exports = {
   name: 'help',
-  description: 'عرض قائمة المساعدة والأوامر المتاحة',
+  description: 'عرض أوامر ProMcBot المنظمة',
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
-  category: 'Misc',
-  type1: 'slash',
+  category: 'Utility',
   type: ApplicationCommandType.ChatInput,
-  /**
-   * @param {Client} client
-   * @param {CommandInteraction} interaction
-   */
+  type1: 'slash',
   run: async (client, interaction) => {
-    const categoryKeys = Object.keys(COMMANDS);
-    let currentCategory = categoryKeys[0];
+    const catalog = getCatalog(client);
+    const categoryNames = [...new Set(catalog.map(group => group.category || 'Commands'))];
+    let currentCategory = categoryNames[0];
 
-    const buildEmbed = (category) => {
-      const cmds = COMMANDS[category];
+    const buildEmbed = category => {
+      const groups = catalog.filter(group => (group.category || 'Commands') === category);
+      const lines = groups.flatMap(commandLines);
       return new EmbedBuilder()
         .setColor(0x7C3AED)
-        .setAuthor({ name: `${client.user.username} — المساعدة`, iconURL: client.user.displayAvatarURL() })
-        .setTitle(`${category}`)
-        .setDescription(cmds.join('\n'))
+        .setAuthor({ name: `${client.user?.username || 'ProMcBot'} — Command Center`, iconURL: client.user?.displayAvatarURL?.() })
+        .setTitle(`أوامر ${category}`)
+        .setDescription(lines.join('\n').slice(0, 3900) || 'لا توجد أوامر متاحة في هذه الفئة.')
         .addFields({
-          name: '📖 الاستخدام',
-          value: 'اختر فئة من القائمة أدناه لعرض أوامرها',
+          name: 'التنظيم الجديد',
+          value: 'الأوامر مجمّعة تحت مجموعات واضحة. العمليات المعقدة متاحة من لوحة التحكم.',
           inline: false,
         })
-        .setThumbnail(client.user.displayAvatarURL({ size: 256 }))
-        .setFooter({
-          text: `Developed with ❤️ by 1Dmar • ${client.user.username} | ${Object.values(COMMANDS).flat().length} أمر`,
-          iconURL: interaction.user.displayAvatarURL(),
-        })
+        .setFooter({ text: 'ProMcBot • مصدر الأوامر هو registry واحد' })
         .setTimestamp();
     };
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('help_category')
-      .setPlaceholder('📂 اختر فئة...')
-      .addOptions(categoryKeys.map(cat => ({ label: cat, value: cat })));
+      .setPlaceholder('اختر فئة الأوامر')
+      .addOptions(categoryNames.map(category => ({ label: category.slice(0, 100), value: category.slice(0, 100) })));
 
-    const row1 = new ActionRowBuilder().addComponents(selectMenu);
-    const row2 = new ActionRowBuilder().addComponents(
+    const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setLabel('سيرفر الدعم')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.gg/6FjFYStz5a')
-        .setEmoji('🔗'),
+        .setURL('https://discord.gg/6FjFYStz5a'),
       new ButtonBuilder()
         .setLabel('دعوة البوت')
         .setStyle(ButtonStyle.Link)
-        .setURL(`https://discord.com/oauth2/authorize?client_id=${client.user.id}&permissions=8&scope=bot+applications.commands`)
-        .setEmoji('🚀'),
+        .setURL(`https://discord.com/oauth2/authorize?client_id=${client.user?.id}&permissions=8&scope=bot+applications.commands`),
     );
 
-    const msg = await interaction.reply({
+    const menuRow = new ActionRowBuilder().addComponents(selectMenu);
+    const message = await interaction.reply({
       embeds: [buildEmbed(currentCategory)],
-      components: [row1, row2],
+      components: [menuRow, buttons],
       ephemeral: true,
       fetchReply: true,
     });
 
-    const collector = msg.createMessageComponentCollector({
-      filter: i => i.user.id === interaction.user.id,
+    const collector = message.createMessageComponentCollector({
+      filter: component => component.user.id === interaction.user.id,
       time: 120000,
     });
-
-    collector.on('collect', async i => {
-      if (i.customId === 'help_category') {
-        currentCategory = i.values[0];
-        await i.update({ embeds: [buildEmbed(currentCategory)], components: [row1, row2] });
-      }
+    collector.on('collect', async component => {
+      if (component.customId !== 'help_category') return;
+      currentCategory = component.values[0];
+      await component.update({ embeds: [buildEmbed(currentCategory)], components: [menuRow, buttons] });
     });
-
-    collector.on('end', () => {
-      interaction.editReply({ components: [row2] }).catch(() => {});
-    });
+    collector.on('end', () => interaction.editReply({ components: [buttons] }).catch(() => {}));
   },
 };

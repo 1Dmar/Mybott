@@ -1,37 +1,41 @@
-# ProMcBot Transformation Implementation Status
+# ProMcBot implementation status
 
-This status describes the work implemented on the default branch only. It deliberately avoids presenting future product ideas as completed features. The supplied attachment ends mid-way through the Pro-plan capability list, so this implementation covers every requirement visible in the supplied file and does not invent requirements after the attachment boundary.
+This status reflects the current default branch after the full prompt review and the bot/plugin/dashboard cleanup. It distinguishes code that is implemented from behavior that requires external credentials or a real production environment.
 
-| Prompt area | Status | Evidence |
+| Prompt area | Status | Evidence or limitation |
 |---|---|---|
-| Preserve existing bot/dashboard/backend/MongoDB | IMPLEMENTED | Existing files remain; new routes/models are additive. |
-| First-class Minecraft plugin | IMPLEMENTED | `plugin/` is a Maven project with Java source, `plugin.yml`, config, README, and built JAR. |
-| Minimized telemetry | IMPLEMENTED | Join, leave, count, heartbeat; UUID/name only on join/leave; bounded queue and 90-day backend expiry. |
-| Asynchronous plugin communication | IMPLEMENTED | Java HTTP client runs from Bukkit async tasks; Bukkit player reads stay on sync task. |
-| Server and instance identity | IMPLEMENTED | `server-id`/`instance-id` in plugin config, signed headers, Mongo `PluginInstance`. |
-| Authentication and request signing | IMPLEMENTED | Provisioned bearer token hash, AES-GCM encrypted signing secret, HMAC-SHA256, timestamp, nonce. |
-| Replay protection | IMPLEMENTED | `PluginNonce` unique record with TTL and five-minute timestamp window. |
-| Payload validation and rate limits | IMPLEMENTED | Body limit, event/key/string limits, JSON validation, express-rate-limit on telemetry route. |
-| Reconnect/retry/backoff | IMPLEMENTED/PARTIAL | Async client retries a batch up to three times with bounded exponential delays and requeues it after final failure; durable disk queue and cross-process delivery are not implemented. |
-| Offline-safe Minecraft operation | IMPLEMENTED | No gameplay action depends on network; bounded queue and status command. |
-| Activation/onboarding progress | IMPLEMENTED | Evidence-backed `/api/guilds/:guildId/activation`, `/intelligence` dashboard page, `/onboarding` route. |
-| Deterministic server intelligence | IMPLEMENTED | Two-window activity/session/returning-player calculations with confidence and evidence. |
-| Player journey/retention analytics | PARTIAL | Foundation signals and returning-player overlap exist; full journey stages and cohort retention are not complete. |
-| Automation engine | IMPLEMENTED/PARTIAL | Explicit rules, cooldown, disable switch, evidence gate, audit execution, Discord message action; only a narrow activity-decline trigger is implemented. |
-| Notification engine | PARTIAL | Existing bot notification systems are preserved; new automation currently sends Discord messages when a configured channel is available. |
-| Security engine | IMPLEMENTED/PARTIAL | Plugin authentication, encryption, HMAC, replay, bounds, ownership checks, and audit execution exist; enterprise threat model and tamper-resistant artifact distribution are not complete. |
-| Subscription/entitlements | IMPLEMENTED/PARTIAL | Free/Pro definitions and entitlement reporting exist; payment, invoicing, and checkout are not implemented. |
-| Observability | IMPLEMENTED/PARTIAL | Owner-protected observability endpoint reports uptime, Mongo state, telemetry count, instances, and rules; metrics backend/tracing/alerting are not implemented. |
-| Multi-server identity | IMPLEMENTED | All new telemetry/credentials/rules are server- and instance-scoped. |
-| Multi-instance deployment | PARTIAL | Data model supports instances; process-local cron and existing Discord caches remain. |
-| Large-network analytics | UNKNOWN/PARTIAL | Deterministic foundation exists, but no production-scale benchmark, warehouse, or distributed ingestion proof is included. |
-| AI intelligence | NOT IMPLEMENTED | The first slice intentionally uses deterministic analytics; no fake AI is presented. |
-| Payment plan at $4.99/month | NOT IMPLEMENTED | Price metadata exists; no payment processor or billing flow exists. |
-| Paper/Spigot/Purpur/Fabric compatibility | UNKNOWN | Maven compiles against Paper API; no runtime compatibility matrix or server integration tests are included. |
+| Preserve bot, dashboard, backend, and MongoDB architecture | DONE | Existing architecture retained; targeted fixes are additive or remove proven-dead loaders |
+| Canonical Discord command surface | DONE | Eight top-level groups from `bot/commands/commandCatalog.js`; one slash loader; duplicate detection smoke test |
+| Legacy command migration | DONE | Old public names removed from registration, dead files removed, docs/translations updated |
+| Discord permission enforcement | DONE | Runtime checks added before command execution; guild routes also require manager authorization |
+| First-class Minecraft plugin | DONE | Java 21 Maven/Paper artifact with identity, HMAC, queue, heartbeat, and status command |
+| Minimized telemetry | DONE | Join, leave, aggregate count, and heartbeat only; no chat or unnecessary player payloads |
+| Asynchronous plugin communication | DONE | Network calls run from async Bukkit tasks; player reads run from sync task |
+| Authentication and request signing | DONE | Provisioned bearer token plus encrypted secret, HMAC-SHA256, timestamp, nonce, and token hashing |
+| Replay protection and limits | DONE | Nonce persistence/TTL, freshness window, request validation, body limits, and telemetry rate limit |
+| Reconnect/retry/backoff | DONE/PARTIAL | Bounded retry and requeue are implemented; durable disk queue is not implemented |
+| Offline-safe Minecraft operation | DONE | Gameplay does not depend on backend availability; `/promcbot status` reports degraded state |
+| Activation/onboarding progress | DONE/PARTIAL | Activation endpoints and dashboard onboarding exist; real progression requires connected Discord/Minecraft data |
+| Deterministic intelligence | DONE | Two-window evidence-backed activity, session, and returning-player calculations |
+| Player journey/retention | PARTIAL | Foundations and returning-player signals exist; complete cohort/1-7-30 day reporting needs more longitudinal data |
+| Weekly intelligence | DONE/PARTIAL | Weekly report foundation and automation trigger exist; only measured metrics are emitted |
+| Impact tracking | PARTIAL | Automation evidence and before/after-capable metadata exist; full action outcome measurement is not complete |
+| Automation | DONE/PARTIAL | Trigger, condition, cooldown, permission/entitlement gate, bounded retry, dedupe, audit execution, and Discord action exist; trigger catalog remains narrow |
+| Alerts/notifications | DONE/PARTIAL | Severity, evidence metadata, dedupe, open/resolved lifecycle, read and resolve routes exist; external delivery depends on Discord configuration |
+| Network intelligence | DONE/PARTIAL | Multi-instance identity and measured comparison exist; production-scale distributed analytics are not proven |
+| Premium/entitlements | DONE/PARTIAL | Central Free/Pro/Ultimate authority and server-side gates exist; live payments require provider credentials |
+| Dashboard responsive shell | DONE | Shared mobile-first CSS/JS fixes header/profile/sidebar/card overflow; 390×844 preview inspected |
+| Real-data policy | DONE | Fake rank/server/player/subscription values removed from the rebuilt overview; empty states explain next action |
+| Security boundaries | DONE/PARTIAL | Auth, ownership, permission, signed telemetry, replay, validation, rate limits, secure sessions, and safe errors are implemented; operational secret rotation remains required |
+| MongoDB/data model | DONE/PARTIAL | Models and indexes support current query patterns; retention is TTL-based for selected event/report/notification data |
+| Observability | DONE/PARTIAL | Health, startup warnings, queue state, telemetry status, and operational logs exist; external tracing/metrics are not included |
+| Localization and vocabulary | DONE/PARTIAL | Help translations and command vocabulary updated; full audit of every legacy string across all surfaces remains a follow-up |
+| Node/runtime compatibility | DONE | Docker and package engines use Node 22.13.0; obsolete Node 18 dependency removed |
+| Paper/Spigot/Purpur/Fabric matrix | PARTIAL | Paper build is verified; real runtime matrix for forks is not included; Fabric is not supported |
+| Payment verification | DONE/PARTIAL | Stripe-compatible signature boundary and entitlement processing exist; provider account/webhook credentials are external |
 
 ## Verification performed
 
-- `node --check` on all changed JavaScript modules.
-- `npm test` with three passing tests for signing/hash and intelligence confidence/trend behavior.
-- `mvn clean test package` with a generated `target/promcbot-plugin-0.1.0.jar`.
-- `git diff --check` and active-branch verification are required before commit/push.
+The repository passes `npm test` with 13 passing tests, including entitlement, telemetry signature/replay, intelligence, automation dedupe, message rendering, and bounded retry coverage. The command registry smoke test loads eight groups and reports no duplicate canonical names. Bot startup smoke loads five events, eight slash groups, and three message commands without Discord or MongoDB credentials. Dashboard backend startup smoke passes in degraded mode and no longer crashes when OAuth credentials are absent. `npm run check`, JavaScript syntax checks, JSON parsing, and `git diff --check` pass. Maven `clean test package` passes, and the generated plugin JAR contains the required classes and `plugin.yml`.
+
+Live Discord command registration, authenticated dashboard flows, real MongoDB persistence, plugin-to-backend telemetry acceptance, and payment-provider acceptance require external credentials and a running production-like environment. They are not marked as complete merely because the local code checks pass.

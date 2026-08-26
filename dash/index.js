@@ -6,12 +6,6 @@ if (process.env.NODE_ENV !== 'production') {
   try { require('dotenv-flow').config(); } catch (e) {}
 }
 
-const {
-  Client, Collection, GatewayIntentBits, Partials, EmbedBuilder,
-  PermissionsBitField, WebhookClient, ActionRowBuilder, ButtonBuilder,
-  ButtonStyle, ActivityType, ChannelType
-} = require("discord.js");
-
 const express    = require('express');
 const passport   = require('passport');
 const mongoose   = require('mongoose');
@@ -50,7 +44,7 @@ const AuditLog = require('../bot/Models/AuditLog');
 const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
 const { verifyStripeSignature, providerConfigured, processVerifiedEvent } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
-const { listNotifications, markRead } = require('../bot/utils/notificationService');
+const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 
@@ -148,54 +142,54 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
 });
 
 // ── Session ───────────────────────────────────────────────────────
-app.use(session({
+const sessionMongoUrl = String(process.env.MONGO_URL || process.env.MONGO_URI || '').trim();
+const sessionStore = sessionMongoUrl
+  ? MongoStore.create({ mongoUrl: sessionMongoUrl, collectionName: 'sessions', ttl: 7 * 24 * 60 * 60 })
+  : null;
+if (!sessionStore) {
+  console.warn('⚠️ MONGO_URL is not configured; dashboard sessions use non-persistent memory storage until MongoDB is configured.');
+}
+const sessionOptions = {
   secret: process.env.SESSION_SECRET || nanoid(48),
   resave: false,
   saveUninitialized: false,
-  store: new MongoStore({
-    mongoUrl: process.env.MONGO_URL || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mybott",
-    collectionName: 'sessions',
-    ttl: 7 * 24 * 60 * 60 // 7 days
-  }),
-  cookie: { 
+  cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax'
   }
-}));
+};
+if (sessionStore) sessionOptions.store = sessionStore;
+app.use(session(sessionOptions));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ── Discord Client ────────────────────────────────────────────────
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers]
-});
-
-const BOT_TOKEN = process.env.BOT1_1_TOKEN;
-if (BOT_TOKEN) {
-  client.login(BOT_TOKEN)
-    .then(() => console.log('✅ Dashboard Discord client ready'))
-    .catch(e => console.warn('⚠️ Discord login failed:', e.message));
-}
+// The dashboard uses the single Discord client created by bot/index.js.
+// `global.__botClient` is assigned during bot startup; resolving it lazily
+// prevents dashboard module load order from creating a second login session.
+const getBotClient = () => global.__botClient || null;
 
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || '';
-if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) console.warn('⚠️ Discord OAuth credentials are not configured; dashboard login is unavailable.');
+const discordOAuthConfigured = Boolean(DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET);
+if (!discordOAuthConfigured) console.warn('⚠️ Discord OAuth credentials are not configured; dashboard login is unavailable.');
 const CALLBACK_URL = process.env.CALLBACK_URL || "https://promcbot.dev/auth/discord/callback";
 
-passport.use(new DiscordStrategy({
-    clientID: DISCORD_CLIENT_ID,
-    clientSecret: DISCORD_CLIENT_SECRET,
-    callbackURL: CALLBACK_URL,
-    scope: ["identify", "guilds", "email"],
-  },
-  async (accessToken, refreshToken, profile, done) => {
-    profile.accessToken = accessToken;
-    return done(null, profile);
-  }
-));
+if (discordOAuthConfigured) {
+  passport.use(new DiscordStrategy({
+      clientID: DISCORD_CLIENT_ID,
+      clientSecret: DISCORD_CLIENT_SECRET,
+      callbackURL: CALLBACK_URL,
+      scope: ["identify", "guilds", "email"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      profile.accessToken = accessToken;
+      return done(null, profile);
+    }
+  ));
+}
 
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
@@ -235,8 +229,14 @@ app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
 app.get('/loading-auth', (req, res) => res.sendFile(path.join(dashDir, 'Loading', 'loading.html')));
 
-app.get('/auth/discord', passport.authenticate('discord'));
-app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
+app.get('/auth/discord', (req, res, next) => {
+  if (!discordOAuthConfigured) return res.status(503).send('Discord login is not configured.');
+  return passport.authenticate('discord')(req, res, next);
+});
+app.get('/auth/discord/callback', (req, res, next) => {
+  if (!discordOAuthConfigured) return res.status(503).send('Discord login is not configured.');
+  return passport.authenticate('discord', { failureRedirect: '/' })(req, res, next);
+}, (req, res) => {
   res.redirect('/dashboard');
 });
 
@@ -326,7 +326,7 @@ app.get('/api/guilds', isAuthenticated, (req, res) => {
   res.json({ success: true, guilds: req.user.guilds || [] });
 });
 
-app.get('/api/guilds/:guildId/settings', isAuthenticated, async (req, res) => {
+app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const settings = await GuildSettings.findOne({ guildId: req.params.guildId }) || { prefix: '!', language: 'en' };
     res.json({ success: true, settings });
@@ -335,7 +335,7 @@ app.get('/api/guilds/:guildId/settings', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/api/guilds/:guildId/settings', isAuthenticated, async (req, res) => {
+app.post('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const { prefix, language, mcIp } = req.body;
     await GuildSettings.findOneAndUpdate(
@@ -392,7 +392,8 @@ app.get('/shared.js', (req, res) => res.sendFile(path.join(dashDir, 'shared.js')
 app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const guildId = req.params.guildId;
-    const botConnected = !!client.guilds.cache.get(guildId);
+    const botClient = getBotClient();
+    const botConnected = !!botClient?.guilds?.cache?.get(guildId);
     const plugin = await PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean();
     const telemetry24h = await TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } });
     const telemetryActive = telemetry24h > 0;
@@ -470,6 +471,12 @@ app.get('/api/guilds/:guildId/notifications', isAuthenticated, requireGuildManag
 
 app.patch('/api/guilds/:guildId/notifications/:notificationId/read', isAuthenticated, requireGuildManager, async (req, res) => {
   const notification = await markRead(req.params.guildId, req.params.notificationId);
+  if (!notification) return res.status(404).json({ success: false, error: 'notification_not_found' });
+  res.json({ success: true, notification });
+});
+
+app.patch('/api/guilds/:guildId/notifications/:notificationId/resolve', isAuthenticated, requireGuildManager, async (req, res) => {
+  const notification = await resolveNotification(req.params.guildId, req.params.notificationId);
   if (!notification) return res.status(404).json({ success: false, error: 'notification_not_found' });
   res.json({ success: true, notification });
 });
@@ -562,7 +569,10 @@ app.delete('/api/guilds/:guildId/automation/:ruleId', isAuthenticated, requireGu
 });
 
 const automationInterval = setInterval(() => {
-  if (mongoose.connection.readyState === 1) runEnabledRules(client).catch(error => console.error('[automation] cycle failed:', error.message));
+  if (mongoose.connection.readyState === 1) {
+    const botClient = getBotClient();
+    if (botClient) runEnabledRules(botClient).catch(error => console.error('[automation] cycle failed:', error.message));
+  }
 }, 5 * 60 * 1000);
 if (typeof automationInterval.unref === 'function') automationInterval.unref();
 
