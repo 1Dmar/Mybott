@@ -1,4 +1,4 @@
-FROM node:18.20.8-slim
+FROM node:20.19.0-slim
 
 # Install system dependencies for canvas and other native modules
 RUN apt-get update && apt-get install -y \
@@ -17,7 +17,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Copy the rest of the application
 COPY . .
