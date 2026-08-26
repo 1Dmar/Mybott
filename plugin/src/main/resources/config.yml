@@ -1,0 +1,14 @@
+# Provision this file per Minecraft server. Never commit real credentials.
+backend:
+  # Use the secure public API URL in production; localhost is allowed for local development.
+  base-url: "https://promcbot.dev"
+  server-id: ""
+  instance-id: ""
+  access-token: ""
+  signing-secret: ""
+  protocol-version: "1"
+  heartbeat-seconds: 60
+telemetry:
+  batch-size: 100
+  max-queue-size: 5000
+  snapshot-seconds: 60

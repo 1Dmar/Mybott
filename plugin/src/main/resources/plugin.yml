@@ -1,0 +1,16 @@
+name: ProMcBot
+version: '${project.version}'
+main: dev.promcbot.plugin.ProMcBotPlugin
+api-version: '1.20'
+author: ProMcBot
+website: https://promcbot.dev
+description: Asynchronous telemetry bridge for ProMcBot.
+commands:
+  promcbot:
+    description: Check ProMcBot plugin connectivity and queue status.
+    usage: /promcbot status
+    permission: promcbot.status
+permissions:
+  promcbot.status:
+    description: View local ProMcBot plugin status.
+    default: true

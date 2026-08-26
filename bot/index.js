@@ -91,6 +91,10 @@ async function initBot() {
   client.userSettings = new Collection();
   client.events = 0;
 
+  // Expose the authoritative bot client to the dashboard without creating a second source of truth.
+  global.__botClient = client;
+  global.__dashClients = [client];
+
   // Load handlers
   const handlesFiles = ['event_handler','slash_handler','cmd_handler','membership_handler','blacklist_handler','bump_handler'];
   handlesFiles.forEach((file) => {

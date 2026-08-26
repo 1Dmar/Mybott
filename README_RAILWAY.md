@@ -19,6 +19,20 @@
 | `SESSION_SECRET`      | نص عشوائي طويل (32+ حرف)                                       | مثال: اجعله عشوائياً                       |
 | `CALLBACK_URL`        | `https://YOUR-DOMAIN.railway.app/auth/discord/callback`         | عدّل الدومين الخاص بك                      |
 | `CUSTOM_DOMAIN`       | `promcbot.qzz.io` (اختياري)                                    | إذا عندك دومين مخصص                        |
+| `PLUGIN_ENCRYPTION_KEY` | مفتاح عشوائي طويل (32+ حرف)                                  | مطلوب لتشفير أسرار Minecraft Plugin في MongoDB |
+
+## Minecraft Plugin
+
+يوجد plugin فعلي قابل للبناء داخل `plugin/`. يتطلب JDK 21 وMaven 3.8 أو أحدث:
+
+```bash
+cd plugin
+mvn clean test package
+```
+
+ينتج البناء `plugin/target/promcbot-plugin-0.1.0.jar`. ثبّت الـJAR في مجلد `plugins` لسيرفر Paper، ثم استخدم صفحة `/intelligence` أو `/onboarding` في dashboard لتوليد credentials لمعرّف instance فريد. انسخ الإعدادات إلى `plugin/config.yml` ولا ترفع الملف بعد تعبئته إلى Git.
+
+الـplugin يجمع join/leave/count/heartbeat فقط في الدفعة الأولى، ويرسلها asynchronously بتوقيع HMAC وبـnonce وtimestamp. عدم توفر backend لا يوقف Minecraft gameplay. تفاصيل البروتوكول في `docs/PLUGIN_PROTOCOL.md`.
 
 ## خطوات الرفع على Railway
 
@@ -60,6 +74,8 @@ mybott/
 ├── Dockerfile         ← بناء الـ container
 ├── .dockerignore      ← استثناء الملفات غير الضرورية
 ├── package.json
+├── plugin/                ← Maven Minecraft telemetry plugin
+├── docs/                  ← transformation plan, protocol, implementation status
 ├── bot/               ← كود البوت Discord
 │   ├── index.js
 │   ├── Commands/

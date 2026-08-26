@@ -112,22 +112,15 @@
         <div class="stat-icon"><i class="bx bx-bolt-circle"></i></div>
         <div class="stat-info">
           <h3>Global Rank</h3>
-          <p>#1,204</p>
+          <p>Not measured</p>
         </div>
       </div>
     </div>
 
-    <div class="section-title"><i class="bx bx-key"></i> Developer API</div>
+    <div class="section-title"><i class="bx bx-line-chart"></i> Server Intelligence</div>
     <div class="api-section">
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Use your API key to interact with ProMcBot programmatically. Keep this key secret!</p>
-      <div class="api-key-box">
-        <span class="api-key-val" id="apiKeyVal">pmb_live_sk_••••••••••••••••••••••••••••••••</span>
-        <div class="api-actions">
-          <button class="icon-btn" id="toggleKeyVis" title="Toggle Visibility"><i class="bx bx-show" id="visIcon"></i></button>
-          <button class="icon-btn" id="copyKey" title="Copy Key"><i class="bx bx-copy"></i></button>
-          <button class="icon-btn" id="regenKey" title="Regenerate Key"><i class="bx bx-refresh"></i></button>
-        </div>
-      </div>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Connect a Minecraft server, verify telemetry, and unlock evidence-backed activity insights.</p>
+      <a class="icon-btn" href="/intelligence" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--primary);">Open onboarding and intelligence <i class="bx bx-right-arrow-alt"></i></a>
     </div>
 
     <div class="section-title" style="margin-top: 2rem;"><i class="bx bx-devices"></i> Active Sessions</div>
@@ -198,27 +191,6 @@
         }
       });
 
-      // API Key Logic
-      let keyVisible = false;
-      const realKey = 'pmb_live_sk_89f7a4b2e1d0c39485761029384756bf';
-      document.getElementById('toggleKeyVis').addEventListener('click', function() {
-        keyVisible = !keyVisible;
-        const valEl = document.getElementById('apiKeyVal');
-        const iconEl = document.getElementById('visIcon');
-        valEl.textContent = keyVisible ? realKey : 'pmb_live_sk_••••••••••••••••••••••••••••••••';
-        iconEl.className = keyVisible ? 'bx bx-hide' : 'bx bx-show';
-      });
-
-      document.getElementById('copyKey').addEventListener('click', function() {
-        window.copyToClipboard(realKey);
-        const icon = this.querySelector('i');
-        icon.className = 'bx bx-check';
-        setTimeout(() => icon.className = 'bx bx-copy', 2000);
-      });
-
-      document.getElementById('regenKey').addEventListener('click', function() {
-        window.showToast('New secure API key generated successfully!', 'success');
-      });
     });
   </script>
 </body>

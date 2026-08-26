@@ -102,6 +102,7 @@
         <div class="menu_title"><span>Main</span></div>
         <li class="item"><a href="/dashboard" class="nav_link ${currentPath === '/dashboard' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-user"></i></span><span class="navlink">Profile</span></a></li>
         <li class="item"><a href="/servers" class="nav_link ${currentPath === '/servers' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My Servers</span></a></li>
+        <li class="item"><a href="/intelligence" class="nav_link ${currentPath === '/intelligence' || currentPath === '/onboarding' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-line-chart"></i></span><span class="navlink">Intelligence</span></a></li>
       </ul>
     `;
 
@@ -110,6 +111,7 @@
         <ul class="menu_items">
           <div class="menu_title"><span>Server Control</span></div>
           <li class="item"><a href="/servers/${gId}/overview" class="nav_link ${currentPath.includes('/overview') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-grid-alt"></i></span><span class="navlink">Overview</span></a></li>
+          <li class="item"><a href="/servers/${gId}/intelligence" class="nav_link ${currentPath.includes('/intelligence') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-line-chart"></i></span><span class="navlink">Server Intelligence</span></a></li>
           <li class="item"><a href="/servers/${gId}/settings" class="nav_link ${currentPath.includes('/settings') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-cog"></i></span><span class="navlink">Settings</span></a></li>
           <li class="item"><a href="/servers/${gId}/modules" class="nav_link ${currentPath.includes('/modules') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-extension"></i></span><span class="navlink">Modules</span></a></li>
           <li class="item"><a href="/servers/${gId}/logs" class="nav_link ${currentPath.includes('/logs') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-list-ul"></i></span><span class="navlink">Audit Logs</span></a></li>

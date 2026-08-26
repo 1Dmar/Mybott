@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProMcBot | Server Intelligence</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/dashboard/shared.css">
+  <style>
+    .intel-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1rem; }
+    .intel-card { background:var(--surface); border-radius:12px; padding:1.25rem; box-shadow:var(--shadow-md); }
+    .intel-card h2 { margin-top:0; color:var(--text); font-size:1.05rem; }
+    .muted { color:var(--text-muted); }
+    .progress-track { height:12px; border-radius:99px; background:var(--border); overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,#5865f2,#22c55e); transition:width .2s ease-out; }
+    .step { display:flex; justify-content:space-between; gap:1rem; padding:.65rem 0; border-bottom:1px solid var(--border); }
+    .step:last-child { border-bottom:0; }
+    .ok { color:#22c55e; } .pending { color:#f59e0b; }
+    .signal { padding:.75rem; border-left:3px solid var(--primary); background:var(--bg); margin:.5rem 0; border-radius:4px; }
+    .signal strong { color:var(--text); } .signal p { margin:.25rem 0 0; color:var(--text-muted); }
+    select,input,button { font:inherit; } select,input { width:100%; padding:.7rem; margin:.35rem 0 .75rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+    button.primary { padding:.7rem 1rem; border:0; border-radius:8px; background:var(--primary); color:white; cursor:pointer; }
+    pre { white-space:pre-wrap; overflow:auto; background:#111827; color:#d1fae5; padding:1rem; border-radius:8px; font-size:.8rem; }
+  </style>
+</head>
+<body>
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="logo"></span><span class="logo_name">ProMcBot</span><i class="bx bx-lock-alt" id="lock-icon"></i><i class="bx bx-x" id="sidebar-close"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="avatar" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
+  <nav class="navbar flex"><i class="bx bx-menu" id="sidebarToggle"></i><div class="navbar_content flex"><i class="bx bx-sun" id="darkLight"></i><div class="user_profile_nav" id="userBtn"><img src="" alt="avatar" data-user-avatar><span id="navUserName">User</span><i class="bx bx-chevron-down"></i><div class="dropdown-menu" id="userDropdown"><a href="/dashboard">Profile</a><a href="/api/logout" class="logout-link">Logout</a></div></div></div></nav>
+  <main class="main-content">
+    <h1>Server Intelligence</h1>
+    <p class="muted">Evidence-backed activation and operational signals. No metric is shown until ProMcBot has measured it.</p>
+    <div class="intel-grid">
+      <section class="intel-card"><h2>Choose a server</h2><select id="serverSelect"><option value="">Loading servers…</option></select><div id="serverMeta" class="muted"></div></section>
+      <section class="intel-card"><h2>Activation progress <span id="progressValue">0%</span></h2><div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div><div id="steps" style="margin-top:.75rem"></div><p id="nextValue" class="muted"></p></section>
+    </div>
+    <div class="intel-grid" style="margin-top:1rem">
+      <section class="intel-card"><h2>Observed data</h2><div id="observations"><p class="muted">Select a server to load measured data.</p></div></section>
+      <section class="intel-card"><h2>Analysis</h2><div id="analysis"><p class="muted">Analysis requires two comparable telemetry windows.</p></div></section>
+      <section class="intel-card"><h2>Recommendations</h2><div id="recommendations"><p class="muted">Recommendations appear only when evidence supports them.</p></div></section>
+    </div>
+    <section class="intel-card" style="margin-top:1rem"><h2>Secure Minecraft connection</h2><p class="muted">Provision one-time credentials for a plugin instance. Store them only in the plugin config.yml; they are never displayed again by the backend.</p><form id="provisionForm"><label>Instance ID<input id="instanceId" value="primary" pattern="[A-Za-z0-9._-]{3,64}" required></label><button class="primary" type="submit">Generate one-time plugin credentials</button></form><pre id="provisionResult" hidden></pre></section>
+  </main>
+  <script src="/dashboard/shared.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    let currentGuild = '';
+    async function json(url, options) { const response = await fetch(url, options); const data = await response.json(); if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`); return data; }
+    function renderList(target, entries, empty) { const el = $(target); el.innerHTML = ''; if (!entries?.length) { el.innerHTML = `<p class="muted">${empty}</p>`; return; } entries.forEach(item => { const div = document.createElement('div'); div.className = 'signal'; const title = document.createElement('strong'); title.textContent = item.key || item.what || 'Signal'; const body = document.createElement('p'); body.textContent = item.evidence || item.interpretation || item.why || item.action || JSON.stringify(item); div.append(title, body); el.append(div); }); }
+    async function loadGuild(guildId) {
+      currentGuild = guildId; if (!guildId) return;
+      try {
+        const [activation, intel] = await Promise.all([json(`/api/guilds/${guildId}/activation`), json(`/api/guilds/${guildId}/intelligence`)]);
+        $('progressValue').textContent = `${activation.progress}%`; $('progressFill').style.width = `${activation.progress}%`; $('nextValue').textContent = activation.nextValue;
+        $('steps').innerHTML = activation.steps.map(step => `<div class="step"><span>${step.label}</span><strong class="${step.complete ? 'ok' : 'pending'}">${step.complete ? 'Connected' : 'Pending'}</strong></div>`).join('');
+        renderList('observations', intel.intelligence.observations, 'No measured observations yet.'); renderList('analysis', intel.intelligence.analysis, 'Not enough measured data for analysis.'); renderList('recommendations', intel.intelligence.recommendations, 'No evidence-backed recommendation at this time.');
+      } catch (error) { $('nextValue').textContent = error.message; }
+    }
+    async function loadServers() { try { const data = await json('/api/guilds'); const select = $('serverSelect'); select.innerHTML = ''; (data.guilds || []).forEach(guild => { const option = document.createElement('option'); option.value = guild.id; option.textContent = guild.name || guild.id; select.append(option); }); if (select.value) { $('serverMeta').textContent = `${data.guilds.length} server(s) available`; loadGuild(select.value); } else $('serverMeta').textContent = 'No accessible servers were returned by Discord.'; select.addEventListener('change', () => loadGuild(select.value)); } catch (error) { $('serverMeta').textContent = error.message; } }
+    $('provisionForm').addEventListener('submit', async event => { event.preventDefault(); $('provisionResult').hidden = false; $('provisionResult').textContent = 'Generating…'; try { const result = await json(`/api/guilds/${currentGuild}/plugin/provision`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ instanceId:$('instanceId').value }) }); $('provisionResult').textContent = JSON.stringify(result.oneTimeConfig, null, 2) + '\n\n' + result.warning; } catch (error) { $('provisionResult').textContent = error.message; } });
+    loadServers();
+  </script>
+</body>
+</html>
