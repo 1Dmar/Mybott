@@ -1,12 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { getEntitlement, hasFeature } = require('../bot/utils/entitlements');
-const { getPaymentCatalog, providerConfigured, extractSubscriptionUpdate, verifyPayPalWebhook } = require('../bot/utils/billingService');
+const { getPaymentCatalog, providerConfigured, extractSubscriptionUpdate, verifyPayPalWebhook, shouldGrantPaymentProof } = require('../bot/utils/billingService');
 
 test('free, pro, and ultimate feature boundaries are centralized', () => {
   const free = getEntitlement({ plan: 'free', status: 'active' });
-  const pro = getEntitlement({ plan: 'pro', status: 'active', currentPeriodEnd: new Date(Date.now() + 86400000) });
-  const ultimate = getEntitlement({ plan: 'ultimate', status: 'active', currentPeriodEnd: new Date(Date.now() + 86400000) });
+  const pro = getEntitlement({ plan: 'pro', status: 'active', metadata: { paymentVerified: true }, currentPeriodEnd: new Date(Date.now() + 86400000) });
+  const ultimate = getEntitlement({ plan: 'ultimate', status: 'active', metadata: { paymentVerified: true }, currentPeriodEnd: new Date(Date.now() + 86400000) });
   assert.equal(hasFeature(free, 'server.intelligence.basic'), true);
   assert.equal(hasFeature(free, 'retention.advanced'), false);
   assert.equal(hasFeature(pro, 'retention.advanced'), true);
@@ -14,8 +14,23 @@ test('free, pro, and ultimate feature boundaries are centralized', () => {
   assert.equal(hasFeature(ultimate, 'network.intelligence'), true);
 });
 
+test('paid subscription without verified payment never grants entitlement', () => {
+  const pending = getEntitlement({ plan: 'pro', status: 'trialing', provider: 'paypal', providerSubscriptionId: 'I-pending', metadata: { paymentVerified: false } });
+  const legacyPending = getEntitlement({ plan: 'pro', status: 'active', provider: 'paypal', providerSubscriptionId: 'I-legacy' });
+  assert.equal(pending.plan, 'free');
+  assert.equal(pending.reason, 'payment_not_verified');
+  assert.equal(legacyPending.plan, 'free');
+  assert.equal(hasFeature(pending, 'retention.advanced'), false);
+});
+
+test('verified PayPal payment grants the configured paid entitlement', () => {
+  const entitlement = getEntitlement({ plan: 'pro', status: 'active', provider: 'paypal', metadata: { paymentVerified: true }, currentPeriodEnd: new Date(Date.now() + 86400000) });
+  assert.equal(entitlement.plan, 'pro');
+  assert.equal(hasFeature(entitlement, 'retention.advanced'), true);
+});
+
 test('expired paid subscription falls back to free while retaining reason', () => {
-  const entitlement = getEntitlement({ plan: 'pro', status: 'active', currentPeriodEnd: new Date(Date.now() - 1000) });
+  const entitlement = getEntitlement({ plan: 'pro', status: 'active', metadata: { paymentVerified: true }, currentPeriodEnd: new Date(Date.now() - 1000) });
   assert.equal(entitlement.plan, 'free');
   assert.equal(entitlement.status, 'expired');
   assert.equal(hasFeature(entitlement, 'retention.advanced'), false);
@@ -30,6 +45,20 @@ test('PayPal is the only billing provider and the catalog never reports fake che
   assert.equal(catalog.plans.ultimate.amount, 9.99);
   assert.equal(catalog.configured, false);
   assert.equal(Object.values(catalog.methods).some(method => method.enabled), false);
+});
+
+test('PayPal approval events do not grant payment proof', () => {
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.ACTIVATED', null, { providerSubscriptionId: 'I-pending' }), false);
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.APPROVED', null, { providerSubscriptionId: 'I-pending' }), false);
+  assert.equal(shouldGrantPaymentProof('PAYMENT.SALE.COMPLETED', null, { providerSubscriptionId: 'I-paid' }), true);
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.PAYMENT.COMPLETED', null, { providerSubscriptionId: 'I-paid' }), true);
+});
+
+test('PayPal payment proof is only carried across the same subscription ID', () => {
+  const verified = { providerSubscriptionId: 'I-same', metadata: { paymentVerified: true } };
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.UPDATED', verified, { providerSubscriptionId: 'I-same' }), true);
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.UPDATED', verified, { providerSubscriptionId: 'I-new' }), false);
+  assert.equal(shouldGrantPaymentProof('BILLING.SUBSCRIPTION.UPDATED', { providerSubscriptionId: 'I-same', metadata: { paymentVerified: false } }, { providerSubscriptionId: 'I-same' }), false);
 });
 
 test('PayPal subscription events map to the shared subscription authority', () => {

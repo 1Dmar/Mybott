@@ -49,6 +49,8 @@ function effectiveSubscription(subscription, now = new Date()) {
   if (!subscription) return { plan: 'free', status: 'active', reason: 'no_subscription' };
   const plan = normalizePlan(subscription.plan);
   if (plan === 'free') return { plan, status: subscription.status || 'active', reason: 'free_plan' };
+  const paymentVerified = subscription.metadata?.paymentVerified === true;
+  if (!paymentVerified) return { plan: 'free', status: 'payment_pending', reason: 'payment_not_verified' };
   const periodEnd = subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
   const graceEnd = subscription.gracePeriodEnd ? new Date(subscription.gracePeriodEnd) : null;
   const current = now instanceof Date ? now.getTime() : new Date(now).getTime();

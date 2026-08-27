@@ -12,6 +12,7 @@ const WEBHOOK_TOLERANCE_SECONDS = 300;
 const PAYPAL_SANDBOX_API = 'https://api-m.sandbox.paypal.com';
 const PAYPAL_LIVE_API = 'https://api-m.paypal.com';
 const SUPPORTED_METHODS = ['paypal', 'card', 'google_pay'];
+const PAYMENT_COMPLETED_EVENTS = Object.freeze(['PAYMENT.SALE.COMPLETED', 'BILLING.SUBSCRIPTION.PAYMENT.COMPLETED']);
 
 function timingSafeText(expected, actual) {
   const a = Buffer.from(String(expected || ''), 'utf8');
@@ -215,14 +216,21 @@ async function verifyPayPalWebhook(rawBody, headers, now = Math.floor(Date.now()
   return { valid, reason: valid ? 'verified' : 'signature_mismatch', timestamp };
 }
 
-function extractSubscriptionUpdate(provider, event) {
+function shouldGrantPaymentProof(eventType, existingSubscription, update) {
+  if (PAYMENT_COMPLETED_EVENTS.includes(eventType)) return true;
+  const previousId = String(existingSubscription?.providerSubscriptionId || '');
+  const currentId = String(update?.providerSubscriptionId || '');
+  return Boolean(existingSubscription?.metadata?.paymentVerified === true && previousId && currentId && previousId === currentId);
+}
+
+function extractSubscriptionUpdate(provider, event, fallback = {}) {
   if (provider !== 'paypal') throw new Error('unsupported_billing_provider');
   const resource = event?.resource || {};
-  const customId = resource.custom_id || resource.customId || resource.purchase_units?.[0]?.custom_id || '';
+  const customId = resource.custom_id || resource.customId || resource.purchase_units?.[0]?.custom_id || fallback.guildId || '';
   const planId = String(resource.plan_id || resource.billing_agreement_id || '');
   const metadataPlan = String(resource.metadata?.plan || '').toLowerCase();
   const configuredPlan = planId && planId === process.env.PAYPAL_ULTIMATE_PLAN_ID ? 'ultimate' : planId && planId === process.env.PAYPAL_PRO_PLAN_ID ? 'pro' : '';
-  const plan = normalizePlan(metadataPlan === 'ultimate' || metadataPlan === 'pro' ? metadataPlan : configuredPlan);
+  const plan = normalizePlan(metadataPlan === 'ultimate' || metadataPlan === 'pro' ? metadataPlan : configuredPlan || fallback.plan);
   if (!['pro', 'ultimate'].includes(plan)) throw new Error('unknown_paypal_plan');
   const statusMap = {
     ACTIVE: 'active',
@@ -240,7 +248,7 @@ function extractSubscriptionUpdate(provider, event) {
     guildId: String(customId),
     plan,
     status,
-    providerSubscriptionId: String(resource.id || resource.billing_agreement_id || ''),
+    providerSubscriptionId: String(resource.id || resource.billing_agreement_id || fallback.providerSubscriptionId || ''),
     providerCustomerId: String(resource.subscriber?.payer_id || resource.payer?.payer_id || ''),
     currentPeriodStart: resource.start_time ? new Date(resource.start_time) : null,
     currentPeriodEnd: nextBilling ? new Date(nextBilling) : null,
@@ -260,14 +268,23 @@ async function processVerifiedEvent(provider, event) {
     { upsert: true, new: false, setDefaultsOnInsert: true }
   );
   if (eventRecord) return { duplicate: true, processed: false };
-  const update = extractSubscriptionUpdate(provider, event);
+  const eventType = event.event_type || event.type;
+  const paymentCompletedEvent = PAYMENT_COMPLETED_EVENTS.includes(eventType);
+  const resource = event.resource || {};
+  const paymentSubscriptionId = String(resource.billing_agreement_id || resource.subscription_id || '');
+  const existingForPayment = paymentCompletedEvent && paymentSubscriptionId
+    ? await Subscription.findOne({ providerSubscriptionId: paymentSubscriptionId }).lean()
+    : null;
+  const update = extractSubscriptionUpdate(provider, event, existingForPayment ? { guildId: existingForPayment.guildId, plan: existingForPayment.plan, providerSubscriptionId: existingForPayment.providerSubscriptionId } : {});
   if (!update.guildId) throw new Error('billing_event_missing_guild');
+  const existingSubscription = existingForPayment || await Subscription.findOne({ guildId: update.guildId }).lean();
+  const paymentVerified = shouldGrantPaymentProof(eventType, existingSubscription, update);
   const subscription = await Subscription.findOneAndUpdate(
     { guildId: update.guildId },
-    { $set: { plan: update.plan === 'free' ? 'pro' : update.plan, status: update.status, provider, providerCustomerId: update.providerCustomerId || null, providerSubscriptionId: update.providerSubscriptionId || null, currentPeriodStart: update.currentPeriodStart, currentPeriodEnd: update.currentPeriodEnd, renewalState: update.renewalState, lastProviderEventId: event.id, gracePeriodEnd: update.status === 'past_due' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null } },
+    { $set: { plan: update.plan === 'free' ? 'pro' : update.plan, status: update.status, provider, providerCustomerId: update.providerCustomerId || null, providerSubscriptionId: update.providerSubscriptionId || null, currentPeriodStart: update.currentPeriodStart, currentPeriodEnd: update.currentPeriodEnd, renewalState: update.renewalState, lastProviderEventId: event.id, gracePeriodEnd: update.status === 'past_due' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null, 'metadata.paymentVerified': paymentVerified } },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
-  if (['PAYMENT.SALE.COMPLETED', 'BILLING.SUBSCRIPTION.ACTIVATED', 'BILLING.SUBSCRIPTION.PAYMENT.COMPLETED'].includes(event.event_type || event.type)) {
+  if (paymentVerified) {
     await Payment.findOneAndUpdate(
       { providerPaymentId: update.providerPaymentId || event.id },
       { guildId: update.guildId, provider, providerPaymentId: update.providerPaymentId || event.id, providerEventId: event.id, amountMinor: update.amountMinor, currency: update.currency, plan: update.plan === 'ultimate' ? 'ultimate' : 'pro', status: 'succeeded', verifiedAt: new Date() },
@@ -279,4 +296,4 @@ async function processVerifiedEvent(provider, event) {
   return { duplicate: false, processed: true, guildId: update.guildId, plan: subscription.plan, status: subscription.status };
 }
 
-module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };
+module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, getPayPalAccessToken, paypalRequest, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, shouldGrantPaymentProof, extractSubscriptionUpdate, processVerifiedEvent };

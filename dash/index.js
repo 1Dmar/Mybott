@@ -370,7 +370,12 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
     await Subscription.updateOne({ guildId: req.params.guildId }, { $set: { renewalState: 'will_cancel', cancellationAt: new Date() } });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'paypal', target: subscription.providerSubscriptionId });
     res.json({ success: true, ...result });
-  } catch (error) { console.error('[billing cancel] provider error:', error.message); res.status(502).json({ success: false, error: 'billing_cancel_failed' }); }
+  } catch (error) {
+    const details = getPayPalErrorDetails(error);
+    const message = formatPayPalError(error);
+    console.error('[billing cancel] provider error:', error.message, details.debugId ? `debug=${details.debugId}` : '');
+    res.status(502).json({ success: false, error: 'billing_cancel_failed', message, ...(details.debugId ? { debugId: details.debugId } : {}) });
+  }
 });
 
 // ── Guild API ─────────────────────────────────────────────────────
