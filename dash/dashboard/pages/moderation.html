@@ -1,28 +1,299 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Moderation Settings — ProMcBot</title>
-  <link rel="stylesheet" href="/shared.css"><link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    .moderation-page{max-width:1120px;margin:0 auto}.moderation-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin-bottom:18px;padding:22px;border:1px solid var(--border);border-radius:20px;background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 14%,var(--surface)),var(--surface));box-shadow:var(--shadow-sm)}.hero-copy{min-width:0}.hero-copy h1{margin:6px 0 7px;font-size:clamp(28px,4vw,42px);letter-spacing:-.05em}.hero-copy p{max-width:650px;margin:0;color:var(--text-muted);line-height:1.6}.server-pill{display:flex;align-items:center;gap:9px;min-width:220px;padding:11px 13px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--text-muted);font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}.server-pill i{color:var(--primary);font-size:18px}.server-pill strong{display:block;margin-top:3px;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none}.moderation-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(250px,.6fr);gap:16px}.settings-card,.insight-card{min-width:0;padding:20px;border:1px solid var(--border);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm)}.section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}.section-heading h2{margin:0 0 4px;font-size:18px}.section-heading p{margin:0;color:var(--text-muted);font-size:12px}.section-icon{display:inline-flex;align-items:center;justify-content:center;width:35px;height:35px;border-radius:11px;background:var(--primary-soft);color:var(--primary);font-size:19px}.lock-banner{margin:0 0 18px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--warning) 45%,var(--border));border-radius:13px;background:color-mix(in srgb,var(--warning) 9%,var(--surface-2));color:var(--text-secondary);font-size:12px;line-height:1.55}.lock-banner strong{display:block;margin-bottom:3px;color:var(--warning);font-size:13px}.settings-card fieldset{min-width:0;margin:0;padding:0;border:0}.settings-card fieldset:disabled{opacity:.68}.primary-control{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:18px;padding:15px;border:1px solid color-mix(in srgb,var(--primary) 25%,var(--border));border-radius:14px;background:linear-gradient(135deg,var(--primary-soft),var(--surface-2))}.field-label{display:block;margin-bottom:6px;color:var(--text);font-size:12px;font-weight:800}.field-help{margin:0;color:var(--text-muted);font-size:11px;line-height:1.5}.field-group{margin-bottom:18px}.select-input{width:100%;min-height:43px;padding:10px 13px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2);color:var(--text);font:inherit;font-size:13px}.select-input:focus{border-color:var(--primary);outline:0;box-shadow:0 0 0 3px var(--primary-soft)}.filter-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 11px;padding-top:18px;border-top:1px solid var(--border)}.filter-heading h3{margin:0;font-size:15px}.filter-heading span{color:var(--text-muted);font-size:10px}.filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.filter-card{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;padding:12px;border:1px solid var(--border);border-radius:13px;background:var(--surface-2)}.filter-card:hover{border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}.filter-info{min-width:0}.filter-info h4{margin:0 0 3px;font-size:12px}.filter-info p{margin:0;color:var(--text-muted);font-size:10px}.module-switch{position:relative;display:inline-flex;flex:0 0 auto;align-items:center;width:42px;height:24px}.module-switch input{position:absolute;width:1px;height:1px;opacity:0}.module-switch-slider{position:relative;width:42px;height:24px;border-radius:99px;background:var(--border);cursor:pointer;transition:.18s}.module-switch-slider:after{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:#fff;content:'';transition:.18s}.module-switch input:checked+.module-switch-slider{background:var(--primary)}.module-switch input:checked+.module-switch-slider:after{transform:translateX(18px)}.module-switch input:focus-visible+.module-switch-slider{box-shadow:0 0 0 3px var(--primary-soft)}.insight-card h3{margin:0 0 5px;font-size:15px}.insight-card>p{margin:0;color:var(--text-muted);font-size:12px;line-height:1.55}.insight-list{display:grid;gap:9px;margin-top:16px}.insight-row{display:flex;align-items:flex-start;gap:9px;padding:11px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}.insight-row i{flex:0 0 auto;color:var(--primary);font-size:17px}.insight-row strong,.insight-row span{display:block}.insight-row strong{font-size:11px}.insight-row span{margin-top:2px;color:var(--text-muted);font-size:10px;line-height:1.4}.save-bar{position:fixed;right:18px;bottom:18px;z-index:1000;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 36px);padding:10px 11px 10px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transform:translateY(12px);transition:.18s}.save-bar.show{opacity:1;pointer-events:auto;transform:none}.save-bar-text{color:var(--text-secondary);font-size:11px}.save-bar button{min-height:34px;padding:8px 11px;border:0;border-radius:9px;background:var(--primary);color:#fff;font:inherit;font-size:11px;font-weight:800;cursor:pointer}.error{color:var(--danger)}@media(max-width:820px){.moderation-hero{display:block}.server-pill{max-width:360px;margin-top:16px}.moderation-grid{grid-template-columns:1fr}}@media(max-width:560px){.moderation-hero,.settings-card,.insight-card{padding:16px}.filter-grid{grid-template-columns:1fr}.primary-control{align-items:flex-start;flex-direction:column}.save-bar{right:10px;bottom:10px;left:10px;max-width:none;justify-content:space-between}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderation - ProMcBot</title>
+    <link rel="stylesheet" href="/shared.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .filter-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .filter-info h4 { margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: var(--text); }
+        .filter-info p { margin: 0; font-size: 12px; color: var(--text-secondary); }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: var(--text); }
+        .select-input { width: 100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--border); background-color: var(--surface-2); color: var(--text); font-family: inherit; font-size: 14px; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236b7280\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'m6 9 6 6 6-6\'/></svg>'); background-repeat: no-repeat; background-position: right 14px center; }
+    </style>
 </head>
-<body class="dark">
-  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><div class="user_profile_nav" id="userBtn"><img src="" alt="Account" data-user-avatar><span id="navUserName" data-user-name>User</span><i class="bx bx-chevron-down"></i><div class="dropdown-menu" id="userDropdown"><a href="/dashboard">Account home</a><a href="/api/logout">Logout</a></div></div></div></nav>
-  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
-  <main class="main-content"><section class="moderation-page"><header class="moderation-hero"><div class="hero-copy"><div class="eyebrow">Server protection</div><h1>Moderation Settings</h1><p>Configure the protection rules that keep conversations useful, consistent, and safe for your community.</p></div><div class="server-pill"><i class="bx bx-server"></i><div>Managed server<strong id="breadServerName">Loading…</strong></div></div></header><div class="moderation-grid"><section class="settings-card"><div class="section-heading"><div><h2>Automod engine</h2><p>Review the response policy and content filters for this server.</p></div><i class="bx bx-shield-quarter section-icon" aria-hidden="true"></i></div><div id="moderationLock" class="lock-banner" hidden></div><fieldset id="moderationControls"><div class="primary-control"><div><label class="field-label" for="automodEnabled">Enable Automod</label><p class="field-help">Automatically detect and act on malicious or disruptive behavior.</p></div><label class="module-switch"><input type="checkbox" id="automodEnabled" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div><div class="field-group"><label class="field-label" for="automodAction">Automod action</label><select id="automodAction" class="select-input" onchange="showSaveBar()"><option value="warn">Warn user</option><option value="mute">Mute user</option><option value="kick">Kick user</option><option value="ban">Ban user</option></select><p class="field-help">The action applied when a member repeatedly violates a filter.</p></div><div class="field-group"><label class="field-label" for="automodLogChannel">Automod log channel</label><select id="automodLogChannel" class="select-input" onchange="showSaveBar()"><option value="">None</option></select><p class="field-help">Where Automod actions are recorded for moderators.</p></div><div class="filter-heading"><h3>Content filters</h3><span>Toggle what should be blocked</span></div><div class="filter-grid"><div class="filter-card"><div class="filter-info"><h4>Bad words</h4><p>Block profanity and slurs.</p></div><label class="module-switch"><input type="checkbox" id="filter_badwords" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div><div class="filter-card"><div class="filter-info"><h4>Links</h4><p>Block unauthorized links.</p></div><label class="module-switch"><input type="checkbox" id="filter_links" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div><div class="filter-card"><div class="filter-info"><h4>Invites</h4><p>Block Discord server invites.</p></div><label class="module-switch"><input type="checkbox" id="filter_invites" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div><div class="filter-card"><div class="filter-info"><h4>Spam</h4><p>Block repeated messages.</p></div><label class="module-switch"><input type="checkbox" id="filter_spam" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div><div class="filter-card"><div class="filter-info"><h4>Caps</h4><p>Block excessive capitalization.</p></div><label class="module-switch"><input type="checkbox" id="filter_caps" onchange="showSaveBar()"><span class="module-switch-slider"></span></label></div></div></fieldset></section><aside class="insight-card"><h3>Protection checklist</h3><p>Good moderation starts with clear defaults and a visible audit trail.</p><div class="insight-list"><div class="insight-row"><i class="bx bx-check-shield"></i><div><strong>Server-scoped policy</strong><span>Changes apply only to the selected managed server.</span></div></div><div class="insight-row"><i class="bx bx-filter-alt"></i><div><strong>Focused filters</strong><span>Enable only the signals your community needs.</span></div></div><div class="insight-row"><i class="bx bx-history"></i><div><strong>Reviewable actions</strong><span>Use a log channel to keep moderator decisions visible.</span></div></div></div></aside></div></section></main>
-  <div class="save-bar" id="saveBar"><span class="save-bar-text">You have unsaved changes.</span><button type="button" onclick="saveSettings()">Save changes</button></div>
-  <script src="/shared.js"></script>
-  <script>
-    const guildId = window.location.pathname.split('/')[2];
-    document.addEventListener('DOMContentLoaded', initModeration);
-    async function initModeration() { const serverName=document.getElementById('breadServerName'); serverName.textContent=localStorage.getItem(`guild_name_${guildId}`)||guildId||'Managed server'; try { const guildResponse=await fetch('/api/guilds',{credentials:'same-origin'}); const guildData=await guildResponse.json(); const guild=(guildData.guilds||[]).find(item=>String(item.id)===String(guildId)); if(guild) serverName.textContent=guild.name||guildId; await loadModernData(); } catch(error) { showModerationLock(error.message||'Moderation is unavailable.'); } }
-    function showModerationLock(message) { const lock=document.getElementById('moderationLock'); lock.hidden=false; lock.innerHTML=`<strong>Moderation is locked · Pro required</strong><span>${message}. Upgrade this server to Pro to unlock these controls.</span>`; document.getElementById('moderationControls').disabled=true; document.getElementById('saveBar').classList.remove('show'); }
-    async function loadModernData() { const response=await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`,{credentials:'same-origin'}); const data=await response.json(); if(!response.ok){showModerationLock(data.message||data.error||'Moderation is unavailable');return} const automod=data.automod||{}; document.getElementById('automodEnabled').checked=automod.enabled===true; document.getElementById('automodAction').value=automod.action||'warn'; const channelSelect=document.getElementById('automodLogChannel'); channelSelect.innerHTML='<option value="">None</option>'; (data.channels||[]).forEach(channel=>{const option=document.createElement('option');option.value=channel.id;option.textContent=`#${channel.name}`;channelSelect.appendChild(option)}); channelSelect.value=automod.logChannel||''; const filters=automod.filters||{}; ['badwords','links','invites','spam','caps'].forEach(key=>{document.getElementById(`filter_${key}`).checked=filters[key]===true}); }
-    function showSaveBar(){ document.getElementById('saveBar').classList.add('show'); }
-    function hideSaveBar(){ document.getElementById('saveBar').classList.remove('show'); }
-    async function saveSettings(){ const filters={}; ['badwords','links','invites','spam','caps'].forEach(key=>{filters[key]=document.getElementById(`filter_${key}`).checked}); const payload={enabled:document.getElementById('automodEnabled').checked,action:document.getElementById('automodAction').value,logChannel:document.getElementById('automodLogChannel').value,filters}; try { const response=await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`,{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(payload)}); const data=await response.json(); if(!response.ok) throw new Error(data.message||data.error||'Moderation update failed'); hideSaveBar(); Swal.fire('Saved!','Moderation settings have been updated.','success'); } catch(error){ Swal.fire('Error',error.message||'Failed to save moderation settings.','error'); } }
-  </script>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo_item">
+            <i class="bx bx-menu" id="sidebarToggle"></i>
+            <span class="logo_name">ProMcBot</span>
+        </div>
+        <div class="navbar_content">
+            <i class='bx bx-sun' id="darkLight"></i>
+            <div class="nav_btn" id="notificationBtn">
+                <i class='bx bx-bell'></i>
+            </div>
+            <div class="user_profile" id="userBtn">
+                <img src="" alt="Profile" class="profile_img" data-user-avatar>
+                <span class="user_name" data-user-name>User</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <!-- Sidebar content injected by shared.js -->
+        <div class="sidebar-footer">
+            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Page Header -->
+        <div class="page-breadcrumb">
+            <a href="/myservers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Moderation</span>
+        </div>
+        <div class="page-title-row">
+            <div class="page-title-icon"><i class='bx bx-shield-quarter'></i></div>
+            <div>
+                <h1 class="page-title">Moderation Settings</h1>
+                <p class="page-subtitle">Configure auto-moderation and logging for your server.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon"><i class='bx bx-bot'></i></div>
+                <div>
+                    <div class="card-title">Automod Engine</div>
+                    <div class="card-subtitle">Automatically detect and act on malicious behavior.</div>
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Enable Automod</label>
+                <div style="margin-top: 8px;">
+                    <label class="module-switch">
+                        <input type="checkbox" id="automodEnabled" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label">Automod Action</label>
+                <select id="automodAction" class="select-input" onchange="showSaveBar()">
+                    <option value="warn">Warn User</option>
+                    <option value="mute">Mute User</option>
+                    <option value="kick">Kick User</option>
+                    <option value="ban">Ban User</option>
+                </select>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px; font-size: 12px;">Action to take when a user repeatedly violates filters.</small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 32px;">
+                <label class="form-label">Automod Log Channel</label>
+                <select id="automodLogChannel" class="select-input" onchange="showSaveBar()">
+                    <option value="">None</option>
+                </select>
+                <small style="color: var(--text-muted); display: block; margin-top: 6px; font-size: 12px;">Channel where automod actions will be logged.</small>
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 600; color: var(--text); padding-bottom: 12px; border-bottom: 1px solid var(--border);">Content Filters</h3>
+            <div class="filter-grid">
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Bad Words</h4>
+                        <p>Block profanity and slurs.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_badwords" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Links</h4>
+                        <p>Block unauthorized links.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_links" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Invites</h4>
+                        <p>Block Discord server invites.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_invites" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Spam</h4>
+                        <p>Block repeated messages.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_spam" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+                <div class="filter-card">
+                    <div class="filter-info">
+                        <h4>Caps</h4>
+                        <p>Block excessive capitalization.</p>
+                    </div>
+                    <label class="module-switch">
+                        <input type="checkbox" id="filter_caps" onchange="showSaveBar()">
+                        <span class="module-switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Save Bar -->
+    <div class="save-bar" id="saveBar">
+        <span class="save-bar-text">You have unsaved changes.</span>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
+
+    <script src="/shared.js"></script>
+    <script>
+        const guildId = window.location.pathname.split('/')[2];
+
+        document.addEventListener('DOMContentLoaded', initModeration);
+
+        async function initModeration() {
+            const serverName = document.getElementById('breadServerName');
+            serverName.textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId || 'Managed server';
+            try {
+                const guildResponse = await fetch('/api/guilds', { credentials: 'same-origin' });
+                const guildData = await guildResponse.json();
+                const guild = (guildData.guilds || []).find(item => String(item.id) === String(guildId));
+                if (guild) serverName.textContent = guild.name || guildId;
+                await loadModernData();
+            } catch (error) {
+                showModerationLock(error.message || 'Moderation is unavailable.');
+            }
+        }
+
+        function showModerationLock(message) {
+            const card = document.querySelector('.main-content .card');
+            const notice = document.createElement('div');
+            notice.className = 'card';
+            notice.style.cssText = 'margin-bottom:16px;border-left:4px solid var(--warning);background:var(--surface-2);';
+            const title = document.createElement('strong');
+            title.textContent = 'Moderation is locked';
+            const copy = document.createElement('p');
+            copy.style.cssText = 'margin:8px 0 0;color:var(--text-secondary);';
+            copy.textContent = `${message}. Upgrade this server to Pro to unlock the controls.`;
+            notice.append(title, copy);
+            card?.parentNode?.insertBefore(notice, card);
+            document.querySelectorAll('input, select, #saveBar button').forEach(element => { element.disabled = true; });
+        }
+
+        async function loadModernData() {
+            const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`, { credentials: 'same-origin' });
+            const data = await response.json();
+            if (!response.ok) {
+                showModerationLock(data.message || data.error || 'Moderation is unavailable');
+                return;
+            }
+            const automod = data.automod || {};
+            document.getElementById('automodEnabled').checked = automod.enabled === true;
+            document.getElementById('automodAction').value = automod.action || 'warn';
+            const channelSelect = document.getElementById('automodLogChannel');
+            channelSelect.innerHTML = '<option value="">None</option>';
+            (data.channels || []).forEach(channel => { const option = document.createElement('option'); option.value = channel.id; option.textContent = `#${channel.name}`; channelSelect.appendChild(option); });
+            channelSelect.value = automod.logChannel || '';
+            const filters = automod.filters || {};
+            ['badwords', 'links', 'invites', 'spam', 'caps'].forEach(key => { document.getElementById(`filter_${key}`).checked = filters[key] === true; });
+        }
+
+        async function loadChannels() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/channels`);
+                const data = await res.json();
+                const select = document.getElementById('automodLogChannel');
+                
+                if (data.channels) {
+                    data.channels.forEach(ch => {
+                        const opt = document.createElement('option');
+                        opt.value = ch.id;
+                        opt.textContent = '#' + ch.name;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (err) {
+                console.error('Error loading channels:', err);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const res = await fetch(`/api/server/${guildId}/guild-settings`);
+                const data = await res.json();
+                
+                if (data.settings && data.settings.automod) {
+                    const automod = data.settings.automod;
+                    
+                    document.getElementById('automodEnabled').checked = !!automod.enabled;
+                    document.getElementById('automodAction').value = automod.action || 'warn';
+                    document.getElementById('automodLogChannel').value = automod.logChannel || '';
+                    
+                    const filters = automod.filters || [];
+                    document.getElementById('filter_badwords').checked = filters.includes('badwords');
+                    document.getElementById('filter_links').checked = filters.includes('links');
+                    document.getElementById('filter_invites').checked = filters.includes('invites');
+                    document.getElementById('filter_spam').checked = filters.includes('spam');
+                    document.getElementById('filter_caps').checked = filters.includes('caps');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function showSaveBar() {
+            document.getElementById('saveBar').classList.add('show');
+        }
+
+        function hideSaveBar() {
+            document.getElementById('saveBar').classList.remove('show');
+        }
+
+        async function saveSettings() {
+            const filters = {};
+            ['badwords', 'links', 'invites', 'spam', 'caps'].forEach(key => { filters[key] = document.getElementById(`filter_${key}`).checked; });
+            const payload = {
+                enabled: document.getElementById('automodEnabled').checked,
+                action: document.getElementById('automodAction').value,
+                logChannel: document.getElementById('automodLogChannel').value,
+                filters,
+            };
+            try {
+                const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || data.error || 'Moderation update failed');
+                hideSaveBar();
+                Swal.fire('Saved!', 'Moderation settings have been updated.', 'success');
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', error.message || 'Failed to save moderation settings.', 'error');
+            }
+        }
+    </script>
 </body>
 </html>
