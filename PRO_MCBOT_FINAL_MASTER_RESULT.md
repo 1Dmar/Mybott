@@ -3,7 +3,7 @@
 **التاريخ:** 27 أغسطس 2026
 **المستودع:** `1Dmar/Mybott`
 **الفرع المستخدم:** `copilot/update-bot-design-and-translation-system`
-**Commits هذه الدورة:** `d376123e9` (implementation)، `b78283a02` (report)، `ae1968337` (PayPal checkout diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge)
+**Commits هذه الدورة:** `d376123e9` (implementation)، `b78283a02` (report)، `ae1968337` (PayPal checkout diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge)
 
 ## الملخص التنفيذي
 
@@ -21,7 +21,7 @@
 | الفرع | `copilot/update-bot-design-and-translation-system` |
 | `main` | لم يُعدّل |
 | فرع جديد | لم يُنشأ |
-| Commits | `d376123e9` (implementation) + `b78283a02` (report) + `ae1968337` (PayPal diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) |
+| Commits | `d376123e9` (implementation) + `b78283a02` (report) + `ae1968337` (PayPal diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) |
 | Logs page | لم تُعدّل `dash/dashboard/pages/logs.html` |
 | Models | لم تُعدّل أي ملفات تحت `bot/Models/**` |
 | الأسرار | لم تُضف tokens أو secrets إلى Git أو التقرير |
@@ -77,7 +77,7 @@ endpoint visual يحاول جلب banner الحقيقي، ثم icon الحقيق
 
 ## Premium وPayPal
 
-الـbilling authority بقيت PayPal فقط. الواجهة لا تمكن checkout إذا كان provider أو method المطلوب غير مهيأ، ولا تعطي paid entitlement من زر أو browser redirect. Card وGoogle Pay لا يظهران كجاهزين إلا عندما تسمح إعدادات PayPal الحالية بهما؛ لم تُضف Stripe ولم تُخزّن بيانات card خام. بعد ظهور `billing_checkout_failed` في الاختبار، أضيفت معالجة آمنة تعرض سبب PayPal القابل للتنفيذ وPayPal debug ID الاختياري بدل الرسالة العامة وحدها، مع بقاء entitlement على Free حتى يصل webhook موثق. كما تم إصلاح شرط سابق كان يحجب PayPal إذا كان Ultimate Plan ID غير موجود؛ أصبح Pro قابلًا للشراء عند إعداد Pro فقط، بينما يبقى Ultimate معطلًا حتى إنشاء خطته. وكُشف وأُصلح mismatch إضافي: endpoint يعيد `plans` كمصفوفة، بينما كانت الواجهة تقرأها ككائن؛ أصبحت الواجهة تتعامل مع الشكلين وتتحقق من Plan ID الخاص بالخطة المختارة. أضيف أيضًا زر `Verify PayPal setup` وendpoint authenticated يفحص OAuth وPlan IDs داخل Sandbox/Live دون إعادة credentials. وأُغلقت ثغرة refresh: `APPROVAL_PENDING` و`APPROVED` و`active`/`trialing` بلا `metadata.paymentVerified === true` تعود إلى Free، ولا تُثبت علامة الدفع إلا من أحداث payment completed الموثقة؛ كما أُصلحت رسائل cancel لتُظهر سبب provider الآمن بدل `billing_cancel_failed` العامة. دُمجت إعادة تصميم Premium البصرية من remote دون فقد gating الأمني.
+الـbilling authority بقيت PayPal فقط. الواجهة لا تمكن checkout إذا كان provider أو method المطلوب غير مهيأ، ولا تعطي paid entitlement من زر أو browser redirect. Card وGoogle Pay لا يظهران كجاهزين إلا عندما تسمح إعدادات PayPal الحالية بهما؛ لم تُضف Stripe ولم تُخزّن بيانات card خام. بعد ظهور `billing_checkout_failed` في الاختبار، أضيفت معالجة آمنة تعرض سبب PayPal القابل للتنفيذ وPayPal debug ID الاختياري بدل الرسالة العامة وحدها، مع بقاء entitlement على Free حتى يصل webhook موثق. كما تم إصلاح شرط سابق كان يحجب PayPal إذا كان Ultimate Plan ID غير موجود؛ أصبح Pro قابلًا للشراء عند إعداد Pro فقط، بينما يبقى Ultimate معطلًا حتى إنشاء خطته. وكُشف وأُصلح mismatch إضافي: endpoint يعيد `plans` كمصفوفة، بينما كانت الواجهة تقرأها ككائن؛ أصبحت الواجهة تتعامل مع الشكلين وتتحقق من Plan ID الخاص بالخطة المختارة. أضيف أيضًا زر `Verify PayPal setup` وendpoint authenticated يفحص OAuth وPlan IDs داخل Sandbox/Live دون إعادة credentials. وأُغلقت ثغرة refresh: `APPROVAL_PENDING` و`APPROVED` و`active`/`trialing` بلا `metadata.paymentVerified === true` تعود إلى Free، ولا تُثبت علامة الدفع إلا من أحداث payment completed الموثقة؛ كما أُصلحت رسائل cancel لتُظهر سبب provider الآمن بدل `billing_cancel_failed` العامة. أضيفت أيضًا headers PayPal الموصى بها (`Prefer` و`PayPal-Request-Id`) وتحديد مرحلة `create_subscription` عند فشل provider، مع حماية نجاح checkout من فشل Audit غير الجوهري. دُمجت إعادة تصميم Premium البصرية وتغييرات remote دون فقد gating الأمني.
 
 لتشغيل Sandbox، اضبط في خدمة backend المتغيرات المطلوبة في البيئة نفسها كما هو موثق في `docs/PAYMENTS.md` و`docs/PREMIUM.md`، ومنها `PAYPAL_ENV=sandbox` وبيانات PayPal sandbox وplan IDs وwebhook ID. استخدم حسابات PayPal sandbox، ثم أنشئ checkout من صفحة server-scoped Premium، واترك provider يعيد المستخدم إلى مسار server المحدد. منح الوصول لا يثبت إلا عند وصول webhook صحيح والتحقق منه.
 
@@ -120,7 +120,7 @@ Maven أثبت compile/package والاختبارات الموجودة فقط. �
 
 ## الاختبارات المنفذة
 
-تم تشغيل المجموعة الكاملة بعد إصلاح PayPal الأخير، وكانت النتيجة **67/67 ناجحة**. شملت guild access وentitlements/billing وcommand catalog وintelligence وtelemetry وmoderation defaults/gate وblacklist parser وpublic stats وserver visuals وsettings وplugin security وYAML generation.
+تم تشغيل المجموعة الكاملة بعد إصلاح PayPal الأخير، وكانت النتيجة **72/72 ناجحة**. شملت guild access وentitlements/billing وcommand catalog وintelligence وtelemetry وmoderation defaults/gate وblacklist parser وpublic stats وserver visuals وsettings وplugin security وYAML generation.
 
 كما نجح `npm run check`، وsyntax checks لكل JavaScript متغير، و`git diff --check`. نجح `npm run build:plugin` عبر `mvn -q -f plugin/pom.xml clean test package`. تم فحص `plugin.yml` وmain class وJava major version 52. أُجري فحص بصري محلي لصفحات Stats/Profile في Chromium؛ هذا لا يثبت DNS أو OAuth أو Discord REST أو MongoDB أو Paper runtime.
 
@@ -150,7 +150,7 @@ Maven أثبت compile/package والاختبارات الموجودة فقط. �
 
 ## المطلوب خارجيًا قبل الإنتاج
 
-يحتاج acceptance النهائي إلى deploy حديث بالـcommit `80aa1c95a`، والتأكد من `MONGODB_URI` وDiscord OAuth/bot credentials و`PLUGIN_ENCRYPTION_KEY` وPayPal variables في Railway، ثم توليد config جديد ووضعه مع JAR الحالي في server Bukkit/Spigot/Paper. بعد تشغيل لاعب فعليًا، يجب مراجعة activation evidence بدل اعتبار heartbeat وحده comparison window.
+يحتاج acceptance النهائي إلى deploy حديث بالـcommit `76316a234`، والتأكد من `MONGODB_URI` وDiscord OAuth/bot credentials و`PLUGIN_ENCRYPTION_KEY` وPayPal variables في Railway، ثم توليد config جديد ووضعه مع JAR الحالي في server Bukkit/Spigot/Paper. بعد تشغيل لاعب فعليًا، يجب مراجعة activation evidence بدل اعتبار heartbeat وحده comparison window.
 
 كما يحتاج `stats.promcbot.dev` إلى domain وDNS records يدويًا، وتحتاج payment flow إلى PayPal sandbox/live setup. يجب تدوير أي credential تم مشاركته سابقًا خارج secret manager، وعدم وضعه في Git أو chat.
 
