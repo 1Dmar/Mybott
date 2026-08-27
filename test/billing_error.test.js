@@ -1,7 +1,15 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog, getPublicPlans } = require('../bot/utils/billingService');
+
+test('Premium UI reads array-shaped billing plans and checks each plan readiness', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'dash/dashboard/pages/premium.html'), 'utf8');
+  assert.match(html, /Array\.isArray\(catalog\?\.plans\)/);
+  assert.match(html, /planIsConfigured\(plan\.id\)/);
+});
 
 test('PayPal catalog allows Pro when only the Pro plan is configured', () => {
   const previous = {};
