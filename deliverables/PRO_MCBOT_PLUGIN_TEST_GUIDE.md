@@ -7,7 +7,7 @@ Use `ProMcBot-0.1.0-Universal-Bukkit.jar` and place it in the `plugins/` directo
 SHA-256:
 
 ```text
-037f0eeb9fa1b162ffe84cb791e788116faa5337f6d18902a510d495c7f4c57c
+7d90f48e7dfba416f3287826bf336ea54d3834f6bb8f8a3234f287d2b78a658c
 ```
 
 ## Supported targets

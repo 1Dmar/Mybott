@@ -58,7 +58,13 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
             getLogger().severe("The server remains playable; telemetry will stay offline until config.yml is completed.");
         }
 
-        if (backend != null) backend.refreshCapabilities().thenAccept(ok -> entitlementAvailable = ok);
+        // Send an initial measured snapshot immediately after startup; do not make
+        // the dashboard wait for the first scheduled minute before showing evidence.
+        captureSnapshot();
+        if (backend != null) {
+            backend.refreshCapabilities().thenAccept(ok -> entitlementAvailable = ok);
+            backend.sendHeartbeat(lastOnlineCount);
+        }
         Bukkit.getPluginManager().registerEvents(this, this);
         if (getCommand("promcbot") != null) getCommand("promcbot").setExecutor(this);
 

@@ -60,6 +60,34 @@ function getManageableGuilds(user, ownerIds = ownerIdsFromEnv()) {
   }, []);
 }
 
+function isDiscordWorkspaceAdmin(guild) {
+  if (guild?.owner === true) return true;
+  const permissions = permissionFlagsFor(guild);
+  return permissions !== null && (permissions & ADMINISTRATOR) === ADMINISTRATOR;
+}
+
+/**
+ * Server workspace scope deliberately excludes ordinary Manage Server users
+ * and platform-owner overrides. Only the actual Discord owner or administrator
+ * can open/edit a managed workspace.
+ */
+function getWorkspaceGuilds(user) {
+  const guilds = Array.isArray(user?.guilds) ? user.guilds : [];
+  return guilds.filter(isDiscordWorkspaceAdmin).map(guild => ({
+    ...guild,
+    managePermission: guild.owner === true ? 'owner' : 'administrator',
+    permissionSource: guild.owner === true ? 'discord_owner' : 'discord_administrator',
+    isPlatformOwner: false,
+  }));
+}
+
+function resolveWorkspaceGuildReference(user, reference) {
+  const value = String(reference || '').trim();
+  if (!value) return null;
+  const workspaceGuilds = getWorkspaceGuilds(user);
+  return workspaceGuilds.find(guild => String(guild.id) === value || String(guild.name || '').toLowerCase() === value.toLowerCase()) || null;
+}
+
 function resolveGuildReference(user, reference, ownerIds = ownerIdsFromEnv()) {
   const value = String(reference || '').trim();
   if (!value) return null;
@@ -76,8 +104,11 @@ module.exports = {
   MANAGE_GUILD,
   canManageGuild,
   getManageableGuilds,
+  getWorkspaceGuilds,
+  isDiscordWorkspaceAdmin,
   managePermissionDetail,
   managePermissionFor,
   ownerIdsFromEnv,
   resolveGuildReference,
+  resolveWorkspaceGuildReference,
 };

@@ -47,7 +47,7 @@ const { listNotifications, markRead, resolveNotification } = require('../bot/uti
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
-const { getManageableGuilds, resolveGuildReference } = require('./guildAccess');
+const { getWorkspaceGuilds, resolveWorkspaceGuildReference } = require('./guildAccess');
 const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership } = require('./botAccess');
 const { getGuildVisual } = require('./serverVisuals');
 const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./settingsValidation');
@@ -219,7 +219,7 @@ function isAuthenticated(req, res, next) {
 
 function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
-  const guild = resolveGuildReference(req.user, reference);
+  const guild = resolveWorkspaceGuildReference(req.user, reference);
   if (!guild) {
     if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(403).json({ success: false, error: 'guild_access_required' });
     return res.redirect(302, '/myservers?guild_access_required=1');
@@ -358,17 +358,20 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = getManageableGuilds(req.user).map(guild => ({
+  const guilds = getWorkspaceGuilds(req.user).map(guild => ({
     ...guild,
     ...botAccessPayload(guild, getBotMembership(botClient, guild.id), inviteUrl),
   }));
-  res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_guilds_only' });
+  res.json({ success: true, guilds, count: guilds.length, scope: 'owner_or_administrator_only' });
 });
 
 app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
-    const botGuild = getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
-    const sourceGuild = { ...(req.managedGuild || {}), banner: req.managedGuild?.banner || botGuild?.banner || null, icon: req.managedGuild?.icon || botGuild?.icon || null };
+    let botGuild = getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
+    if (botGuild?.fetch) {
+      try { botGuild = await botGuild.fetch(); } catch (_) { /* cached Discord data remains a safe fallback */ }
+    }
+    const sourceGuild = { ...(req.managedGuild || {}), banner: botGuild?.banner || req.managedGuild?.banner || null, icon: botGuild?.icon || req.managedGuild?.icon || null };
     const visual = await getGuildVisual(sourceGuild);
     res.json({ success: true, guildId: req.params.guildId, visual });
   } catch (_) {
@@ -492,7 +495,7 @@ app.get('/callback/check/userData', (req, res) => {
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-      guilds: getManageableGuilds(req.user)
+      guilds: getWorkspaceGuilds(req.user)
     }
   });
 });
@@ -507,7 +510,7 @@ app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDi
 app.get('/premium', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'premium.html')));
 
 // Dynamic Server Pages
-const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence'];
+const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions'];
 serverPages.forEach(page => {
   const serveServerPage = (req, res) => {
     const filePath = path.join(dashDir, 'pages', `${page}.html`);
@@ -544,8 +547,10 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
       ]);
     }
     const databaseNote = databaseReady ? '' : 'MongoDB is not connected; database-backed evidence is waiting and no metric is inferred.';
-    const telemetryActive = telemetry24h > 0;
     const pluginHeartbeatRecent = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
+    // Heartbeat is a real telemetry event. Use it as the initial connection
+    // evidence, while keeping player activity and intelligence thresholds strict.
+    const telemetryActive = telemetry24h > 0 || pluginHeartbeatRecent;
     const comparisonWindowReady = telemetry14d >= 20;
     const intelligenceActive = telemetry24h >= 10 && comparisonWindowReady;
     const steps = [
@@ -553,7 +558,7 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
       { key: 'discord_runtime_connected', label: 'Discord runtime connected', complete: botConnected, evidence: botConnected ? 'Bot runtime can see this guild.' : 'Bot runtime cannot currently see this guild.' },
       { key: 'minecraft_plugin_provisioned', label: 'Minecraft plugin provisioned', complete: !!plugin, evidence: plugin?.instanceId ? `Instance ${plugin.instanceId} is registered.` : databaseNote || 'No registered plugin instance.' },
       { key: 'plugin_heartbeat_recent', label: 'Minecraft heartbeat is recent', complete: pluginHeartbeatRecent, evidence: plugin?.lastSeenAt ? `Last heartbeat: ${new Date(plugin.lastSeenAt).toISOString()}.` : databaseNote || 'No plugin heartbeat recorded.' },
-      { key: 'telemetry_received', label: 'Telemetry received', complete: telemetryActive, evidence: databaseNote || `${telemetry24h} telemetry event(s) recorded in the last 24 hours.` },
+      { key: 'telemetry_received', label: 'Telemetry received', complete: telemetryActive, evidence: databaseNote || (telemetry24h > 0 ? `${telemetry24h} telemetry event(s) recorded in the last 24 hours.` : pluginHeartbeatRecent ? 'A recent heartbeat was accepted; detailed player telemetry is still waiting.' : 'No telemetry event recorded in the last 24 hours.') },
       { key: 'player_activity_observed', label: 'Player activity observed', complete: playerEvents24h > 0, evidence: databaseNote || `${playerEvents24h} join/leave event(s) recorded in the last 24 hours.` },
       { key: 'comparison_window_ready', label: 'Comparison window ready', complete: comparisonWindowReady, evidence: databaseNote || `${telemetry14d} event(s) recorded in the last 14 days; at least 20 are required.` },
       { key: 'server_intelligence_active', label: 'Server intelligence active', complete: intelligenceActive, evidence: databaseNote || (intelligenceActive ? 'Both recent sample and comparison window thresholds are met.' : 'Recent and comparison-window thresholds are not both met.') },
@@ -609,7 +614,15 @@ app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildMana
 app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const [intel, notifications] = await Promise.all([TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry), listNotifications(req.params.guildId, 50)]);
-    const actions = intel.recommendations.map((recommendation, index) => ({
+    const recommendations = [...intel.recommendations];
+    if (!recommendations.length && intel.confidence === 'insufficient') recommendations.push({
+      what: 'Collect more measured evidence',
+      severity: 'low',
+      evidence: `Only ${intel.sample?.recentEvents || 0} recent and ${intel.sample?.previousEvents || 0} comparison events are available.`,
+      why: 'The system should not invent a trend from a small sample.',
+      action: 'Keep the plugin online, allow scheduled player-count snapshots, and have players join and leave before reviewing intelligence again.',
+    });
+    const actions = recommendations.map((recommendation, index) => ({
       id: `recommendation-${index}`,
       title: recommendation.what,
       severity: recommendation.severity || 'medium',
@@ -683,7 +696,7 @@ app.post('/api/guilds/:guildId/plugin/provision', isAuthenticated, requireGuildM
     const accessToken = `pmc_${crypto.randomBytes(32).toString('base64url')}`;
     const signingSecret = crypto.randomBytes(32).toString('base64url');
     await PluginCredential.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { serverId: req.params.guildId, instanceId, accessTokenHash: hashToken(accessToken), encryptedSigningSecret: encryptSecret(signingSecret), protocolVersion: '1', revokedAt: null, lastRotatedAt: new Date() }, { upsert: true, new: true, setDefaultsOnInsert: true });
-    await PluginInstance.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { $set: { networkId, minecraftServerId, serverName, protocolVersion: '1', status: 'offline', revokedAt: null }, $setOnInsert: { firstSeenAt: new Date(), lastSeenAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    await PluginInstance.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { $set: { networkId, minecraftServerId, serverName, protocolVersion: '1', status: 'offline', revokedAt: null }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'plugin_provisioned', feature: 'plugin.connection', result: 'success', source: 'dashboard', target: instanceId, metadata: { networkId, minecraftServerId } });
     res.status(201).json({ success: true, oneTimeConfig: { baseUrl: `${req.protocol}://${req.get('host')}`, serverId: req.params.guildId, instanceId, networkId, minecraftServerId, serverName, accessToken, signingSecret, protocolVersion: '1' }, warning: 'Store these credentials in the plugin config.yml. They are not returned again.' });
   } catch (error) { console.error('[plugin provision] error:', error.message); res.status(500).json({ success: false, error: 'plugin_provision_failed' }); }

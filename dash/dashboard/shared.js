@@ -98,30 +98,41 @@
     const serverName = guild?.name || (gId ? `Server ${gId}` : 'Choose a server');
     const serverIcon = guild?.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
 
-    let html = `
-      ${gId ? `<a class="sidebar-server-context" href="/myservers" aria-label="Back to managed servers">
-        <img src="${serverIcon}" alt="">
-        <span><small>MANAGED SERVER</small><strong>${escapeHtml(serverName)}</strong></span>
-        <i class="bx bx-chevron-right" aria-hidden="true"></i>
-      </a>` : ''}
-      <ul class="menu_items">
-        <div class="menu_title"><span>Workspace</span></div>
-        <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
-        <li class="item"><a href="/myservers" class="nav_link ${active('/myservers') && !gId ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
-        <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
-        <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
-      </ul>
-    `;
-
+    let html = '';
     if (gId) {
-      html += `
+      html = `
+        <a class="sidebar-server-context" href="/myservers" aria-label="Back to managed servers">
+          <img src="${escapeHtml(serverIcon)}" alt="">
+          <span><small>MANAGED SERVER</small><strong>${escapeHtml(serverName)}</strong></span>
+          <i class="bx bx-chevron-right" aria-hidden="true"></i>
+        </a>
         <ul class="menu_items">
-          <div class="menu_title"><span>Server control</span></div>
+          <div class="menu_title"><span>General</span></div>
           <li class="item"><a href="${serverPath(gId, 'overview')}" class="nav_link ${currentPath.endsWith('/overview') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-grid-alt"></i></span><span class="navlink">Overview</span></a></li>
+          <li class="item"><a href="${serverPath(gId, 'settings')}" class="nav_link ${currentPath.endsWith('/settings') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-cog"></i></span><span class="navlink">Configuration</span></a></li>
+        </ul>
+        <ul class="menu_items">
+          <div class="menu_title"><span>Features</span></div>
           <li class="item"><a href="${serverPath(gId, 'intelligence')}" class="nav_link ${currentPath.endsWith('/intelligence') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-pulse"></i></span><span class="navlink">Intelligence</span></a></li>
-          <li class="item"><a href="${serverPath(gId, 'settings')}" class="nav_link ${currentPath.endsWith('/settings') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-cog"></i></span><span class="navlink">Setup & settings</span></a></li>
+          <li class="item"><a href="${serverPath(gId, 'actions')}" class="nav_link ${currentPath.endsWith('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action Center</span></a></li>
           <li class="item"><a href="${serverPath(gId, 'modules')}" class="nav_link ${currentPath.endsWith('/modules') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-extension"></i></span><span class="navlink">Modules</span></a></li>
+          <li class="item"><a href="${serverPath(gId, 'moderation')}" class="nav_link ${currentPath.endsWith('/moderation') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Moderation</span></a></li>
           <li class="item"><a href="${serverPath(gId, 'logs')}" class="nav_link ${currentPath.endsWith('/logs') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-list-check"></i></span><span class="navlink">Audit</span></a></li>
+        </ul>
+        <ul class="menu_items">
+          <div class="menu_title"><span>Others</span></div>
+          <li class="item"><a href="/myservers" class="nav_link"><span class="navlink_icon"><i class="bx bx-arrow-back"></i></span><span class="navlink">Back to My Servers</span></a></li>
+          <li class="item"><a href="${serverPath(gId, 'premium')}" class="nav_link ${currentPath.endsWith('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
+        </ul>
+      `;
+    } else {
+      html = `
+        <ul class="menu_items">
+          <div class="menu_title"><span>Workspace</span></div>
+          <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
+          <li class="item"><a href="/myservers" class="nav_link ${active('/myservers') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
+          <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
+          <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
         </ul>
       `;
     }

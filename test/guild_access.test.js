@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { canManageGuild, getManageableGuilds, managePermissionDetail, managePermissionFor, resolveGuildReference } = require('../dash/guildAccess');
+const { canManageGuild, getManageableGuilds, getWorkspaceGuilds, managePermissionDetail, managePermissionFor, resolveGuildReference, resolveWorkspaceGuildReference } = require('../dash/guildAccess');
 
 test('guild access includes only owner, administrator, and manage-guild permissions', () => {
   const user = {
@@ -54,6 +54,18 @@ test('permission detail preserves Discord role and exposes platform override sep
     source: 'discord_administrator',
     isPlatformOwner: true,
   });
+});
+
+test('workspace scope includes only Discord owner and administrator guilds', () => {
+  const user = { id: 'user-1', guilds: [
+    { id: 'owner', name: 'Owner Guild', owner: true, permissions: '0' },
+    { id: 'admin', name: 'Admin Guild', owner: false, permissions: '8' },
+    { id: 'manager', name: 'Manager Guild', owner: false, permissions: '32' },
+    { id: 'member', name: 'Member Guild', owner: false, permissions: '0' },
+  ] };
+  assert.deepEqual(getWorkspaceGuilds(user).map(guild => guild.id), ['owner', 'admin']);
+  assert.equal(resolveWorkspaceGuildReference(user, 'Manager Guild'), null);
+  assert.equal(resolveWorkspaceGuildReference(user, 'Admin Guild').id, 'admin');
 });
 
 test('guild references resolve by managed server name without widening access', () => {
