@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Public server stats · ProMcBot</title>
+  <style>
+    :root { color-scheme: dark; --bg:#090b12; --panel:#111522; --line:#222a3b; --muted:#8f9ab0; --text:#f4f7fb; --accent:#8b5cf6; --cyan:#42d8ff; }
+    * { box-sizing:border-box; } body { margin:0; min-height:100vh; color:var(--text); font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif; background:radial-gradient(circle at 12% 0%,#1a1233 0,transparent 34rem),radial-gradient(circle at 100% 20%,#0c2a39 0,transparent 30rem),var(--bg); }
+    a { color:inherit; } .shell { width:min(1080px,calc(100% - 32px)); margin:0 auto; padding:28px 0 54px; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:40px; } .brand { display:flex; align-items:center; gap:11px; font-weight:800; letter-spacing:.2px; } .mark { width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--cyan)); box-shadow:0 0 30px #7c3aed55; }
+    .top a { text-decoration:none; color:#c9d2e6; font-size:13px; border:1px solid var(--line); border-radius:10px; padding:9px 12px; background:#ffffff06; }
+    .hero { display:grid; grid-template-columns:1.5fr .8fr; gap:22px; align-items:stretch; } .hero-card,.metric,.notice { border:1px solid var(--line); background:linear-gradient(145deg,#151a2aee,#0d111cdd); border-radius:22px; box-shadow:0 22px 80px #00000026; }
+    .hero-card { padding:31px; position:relative; overflow:hidden; } .hero-card:after { content:""; position:absolute; width:210px;height:210px;right:-70px;top:-80px;border-radius:50%;background:#42d8ff16;filter:blur(4px); }
+    .eyebrow { font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--cyan);font-weight:800; } h1 { margin:13px 0 9px; font-size:clamp(30px,5vw,58px); line-height:1.02; letter-spacing:-.055em; } .lead { margin:0; max-width:620px; color:#aeb8ca; line-height:1.65; }
+    .server-id { margin-top:21px; color:var(--muted); font-size:12px; word-break:break-all; } .health { padding:25px; display:flex; flex-direction:column; justify-content:space-between; } .health h2 { margin:8px 0; font-size:21px; } .status { display:inline-flex; align-items:center; gap:8px; width:max-content; padding:7px 10px; border-radius:999px; background:#ffffff08; color:#ccd6e8; font-size:12px; } .dot { width:8px;height:8px;border-radius:50%;background:#9aa6bb; } .dot.on { background:#38e68a; box-shadow:0 0 14px #38e68a; }
+    .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:13px; margin-top:14px; } .metric { padding:19px; } .metric small { color:var(--muted); display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; } .metric strong { display:block; margin-top:9px; font-size:26px; letter-spacing:-.04em; } .metric span { display:block; margin-top:7px; color:#78859d; font-size:11px; }
+    .notice { margin-top:14px; padding:17px 19px; color:#b3bed0; font-size:13px; line-height:1.6; } .notice b { color:#f3f6fb; } footer { margin-top:34px; color:#6f7b91; font-size:12px; text-align:center; }
+    @media(max-width:760px){ .hero{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)} .top{margin-bottom:25px} .hero-card{padding:24px} } @media(max-width:420px){.metrics{grid-template-columns:1fr 1fr}.metric{padding:15px}.metric strong{font-size:21px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="top"><a class="brand" href="/"><span class="mark"></span><span>ProMcBot <span style="color:#8f9ab0;font-weight:600">Public Stats</span></span></a><a href="https://promcbot.dev">Dashboard</a></header>
+    <section class="hero">
+      <article class="hero-card"><div class="eyebrow">Live, evidence-backed overview</div><h1 id="serverName">Public server stats</h1><p class="lead">A privacy-safe snapshot built from the Minecraft plugin telemetry that this server has actually sent. No player names, Discord member lists, or raw events are published.</p><div class="server-id" id="serverId">Provide a server id to view its public card.</div></article>
+      <aside class="health"><div><div class="eyebrow">Connection</div><h2 id="connectionTitle">Waiting for server</h2><div class="status"><span class="dot" id="statusDot"></span><span id="connectionStatus">Not measured</span></div></div><div style="color:#738198;font-size:12px;line-height:1.5" id="lastSeen">No heartbeat has been published.</div></aside>
+    </section>
+    <section class="metrics" aria-label="Public metrics"><div class="metric"><small>Players online</small><strong id="players">—</strong><span>latest measured count</span></div><div class="metric"><small>Joins · 24h</small><strong id="joins">—</strong><span>observed events</span></div><div class="metric"><small>Leaves · 24h</small><strong id="leaves">—</strong><span>observed events</span></div><div class="metric"><small>Telemetry · 24h</small><strong id="events">—</strong><span>received events</span></div></section>
+    <div class="notice" id="notice"><b>Data status:</b> Loading a server-scoped aggregate. A dash means the plugin has not sent enough evidence yet; it is not an estimate.</div>
+    <footer>ProMcBot publishes aggregates only. Server owners can remove this page by disabling public stats in a future privacy setting.</footer>
+  </main>
+  <script>
+    const id = new URLSearchParams(location.search).get('guildId');
+    const esc = value => String(value ?? '').replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+    const set = (key, value) => { const node=document.getElementById(key); if(node) node.textContent=value; };
+    async function load(){
+      if(!id || !/^\d{5,25}$/.test(id)){ set('notice','Public stats need a valid Discord server id in the guildId query parameter.'); return; }
+      set('serverId','Server ID · '+id);
+      try { const response=await fetch('/api/public/stats/'+encodeURIComponent(id)); const data=await response.json(); if(!response.ok) throw new Error(data.error||'unavailable');
+        const server=data.server||{}; const stats=data.stats||{}; set('serverName',server.name||'Public server stats'); set('connectionTitle',stats.plugin?.online?'Connected':'Waiting for heartbeat'); set('connectionStatus',stats.plugin?.online?'Plugin online':'Not recently measured'); document.getElementById('statusDot').classList.toggle('on',Boolean(stats.plugin?.online)); set('players',stats.latestOnlinePlayers ?? '—'); set('joins',stats.playerJoins ?? '—'); set('leaves',stats.playerLeaves ?? '—'); set('events',stats.eventCount ?? '—'); set('lastSeen',stats.plugin?.lastSeenAt ? 'Last heartbeat · '+new Date(stats.plugin.lastSeenAt).toLocaleString() : 'No heartbeat has been published.'); set('notice',stats.measured ? 'Data status: this card is calculated from received telemetry in the last 24 hours.' : 'Data status: no recent telemetry is available yet. Nothing is inferred or fabricated.');
+      } catch(error){ set('notice','Data status: this public card is temporarily unavailable. The server id is not exposed beyond this page.'); }
+    } load();
+  </script>
+</body>
+</html>

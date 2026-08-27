@@ -4,6 +4,7 @@ const {
     EmbedBuilder
 } = require("discord.js");
 const GuildSettings = require("../../../Models/GuildSettings");
+const { requireProModeration } = require("../../../utils/moderationGate");
 
 module.exports = {
     name: "automod-filter",
@@ -37,6 +38,8 @@ module.exports = {
     ],
 
     run: async (client, interaction) => {
+        const gate = await requireProModeration(interaction);
+        if (!gate.ok) return interaction.reply(gate.response);
         const filterType = interaction.options.getString("type");
         const enabled = interaction.options.getBoolean("enabled");
 

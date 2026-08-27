@@ -1,34 +1,18 @@
 const {
-  CommandInteraction,
   ApplicationCommandType,
   PermissionFlagsBits,
-  Client,
-  SlashCommandBuilder,
   EmbedBuilder
 } = require("discord.js");
-const ms = require('ms');
 const Blacklist = require("../../../Models/BlackList");
 
 function parseDuration(duration) {
-    if (duration === 'inf') {
-        return null;
-    }
-    const match = duration.match(/(\d+)([smhd])/);
-    const value = parseInt(match[1]);
-    const unit = match[2];
-    
-    switch (unit) {
-        case 's':
-            return value * 1000;
-        case 'm':
-            return value * 1000 * 60;
-        case 'h':
-            return value * 1000 * 60 * 60;
-        case 'd':
-            return value * 1000 * 60 * 60 * 24;
-        default:
-            throw new Error('Invalid duration unit');
-    }
+    const value = String(duration || '').trim().toLowerCase();
+    if (value === 'inf') return null;
+    const match = value.match(/^(\d+)\s*(mo|ms|s|m|h|d|w)$/);
+    if (!match) throw new Error('Invalid duration. Use e.g. 30m, 2h, 5d, 2w, 1mo, or inf.');
+    const amount = Number(match[1]);
+    const multipliers = { ms: 1, s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000, w: 7 * 24 * 60 * 60 * 1000, mo: 30 * 24 * 60 * 60 * 1000 };
+    return amount * multipliers[match[2]];
 }
 
 module.exports = {
@@ -60,13 +44,19 @@ module.exports = {
     },
   ],
   run: async (client, interaction) => {
-    if (interaction.user.id !== "804999528129363998" && interaction.user.id !== "1071690719418396752") return;
-    const guildIds = interaction.options.getString('guild_id');
+    if (interaction.user.id !== "804999528129363998" && interaction.user.id !== "1071690719418396752") {
+      return interaction.reply({ content: 'لا تملك صلاحية استخدام هذا الأمر.', ephemeral: true });
+    }
+    const guildIds = interaction.options.getString('guild_id').trim();
     const duration = interaction.options.getString('duration');
     const reason = interaction.options.getString('reason');
    
-    const isPermanent = duration === 'inf';
-    const expiresAt = isPermanent ? null : Date.now() + parseDuration(duration);
+    let durationMs;
+    try { durationMs = parseDuration(duration); } catch (error) {
+      return interaction.reply({ content: error.message, ephemeral: true });
+    }
+    const isPermanent = durationMs === null;
+    const expiresAt = isPermanent ? null : Date.now() + durationMs;
 
       const existingBlacklist = await Blacklist.findOne({ guildIds: guildIds });
       if (existingBlacklist) {
@@ -85,7 +75,7 @@ module.exports = {
         });
       }
       
-    await Blacklist.create({ guildIds, isBlacklisted: 'true', reason, duration: isPermanent ? null : ms(duration), expiresAt, isPermanent });
+    await Blacklist.create({ guildIds, isBlacklisted: 'true', reason, duration: durationMs, expiresAt, isPermanent });
 
     const embed = new EmbedBuilder()
       .setColor(0xFF0000) // Red color
@@ -102,4 +92,5 @@ module.exports = {
       ephemeral: false,
     });
   },
+  parseDuration,
 };

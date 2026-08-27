@@ -7,6 +7,7 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
     const baseUrl = process.env.PUBLIC_BASE_URL || process.env.CALLBACK_URL?.replace('/auth/discord/callback', '') || 'https://promcbot.dev';
     const description = Object.values(PLANS).map(plan => `**${plan.name}** — $${plan.priceUsdMonthly.toFixed(2)}/month\n${plan.promise}`).join('\n\n');
-    return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xf59e0b).setTitle('ProMcBot Premium').setDescription(description).addFields({ name: 'Premium center', value: `${baseUrl}/premium` }, { name: 'Billing truth', value: 'The server verifies payment-provider webhooks before changing access. No command can activate paid access by itself.' }).setTimestamp()] });
+    const premiumUrl = `${baseUrl}/myservers/${encodeURIComponent(interaction.guild.id)}/premium`;
+    return interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xf59e0b).setTitle('ProMcBot Premium').setDescription(description).addFields({ name: 'Premium center', value: premiumUrl }, { name: 'Billing truth', value: 'The server verifies payment-provider webhooks before changing access. No command can activate paid access by itself.' }).setTimestamp()] });
   },
 };

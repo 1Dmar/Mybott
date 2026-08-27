@@ -29,21 +29,41 @@ module.exports = {
             type: ApplicationCommandOptionType.String,
             required: true,
             choices: [
-                { name: "Server Players (48h)", value: "server" }
+                { name: "Server Players (48h)", value: "server" },
+                { name: "Public Stats Card", value: "public" }
             ]
         }
     ],
 
     run: async (client, interaction) => {
+        const type = interaction.options.getString("type");
+        const guildId = interaction.guild.id;
+        if (type === "public") {
+            const baseUrl = String(process.env.PUBLIC_STATS_URL || process.env.PUBLIC_BASE_URL || 'https://promcbot.dev').replace(/\/$/, '');
+            const publicUrl = `${baseUrl}/stats?guildId=${encodeURIComponent(guildId)}`;
+            return interaction.reply({
+                embeds: [{
+                    color: 0x8b5cf6,
+                    author: { name: 'ProMcBot Public Stats' },
+                    title: `${interaction.guild.name} · public stats`,
+                    description: 'Share a privacy-safe server card generated from measured Minecraft telemetry.',
+                    url: publicUrl,
+                    fields: [
+                        { name: 'Public link', value: publicUrl },
+                        { name: 'Privacy', value: 'Aggregates only · no player names or raw events.' }
+                    ],
+                    footer: { text: 'A dash means that evidence is not available yet; no metric is fabricated.' },
+                    timestamp: new Date().toISOString()
+                }]
+            });
+        }
+
         if (typeof createCanvas !== 'function') {
             return interaction.reply({
                 content: 'الرسم البياني غير متاح حاليًا لأن مكوّن الصور لم يُبنَ في بيئة التشغيل. يمكنك مراجعة الإحصائيات بعد تفعيل renderer.',
                 ephemeral: true,
             });
         }
-
-        const type = interaction.options.getString("type");
-        const guildId = interaction.guild.id;
 
         await interaction.deferReply();
 

@@ -3,7 +3,9 @@ const {
     PermissionFlagsBits,
     EmbedBuilder
 } = require("discord.js");
-const GuildSettings = require("../../../Models/GuildSettings");
+const GuildSettings = require('../../../Models/GuildSettings');
+const { normalizeAutomod } = require('../../../../dash/moderationConfig');
+const { requireProModeration } = require('../../../utils/moderationGate');
 
 module.exports = {
     name: "automod-settings",
@@ -15,9 +17,11 @@ module.exports = {
     type: ApplicationCommandType.ChatInput,
 
     run: async (client, interaction) => {
+        const gate = await requireProModeration(interaction);
+        if (!gate.ok) return interaction.reply(gate.response);
         try {
             const settings = await GuildSettings.getSettings(interaction.guild.id);
-            const { automod } = settings;
+            const automod = normalizeAutomod(settings?.automod);
             const emojis = (bool) => bool ? client.emojis.SUCCESS : client.emojis.ERROR;
 
             const embed = new EmbedBuilder()

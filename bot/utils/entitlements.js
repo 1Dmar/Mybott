@@ -14,6 +14,7 @@ const FEATURES = Object.freeze({
   'network.intelligence': 'ultimate',
   'network.analytics': 'ultimate',
   'security.basic': 'free',
+  'moderation.advanced': 'pro',
   'security.advanced': 'ultimate',
   'reports.basic': 'free',
   'reports.advanced': 'pro',

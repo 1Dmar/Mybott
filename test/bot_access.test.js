@@ -2,13 +2,28 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership } = require('../dash/botAccess');
+const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership, resolveBotMembership } = require('../dash/botAccess');
 
 test('bot membership distinguishes installed, absent, and unavailable states', () => {
   const installedClient = { guilds: { cache: new Map([['guild-1', {}]]) } };
   assert.deepEqual(getBotMembership(installedClient, 'guild-1'), { state: 'installed', installed: true });
   assert.deepEqual(getBotMembership(installedClient, 'guild-2'), { state: 'absent', installed: false });
   assert.deepEqual(getBotMembership(null, 'guild-1'), { state: 'unknown', installed: false });
+});
+
+test('Discord fetch resolves a guild that is installed but not in cache', async () => {
+  const fetched = { id: 'guild-2', name: 'Fetched Guild' };
+  const client = { guilds: { cache: new Map(), fetch: async id => id === 'guild-2' ? fetched : null } };
+  const result = await resolveBotMembership(client, 'guild-2');
+  assert.equal(result.state, 'installed');
+  assert.equal(result.guild, fetched);
+});
+
+test('Discord fetch maps unknown guild to absent and transient errors to unknown', async () => {
+  const absent = { guilds: { cache: new Map(), fetch: async () => { const error = new Error('unknown guild'); error.code = 10004; throw error; } } };
+  const transient = { guilds: { cache: new Map(), fetch: async () => { const error = new Error('rate limited'); error.status = 429; throw error; } } };
+  assert.equal((await resolveBotMembership(absent, 'guild-2')).state, 'absent');
+  assert.equal((await resolveBotMembership(transient, 'guild-2')).state, 'unknown');
 });
 
 test('bot access decision allows only an installed bot and gives actionable statuses', () => {

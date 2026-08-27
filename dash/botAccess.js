@@ -27,6 +27,20 @@ function botAccessDecision(membership) {
   return { allow: false, status: 503, error: 'bot_membership_unavailable' };
 }
 
+async function resolveBotMembership(botClient, guildId) {
+  const cached = getBotMembership(botClient, guildId);
+  if (cached.state === 'installed') return { ...cached, guild: botClient.guilds.cache.get(String(guildId)) };
+  if (!botClient?.guilds || typeof botClient.guilds.fetch !== 'function') return { state: 'unknown', installed: false };
+  try {
+    const guild = await botClient.guilds.fetch(String(guildId));
+    return guild ? { state: 'installed', installed: true, guild } : { state: 'unknown', installed: false };
+  } catch (error) {
+    const code = String(error?.code || '');
+    if (code === '10004' || code === '50001' || error?.status === 404) return { state: 'absent', installed: false };
+    return { state: 'unknown', installed: false };
+  }
+}
+
 function botAccessPayload(guild, membership, inviteUrl) {
   const installed = membership?.state === 'installed';
   return {
@@ -38,4 +52,4 @@ function botAccessPayload(guild, membership, inviteUrl) {
   };
 }
 
-module.exports = { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership };
+module.exports = { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership, resolveBotMembership };

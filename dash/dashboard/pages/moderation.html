@@ -174,11 +174,54 @@
     <script>
         const guildId = window.location.pathname.split('/')[2];
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
-            await loadChannels();
-            await loadData();
-        });
+        document.addEventListener('DOMContentLoaded', initModeration);
+
+        async function initModeration() {
+            const serverName = document.getElementById('breadServerName');
+            serverName.textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId || 'Managed server';
+            try {
+                const guildResponse = await fetch('/api/guilds', { credentials: 'same-origin' });
+                const guildData = await guildResponse.json();
+                const guild = (guildData.guilds || []).find(item => String(item.id) === String(guildId));
+                if (guild) serverName.textContent = guild.name || guildId;
+                await loadModernData();
+            } catch (error) {
+                showModerationLock(error.message || 'Moderation is unavailable.');
+            }
+        }
+
+        function showModerationLock(message) {
+            const card = document.querySelector('.main-content .card');
+            const notice = document.createElement('div');
+            notice.className = 'card';
+            notice.style.cssText = 'margin-bottom:16px;border-left:4px solid var(--warning);background:var(--surface-2);';
+            const title = document.createElement('strong');
+            title.textContent = 'Moderation is locked';
+            const copy = document.createElement('p');
+            copy.style.cssText = 'margin:8px 0 0;color:var(--text-secondary);';
+            copy.textContent = `${message}. Upgrade this server to Pro to unlock the controls.`;
+            notice.append(title, copy);
+            card?.parentNode?.insertBefore(notice, card);
+            document.querySelectorAll('input, select, #saveBar button').forEach(element => { element.disabled = true; });
+        }
+
+        async function loadModernData() {
+            const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`, { credentials: 'same-origin' });
+            const data = await response.json();
+            if (!response.ok) {
+                showModerationLock(data.message || data.error || 'Moderation is unavailable');
+                return;
+            }
+            const automod = data.automod || {};
+            document.getElementById('automodEnabled').checked = automod.enabled === true;
+            document.getElementById('automodAction').value = automod.action || 'warn';
+            const channelSelect = document.getElementById('automodLogChannel');
+            channelSelect.innerHTML = '<option value="">None</option>';
+            (data.channels || []).forEach(channel => { const option = document.createElement('option'); option.value = channel.id; option.textContent = `#${channel.name}`; channelSelect.appendChild(option); });
+            channelSelect.value = automod.logChannel || '';
+            const filters = automod.filters || {};
+            ['badwords', 'links', 'invites', 'spam', 'caps'].forEach(key => { document.getElementById(`filter_${key}`).checked = filters[key] === true; });
+        }
 
         async function loadChannels() {
             try {
@@ -232,45 +275,23 @@
         }
 
         async function saveSettings() {
-            const enabled = document.getElementById('automodEnabled').checked;
-            const action = document.getElementById('automodAction').value;
-            const logChannel = document.getElementById('automodLogChannel').value;
-            
-            const filters = [];
-            if (document.getElementById('filter_badwords').checked) filters.push('badwords');
-            if (document.getElementById('filter_links').checked) filters.push('links');
-            if (document.getElementById('filter_invites').checked) filters.push('invites');
-            if (document.getElementById('filter_spam').checked) filters.push('spam');
-            if (document.getElementById('filter_caps').checked) filters.push('caps');
-
+            const filters = {};
+            ['badwords', 'links', 'invites', 'spam', 'caps'].forEach(key => { filters[key] = document.getElementById(`filter_${key}`).checked; });
+            const payload = {
+                enabled: document.getElementById('automodEnabled').checked,
+                action: document.getElementById('automodAction').value,
+                logChannel: document.getElementById('automodLogChannel').value,
+                filters,
+            };
             try {
-                const getRes = await fetch(`/api/server/${guildId}/guild-settings`);
-                const getData = await getRes.json();
-                const updatedSettings = getData.settings || {};
-                
-                updatedSettings.automod = {
-                    ...updatedSettings.automod,
-                    enabled,
-                    action,
-                    logChannel,
-                    filters
-                };
-
-                const res = await fetch(`/api/server/${guildId}/guild-settings`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ settings: updatedSettings })
-                });
-
-                if (res.ok) {
-                    Swal.fire('Saved!', 'Moderation settings have been updated.', 'success');
-                    hideSaveBar();
-                } else {
-                    throw new Error('Save failed');
-                }
-            } catch (err) {
-                console.error(err);
-                Swal.fire('Error', 'Failed to save moderation settings.', 'error');
+                const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/moderation`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(payload) });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || data.error || 'Moderation update failed');
+                hideSaveBar();
+                Swal.fire('Saved!', 'Moderation settings have been updated.', 'success');
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', error.message || 'Failed to save moderation settings.', 'error');
             }
         }
     </script>

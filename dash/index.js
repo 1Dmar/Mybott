@@ -48,10 +48,12 @@ const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
 const { getWorkspaceGuilds, resolveWorkspaceGuildReference } = require('./guildAccess');
-const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership } = require('./botAccess');
+const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership, resolveBotMembership } = require('./botAccess');
 const { getGuildVisual } = require('./serverVisuals');
 const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./settingsValidation');
 const { getConfigurationStatus } = require('./configurationStatus');
+const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
+const { buildPublicStats } = require('./publicStats');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -82,6 +84,11 @@ const dbInit = initDB()
     console.error("Dashboard DB Init Error:", err);
     return null;
   });
+
+const requireDatabaseReady = (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, error: 'database_unavailable', message: 'MongoDB is not connected; this data-backed operation is temporarily unavailable.' });
+  next();
+};
 
 app.use((req, res, next) => {
   // Database initialization runs once in the background. Do not block static pages,
@@ -217,14 +224,14 @@ function isAuthenticated(req, res, next) {
   res.redirect('/loading-auth');
 }
 
-function requireGuildManager(req, res, next) {
+async function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
   const guild = resolveWorkspaceGuildReference(req.user, reference);
   if (!guild) {
     if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(403).json({ success: false, error: 'guild_access_required' });
     return res.redirect(302, '/myservers?guild_access_required=1');
   }
-  const membership = getBotMembership(getBotClient(), guild.id);
+  const membership = await resolveBotMembership(getBotClient(), guild.id);
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
   req.managedGuild = guild;
   req.botMembership = membership;
@@ -304,7 +311,7 @@ app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildManage
   }
 });
 
-app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   const period = new Date().toISOString().slice(0, 7);
   const usage = await require('../bot/Models/UsageCounter').find({ guildId: req.params.guildId, period }).lean();
@@ -321,18 +328,19 @@ app.get('/api/configuration/status', isAuthenticated, (req, res) => {
   res.json({ success: true, status: getConfigurationStatus(), source: 'deployment_configuration_presence_only' });
 });
 
-app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   const [entitlement, subscription, invoices, payments] = await Promise.all([getForGuild(req.params.guildId), Subscription.findOne({ guildId: req.params.guildId }).lean(), Invoice.find({ guildId: req.params.guildId }).sort({ issuedAt: -1 }).limit(50).lean(), Payment.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50).lean()]);
   res.json({ success: true, entitlement, subscription: subscription || { guildId: req.params.guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' }, invoices, payments, provider: getPaymentCatalog() });
 });
 
-app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildManager, async (req, res) => {
+app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   const plan = String(req.body?.plan || '').toLowerCase();
   const method = String(req.body?.method || 'paypal').toLowerCase();
   if (!['pro', 'ultimate'].includes(plan)) return res.status(400).json({ success: false, error: 'invalid_paid_plan' });
   try {
     const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
-    const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}/premium?billing=pending`, cancelUrl: `${baseUrl}/premium?billing=cancelled` });
+    const serverPremiumPath = `/myservers/${encodeURIComponent(req.params.guildId)}/premium`;
+    const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}${serverPremiumPath}?billing=pending`, cancelUrl: `${baseUrl}${serverPremiumPath}?billing=cancelled` });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
     res.json({ success: true, ...checkout });
   } catch (error) {
@@ -342,7 +350,7 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
   }
 });
 
-app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildManager, async (req, res) => {
+app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   const subscription = await Subscription.findOne({ guildId: req.params.guildId }).lean();
   if (!subscription?.providerSubscriptionId) return res.status(409).json({ success: false, error: 'no_provider_subscription' });
   if (subscription.provider !== 'paypal' || !providerConfigured('paypal')) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
@@ -355,19 +363,19 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 });
 
 // ── Guild API ─────────────────────────────────────────────────────
-app.get('/api/guilds', isAuthenticated, (req, res) => {
+app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = getWorkspaceGuilds(req.user).map(guild => ({
+  const guilds = await Promise.all(getWorkspaceGuilds(req.user).map(async guild => ({
     ...guild,
-    ...botAccessPayload(guild, getBotMembership(botClient, guild.id), inviteUrl),
-  }));
+    ...botAccessPayload(guild, await resolveBotMembership(botClient, guild.id), inviteUrl),
+  })));
   res.json({ success: true, guilds, count: guilds.length, scope: 'owner_or_administrator_only' });
 });
 
 app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
-    let botGuild = getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
+    let botGuild = req.botMembership?.guild || getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
     if (botGuild?.fetch) {
       try { botGuild = await botGuild.fetch(); } catch (_) { /* cached Discord data remains a safe fallback */ }
     }
@@ -420,13 +428,39 @@ const moduleKeys = ['autoResponder', 'welcomeMessages', 'moderation', 'logs', 't
 const moduleMeta = {
   autoResponder: { label: 'Auto responder', description: 'Reply to configured phrases.', href: 'configuration' },
   welcomeMessages: { label: 'Welcome messages', description: 'Greet new members in a chosen channel.', href: 'welcome' },
-  moderation: { label: 'Moderation', description: 'Apply the server moderation module.', href: 'moderation' },
+  moderation: { label: 'Moderation', description: 'Apply the server moderation module.', href: 'moderation', requiredFeature: 'moderation.advanced' },
   logs: { label: 'Audit logging', description: 'Keep administrative activity visible.', href: 'logs' },
   tickets: { label: 'Support tickets', description: 'Give members a support entry point.', href: 'ticket' },
   serverStatus: { label: 'Server status', description: 'Show Minecraft health and status signals.', href: 'intelligence' },
 };
 
-app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/moderation', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  try {
+    const entitlement = await getForGuild(req.params.guildId);
+    if (!hasFeature(entitlement, 'moderation.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'moderation.advanced', requiredPlan: 'pro', message: 'Moderation requires the Pro plan.' });
+    const settings = await GuildSettings.findOne({ guildId: req.params.guildId }).lean();
+    const guild = getBotClient()?.guilds?.cache?.get(req.params.guildId);
+    const channels = guild?.channels?.cache ? [...guild.channels.cache.values()].filter(channel => {
+      const textBased = typeof channel.isTextBased === 'function' ? channel.isTextBased() : [0, 5].includes(channel.type);
+      return textBased && channel.name;
+    }).map(channel => ({ id: channel.id, name: channel.name })).sort((a, b) => a.name.localeCompare(b.name)) : [];
+    res.json({ success: true, guildId: req.params.guildId, automod: normalizeAutomod(settings?.automod), channels, entitlement: { plan: entitlement.plan } });
+  } catch (error) { res.status(500).json({ success: false, error: 'moderation_unavailable' }); }
+});
+
+app.patch('/api/guilds/:guildId/moderation', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  const entitlement = await getForGuild(req.params.guildId);
+  if (!hasFeature(entitlement, 'moderation.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'moderation.advanced', requiredPlan: 'pro', message: 'Moderation requires the Pro plan.' });
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const current = normalizeAutomod(body);
+  try {
+    await GuildSettings.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { automod: current } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    await BotConfig.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { 'modules.moderation': current.enabled } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    res.json({ success: true, guildId: req.params.guildId, automod: current });
+  } catch (error) { res.status(500).json({ success: false, error: 'moderation_update_failed' }); }
+});
+
+app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   try {
     const guildId = req.params.guildId;
     const now = Date.now();
@@ -446,7 +480,7 @@ app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, a
   }
 });
 
-app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   try {
     const [config, pluginInstances, settings] = await Promise.all([
       BotConfig.findOne({ guildId: req.params.guildId }).lean(),
@@ -455,16 +489,24 @@ app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, as
     ]);
     const configuredModules = config?.modules || {};
     const moduleEnabled = id => id === 'moderation' ? (configuredModules[id] === true || settings?.automod?.enabled === true) : configuredModules[id] === true;
-    const moduleToggleable = id => id === 'autoResponder' || id === 'moderation';
-    const modules = moduleKeys.map(id => ({
-      id,
-      ...moduleMeta[id],
-      enabled: moduleEnabled(id),
-      configured: Boolean(config),
-      statusLabel: moduleToggleable(id) ? (moduleEnabled(id) ? 'Enabled' : 'Off') : (moduleEnabled(id) ? 'Configured' : 'Open setup'),
-      href: `/myservers/${encodeURIComponent(req.params.guildId)}/${moduleMeta[id].href}`,
-      toggleable: moduleToggleable(id),
-    }));
+    const moduleToggleable = id => id === 'autoResponder' || id === 'moderation' || id === 'logs';
+    const entitlement = await getForGuild(req.params.guildId);
+    const modules = moduleKeys.map(id => {
+      const meta = moduleMeta[id];
+      const locked = Boolean(meta.requiredFeature && !hasFeature(entitlement, meta.requiredFeature));
+      return {
+        id,
+        ...meta,
+        enabled: moduleEnabled(id),
+        configured: Boolean(config),
+        locked,
+        requiredPlan: meta.requiredFeature ? require('../bot/utils/entitlements').requiredPlanFor(meta.requiredFeature) : null,
+        lockReason: locked ? `Requires ${String(require('../bot/utils/entitlements').requiredPlanFor(meta.requiredFeature) || 'paid').toUpperCase()} plan.` : null,
+        statusLabel: locked ? 'Locked' : moduleToggleable(id) ? (moduleEnabled(id) ? 'Enabled' : 'Off') : (moduleEnabled(id) ? 'Configured' : 'Open setup'),
+        href: `/myservers/${encodeURIComponent(req.params.guildId)}/${meta.href}`,
+        toggleable: moduleToggleable(id) && !locked,
+      };
+    });
     const recentCutoff = Date.now() - 5 * 60 * 1000;
     const pluginOnline = pluginInstances.some(instance => instance.status === 'online' || (instance.lastSeenAt && new Date(instance.lastSeenAt).getTime() >= recentCutoff));
     modules.push({ id: 'minecraftPlugin', label: 'Minecraft plugin', description: 'Required for player data and remote server commands.', enabled: pluginOnline, configured: pluginInstances.length > 0, statusLabel: pluginOnline ? 'Connected' : pluginInstances.length ? 'Waiting for heartbeat' : 'Not connected', href: `/myservers/${encodeURIComponent(req.params.guildId)}/intelligence`, toggleable: false });
@@ -474,9 +516,14 @@ app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, as
   }
 });
 
-app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuildManager, async (req, res) => {
+app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
   const moduleId = String(req.params.moduleId || '');
   if (!moduleKeys.includes(moduleId) || typeof req.body?.enabled !== 'boolean') return res.status(400).json({ success: false, error: 'invalid_module_update' });
+  const requiredFeature = moduleMeta[moduleId]?.requiredFeature;
+  if (requiredFeature) {
+    const entitlement = await getForGuild(req.params.guildId);
+    if (!hasFeature(entitlement, requiredFeature)) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: requiredFeature, requiredPlan: 'pro', message: 'This module requires the Pro plan.' });
+  }
   try {
     const config = await BotConfig.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { [`modules.${moduleId}`]: req.body.enabled } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
     if (moduleId === 'moderation') await GuildSettings.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { 'automod.enabled': req.body.enabled } }, { upsert: true, setDefaultsOnInsert: true });
@@ -500,6 +547,41 @@ app.get('/callback/check/userData', (req, res) => {
   });
 });
 
+// Public stats/profile experience. These endpoints intentionally expose aggregates only.
+const publicStatsLimiter = rateLimit({ windowMs: 60 * 1000, max: 90, standardHeaders: true, legacyHeaders: false });
+app.get('/api/public/stats/:guildId', publicStatsLimiter, requireDatabaseReady, async (req, res) => {
+  const guildId = String(req.params.guildId || '');
+  if (!/^\d{5,25}$/.test(guildId)) return res.status(400).json({ success: false, error: 'invalid_guild_id' });
+  try {
+    const botClient = getBotClient();
+    const guild = botClient?.guilds?.cache?.get(guildId) || null;
+    const [plugin, events] = await Promise.all([
+      PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
+      TelemetryEvent.find({ serverId: guildId, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['heartbeat', 'player_count', 'player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(5000).lean(),
+    ]);
+    const stats = buildPublicStats(events, plugin);
+    res.json({ success: true, server: { id: guildId, name: guild?.name || plugin?.serverName || 'Minecraft server', icon: guild?.icon || null }, stats, source: 'aggregate_telemetry' });
+  } catch (error) {
+    res.status(503).json({ success: false, error: 'public_stats_unavailable' });
+  }
+});
+
+app.get('/api/public/profile/:userId', publicStatsLimiter, async (req, res) => {
+  const userId = String(req.params.userId || '');
+  if (!/^\d{5,25}$/.test(userId)) return res.status(400).json({ success: false, error: 'invalid_user_id' });
+  try {
+    const user = await getBotClient()?.users?.fetch(userId);
+    if (!user) return res.status(404).json({ success: false, error: 'public_profile_not_found' });
+    res.json({ success: true, profile: { id: user.id, username: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), bot: Boolean(user.bot) }, privacy: { source: 'Discord public profile', privateGuildData: false } });
+  } catch (error) {
+    res.status(404).json({ success: false, error: 'public_profile_not_found' });
+  }
+});
+
+app.get('/stats', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
+app.get('/profile/:userId', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'profile.html')));
+app.get('/u/:userId', (req, res) => res.redirect(302, `/profile/${encodeURIComponent(req.params.userId)}`));
+
 // Dashboard Protected Pages
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
 app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
@@ -507,7 +589,7 @@ app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers
 app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/onboarding', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
-app.get('/premium', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'premium.html')));
+app.get('/premium', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 
 // Dynamic Server Pages
 const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions'];
@@ -531,7 +613,7 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
     const guildId = req.params.guildId;
     const botClient = getBotClient();
     const managedGuild = req.managedGuild || botClient?.guilds?.cache?.get(guildId) || null;
-    const botConnected = !!botClient?.guilds?.cache?.get(guildId);
+    const botConnected = req.botMembership?.state === 'installed';
     const now = Date.now();
     let plugin = null;
     let telemetry24h = 0;
@@ -634,7 +716,7 @@ app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManag
       createdAt: intel.generatedAt,
       status: 'open',
       executable: false,
-      action: null,
+      action: { type: 'navigate', href: `/myservers/${encodeURIComponent(req.params.guildId)}/intelligence`, label: 'Open setup & intelligence' },
     }));
     res.json({
       success: true,

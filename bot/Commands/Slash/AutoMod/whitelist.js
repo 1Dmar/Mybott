@@ -4,6 +4,7 @@ const {
     EmbedBuilder
 } = require("discord.js");
 const GuildSettings = require("../../../Models/GuildSettings");
+const { requireProModeration } = require("../../../utils/moderationGate");
 
 const formatEmoji = (emoji) => {
     if (!emoji) return "";
@@ -49,6 +50,8 @@ module.exports = {
     ],
 
     run: async (client, interaction) => {
+        const gate = await requireProModeration(interaction);
+        if (!gate.ok) return interaction.reply(gate.response);
         const type = interaction.options.getString("type");
         const target = interaction.options.getMentionable("target");
         const channel = interaction.options.getChannel("channel");
