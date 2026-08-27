@@ -2,17 +2,17 @@
 
 ## Repository state
 
-The current changes are on `copilot/update-bot-design-and-translation-system`, the requested default branch for this repository. The final source commit before the current payment-provider pass was `ecd88f7470659cd80bfcdfdb0366ab0ed47d3ee7`; the PayPal/provider and documentation changes in this pass remain to be committed after the final gate. `main` is not modified.
+The final verified changes are on `copilot/update-bot-design-and-translation-system`, the requested default branch for this repository. Commit `2808734ca329c79d5fe34c76c764d857e31b3ee1` was pushed to origin and matches the remote branch head. `main` is not modified.
 
 ## Verified successfully
 
 | Check | Result |
 |---|---|
 | `npm ci --ignore-scripts` | Passed |
-| `npm test` | Passed: 15 tests, 0 failures after PayPal test migration |
+| `npm test` | Passed: 24 tests, 0 failures after the final hardening pass |
 | `npm run check` | Passed |
 | Recursive JavaScript syntax checks | Passed for changed bot/dashboard/test modules |
-| `git diff --check` | Passed before the current uncommitted provider pass |
+| `git diff --check` | Passed in the final quality gate |
 | `mvn clean test package` | Passed with Java 21; plugin JAR produced |
 | Command registry smoke | Passed: 8 groups, no duplicate canonical names |
 | Bot startup smoke | Passed: 5 events, 8 slash groups, 3 message commands without external secrets |
@@ -25,7 +25,7 @@ The current changes are on `copilot/update-bot-design-and-translation-system`, t
 
 The suite covers centralized Free/Pro/Ultimate boundaries, expiration fallback, PayPal catalog and subscription-event mapping, fail-closed webhook configuration, plugin request cryptography, intelligence confidence and measured trends, player journey/session calculations, network comparison, command automation dedupe, message rendering, and bounded retry behavior.
 
-The command smoke test loads the canonical catalog and every referenced implementation. It verifies the eight top-level groups and catches duplicate canonical names. The bot startup smoke verifies that the process loads handlers without Discord or MongoDB credentials. The Dashboard preview checks the screenshot defects through a production-like static HTTP preview rather than treating a `file://` render as proof.
+The command acceptance test loads the canonical catalog and every referenced implementation. It verifies the eight top-level groups, permission metadata, help parity, and catches duplicate canonical names. The bot startup smoke verifies that the process loads handlers without Discord or MongoDB credentials. The Dashboard preview checks the screenshot defects through a production-like static HTTP preview rather than treating a `file://` render as proof.
 
 ## Payment QA position
 
