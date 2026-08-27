@@ -8,7 +8,7 @@ This review covers the implementation of `ProMcBot_FINAL_MASTER_EXECUTION_PROMPT
 |---|---|
 | Repository | `1Dmar/Mybott` |
 | Default branch | `copilot/update-bot-design-and-translation-system` |
-| Latest verified commit | `88dc90c221052215bcfce258b46062a3e6532e17` |
+| Code verification commit | `88dc90c221052215bcfce258b46062a3e6532e17` (documentation-only commits followed) |
 | Runtime baseline | Node.js `22.13.0` in Docker |
 | Plugin artifact | `plugin/target/promcbot-plugin-0.1.0.jar` |
 | Readiness | **READY FOR REAL SERVER TESTING** |
