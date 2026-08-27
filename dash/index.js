@@ -82,8 +82,10 @@ const dbInit = initDB()
     return null;
   });
 
-app.use(async (req, res, next) => {
-  await dbInit;
+app.use((req, res, next) => {
+  // Database initialization runs once in the background. Do not block static pages,
+  // auth checks, or server context while MongoDB is connecting or unavailable.
+  void dbInit;
   next();
 });
 
@@ -277,9 +279,14 @@ app.get('/api/user/membership', isAuthenticated, async (req, res) => {
 });
 
 app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildManager, async (req, res) => {
-  await ensureFreeSubscription(req.params.guildId);
-  const entitlement = await getForGuild(req.params.guildId);
-  res.json({ success: true, entitlement, availablePlans: Object.values(PLANS), authority: 'server_subscription' });
+  if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, error: 'database_unavailable', message: 'MongoDB is not connected; entitlement data is temporarily unavailable.' });
+  try {
+    await ensureFreeSubscription(req.params.guildId);
+    const entitlement = await getForGuild(req.params.guildId);
+    res.json({ success: true, entitlement, availablePlans: Object.values(PLANS), authority: 'server_subscription' });
+  } catch (_) {
+    res.status(503).json({ success: false, error: 'entitlements_unavailable', message: 'Entitlement data is temporarily unavailable.' });
+  }
 });
 
 app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, async (req, res) => {
@@ -502,13 +509,21 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
     const botClient = getBotClient();
     const managedGuild = req.managedGuild || botClient?.guilds?.cache?.get(guildId) || null;
     const botConnected = !!botClient?.guilds?.cache?.get(guildId);
-    const plugin = await PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean();
     const now = Date.now();
-    const [telemetry24h, playerEvents24h, telemetry14d] = await Promise.all([
-      TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
-      TelemetryEvent.countDocuments({ serverId: guildId, type: { $in: ['player_join', 'player_leave'] }, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
-      TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 14 * 24 * 60 * 60 * 1000) } }),
-    ]);
+    let plugin = null;
+    let telemetry24h = 0;
+    let playerEvents24h = 0;
+    let telemetry14d = 0;
+    const databaseReady = mongoose.connection.readyState === 1;
+    if (databaseReady) {
+      [plugin, telemetry24h, playerEvents24h, telemetry14d] = await Promise.all([
+        PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
+        TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
+        TelemetryEvent.countDocuments({ serverId: guildId, type: { $in: ['player_join', 'player_leave'] }, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
+        TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 14 * 24 * 60 * 60 * 1000) } }),
+      ]);
+    }
+    const databaseNote = databaseReady ? '' : 'MongoDB is not connected; database-backed evidence is waiting and no metric is inferred.';
     const telemetryActive = telemetry24h > 0;
     const pluginHeartbeatRecent = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
     const comparisonWindowReady = telemetry14d >= 20;
@@ -516,17 +531,17 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
     const steps = [
       { key: 'account_authenticated', label: 'Dashboard account authenticated', complete: !!req.user, evidence: req.user ? 'Authenticated session is present.' : 'No authenticated session.' },
       { key: 'discord_runtime_connected', label: 'Discord runtime connected', complete: botConnected, evidence: botConnected ? 'Bot runtime can see this guild.' : 'Bot runtime cannot currently see this guild.' },
-      { key: 'minecraft_plugin_provisioned', label: 'Minecraft plugin provisioned', complete: !!plugin, evidence: plugin?.instanceId ? `Instance ${plugin.instanceId} is registered.` : 'No registered plugin instance.' },
-      { key: 'plugin_heartbeat_recent', label: 'Minecraft heartbeat is recent', complete: pluginHeartbeatRecent, evidence: plugin?.lastSeenAt ? `Last heartbeat: ${new Date(plugin.lastSeenAt).toISOString()}.` : 'No plugin heartbeat recorded.' },
-      { key: 'telemetry_received', label: 'Telemetry received', complete: telemetryActive, evidence: `${telemetry24h} telemetry event(s) recorded in the last 24 hours.` },
-      { key: 'player_activity_observed', label: 'Player activity observed', complete: playerEvents24h > 0, evidence: `${playerEvents24h} join/leave event(s) recorded in the last 24 hours.` },
-      { key: 'comparison_window_ready', label: 'Comparison window ready', complete: comparisonWindowReady, evidence: `${telemetry14d} event(s) recorded in the last 14 days; at least 20 are required.` },
-      { key: 'server_intelligence_active', label: 'Server intelligence active', complete: intelligenceActive, evidence: intelligenceActive ? 'Both recent sample and comparison window thresholds are met.' : 'Recent and comparison-window thresholds are not both met.' },
+      { key: 'minecraft_plugin_provisioned', label: 'Minecraft plugin provisioned', complete: !!plugin, evidence: plugin?.instanceId ? `Instance ${plugin.instanceId} is registered.` : databaseNote || 'No registered plugin instance.' },
+      { key: 'plugin_heartbeat_recent', label: 'Minecraft heartbeat is recent', complete: pluginHeartbeatRecent, evidence: plugin?.lastSeenAt ? `Last heartbeat: ${new Date(plugin.lastSeenAt).toISOString()}.` : databaseNote || 'No plugin heartbeat recorded.' },
+      { key: 'telemetry_received', label: 'Telemetry received', complete: telemetryActive, evidence: databaseNote || `${telemetry24h} telemetry event(s) recorded in the last 24 hours.` },
+      { key: 'player_activity_observed', label: 'Player activity observed', complete: playerEvents24h > 0, evidence: databaseNote || `${playerEvents24h} join/leave event(s) recorded in the last 24 hours.` },
+      { key: 'comparison_window_ready', label: 'Comparison window ready', complete: comparisonWindowReady, evidence: databaseNote || `${telemetry14d} event(s) recorded in the last 14 days; at least 20 are required.` },
+      { key: 'server_intelligence_active', label: 'Server intelligence active', complete: intelligenceActive, evidence: databaseNote || (intelligenceActive ? 'Both recent sample and comparison window thresholds are met.' : 'Recent and comparison-window thresholds are not both met.') },
     ];
     const completed = steps.filter(step => step.complete).length;
     const progress = Math.round((completed / steps.length) * 100);
     const nextStep = steps.find(step => !step.complete);
-    res.json({ success: true, progress, completed, steps, evidence: { telemetry24h, playerEvents24h, telemetry14d, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, server: { id: guildId, name: managedGuild?.name || plugin?.serverName || guildId, icon: managedGuild?.icon || null }, nextValue: nextStep ? `Next: ${nextStep.label}. ${nextStep.evidence}` : 'Server intelligence is active.' });
+    res.json({ success: true, degraded: !databaseReady, progress, completed, steps, evidence: { telemetry24h, playerEvents24h, telemetry14d, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, server: { id: guildId, name: managedGuild?.name || plugin?.serverName || guildId, icon: managedGuild?.icon || null }, nextValue: nextStep ? `Next: ${nextStep.label}. ${nextStep.evidence}` : 'Server intelligence is active.' });
   } catch (error) { res.status(500).json({ success: false, error: 'activation_status_failed' }); }
 });
 
