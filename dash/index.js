@@ -48,6 +48,7 @@ const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
 const { getManageableGuilds, resolveGuildReference } = require('./guildAccess');
+const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership } = require('./botAccess');
 const { getGuildVisual } = require('./serverVisuals');
 const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./settingsValidation');
 const { getConfigurationStatus } = require('./configurationStatus');
@@ -219,9 +220,23 @@ function isAuthenticated(req, res, next) {
 function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
   const guild = resolveGuildReference(req.user, reference);
-  if (!guild) return res.status(403).json({ success: false, error: 'guild_access_required' });
+  if (!guild) {
+    if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(403).json({ success: false, error: 'guild_access_required' });
+    return res.redirect(302, '/myservers?guild_access_required=1');
+  }
+  const membership = getBotMembership(getBotClient(), guild.id);
+  const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
   req.managedGuild = guild;
+  req.botMembership = membership;
+  req.botInviteUrl = inviteUrl;
   req.params.guildId = guild.id;
+  const decision = botAccessDecision(membership);
+  if (!decision.allow) {
+    const error = decision.error;
+    const message = membership.state === 'absent' ? 'Invite ProMcBot to this Discord server before opening its workspace.' : 'Discord bot membership is still loading; retry shortly.';
+    if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(decision.status).json({ success: false, error, message, inviteUrl });
+    return res.redirect(302, `/myservers?${error}=1&guildId=${encodeURIComponent(guild.id)}`);
+  }
   next();
 }
 
@@ -341,7 +356,12 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 
 // ── Guild API ─────────────────────────────────────────────────────
 app.get('/api/guilds', isAuthenticated, (req, res) => {
-  const guilds = getManageableGuilds(req.user);
+  const botClient = getBotClient();
+  const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
+  const guilds = getManageableGuilds(req.user).map(guild => ({
+    ...guild,
+    ...botAccessPayload(guild, getBotMembership(botClient, guild.id), inviteUrl),
+  }));
   res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_guilds_only' });
 });
 

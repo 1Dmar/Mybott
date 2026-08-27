@@ -1,5 +1,5 @@
 name: ProMcBot
-version: '${project.version}'
+version: '0.1.0'
 main: dev.promcbot.plugin.ProMcBotPlugin
 author: ProMcBot
 website: https://promcbot.dev

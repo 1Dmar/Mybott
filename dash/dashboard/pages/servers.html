@@ -35,6 +35,9 @@
     .server-card-footer small { color: var(--text-muted); }
     .server-open { display: inline-flex; align-items: center; gap: 5px; color: var(--primary); font-size: 13px; font-weight: 750; text-decoration: none; }
     .server-open:hover { color: var(--primary-strong); }
+    .server-open.disabled { color: var(--text-muted); cursor: default; }
+    .server-access-note { margin: 0 18px 14px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+    .server-access-note strong { color: var(--warning, #b45309); }
     .empty-state { grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 18px; color: var(--text-muted); }
     .empty-state i { display: block; margin-bottom: 8px; color: var(--primary); font-size: 34px; }
     @media (max-width: 640px) { .picker-hero { display: block; } .picker-count { display: inline-block; min-width: 116px; margin-top: 16px; } .picker-toolbar { display: block; } .picker-toolbar > * + * { margin-top: 10px; } }
@@ -71,7 +74,7 @@
         const visible = servers.filter(guild => !query || String(guild.name || '').toLowerCase().includes(query));
         count.textContent = servers.length;
         if (!visible.length) { grid.innerHTML = `<div class="empty-state"><i class="bx bx-server"></i><strong>${servers.length ? 'No matching server' : 'No managed servers yet'}</strong><div>${servers.length ? 'Try another name.' : 'Ask a server owner to grant you Manage Server or Administrator permission.'}</div></div>`; return; }
-        grid.innerHTML = visible.map(guild => { const visual = visuals[guild.id] || {}; return `<article class="server-card"><div class="server-banner" data-server-art="${esc(guild.id)}" style="--server-color:${esc(visual.dominantColor || '#5865f2')}"><div class="server-banner-content"><img class="server-icon" src="${esc(iconFor(guild))}" alt=""><div class="server-name"><strong>${esc(guild.name || 'Unnamed server')}</strong><span>Discord server</span></div></div></div><span class="permission-badge"><i class="bx bx-shield-quarter"></i>${label(guild.managePermission)}</span><div class="server-card-footer"><small>Server workspace</small><a class="server-open" href="/myservers/${encodeURIComponent(guild.id)}/overview">Open <i class="bx bx-right-arrow-alt"></i></a></div></article>`; }).join(''); grid.querySelectorAll('[data-server-art]').forEach(art => { const visual = visuals[art.dataset.serverArt]; if (visual?.bannerUrl) art.style.setProperty('--server-banner', `url("${visual.bannerUrl}")`); });
+        grid.innerHTML = visible.map(guild => { const visual = visuals[guild.id] || {}; const installed = guild.botStatus === 'installed'; const botUnknown = guild.botStatus === 'unknown'; const action = installed ? `<a class="server-open" href="/myservers/${encodeURIComponent(guild.id)}/overview">Open <i class="bx bx-right-arrow-alt"></i></a>` : guild.inviteUrl ? `<a class="server-open" href="${esc(guild.inviteUrl)}" target="_blank" rel="noopener">Invite bot <i class="bx bx-link-external"></i></a>` : `<span class="server-open disabled">${botUnknown ? 'Checking bot…' : 'Invite required'}</span>`; const note = installed ? '' : `<div class="server-access-note"><strong>${botUnknown ? 'Bot status is loading.' : 'ProMcBot is not in this server.'}</strong> ${botUnknown ? 'Try again shortly.' : 'Invite it before opening the server workspace.'}</div>`; return `<article class="server-card"><div class="server-banner" data-server-art="${esc(guild.id)}" style="--server-color:${esc(visual.dominantColor || '#5865f2')}"><div class="server-banner-content"><img class="server-icon" src="${esc(iconFor(guild))}" alt=""><div class="server-name"><strong>${esc(guild.name || 'Unnamed server')}</strong><span>Discord server</span></div></div></div><span class="permission-badge"><i class="bx bx-shield-quarter"></i>${label(guild.managePermission)}</span>${note}<div class="server-card-footer"><small>${installed ? 'Server workspace' : 'Bot required'}</small>${action}</div></article>`; }).join(''); grid.querySelectorAll('[data-server-art]').forEach(art => { const visual = visuals[art.dataset.serverArt]; if (visual?.bannerUrl && /^https:\/\/cdn\.discordapp\.com\//.test(visual.bannerUrl)) art.style.setProperty('--server-banner', `url("${visual.bannerUrl}")`); });
       }
       async function loadServers() {
         try {
@@ -79,6 +82,9 @@
           if (!response.ok) throw new Error('managed_servers_unavailable');
           const data = await response.json();
           servers = Array.isArray(data.guilds) ? data.guilds : [];
+          const params = new URLSearchParams(window.location.search);
+          if (params.has('bot_not_in_server')) window.showToast('Invite ProMcBot to this server before opening its workspace.');
+          if (params.has('bot_membership_unavailable')) window.showToast('Bot membership is still loading. Try again shortly.');
           render();
           await loadVisuals();
         } catch (_) {
