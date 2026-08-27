@@ -55,6 +55,32 @@ function providerConfigured(provider = 'paypal') {
   return provider === 'paypal' && paypalConfigured();
 }
 
+function getPayPalErrorDetails(error) {
+  const body = error?.response?.data || error?.paypal || {};
+  const details = Array.isArray(body.details) ? body.details : [];
+  const first = details.find(item => item && (item.issue || item.description)) || {};
+  const headers = error?.response?.headers || {};
+  return {
+    name: String(body.name || body.error || first.issue || '').slice(0, 80),
+    issue: String(first.issue || '').slice(0, 100),
+    description: String(first.description || body.message || '').replace(/[\r\n]+/g, ' ').slice(0, 240),
+    debugId: String(body.debug_id || headers['paypal-debug-id'] || '').slice(0, 80),
+    status: Number(error?.response?.status) || null,
+  };
+}
+
+function formatPayPalError(error) {
+  const code = String(error?.message || '');
+  if (code === 'paypal_credentials_missing') return 'PayPal Client ID أو Client Secret غير مضبوط في بيئة التشغيل.';
+  if (code === 'payment_method_not_configured') return 'طريقة الدفع أو PayPal plan ID غير مهيأة بالكامل في بيئة التشغيل.';
+  if (code === 'paypal_approval_url_missing') return 'PayPal أنشأ الطلب دون رابط موافقة؛ راجع حالة الخطة والبيئة.';
+  const details = getPayPalErrorDetails(error);
+  const reason = details.description || details.issue || details.name;
+  if (reason) return `PayPal رفض إنشاء الاشتراك: ${reason}${details.debugId ? ` (debug ${details.debugId})` : ''}`;
+  if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'انتهت مهلة الاتصال مع PayPal. حاول مرة أخرى وتحقق من deployment network.';
+  return 'فشل اتصال PayPal. تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.';
+}
+
 async function getPayPalAccessToken() {
   if (!process.env.PAYPAL_CLIENT_ID || !process.env.PAYPAL_CLIENT_SECRET) throw new Error('paypal_credentials_missing');
   const response = await axios.post(`${paypalApiBase()}/v1/oauth2/token`, 'grant_type=client_credentials', {
@@ -200,4 +226,4 @@ async function processVerifiedEvent(provider, event) {
   return { duplicate: false, processed: true, guildId: update.guildId, plan: subscription.plan, status: subscription.status };
 }
 
-module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };
+module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };

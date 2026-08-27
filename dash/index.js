@@ -41,7 +41,7 @@ const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
 const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
-const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, createCheckout, cancelSubscription } = require('../bot/utils/billingService');
+const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
@@ -345,8 +345,10 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
     res.json({ success: true, ...checkout });
   } catch (error) {
     const configurationError = ['payment_method_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
-    console.error('[billing checkout] provider error:', error.message);
-    res.status(configurationError ? 503 : 502).json({ success: false, error: configurationError ? 'billing_provider_not_configured' : 'billing_checkout_failed', method });
+    const providerMessage = formatPayPalError(error);
+    const providerDetails = getPayPalErrorDetails(error);
+    console.error('[billing checkout] provider error:', error.message, providerDetails.debugId ? `debug=${providerDetails.debugId}` : '');
+    res.status(configurationError ? 503 : 502).json({ success: false, error: configurationError ? 'billing_provider_not_configured' : 'billing_checkout_failed', message: providerMessage, method, ...(providerDetails.debugId ? { debugId: providerDetails.debugId } : {}) });
   }
 });
 

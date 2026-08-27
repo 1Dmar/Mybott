@@ -79,7 +79,7 @@
     (() => {
       const $ = id => document.getElementById(id); let guildId = ''; let billing = null; let plans = []; let catalog = null;
       const routeGuildId = (window.location.pathname.match(/\/myservers\/([^/]+)\/premium/) || [])[1] || '';
-      async function api(url, options) { const response = await fetch(url, options); const data = await response.json(); if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`); return data; }
+      async function api(url, options) { const response = await fetch(url, options); const data = await response.json(); if (!response.ok) { const error = new Error(data.message || data.error || `Request failed (${response.status})`); error.code = data.error; error.debugId = data.debugId; throw error; } return data; }
       const esc = value => { const node = document.createElement('span'); node.textContent = String(value ?? ''); return node.innerHTML; };
       const methodId = () => $('methodSelect').value || 'paypal';
       const show = message => { $('message').hidden = false; $('message').textContent = message; };

@@ -16,6 +16,8 @@ Required variables are `PAYPAL_ENV`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`,
 
 The implementation is **not live-provider tested** in this repository because production credentials were not supplied. Sandbox testing should use PayPal sandbox credentials and sandbox plan IDs, then verify checkout, webhook, duplicate event, cancellation, renewal, failure, and expiration scenarios before production activation. Raw card numbers are never stored or accepted by this application.
 
+When checkout fails, the backend now returns a safe provider explanation and optional PayPal debug ID instead of only `billing_checkout_failed`. The first checks are: `PAYPAL_ENV` matches the source of the Client ID, Secret, Plan IDs, and Webhook ID; the selected plan is Active/On in PayPal; `PAYPAL_PRO_PLAN_ID` is the Plan ID rather than the Product ID; the plan belongs to the same Sandbox or Live account; and the webhook URL is publicly reachable over HTTPS. A browser return to the Premium page never grants access by itself.
+
 PayPal's official documentation describes its REST APIs for orders, payments, subscriptions, and related resources [1]. PayPal also documents Google Pay as a provider-mediated checkout capability with regional and account requirements [2].
 
 ## References
