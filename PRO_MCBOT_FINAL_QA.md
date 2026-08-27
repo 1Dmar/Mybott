@@ -2,7 +2,7 @@
 
 ## Repository state
 
-The final verified changes are on `copilot/update-bot-design-and-translation-system`, the requested default branch for this repository. Commit `2808734ca329c79d5fe34c76c764d857e31b3ee1` was pushed to origin and matches the remote branch head. `main` is not modified.
+The final verified changes are on `copilot/update-bot-design-and-translation-system`, the requested default branch for this repository. Commit `88dc90c221052215bcfce258b46062a3e6532e17` is the final verified branch head and matches origin. `main` is not modified.
 
 ## Verified successfully
 
