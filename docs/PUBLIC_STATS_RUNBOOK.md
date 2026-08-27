@@ -39,7 +39,7 @@ https://stats.promcbot.dev/api/public/stats/<guild-id>
 
 ## حدود الإثبات
 
-هذا runbook لا يثبت أن DNS أو Railway أو PayPal تم إعدادها بالفعل؛ هذه خطوات تشغيل خارج Git. كما أن صفحة stats لا تحول heartbeat إلى player activity كاملة: join/leave وcomparison windows تحتاج أحداثًا فعلية من plugin وفترة جمع كافية.
+تم فحص النطاق بعد push: DNS لـ`stats.promcbot.dev` يحل عبر Cloudflare، لكن HTTPS يعيد حاليًا HTTP 525، ما يعني أن DNS موجود بينما handshake بين Cloudflare وorigin غير مكتمل. راجع Railway custom domain وtarget port وSSL، واضبط Cloudflare SSL/TLS وفق وضع origin، ثم أعد اختبار `/health`. لا يثبت هذا runbook أن إصلاح Cloudflare/Railway/PayPal تم من داخل Git؛ هذه خطوات تشغيل خارجية. كما أن صفحة stats لا تحول heartbeat إلى player activity كاملة: join/leave وcomparison windows تحتاج أحداثًا فعلية من plugin وفترة جمع كافية.
 
 ## References
 

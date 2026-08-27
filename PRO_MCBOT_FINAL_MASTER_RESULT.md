@@ -21,10 +21,11 @@
 | الفرع | `copilot/update-bot-design-and-translation-system` |
 | `main` | لم يُعدّل |
 | فرع جديد | لم يُنشأ |
-| Commit | `d376123e9` |
+| Commits | `d376123e9` (implementation) + `b78283a02` (final report) |
 | Logs page | لم تُعدّل `dash/dashboard/pages/logs.html` |
 | Models | لم تُعدّل أي ملفات تحت `bot/Models/**` |
 | الأسرار | لم تُضف tokens أو secrets إلى Git أو التقرير |
+| health المنشور | `https://promcbot.dev/health` = HTTP 200؛ `https://stats.promcbot.dev/health` = HTTP 525 Cloudflare |
 
 ## ما تم تغييره
 
@@ -100,7 +101,7 @@ Moderation gated من ثلاث طبقات: metadata وlock tag في Modules، HT
 PUBLIC_STATS_URL=https://stats.promcbot.dev
 ```
 
-بعدها تُختبر `/health` و`/stats?guildId=<guild-id>` و`/api/public/stats/<guild-id>`. لا يدعي المستودع أن DNS أو Railway تم ضبطهما تلقائيًا؛ هذا إعداد خارجي.[1] [2]
+بعدها تُختبر `/health` و`/stats?guildId=<guild-id>` و`/api/public/stats/<guild-id>`. تم فحص النطاق بعد push: DNS لـ`stats.promcbot.dev` يحل عبر Cloudflare، لكن HTTPS يعيد **525 Origin SSL Handshake Failed**؛ لذلك الصفحة والكود جاهزان، أما origin SSL/Cloudflare mode فيحتاج إصلاحًا خارجيًا في Railway/Cloudflare. `https://promcbot.dev/health` أعاد HTTP 200. لا يدعي المستودع أن هذا الإصلاح الخارجي تم تلقائيًا.[1] [2]
 
 ## Minecraft plugin
 
@@ -143,7 +144,7 @@ Maven أثبت compile/package والاختبارات الموجودة فقط. �
 | Blacklist وAutoMod undefined | **DONE** | parser/defaults/emoji aliases واختبارات مباشرة |
 | banners وfallback colors | **DONE WITH LIVE LIMIT** | code واختبارات جاهزة؛ banner حي يحتاج Discord guild |
 | Stats/Profile public experience | **DONE** | public aggregates، profile ID-based، embed ورابط عام |
-| `stats.promcbot.dev` | **PARTIAL EXTERNAL** | الصفحة والrunbook جاهزان؛ DNS/Railway لم يضبطهما الكود |
+| `stats.promcbot.dev` | **PARTIAL EXTERNAL** | DNS يحل، لكن HTTPS حاليًا 525؛ يلزم إصلاح origin SSL/Cloudflare خارج Git |
 | runtime acceptance لكل Minecraft versions | **BLOCKED EXTERNAL** | compile/package فقط؛ لا توجد خوادم Spigot/Paper خارجية |
 | Logs وModels untouched | **DONE** | لا تغييرات في المسارين المحميين |
 
