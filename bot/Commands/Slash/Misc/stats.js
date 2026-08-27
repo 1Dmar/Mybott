@@ -40,7 +40,7 @@ module.exports = {
         const guildId = interaction.guild.id;
         if (type === "public") {
             const baseUrl = String(process.env.PUBLIC_STATS_URL || process.env.PUBLIC_BASE_URL || 'https://promcbot.dev').replace(/\/$/, '');
-            const publicUrl = `${baseUrl}/stats?guildId=${encodeURIComponent(guildId)}`;
+            const publicUrl = `${baseUrl}/stats/${encodeURIComponent(guildId)}`;
             return interaction.reply({
                 embeds: [{
                     color: 0x8b5cf6,

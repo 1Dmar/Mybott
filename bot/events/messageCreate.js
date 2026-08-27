@@ -22,6 +22,7 @@ const WelcomeChannel = require("../Models/WelcomeChannel");
 const ApiKey = require('../Models/apiKey');
 const BumpedServer = require('../Models/bumpedServer');
 const BlackList = require("../Models/BlackList");
+const { getActiveBlacklist } = require('../utils/blacklistGuard');
 const AutoResponder = require("../Models/AutoResponder");
 const BotConfig = require("../Models/BotConfig");
 const { DateTime } = require('luxon');
@@ -179,8 +180,10 @@ const handleMainMessage = async (client, message) => {
             }
         }
 
-        // Blacklist check
-        if (serverdbbl && serverdbbl.isBlacklisted === 'true') {
+        // Blacklist check. Re-read the entry so expiry is enforced even when the cache is stale.
+        const activeBlacklist = await getActiveBlacklist(message.guild.id);
+        if (activeBlacklist) {
+            client.userSettings.set(message.guild.id + "_bl", activeBlacklist);
             const replyMessage = await message.reply({
                 content: `> \`${message.guild.name}\`${EMOJIS.BLOCK} Server has been Blacklisted from ProMcBot`,
             });
@@ -190,6 +193,7 @@ const handleMainMessage = async (client, message) => {
             }, 5000);
             return;
         }
+        if (serverdbbl) client.userSettings.delete(message.guild.id + "_bl");
 
         // Permissions check
         if (
