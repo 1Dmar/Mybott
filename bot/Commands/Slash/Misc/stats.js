@@ -9,7 +9,7 @@ let createCanvas;
 try {
     ({ createCanvas } = require('canvas'));
 } catch (error) {
-    console.warn('⚠️ Stats chart renderer unavailable:', error.message);
+    // Optional native renderer; the command returns an explicit unavailable response when called.
 }
 const PlayerHistory = require('../../../Models/PlayerHistory');
 const Server = require('../../../Models/Server');

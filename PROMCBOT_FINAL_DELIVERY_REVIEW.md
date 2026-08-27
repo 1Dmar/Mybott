@@ -2,58 +2,60 @@
 
 ## Scope and branch
 
-This review covers the implementation of `ProMcBot_Master_Implementation_Prompt.md` that is present in the repository, plus the subsequent cleanup required by the supplied mobile dashboard reference and the repeated-command problem. All source changes were made on the default branch `copilot/update-bot-design-and-translation-system`; `main` was not modified.
+This review covers the implementation of `ProMcBot_FINAL_MASTER_EXECUTION_PROMPT.md`, including the repeated-command cleanup and the supplied mobile Dashboard acceptance reference. All source changes are kept on the repository default branch `copilot/update-bot-design-and-translation-system`; `main` was not modified and no feature branch was created.
 
 | Item | Current value |
 |---|---|
 | Repository | `1Dmar/Mybott` |
-| Source branch | `copilot/update-bot-design-and-translation-system` |
-| Implementation commit | `52394227c` (`fix canonical commands dashboard and runtime safety`) |
-| Railway service previously verified | Project `superb-nature`, production service `Mybott` |
+| Default branch | `copilot/update-bot-design-and-translation-system` |
+| Latest checked-in baseline before this pass | `ecd88f7470659cd80bfcdfdb0366ab0ed47d3ee7` |
 | Runtime baseline | Node.js `22.13.0` in Docker |
 | Plugin artifact | `plugin/target/promcbot-plugin-0.1.0.jar` |
-| Default branch constraint | Respected; no feature branch was created |
+| Readiness | **READY FOR REAL SERVER TESTING** |
 
-## What changed
+## Delivered implementation
 
-The Discord command system now has one authoritative catalog in `bot/commands/commandCatalog.js` and one slash registration path. Discord exposes eight top-level groups: `server`, `minecraft`, `intelligence`, `moderation`, `premium`, `utility`, `admin`, and `help`. Repeated public names such as `setup_server`, `remove_server`, `setlanguage`, `automod-settings`, and the old `mc-*` commands were removed from registration and documentation. Unreferenced legacy loaders and commands were deleted after reference checks. The help command is generated from the same catalog, and permission metadata is enforced at runtime.
+The Discord command system has one authoritative catalog in `bot/commands/commandCatalog.js` and one slash registration path in `bot/handlers/slash_handler.js`. Discord exposes eight top-level groups: `server`, `minecraft`, `intelligence`, `moderation`, `premium`, `utility`, `admin`, and `help`. Duplicate public names and proven-dead legacy loaders were removed after reference checks. Guild stale commands are cleared during synchronization, and help is generated from the same catalog.
 
-The duplicate `messageCreate` event was removed by integrating AutoMod into the canonical message event. This prevents the same message from passing through two listeners. The bot startup path now loads its canonical command registry even in degraded mode, while disabling Discord synchronization only when the bot token is absent. Dashboard no longer creates a second Discord client; it resolves the single client created by `bot/index.js` lazily.
+AutoMod is integrated into the sole `messageCreate` listener. Runtime permission checks execute before group command handlers, and Dashboard Guild routes require manager authorization. The Dashboard resolves the single Discord client lazily instead of creating a second client.
 
-The dashboard shell was rebuilt around shared responsive CSS and navigation behavior. The supplied broken layout showed an oversized/clipped avatar, profile/header overlap, an uncontrolled dark sidebar, and mobile overflow. The rebuilt overview bounds the avatar and profile card, uses a mobile drawer/backdrop, stacks cards on phone widths, removes fake rank/count values, and guides empty states toward onboarding. A 390×844 preview was inspected without horizontal overflow or profile overlap.
+The shared Dashboard shell now bounds the avatar/profile/header, uses a mobile drawer and backdrop, stacks cards at small widths, and prevents horizontal overflow. Fake rank, fake counts, misleading plan labels, and browser-granted premium state were removed. Action Center now presents evidence, severity, priority, confidence, why the signal matters, recommended next step, timestamp, notification status, read control, and resolve control with safe empty/error/loading states. Recommendations are explicitly advisory when no executable backend action exists.
 
-The dashboard backend now avoids the unsafe localhost MongoDB fallback, supports `MONGO_URI`, starts safely when OAuth credentials are missing, and returns a clear 503 for unavailable Discord login rather than crashing Passport initialization. Guild settings routes now require the same guild-manager authorization as the other guild routes. Environment configuration no longer provides a default production-looking API key.
+Intelligence onboarding now exposes eight evidence-bearing steps: authenticated dashboard session, Discord runtime visibility, plugin provisioning, recent heartbeat, telemetry receipt, player activity, comparison-window readiness, and intelligence activation. Premium locks are derived from the server entitlement response. The activation progress is calculated from returned step completion rather than a hard-coded five-step display.
 
-Automation now has stable dedupe keys, correct weekly behavior, bounded delivery retries, less noisy condition-skipped history, and evidence metadata. Notifications have dedupe, open/resolved status, read state, and a guild-authorized resolve endpoint. These changes support the prompt's `trigger → condition → action → cooldown → retry → audit → dedupe` model without claiming causal impact where only an observed change exists.
+Automation and notification records support dedupe, cooldown, bounded retries, execution evidence, open/resolved lifecycle, read state, and guild-scoped resolution. The system does not claim causal impact where it only observes a before/after signal. Distributed scheduling, complete longitudinal impact tracking, and 1/7/30-day cohort retention remain partial.
 
-The Minecraft plugin remains a Java 21 Paper artifact with signed asynchronous telemetry, server/instance identity, bounded queue, retries, requeue, heartbeat, minimized join/leave/count data, offline-safe gameplay, and a safe `/promcbot status` command. HMAC canonicalization matches the backend implementation. Maven packaging was verified and the JAR contains the main class, `BackendClient`, `TelemetryQueue`, and `plugin.yml`.
+The payment boundary is PayPal-based. The adapter implements OAuth access-token acquisition, hosted subscription creation, cancellation, server-side webhook signature verification, event idempotency, and shared subscription updates. Card checkout and Google Pay are provider-mediated availability flags; raw card data is never stored, and a frontend redirect never grants entitlement. Malformed webhook JSON and unknown PayPal plan IDs fail closed. Stripe is not used by the runtime billing path.
 
-## Plan and entitlements
-
-The centralized Free/Pro/Ultimate authority remains the source of truth. Free is useful for basic connection and measured health; Pro unlocks extended intelligence and retention capabilities; Ultimate unlocks network intelligence. Payments remain provider-bound: the code verifies webhook signatures and applies idempotent state transitions, but live Stripe credentials, price IDs, and webhook configuration are external requirements.
+The Java 21 Paper plugin retains offline-safe gameplay and minimizes telemetry to join, leave/session duration, aggregate player count, and heartbeat. It uses server/instance identity, encrypted provisioned secrets, bearer authentication, HMAC-SHA256 canonical signing, timestamp freshness, nonce replay protection, bounded queue, asynchronous HTTP, retry/requeue, capability refresh, and `/promcbot status`.
 
 ## Verification results
 
 | Check | Result |
 |---|---|
-| `npm ci --ignore-scripts` | PASS |
-| `npm test` | PASS: 13 tests, 0 failures |
-| Command registry smoke | PASS: 8 top-level groups, no duplicate canonical names |
-| Bot startup smoke | PASS: 5 events, 8 slash groups, 3 message commands without external secrets |
-| Dashboard backend startup smoke | PASS in explicit degraded mode; no Passport OAuth crash |
-| Dashboard 390×844 visual preview | PASS for containment, stacking, and no horizontal overflow |
-| `npm run check` and JavaScript syntax checks | PASS |
-| Translation JSON parsing and stale command scan | PASS |
-| `mvn clean test package` | PASS |
-| Plugin JAR content check | PASS |
-| `git diff --check` | PASS |
+| `npm ci --ignore-scripts` | PASS in the earlier dependency-install gate |
+| `npm test` | **PASS: 24 tests, 0 failures** |
+| Command acceptance | PASS: eight groups, unique names, descriptions, permissions, help parity |
+| Plugin security coverage | PASS: encryption, malformed headers, body limit, token hash, HMAC, valid auth, replay |
+| PayPal hardening coverage | PASS: catalog, event mapping, malformed event, unknown plan, missing configuration |
+| Changed JavaScript syntax | PASS |
+| `npm run check` | PASS in the final quality gate |
+| `git diff --check` | PASS in the final quality gate |
+| Bot startup smoke | PASS: five events, eight slash groups, three message commands in degraded mode |
+| Maven `clean test package` | PASS in the earlier plugin gate |
+| Plugin JAR content | PASS in the earlier plugin gate |
+| Responsive Dashboard preview | **PASS: 21 combinations**; no overflow/page errors and mobile drawer/backdrop behavior verified |
 
-## Honest limitations
+The responsive test used an HTTP preview with an authenticated fixture and exercised Actions, Intelligence, and Premium at widths `360, 390, 412, 768, 1024, 1280, 1440`. It measured `scrollWidth <= innerWidth` and checked drawer opening/backdrop behavior at mobile widths. This is not a substitute for a real OAuth session.
 
-Live Discord acceptance still requires a real bot token and a Discord test guild to register, fetch, and verify commands. Live dashboard acceptance requires Discord OAuth and persistent MongoDB. Plugin-to-backend acceptance requires a real Paper server and credentials produced by provisioning. The code does not claim Fabric compatibility, production-scale distributed scheduling, durable cross-process telemetry queues, complete 1/7/30-day cohort retention, or causal impact attribution. Native canvas is optional; image commands report an explicit unavailable-renderer message when the native module is not built.
+## External blockers
 
-The dependency audit still reports advisories in the existing dependency tree. No forced audit upgrade was applied because it could introduce breaking runtime changes. Production operators must configure `BOT1_1_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET`, `MONGO_URL` or `MONGO_URI`, plugin encryption/provisioning values, and payment provider values only when those features are enabled. Secrets must never be committed to Git.
+Live Discord command registration, REST fetch, and command execution require a valid bot token and test guild. Authenticated Dashboard persistence requires OAuth and MongoDB credentials. Plugin-to-backend acceptance requires a real Paper server and provisioned credentials. PayPal sandbox/live checkout and webhook acceptance require a configured provider account, client credentials, plan IDs, webhook ID, and any regional/device method enablement.
+
+The dependency tree still contains advisories. No forced audit upgrade was applied because it could break the Discord, Minecraft, or browser runtime. Production operators must rotate any previously exposed credentials and must not commit tokens, provider secrets, or one-time plugin configuration.
 
 ## Final quality position
 
-The implementation is materially cleaner and safer than the previous surface: commands are grouped, duplicate listeners are removed, the dashboard mobile failure is addressed, runtime startup is more graceful, and plugin/backend boundaries are explicit. The remaining limitations are labeled rather than hidden. The repository should not be described as fully production-validated until the external Discord, MongoDB, Paper, and payment acceptance scenarios are executed with real credentials.
+The repository is materially cleaner and safer: the public command surface is consolidated, duplicate message handling is removed, mobile Dashboard defects are addressed, Action Center and Intelligence show real-data boundaries, PayPal fails closed without configuration, and plugin/backend security paths are tested locally. The remaining limitations are intentionally visible rather than hidden.
+
+**Readiness label: READY FOR REAL SERVER TESTING.**

@@ -7,7 +7,7 @@ try {
     rendererAvailable = typeof createCanvas === 'function' && typeof loadImage === 'function';
 } catch (error) {
     // The bot can run without image rendering; only the optional player-card feature is unavailable.
-    console.warn('⚠️ Player card renderer unavailable:', error.message);
+    // Do not emit startup noise; callers receive a safe unavailable result.
 }
 
 const axios = require('axios');

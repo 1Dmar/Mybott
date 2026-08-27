@@ -11,7 +11,6 @@ const passport   = require('passport');
 const mongoose   = require('mongoose');
 const path       = require('path');
 const fs         = require('fs');
-const axios      = require('axios');
 const session    = require('express-session');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -42,7 +41,7 @@ const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
 const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
-const { verifyStripeSignature, providerConfigured, processVerifiedEvent } = require('../bot/utils/billingService');
+const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, createCheckout, cancelSubscription } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
@@ -85,11 +84,17 @@ app.use(async (req, res, next) => {
 // Provider webhooks are verified from the exact raw body before changing subscription state.
 app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max: 60 }), async (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
-  if (provider !== 'stripe') return res.status(501).json({ success: false, error: 'billing_provider_not_implemented' });
+  if (provider !== 'paypal') return res.status(501).json({ success: false, error: 'billing_provider_not_implemented' });
   if (!providerConfigured(provider)) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
-  const verification = verifyStripeSignature(req.rawBody, req.get('stripe-signature'), process.env.STRIPE_WEBHOOK_SECRET);
-  if (!verification.valid) return res.status(400).json({ success: false, error: verification.reason });
   try {
+    const verification = await verifyPayPalWebhook(req.rawBody, {
+      'paypal-transmission-time': req.get('paypal-transmission-time'),
+      'paypal-transmission-id': req.get('paypal-transmission-id'),
+      'paypal-transmission-sig': req.get('paypal-transmission-sig'),
+      'paypal-cert-url': req.get('paypal-cert-url'),
+      'paypal-auth-algo': req.get('paypal-auth-algo'),
+    });
+    if (!verification.valid) return res.status(400).json({ success: false, error: verification.reason });
     const result = await processVerifiedEvent(provider, req.body);
     res.status(200).json({ received: true, ...result });
   } catch (error) {
@@ -288,37 +293,41 @@ app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, asyn
 });
 
 app.get('/api/billing/config', isAuthenticated, (req, res) => {
-  res.json({ success: true, plans: Object.values(PLANS), provider: process.env.STRIPE_PUBLISHABLE_KEY ? 'stripe' : null, checkoutAvailable: !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_PRO_PRICE_ID && !!process.env.STRIPE_ULTIMATE_PRICE_ID, webhookConfigured: !!process.env.STRIPE_WEBHOOK_SECRET });
+  const catalog = getPaymentCatalog();
+  res.json({ success: true, plans: Object.values(PLANS), ...catalog, webhookUrl: '/api/billing/webhook/paypal' });
 });
 
 app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, async (req, res) => {
   const [entitlement, subscription, invoices, payments] = await Promise.all([getForGuild(req.params.guildId), Subscription.findOne({ guildId: req.params.guildId }).lean(), Invoice.find({ guildId: req.params.guildId }).sort({ issuedAt: -1 }).limit(50).lean(), Payment.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50).lean()]);
-  res.json({ success: true, entitlement, subscription: subscription || { guildId: req.params.guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' }, invoices, payments, provider: { name: process.env.STRIPE_SECRET_KEY ? 'stripe' : null, checkoutAvailable: !!process.env.STRIPE_SECRET_KEY && !!process.env.STRIPE_PRO_PRICE_ID && !!process.env.STRIPE_ULTIMATE_PRICE_ID } });
+  res.json({ success: true, entitlement, subscription: subscription || { guildId: req.params.guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' }, invoices, payments, provider: getPaymentCatalog() });
 });
 
 app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildManager, async (req, res) => {
   const plan = String(req.body?.plan || '').toLowerCase();
+  const method = String(req.body?.method || 'paypal').toLowerCase();
   if (!['pro', 'ultimate'].includes(plan)) return res.status(400).json({ success: false, error: 'invalid_paid_plan' });
-  const priceId = plan === 'pro' ? process.env.STRIPE_PRO_PRICE_ID : process.env.STRIPE_ULTIMATE_PRICE_ID;
-  if (!process.env.STRIPE_SECRET_KEY || !priceId) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
   try {
-    const params = new URLSearchParams({ mode: 'subscription', 'line_items[0][price]': priceId, 'line_items[0][quantity]': '1', client_reference_id: req.params.guildId, 'metadata[guildId]': req.params.guildId, 'metadata[plan]': plan, success_url: `${process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`}/premium?billing=success`, cancel_url: `${process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`}/premium?billing=cancelled` });
-    const response = await axios.post('https://api.stripe.com/v1/checkout/sessions', params.toString(), { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 });
-    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'success', source: 'dashboard', target: plan });
-    res.json({ success: true, checkoutUrl: response.data?.url || null });
-  } catch (error) { console.error('[billing checkout] provider error:', error.response?.status || error.message); res.status(502).json({ success: false, error: 'billing_checkout_failed' }); }
+    const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}/premium?billing=pending`, cancelUrl: `${baseUrl}/premium?billing=cancelled` });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
+    res.json({ success: true, ...checkout });
+  } catch (error) {
+    const configurationError = ['payment_method_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
+    console.error('[billing checkout] provider error:', error.message);
+    res.status(configurationError ? 503 : 502).json({ success: false, error: configurationError ? 'billing_provider_not_configured' : 'billing_checkout_failed', method });
+  }
 });
 
 app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildManager, async (req, res) => {
   const subscription = await Subscription.findOne({ guildId: req.params.guildId }).lean();
   if (!subscription?.providerSubscriptionId) return res.status(409).json({ success: false, error: 'no_provider_subscription' });
-  if (subscription.provider !== 'stripe' || !process.env.STRIPE_SECRET_KEY) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
+  if (subscription.provider !== 'paypal' || !providerConfigured('paypal')) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
   try {
-    await axios.post(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscription.providerSubscriptionId)}`, new URLSearchParams({ cancel_at_period_end: 'true' }).toString(), { headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 });
+    const result = await cancelSubscription(subscription.providerSubscriptionId);
     await Subscription.updateOne({ guildId: req.params.guildId }, { $set: { renewalState: 'will_cancel', cancellationAt: new Date() } });
-    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'dashboard', target: subscription.providerSubscriptionId });
-    res.json({ success: true, renewalState: 'will_cancel' });
-  } catch (error) { console.error('[billing cancel] provider error:', error.response?.status || error.message); res.status(502).json({ success: false, error: 'billing_cancel_failed' }); }
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'paypal', target: subscription.providerSubscriptionId });
+    res.json({ success: true, ...result });
+  } catch (error) { console.error('[billing cancel] provider error:', error.message); res.status(502).json({ success: false, error: 'billing_cancel_failed' }); }
 });
 
 // ── Guild API ─────────────────────────────────────────────────────
@@ -395,19 +404,30 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
     const botClient = getBotClient();
     const botConnected = !!botClient?.guilds?.cache?.get(guildId);
     const plugin = await PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean();
-    const telemetry24h = await TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } });
+    const now = Date.now();
+    const [telemetry24h, playerEvents24h, telemetry14d] = await Promise.all([
+      TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
+      TelemetryEvent.countDocuments({ serverId: guildId, type: { $in: ['player_join', 'player_leave'] }, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
+      TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 14 * 24 * 60 * 60 * 1000) } }),
+    ]);
     const telemetryActive = telemetry24h > 0;
-    const intelligenceActive = telemetry24h >= 10;
+    const pluginHeartbeatRecent = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
+    const comparisonWindowReady = telemetry14d >= 20;
+    const intelligenceActive = telemetry24h >= 10 && comparisonWindowReady;
     const steps = [
-      { key: 'bot_added', label: 'Bot added', complete: botConnected, percent: 0 },
-      { key: 'discord_connected', label: 'Discord connected', complete: !!req.user, percent: 25 },
-      { key: 'minecraft_connected', label: 'Minecraft connected', complete: !!plugin, percent: 50 },
-      { key: 'data_collection_active', label: 'Data collection active', complete: telemetryActive, percent: 75 },
-      { key: 'server_intelligence_active', label: 'Server intelligence active', complete: intelligenceActive, percent: 100 },
+      { key: 'account_authenticated', label: 'Dashboard account authenticated', complete: !!req.user, evidence: req.user ? 'Authenticated session is present.' : 'No authenticated session.' },
+      { key: 'discord_runtime_connected', label: 'Discord runtime connected', complete: botConnected, evidence: botConnected ? 'Bot runtime can see this guild.' : 'Bot runtime cannot currently see this guild.' },
+      { key: 'minecraft_plugin_provisioned', label: 'Minecraft plugin provisioned', complete: !!plugin, evidence: plugin?.instanceId ? `Instance ${plugin.instanceId} is registered.` : 'No registered plugin instance.' },
+      { key: 'plugin_heartbeat_recent', label: 'Minecraft heartbeat is recent', complete: pluginHeartbeatRecent, evidence: plugin?.lastSeenAt ? `Last heartbeat: ${new Date(plugin.lastSeenAt).toISOString()}.` : 'No plugin heartbeat recorded.' },
+      { key: 'telemetry_received', label: 'Telemetry received', complete: telemetryActive, evidence: `${telemetry24h} telemetry event(s) recorded in the last 24 hours.` },
+      { key: 'player_activity_observed', label: 'Player activity observed', complete: playerEvents24h > 0, evidence: `${playerEvents24h} join/leave event(s) recorded in the last 24 hours.` },
+      { key: 'comparison_window_ready', label: 'Comparison window ready', complete: comparisonWindowReady, evidence: `${telemetry14d} event(s) recorded in the last 14 days; at least 20 are required.` },
+      { key: 'server_intelligence_active', label: 'Server intelligence active', complete: intelligenceActive, evidence: intelligenceActive ? 'Both recent sample and comparison window thresholds are met.' : 'Recent and comparison-window thresholds are not both met.' },
     ];
     const completed = steps.filter(step => step.complete).length;
-    const progress = intelligenceActive ? 100 : telemetryActive ? 75 : plugin ? 50 : botConnected ? 25 : 0;
-    res.json({ success: true, progress, completed, steps, evidence: { telemetry24h, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, nextValue: progress < 100 ? 'Connect the next incomplete system to unlock evidence-backed server intelligence.' : 'Server intelligence is active.' });
+    const progress = Math.round((completed / steps.length) * 100);
+    const nextStep = steps.find(step => !step.complete);
+    res.json({ success: true, progress, completed, steps, evidence: { telemetry24h, playerEvents24h, telemetry14d, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, nextValue: nextStep ? `Next: ${nextStep.label}. ${nextStep.evidence}` : 'Server intelligence is active.' });
   } catch (error) { res.status(500).json({ success: false, error: 'activation_status_failed' }); }
 });
 
@@ -455,8 +475,27 @@ app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildMana
 app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const [intel, notifications] = await Promise.all([TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry), listNotifications(req.params.guildId, 50)]);
-    const actions = intel.recommendations.map((recommendation, index) => ({ id: `recommendation-${index}`, title: recommendation.what, impact: recommendation.why, evidence: recommendation.why, executable: false, action: null }));
-    res.json({ success: true, issues: actions, notifications, message: actions.length ? null : 'No evidence-backed action is required right now.' });
+    const actions = intel.recommendations.map((recommendation, index) => ({
+      id: `recommendation-${index}`,
+      title: recommendation.what,
+      severity: recommendation.severity || 'medium',
+      priority: recommendation.priority || recommendation.severity || 'medium',
+      evidence: recommendation.evidence || recommendation.why,
+      whyItMatters: recommendation.whyItMatters || recommendation.why,
+      recommendation: recommendation.action || 'Review the measured evidence before taking an intervention.',
+      confidence: intel.confidence,
+      createdAt: intel.generatedAt,
+      status: 'open',
+      executable: false,
+      action: null,
+    }));
+    res.json({
+      success: true,
+      issues: actions,
+      notifications,
+      evidence: { confidence: intel.confidence, sample: intel.sample, generatedAt: intel.generatedAt },
+      message: actions.length ? null : 'No evidence-backed action is required right now.',
+    });
   } catch (error) { res.status(500).json({ success: false, error: 'action_center_failed' }); }
 });
 

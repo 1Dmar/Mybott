@@ -9,7 +9,7 @@ let registerFont;
 try {
     ({ createCanvas, loadImage, registerFont } = require('canvas'));
 } catch (error) {
-    console.warn('⚠️ Status image renderer unavailable:', error.message);
+    // Optional native renderer; keep startup quiet and fail safely at call time.
 }
 
 // Register fonts

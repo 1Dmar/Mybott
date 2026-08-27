@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
   guildId: { type: String, required: true, index: true },
-  provider: { type: String, enum: ['stripe', 'paypal', 'manual'], required: true },
+  provider: { type: String, enum: ['paypal', 'manual'], required: true },
   providerPaymentId: { type: String, required: true, unique: true },
   providerEventId: { type: String, default: null, index: true },
   amountMinor: { type: Number, required: true, min: 0 },

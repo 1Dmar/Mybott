@@ -1,10 +1,79 @@
-<!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ProMcBot | Action Center</title><link rel="stylesheet" href="/shared.css"><style>
-.wrap{max-width:1100px;margin:auto;padding:2rem}.card{background:var(--surface);border-radius:14px;padding:1.25rem;margin:1rem 0;box-shadow:var(--shadow-md)}.muted{color:var(--text-muted)}.row{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.9rem 0;border-bottom:1px solid var(--border)}.row:last-child{border:0}.priority{font-size:.75rem;text-transform:uppercase;font-weight:700}.high{color:#ef4444}.medium{color:#f59e0b}.read{opacity:.6}button{padding:.6rem .9rem;border:0;border-radius:8px;background:var(--primary);color:#fff;cursor:pointer}
-</style></head><body>
-<nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="logo"></span><span class="logo_name">ProMcBot</span><i class="bx bx-lock-alt" id="lock-icon"></i><i class="bx bx-x" id="sidebar-close"></i></div><div class="menu_container"><div class="menu_content"></div></div></nav>
-<nav class="navbar flex"><i class="bx bx-menu" id="sidebarToggle"></i><div class="navbar_content flex"><i class="bx bx-sun" id="darkLight"></i><span id="navUserName">User</span></div></nav>
-<main class="main-content"><div class="wrap"><h1>Action Center</h1><p class="muted">Only evidence-backed issues and delivered system actions appear here. A recommendation is not shown as executable unless a real action is wired behind it.</p><div class="card"><h2>Important issues</h2><div id="issues"><p class="muted">Loading…</p></div></div><div class="card"><h2>Notifications</h2><div id="notifications"><p class="muted">Loading…</p></div></div></div></main>
-<script src="/shared.js"></script><script>
-const $=id=>document.getElementById(id); async function api(url){const r=await fetch(url);const d=await r.json();if(!r.ok)throw Error(d.error||`Request failed (${r.status})`);return d;} function render(guild){Promise.all([api(`/api/guilds/${guild.id}/action-center`)]).then(([data])=>{const issues=$('issues');issues.innerHTML=data.issues.length?data.issues.map(item=>`<div class="row"><div><strong>${item.title}</strong><p class="muted">${item.impact||item.evidence}</p></div><span class="priority medium">${item.executable?'Ready':'Recommendation only'}</span></div>`).join(''):'<p class="muted">No evidence-backed action is required right now.</p>';const notifications=$('notifications');notifications.innerHTML=data.notifications.length?data.notifications.map(item=>`<div class="row ${item.readAt?'read':''}"><div><strong>${item.title}</strong><p class="muted">${item.message}</p><small class="muted">${item.source} · ${new Date(item.createdAt).toLocaleString()}</small></div><button data-id="${item._id}" ${item.readAt?'disabled':''}>${item.readAt?'Read':'Mark read'}</button></div>`).join(''):'<p class="muted">No notifications.</p>';notifications.querySelectorAll('button[data-id]').forEach(btn=>btn.onclick=async()=>{await fetch(`/api/guilds/${guild.id}/notifications/${btn.dataset.id}/read`,{method:'PATCH'});render(guild);});}).catch(e=>{$('issues').textContent=e.message;});} api('/api/guilds').then(data=>{const guild=data.guilds?.[0];if(guild)render(guild);else $('issues').textContent='No accessible servers were returned by Discord.';}).catch(e=>{$('issues').textContent=e.message;});
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProMcBot | Action Center</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    .actions-page{max-width:1180px;margin:0 auto;padding:2rem clamp(1rem,3vw,2.5rem)}
+    .actions-header{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1.5rem}
+    .actions-header h1{margin:0 0 .5rem}.actions-header p{max-width:760px;margin:0}
+    .evidence-strip{display:flex;flex-wrap:wrap;gap:.7rem;margin:1rem 0 1.5rem}
+    .evidence-chip{border:1px solid var(--border);border-radius:999px;padding:.45rem .75rem;color:var(--text-muted);font-size:.85rem;background:var(--surface)}
+    .evidence-chip strong{color:var(--text);margin-inline-start:.25rem}
+    .action-list{display:grid;gap:1rem}.action-card,.notification-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.15rem;box-shadow:var(--shadow-sm)}
+    .action-top,.notification-top{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}.action-title,.notification-title{margin:0;font-size:1.05rem}
+    .badge{display:inline-flex;align-items:center;border-radius:999px;padding:.3rem .6rem;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+    .badge-high{background:rgba(239,68,68,.15);color:#ef4444}.badge-medium{background:rgba(245,158,11,.15);color:#d97706}.badge-low{background:rgba(34,197,94,.15);color:#16a34a}.badge-open{background:rgba(59,130,246,.15);color:#2563eb}.badge-resolved{background:rgba(34,197,94,.15);color:#16a34a}.badge-snoozed{background:rgba(148,163,184,.18);color:#64748b}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin-top:1rem}.detail{border-radius:10px;background:var(--surface-2,var(--background));padding:.8rem}.detail-label{display:block;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.25rem}.detail p{margin:0;line-height:1.45}
+    .card-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem}.card-actions button{border:1px solid var(--border);border-radius:9px;padding:.55rem .8rem;background:transparent;color:var(--text);cursor:pointer}.card-actions button.primary{background:var(--primary);border-color:var(--primary);color:#fff}.card-actions button:disabled{opacity:.55;cursor:not-allowed}
+    .notification-list{display:grid;gap:.75rem}.notification-card.is-read{opacity:.72}.notification-meta{display:flex;flex-wrap:wrap;gap:.5rem;color:var(--text-muted);font-size:.8rem;margin-top:.55rem}.section-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:1.2rem;margin-top:1rem}.section-card h2{margin:.1rem 0 1rem;font-size:1.15rem}.state{color:var(--text-muted);padding:1rem 0}.state.error{color:#ef4444}
+    @media (max-width:700px){.actions-page{padding:1.25rem .9rem}.actions-header{display:block}.detail-grid{grid-template-columns:1fr}.action-top,.notification-top{display:block}.badge{margin-top:.7rem}.section-card{padding:1rem}}
+  </style>
+</head>
+<body>
+  <nav class="sidebar close" id="sidebar" aria-label="Primary navigation">
+    <div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot logo"></span><span class="logo_name">ProMcBot</span><i class="bx bx-lock-alt" id="lock-icon" aria-hidden="true"></i><i class="bx bx-x" id="sidebar-close" role="button" tabindex="0" aria-label="Close navigation"></i></div>
+    <div class="menu_container"><div class="menu_content"></div></div>
+  </nav>
+  <nav class="navbar flex"><i class="bx bx-menu" id="sidebarToggle" role="button" tabindex="0" aria-label="Open navigation"></i><div class="navbar_content flex"><i class="bx bx-sun" id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"></i><span id="navUserName" data-user-name>User</span></div></nav>
+  <main class="main-content"><div class="actions-page">
+    <header class="actions-header"><div><h1>Action Center</h1><p class="muted">Evidence-backed observations and delivered notifications for the selected server. Recommendations are advisory unless a real executable action is explicitly exposed.</p></div><button id="refreshActions" class="card-actions-button" type="button">Refresh</button></header>
+    <div id="evidenceStrip" class="evidence-strip" aria-live="polite"></div>
+    <section class="section-card" aria-labelledby="issuesHeading"><h2 id="issuesHeading">Recommended review</h2><div id="issues" class="action-list" aria-live="polite"><p class="state">Loading measured evidence…</p></div></section>
+    <section class="section-card" aria-labelledby="notificationsHeading"><h2 id="notificationsHeading">Notifications and resolution history</h2><div id="notifications" class="notification-list" aria-live="polite"><p class="state">Loading notifications…</p></div></section>
+  </div></main>
+  <script src="/shared.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const escapeHtml = value => String(value ?? '—').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const formatTime = value => { const date = value && new Date(value); return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : 'Time not available'; };
+      const api = async (url, options = {}) => { const response = await fetch(url, { credentials: 'same-origin', ...options }); let data = {}; try { data = await response.json(); } catch (_) {} if (!response.ok) throw new Error(data.message || data.error || `Request failed (${response.status})`); return data; };
+      let selectedGuild;
+      const severity = value => ['high','medium','low'].includes(String(value).toLowerCase()) ? String(value).toLowerCase() : 'medium';
+      function renderEvidence(evidence) {
+        const sample = evidence?.sample || {};
+        $('evidenceStrip').innerHTML = [
+          ['Confidence', evidence?.confidence || 'insufficient'],
+          ['Recent events', sample.recentEvents ?? 0],
+          ['Comparison events', sample.previousEvents ?? 0],
+          ['Generated', formatTime(evidence?.generatedAt)]
+        ].map(([label, value]) => `<span class="evidence-chip">${escapeHtml(label)}<strong>${escapeHtml(value)}</strong></span>`).join('');
+      }
+      function renderIssues(items) {
+        const container = $('issues');
+        if (!items?.length) { container.innerHTML = '<p class="state">No evidence-backed action is required right now.</p>'; return; }
+        container.innerHTML = items.map(item => `<article class="action-card"><div class="action-top"><div><h3 class="action-title">${escapeHtml(item.title)}</h3><div class="notification-meta"><span>${escapeHtml(item.status || 'open')}</span><span>${escapeHtml(item.confidence || 'insufficient')} confidence</span><span>${escapeHtml(formatTime(item.createdAt))}</span></div></div><span class="badge badge-${severity(item.severity || item.priority)}">${escapeHtml(item.severity || item.priority || 'medium')}</span></div><div class="detail-grid"><div class="detail"><span class="detail-label">Observed evidence</span><p>${escapeHtml(item.evidence)}</p></div><div class="detail"><span class="detail-label">Why it matters</span><p>${escapeHtml(item.whyItMatters)}</p></div><div class="detail"><span class="detail-label">Recommended next step</span><p>${escapeHtml(item.recommendation)}</p></div></div><div class="card-actions"><button type="button" disabled>${item.executable ? 'Action available' : 'Recommendation only'}</button><a class="card-actions-button" href="/intelligence">Open intelligence</a></div></article>`).join('');
+      }
+      function renderNotifications(items) {
+        const container = $('notifications');
+        if (!items?.length) { container.innerHTML = '<p class="state">No notifications have been recorded for this server.</p>'; return; }
+        container.innerHTML = items.map(item => { const status = ['open','resolved','snoozed'].includes(item.status) ? item.status : 'open'; const read = Boolean(item.readAt); return `<article class="notification-card ${read ? 'is-read' : ''}"><div class="notification-top"><div><h3 class="notification-title">${escapeHtml(item.title || 'Notification')}</h3><div class="notification-meta"><span>${escapeHtml(item.source || 'system')}</span><span>${escapeHtml(formatTime(item.createdAt))}</span>${item.resolvedAt ? `<span>Resolved ${escapeHtml(formatTime(item.resolvedAt))}</span>` : ''}</div></div><span class="badge badge-${status}">${escapeHtml(status)}</span></div><p>${escapeHtml(item.message)}</p><div class="card-actions">${read ? '<button type="button" disabled>Read</button>' : `<button type="button" class="primary" data-read="${escapeHtml(item._id)}">Mark read</button>`}${status === 'resolved' ? '<button type="button" disabled>Resolved</button>' : `<button type="button" data-resolve="${escapeHtml(item._id)}">Resolve</button>`}</div></article>`; }).join('');
+        container.querySelectorAll('[data-read]').forEach(button => button.addEventListener('click', () => mutateNotification(button.dataset.read, 'read')));
+        container.querySelectorAll('[data-resolve]').forEach(button => button.addEventListener('click', () => mutateNotification(button.dataset.resolve, 'resolve')));
+      }
+      async function mutateNotification(id, operation) { if (!selectedGuild) return; try { await api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/notifications/${encodeURIComponent(id)}/${operation}`, { method: 'PATCH' }); await load(); } catch (error) { window.showToast(error.message, 'error'); } }
+      async function load() {
+        $('issues').innerHTML = '<p class="state">Loading measured evidence…</p>';
+        try { const data = await api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/action-center`); renderEvidence(data.evidence); renderIssues(data.issues); renderNotifications(data.notifications); } catch (error) { $('issues').innerHTML = `<p class="state error">${escapeHtml(error.message)}. No unverified action was shown.</p>`; $('notifications').innerHTML = '<p class="state">Notifications are unavailable until the server connection is restored.</p>'; }
+      }
+      async function initActions() { try { const data = await api('/api/guilds'); selectedGuild = data.guilds?.[0]; if (!selectedGuild) { $('issues').innerHTML = '<p class="state">No accessible servers were returned by Discord.</p>'; $('notifications').innerHTML = '<p class="state">Connect a server to view notifications.</p>'; return; } await load(); } catch (error) { $('issues').innerHTML = `<p class="state error">${escapeHtml(error.message)}</p>`; $('notifications').innerHTML = '<p class="state">Could not load notification data.</p>'; } }
+      $('refreshActions').addEventListener('click', () => selectedGuild && load());
+      document.addEventListener('DOMContentLoaded', initActions);
+    })();
+  </script>
+</body>
+</html>

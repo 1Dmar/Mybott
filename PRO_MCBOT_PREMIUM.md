@@ -8,4 +8,4 @@
 
 The premium center reads plan metadata, subscription status, renewal state, usage, invoices, and payment records from the backend. Free features remain useful. A locked feature is explained rather than hidden, and the backend—not browser flags, local storage, or client plan names—decides access.
 
-Payment processing is provider-backed only when Stripe credentials and price IDs are configured. Without them, the premium center shows an honest provider-not-configured state. Subscription expiry returns the effective entitlement to Free while historical data remains subject to the retention policy.
+Payment processing is provider-backed only when PayPal credentials, plan IDs, webhook ID, and method enablement are configured. The Premium Center distinguishes PayPal, credit/debit card checkout, and Google Pay availability without claiming that a disabled provider is live. Without configuration, it shows an honest provider-not-configured state. Subscription expiry returns the effective entitlement to Free while historical data remains subject to the retention policy.

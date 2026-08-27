@@ -4,7 +4,7 @@ const subscriptionSchema = new mongoose.Schema({
   guildId: { type: String, required: true, unique: true, index: true },
   plan: { type: String, enum: ['free', 'pro', 'ultimate'], default: 'free', required: true },
   status: { type: String, enum: ['active', 'trialing', 'past_due', 'cancelled', 'expired', 'grace_period'], default: 'active', required: true },
-  provider: { type: String, enum: ['none', 'stripe', 'paypal', 'manual'], default: 'none' },
+  provider: { type: String, enum: ['none', 'paypal', 'manual'], default: 'none' },
   providerCustomerId: { type: String, default: null, maxlength: 255 },
   providerSubscriptionId: { type: String, default: null, maxlength: 255 },
   currentPeriodStart: { type: Date, default: null },

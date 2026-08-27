@@ -2,7 +2,7 @@
 
 ## Working foundation to preserve
 
-The repository contains a Discord.js bot, an Express dashboard, Mongoose models, Discord OAuth, existing moderation/welcome/log/ticket/community systems, and a Railway/Docker deployment path. The slash-command loader and the existing dashboard navigation are preserved. The transformation adds platform capabilities rather than replacing those systems.
+The repository contains a Discord.js bot, an Express dashboard, Mongoose models, Discord OAuth, existing moderation/welcome/log/ticket/community systems, and a Railway/Docker deployment path. The canonical slash-command loader and responsive dashboard navigation are preserved and cleaned. Duplicate loaders/listeners were removed only after reference checks. The transformation adds platform capabilities while protecting working systems.
 
 ## Current implemented platform slice
 
@@ -10,11 +10,11 @@ The default branch now contains a Paper API Maven plugin, minimized asynchronous
 
 ## Partial or blocked areas
 
-Full player cohort retention, cross-server identity analytics, distributed scheduling, a payment provider account, runtime Minecraft compatibility testing, AI interpretation, enterprise network operations, and durable multi-process queues require additional production infrastructure or credentials. These are represented as explicit partial or blocked states rather than fake success states.
+Full player cohort retention, cross-server identity analytics, distributed scheduling, a PayPal provider account, runtime Minecraft compatibility testing, AI interpretation, enterprise network operations, and durable multi-process queues require additional production infrastructure or credentials. These are represented as explicit partial or blocked states rather than fake success states.
 
 ## Placeholder or fake behavior found and removed/refactored
 
-The legacy `/bot` API returned echo-style player, command, and status responses and independently trusted an `X-Premium-Key`; it now reports measured player/status data, uses central entitlements, and returns a clear not-implemented response for Minecraft command execution. The old `/claim` flow generated premium keys and wrote free-form membership strings; it now directs administrators to the server-side premium center without changing subscription state. The old premium page contained outdated prices, payment claims, trial claims, and static feature promises; it now reads backend plan metadata and disables checkout when a provider is not configured. The dashboard's hardcoded API key and global rank were removed.
+The legacy `/bot` API returned echo-style player, command, and status responses and independently trusted an `X-Premium-Key`; it now reports measured player/status data, uses central entitlements, and returns a clear not-implemented response for Minecraft command execution. The old `/claim` flow generated premium keys and wrote free-form membership strings; it now directs administrators to the server-side premium center without changing subscription state. The old premium page contained outdated prices, payment claims, trial claims, and static feature promises; it now reads backend plan metadata, displays PayPal/card/Google Pay availability, and disables checkout when the provider is not configured. The dashboard's hardcoded API key and global rank were removed.
 
 ## Duplicated logic and remaining refactor targets
 
@@ -22,7 +22,7 @@ Legacy premium models and utilities remain in the repository for migration compa
 
 ## Required environment variables
 
-Core operation requires `BOT1_1_TOKEN`, `MONGO_URL` or `MONGO_URI`, `OWNER_ID`, OAuth values, and `SESSION_SECRET`. Plugin provisioning requires `PLUGIN_ENCRYPTION_KEY`. Real Stripe billing requires `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRO_PRICE_ID`, `STRIPE_ULTIMATE_PRICE_ID`, and optionally `PUBLIC_BASE_URL`.
+Core operation requires `BOT1_1_TOKEN`, `MONGO_URL` or `MONGO_URI`, `OWNER_ID`, OAuth values, and `SESSION_SECRET`. Plugin provisioning requires `PLUGIN_ENCRYPTION_KEY`. Real PayPal billing requires `PAYPAL_ENV`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_PRO_PLAN_ID`, `PAYPAL_ULTIMATE_PLAN_ID`, and optionally `PAYPAL_CARD_CHECKOUT_ENABLED`, `PAYPAL_GOOGLE_PAY_ENABLED`, and `PUBLIC_BASE_URL`.
 
 ## Source of truth
 
