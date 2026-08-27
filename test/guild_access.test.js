@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { canManageGuild, getManageableGuilds, managePermissionFor, resolveGuildReference } = require('../dash/guildAccess');
+const { canManageGuild, getManageableGuilds, managePermissionDetail, managePermissionFor, resolveGuildReference } = require('../dash/guildAccess');
 
 test('guild access includes only owner, administrator, and manage-guild permissions', () => {
   const user = {
@@ -25,11 +25,35 @@ test('guild access includes only owner, administrator, and manage-guild permissi
   assert.equal(canManageGuild(user, 'manager-guild', []), true);
 });
 
-test('guild access does not throw for malformed permissions and supports configured owner override', () => {
-  const user = { id: 'owner-1', guilds: [{ id: 'owned', permissions: 'not-a-number' }, { id: 'broken', permissions: null }] };
+test('platform owner override authorizes access without falsely labeling every guild as Discord Owner', () => {
+  const user = {
+    id: 'owner-1',
+    guilds: [
+      { id: 'discord-owner', owner: true, permissions: '0' },
+      { id: 'managed', permissions: '32' },
+      { id: 'member-only', permissions: '0' },
+      { id: 'malformed', permissions: 'not-a-number' },
+    ],
+  };
   assert.equal(managePermissionFor(user.guilds[0], user.id, ['owner-1']), 'owner');
-  assert.equal(managePermissionFor(user.guilds[1], 'other-user', []), null);
-  assert.deepEqual(getManageableGuilds(user, ['owner-1']).map(guild => guild.id), ['owned', 'broken']);
+  assert.equal(managePermissionFor(user.guilds[1], user.id, ['owner-1']), 'manage_guild');
+  assert.equal(managePermissionFor(user.guilds[2], user.id, ['owner-1']), 'platform_owner');
+  assert.equal(managePermissionFor(user.guilds[3], 'other-user', []), null);
+  assert.deepEqual(getManageableGuilds(user, ['owner-1']).map(guild => [guild.id, guild.managePermission, guild.permissionSource]), [
+    ['discord-owner', 'owner', 'discord_owner'],
+    ['managed', 'manage_guild', 'discord_manage_guild'],
+    ['member-only', 'platform_owner', 'platform_owner_override'],
+    ['malformed', 'platform_owner', 'platform_owner_override'],
+  ]);
+});
+
+test('permission detail preserves Discord role and exposes platform override separately', () => {
+  assert.deepEqual(managePermissionDetail({ owner: false, permissions: '8' }, 'u', ['u']), {
+    canManage: true,
+    label: 'administrator',
+    source: 'discord_administrator',
+    isPlatformOwner: true,
+  });
 });
 
 test('guild references resolve by managed server name without widening access', () => {

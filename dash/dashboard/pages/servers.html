@@ -21,12 +21,15 @@
     .server-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; }
     .server-card { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms ease; }
     .server-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .server-card-top { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 18px 18px 14px; }
-    .server-icon { display: block; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 15px; object-fit: cover; background: var(--primary-soft); }
-    .server-name { min-width: 0; }
+    .server-banner { position: relative; min-height: 116px; overflow: hidden; padding: 16px 18px; background: var(--server-color, var(--primary)); }
+    .server-banner::before { position: absolute; inset: 0; content: ''; background-image: var(--server-banner, none); background-position: center; background-size: cover; opacity: .78; }
+    .server-banner::after { position: absolute; inset: 0; content: ''; background: linear-gradient(90deg, rgba(10, 15, 35, .82), rgba(10, 15, 35, .18)); }
+    .server-banner-content { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .server-icon { display: block; flex: 0 0 54px; width: 54px; height: 54px; border: 3px solid rgba(255,255,255,.74); border-radius: 16px; object-fit: cover; background: rgba(255,255,255,.18); box-shadow: 0 8px 20px rgba(0,0,0,.2); }
+    .server-name { min-width: 0; color: #fff; }
     .server-name strong, .server-name span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .server-name strong { color: var(--text); font-size: 16px; }
-    .server-name span { margin-top: 3px; color: var(--text-muted); font-size: 11px; }
+    .server-name strong { color: #fff; font-size: 16px; }
+    .server-name span { margin-top: 3px; color: rgba(255,255,255,.78); font-size: 11px; }
     .permission-badge { display: inline-flex; align-items: center; gap: 5px; width: fit-content; margin: 0 18px 15px; padding: 5px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 750; }
     .server-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding: 13px 18px; border-top: 1px solid var(--border); }
     .server-card-footer small { color: var(--text-muted); }
@@ -59,16 +62,16 @@
       const grid = document.getElementById('serversGrid');
       const search = document.getElementById('serverSearch');
       const count = document.getElementById('serverCount');
-      let servers = [];
+      let servers = []; let visuals = {};
       const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
-      const label = permission => ({ owner: 'Owner', administrator: 'Administrator', manage_guild: 'Manage Server' }[permission] || 'Manage Server');
-      const iconFor = guild => guild.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
+      const label = permission => ({ owner: 'Owner', administrator: 'Administrator', manage_guild: 'Manage Server', platform_owner: 'Platform access' }[permission] || 'Manage Server');
+      const iconFor = guild => visuals[guild.id]?.iconUrl || (guild.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png');
       function render() {
         const query = search.value.trim().toLowerCase();
         const visible = servers.filter(guild => !query || String(guild.name || '').toLowerCase().includes(query));
         count.textContent = servers.length;
         if (!visible.length) { grid.innerHTML = `<div class="empty-state"><i class="bx bx-server"></i><strong>${servers.length ? 'No matching server' : 'No managed servers yet'}</strong><div>${servers.length ? 'Try another name.' : 'Ask a server owner to grant you Manage Server or Administrator permission.'}</div></div>`; return; }
-        grid.innerHTML = visible.map(guild => `<article class="server-card"><div class="server-card-top"><img class="server-icon" src="${iconFor(guild)}" alt=""><div class="server-name"><strong>${esc(guild.name || 'Unnamed server')}</strong><span>Discord server · ${esc(guild.id)}</span></div></div><span class="permission-badge"><i class="bx bx-shield-quarter"></i>${label(guild.managePermission)}</span><div class="server-card-footer"><small>Server workspace</small><a class="server-open" href="/myservers/${encodeURIComponent(guild.id)}/overview">Open <i class="bx bx-right-arrow-alt"></i></a></div></article>`).join('');
+        grid.innerHTML = visible.map(guild => { const visual = visuals[guild.id] || {}; return `<article class="server-card"><div class="server-banner" data-server-art="${esc(guild.id)}" style="--server-color:${esc(visual.dominantColor || '#5865f2')}"><div class="server-banner-content"><img class="server-icon" src="${esc(iconFor(guild))}" alt=""><div class="server-name"><strong>${esc(guild.name || 'Unnamed server')}</strong><span>Discord server</span></div></div></div><span class="permission-badge"><i class="bx bx-shield-quarter"></i>${label(guild.managePermission)}</span><div class="server-card-footer"><small>Server workspace</small><a class="server-open" href="/myservers/${encodeURIComponent(guild.id)}/overview">Open <i class="bx bx-right-arrow-alt"></i></a></div></article>`; }).join(''); grid.querySelectorAll('[data-server-art]').forEach(art => { const visual = visuals[art.dataset.serverArt]; if (visual?.bannerUrl) art.style.setProperty('--server-banner', `url("${visual.bannerUrl}")`); });
       }
       async function loadServers() {
         try {
@@ -77,10 +80,12 @@
           const data = await response.json();
           servers = Array.isArray(data.guilds) ? data.guilds : [];
           render();
+          await loadVisuals();
         } catch (_) {
           grid.innerHTML = '<div class="empty-state"><i class="bx bx-error-circle"></i><strong>Managed servers could not load</strong><div>Refresh the page or sign in again.</div></div>';
         }
       }
+      async function loadVisuals() { const pending = servers.map(async guild => { try { const response = await fetch(`/api/guilds/${encodeURIComponent(guild.id)}/visual`, { credentials: 'same-origin' }); if (!response.ok) return; const data = await response.json(); visuals[guild.id] = data.visual || {}; } catch (_) {} }); await Promise.allSettled(pending); render(); }
       search.addEventListener('input', render);
       document.addEventListener('DOMContentLoaded', loadServers);
     })();

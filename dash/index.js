@@ -48,6 +48,9 @@ const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
 const { getManageableGuilds, resolveGuildReference } = require('./guildAccess');
+const { getGuildVisual } = require('./serverVisuals');
+const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./settingsValidation');
+const { getConfigurationStatus } = require('./configurationStatus');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -292,6 +295,10 @@ app.get('/api/billing/config', isAuthenticated, (req, res) => {
   res.json({ success: true, plans: Object.values(PLANS), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
 });
 
+app.get('/api/configuration/status', isAuthenticated, (req, res) => {
+  res.json({ success: true, status: getConfigurationStatus(), source: 'deployment_configuration_presence_only' });
+});
+
 app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, async (req, res) => {
   const [entitlement, subscription, invoices, payments] = await Promise.all([getForGuild(req.params.guildId), Subscription.findOne({ guildId: req.params.guildId }).lean(), Invoice.find({ guildId: req.params.guildId }).sort({ issuedAt: -1 }).limit(50).lean(), Payment.find({ guildId: req.params.guildId }).sort({ createdAt: -1 }).limit(50).lean()]);
   res.json({ success: true, entitlement, subscription: subscription || { guildId: req.params.guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' }, invoices, payments, provider: getPaymentCatalog() });
@@ -302,7 +309,7 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
   const method = String(req.body?.method || 'paypal').toLowerCase();
   if (!['pro', 'ultimate'].includes(plan)) return res.status(400).json({ success: false, error: 'invalid_paid_plan' });
   try {
-    const baseUrl = process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
     const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}/premium?billing=pending`, cancelUrl: `${baseUrl}/premium?billing=cancelled` });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
     res.json({ success: true, ...checkout });
@@ -331,9 +338,24 @@ app.get('/api/guilds', isAuthenticated, (req, res) => {
   res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_guilds_only' });
 });
 
+app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const botGuild = getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
+    const sourceGuild = { ...(req.managedGuild || {}), banner: req.managedGuild?.banner || botGuild?.banner || null, icon: req.managedGuild?.icon || botGuild?.icon || null };
+    const visual = await getGuildVisual(sourceGuild);
+    res.json({ success: true, guildId: req.params.guildId, visual });
+  } catch (_) {
+    res.status(200).json({ success: true, guildId: req.params.guildId, visual: { bannerUrl: null, iconUrl: null, dominantColor: '#5865f2', source: 'default' } });
+  }
+});
+
 app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
-    const settings = await GuildSettings.findOne({ guildId: req.params.guildId }) || { prefix: '!', language: 'en' };
+    const [storedSettings, serverInfo] = await Promise.all([
+      GuildSettings.findOne({ guildId: req.params.guildId }).lean(),
+      ServerInfo.findOne({ serverId: req.params.guildId }).lean(),
+    ]);
+    const settings = { prefix: '!', language: 'en', ...(storedSettings || {}), mcIp: storedSettings?.mcIp || serverInfo?.javaIP || '', mcPort: serverInfo?.javaPort || 25565 };
     res.json({ success: true, settings });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
@@ -342,15 +364,25 @@ app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, a
 
 app.post('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
-    const { prefix, language, mcIp } = req.body;
-    await GuildSettings.findOneAndUpdate(
-      { guildId: req.params.guildId },
-      { prefix, language, mcIp },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    res.json({ success: true });
+    const normalized = normalizeMinecraftSettings(req.body);
+    if (!normalized.ok) return res.status(400).json({ success: false, error: normalized.error });
+    const { prefix, language, mcIp, mcPort: rawPort } = normalized.settings;
+    const serverUpdate = buildServerInfoUpdate({ mcIp, mcPort: rawPort });
+    await Promise.all([
+      GuildSettings.findOneAndUpdate(
+        { guildId: req.params.guildId },
+        { $set: { prefix, language, mcIp } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ),
+      ServerInfo.findOneAndUpdate(
+        { serverId: req.params.guildId },
+        serverUpdate,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ),
+    ]);
+    res.json({ success: true, settings: { prefix, language, mcIp, mcPort: rawPort } });
   } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
+    res.status(500).json({ success: false, error: 'settings_save_failed' });
   }
 });
 
@@ -369,15 +401,16 @@ app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, a
     const guildId = req.params.guildId;
     const now = Date.now();
     const botGuild = getBotClient()?.guilds?.cache?.get(guildId) || null;
-    const [plugin, telemetry24h, settings, entitlement, botConfig] = await Promise.all([
+    const [plugin, telemetry24h, settings, entitlement, botConfig, serverInfo] = await Promise.all([
       PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
       TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
       GuildSettings.findOne({ guildId }).lean(),
       getForGuild(guildId),
       BotConfig.findOne({ guildId }).lean(),
+      ServerInfo.findOne({ serverId: guildId }).lean(),
     ]);
     const pluginOnline = Boolean(plugin && (plugin.status === 'online' || (plugin.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000)));
-    res.json({ success: true, source: 'discord+plugin+telemetry+entitlement', server: { id: guildId, name: botGuild?.name || plugin?.serverName || null, icon: botGuild?.icon || null, memberCount: Number.isFinite(botGuild?.memberCount) ? botGuild.memberCount : null, discordConnected: Boolean(botGuild) }, plugin: plugin ? { instanceId: plugin.instanceId, status: pluginOnline ? 'online' : plugin.status || 'offline', lastSeenAt: plugin.lastSeenAt || null, onlinePlayers: plugin.lastOnlinePlayers ?? null } : null, telemetry: { events24h: telemetry24h }, entitlement: { plan: entitlement.plan, name: entitlement.name, status: entitlement.status, currentPeriodEnd: entitlement.currentPeriodEnd || null }, settings: { prefix: settings?.prefix || '!', language: settings?.language || 'en', mcIp: settings?.mcIp || null }, modules: botConfig?.modules || {} });
+    res.json({ success: true, source: 'discord+plugin+telemetry+entitlement', server: { id: guildId, name: botGuild?.name || plugin?.serverName || null, icon: botGuild?.icon || null, memberCount: Number.isFinite(botGuild?.memberCount) ? botGuild.memberCount : null, discordConnected: Boolean(botGuild) }, plugin: plugin ? { instanceId: plugin.instanceId, status: pluginOnline ? 'online' : plugin.status || 'offline', lastSeenAt: plugin.lastSeenAt || null, onlinePlayers: plugin.lastOnlinePlayers ?? null } : null, telemetry: { events24h: telemetry24h }, entitlement: { plan: entitlement.plan, name: entitlement.name, status: entitlement.status, currentPeriodEnd: entitlement.currentPeriodEnd || null }, settings: { prefix: settings?.prefix || '!', language: settings?.language || 'en', mcIp: settings?.mcIp || null, mcPort: serverInfo?.javaPort || 25565 }, modules: botConfig?.modules || {} });
   } catch (error) {
     res.status(500).json({ success: false, error: 'overview_unavailable' });
   }
@@ -441,8 +474,8 @@ app.get('/callback/check/userData', (req, res) => {
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
 app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
 app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
-app.get('/intelligence', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
-app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
+app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
+app.get('/onboarding', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
 app.get('/premium', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'premium.html')));
 
@@ -467,6 +500,7 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
   try {
     const guildId = req.params.guildId;
     const botClient = getBotClient();
+    const managedGuild = req.managedGuild || botClient?.guilds?.cache?.get(guildId) || null;
     const botConnected = !!botClient?.guilds?.cache?.get(guildId);
     const plugin = await PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean();
     const now = Date.now();
@@ -492,7 +526,7 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
     const completed = steps.filter(step => step.complete).length;
     const progress = Math.round((completed / steps.length) * 100);
     const nextStep = steps.find(step => !step.complete);
-    res.json({ success: true, progress, completed, steps, evidence: { telemetry24h, playerEvents24h, telemetry14d, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, nextValue: nextStep ? `Next: ${nextStep.label}. ${nextStep.evidence}` : 'Server intelligence is active.' });
+    res.json({ success: true, progress, completed, steps, evidence: { telemetry24h, playerEvents24h, telemetry14d, lastPluginSeenAt: plugin?.lastSeenAt || null, instanceId: plugin?.instanceId || null }, server: { id: guildId, name: managedGuild?.name || plugin?.serverName || guildId, icon: managedGuild?.icon || null }, nextValue: nextStep ? `Next: ${nextStep.label}. ${nextStep.evidence}` : 'Server intelligence is active.' });
   } catch (error) { res.status(500).json({ success: false, error: 'activation_status_failed' }); }
 });
 
