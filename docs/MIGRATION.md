@@ -15,6 +15,8 @@ No MongoDB collection is dropped by this change. Existing `User`, `Server`, subs
 
 The automation changes are also additive. Existing rules retain their trigger/action fields; executions gain a deduplication key and notifications gain an explicit open/resolved lifecycle. Operators should review any rule that used `weekly_summary`, because it now runs once per UTC week only when the comparison windows contain sufficient evidence.
 
+The Dashboard route migration changes the user-facing server picker from `/servers` to `/myservers`. The former top-level and dynamic `/servers` paths remain authenticated compatibility redirects. The new picker and all current server selectors use the backend manager-only contract, so view-only Discord Guilds are not exposed as manageable workspaces. No MongoDB record is changed by this route migration.
+
 The deployment migration requires Node.js 22.13.0 or newer within the supported major version range. The Docker image and package engines express this requirement, and the obsolete `node@18` runtime dependency has been removed. Railway should rebuild from the default branch after the commit is pushed.
 
 Before applying future schema changes, take a database backup and validate indexes in a staging environment. This repository does not silently backfill or delete production data.

@@ -1,102 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Server Settings — ProMcBot</title>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Setup & settings — ProMcBot</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .settings-container { max-width: 800px; margin: 0 auto; }
-    .settings-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 30px;
-      margin-bottom: 24px;
-    }
-    .form-group { margin-bottom: 24px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text); }
-    .form-group input, .form-group select {
-      width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
-      background: var(--surface-2); color: var(--text); outline: none; transition: 0.3s;
-    }
-    .form-group input:focus { border-color: #FF512F; }
-    .btn-save {
-      width: 100%; padding: 14px; background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
-    }
-    .btn-save:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255, 81, 47, 0.3); }
+    .settings-page { max-width: 900px; }
+    .settings-header { margin-bottom: 18px; }
+    .settings-header h1 { margin: 0 0 6px; }
+    .settings-header p { margin: 0; color: var(--text-muted); }
+    .settings-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; }
+    .settings-card, .settings-help { min-width: 0; padding: 19px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); }
+    .settings-card h2, .settings-help h2 { margin: 0 0 5px; font-size: 18px; }
+    .settings-card > p, .settings-help > p { margin: 0 0 18px; color: var(--text-muted); font-size: 13px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .form-group { min-width: 0; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { display: block; margin-bottom: 6px; color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+    .form-help { display: block; margin-top: 5px; color: var(--text-muted); font-size: 11px; }
+    .save-row { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+    .save-row button { border: 0; border-radius: 10px; }
+    #saveMessage { color: var(--text-muted); font-size: 12px; }
+    .settings-help ul { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .settings-help li { display: flex; gap: 8px; color: var(--text-muted); font-size: 12px; }
+    .settings-help li i { flex: 0 0 auto; color: var(--primary); font-size: 17px; }
+    @media (max-width: 760px) { .settings-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .form-group.full { grid-column: auto; } .save-row { align-items: stretch; flex-direction: column; } }
   </style>
 </head>
 <body class="dark">
-  <nav class="navbar">
-    <div class="logo_item">
-      <i class="bx bx-menu" id="sidebarToggle"></i>
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span class="brand-name">ProMcBot</span>
-    </div>
-    <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight"><i class='bx bx-sun'></i></div>
-      <img src="" class="user-avatar" data-user-avatar id="userBtn">
-    </div>
-  </nav>
-
-  <nav class="sidebar" id="sidebar"></nav>
-
-  <main class="main-content">
-    <div class="settings-container">
-      <div class="section-header">
-        <h1>Server Settings</h1>
-        <p>Configure your bot's behavior for this specific server.</p>
-      </div>
-
-      <div class="settings-card">
-        <form id="settingsForm">
-          <div class="form-group">
-            <label>Bot Prefix</label>
-            <input type="text" id="prefix" placeholder="e.g. !" maxlength="5">
-          </div>
-          <div class="form-group">
-            <label>Language</label>
-            <select id="language">
-              <option value="en">English</option>
-              <option value="ar">العربية</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Minecraft Server IP</label>
-            <input type="text" id="mcIp" placeholder="e.g. play.myserver.com">
-          </div>
-          <button type="submit" class="btn-save">Save Changes</button>
-        </form>
-      </div>
-    </div>
-  </main>
-
+  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><img src="" class="user-avatar" data-user-avatar id="userBtn" alt="Account"></div></nav>
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
+  <main class="main-content"><section class="settings-page"><header class="settings-header"><div class="eyebrow">Server control</div><h1>Setup & settings</h1><p>Set the small things here. Use the setup wizard for the Minecraft connection.</p></header><div class="settings-layout"><section class="settings-card"><h2>Server basics</h2><p>These settings apply only to the selected managed server.</p><form id="settingsForm"><div class="form-grid"><div class="form-group"><label for="prefix">Bot prefix</label><input id="prefix" maxlength="5" placeholder="!" required><span class="form-help">Used by legacy message commands.</span></div><div class="form-group"><label for="language">Dashboard language</label><select id="language"><option value="en">English</option><option value="ar">العربية</option></select></div><div class="form-group full"><label for="mcIp">Minecraft address <span class="mini-note">optional</span></label><input id="mcIp" maxlength="255" placeholder="play.example.com"><span class="form-help">The plugin connection is provisioned separately and never exposes its secret here.</span></div></div><div class="save-row"><button type="submit" class="button-primary"><i class="bx bx-save"></i> Save settings</button><span id="saveMessage" role="status"></span></div></form></section><aside class="settings-help"><h2>Next steps</h2><p>Keep setup focused.</p><ul><li><i class="bx bx-check-shield"></i><span>Confirm you are managing the right server.</span></li><li><i class="bx bx-link"></i><span>Connect Minecraft from Setup & intelligence.</span></li><li><i class="bx bx-pulse"></i><span>Wait for measured heartbeat and telemetry.</span></li></ul></aside></div></section></main>
   <script src="/shared.js"></script>
   <script>
-    const gId = window.location.pathname.match(/\/servers\/(\d+)/)[1];
-    
-    document.getElementById('settingsForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const data = {
-        prefix: document.getElementById('prefix').value,
-        language: document.getElementById('language').value,
-        mcIp: document.getElementById('mcIp').value
-      };
-      
-      try {
-        const res = await fetch(`/api/guilds/${gId}/settings`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        if (res.ok) alert('Settings saved successfully!');
-      } catch (e) {
-        alert('Failed to save settings.');
-      }
-    });
+    (() => { const match = window.location.pathname.match(/\/myservers\/(\d+)/); const guildId = match?.[1]; const form = document.getElementById('settingsForm'); const message = document.getElementById('saveMessage'); async function load() { if (!guildId) return; try { const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/settings`); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Settings unavailable'); document.getElementById('prefix').value = data.settings?.prefix || '!'; document.getElementById('language').value = data.settings?.language || 'en'; document.getElementById('mcIp').value = data.settings?.mcIp || ''; } catch (error) { message.textContent = error.message; } } form.addEventListener('submit', async event => { event.preventDefault(); message.textContent = 'Saving…'; try { const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prefix: document.getElementById('prefix').value.trim(), language: document.getElementById('language').value, mcIp: document.getElementById('mcIp').value.trim() }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Save failed'); message.textContent = 'Saved'; } catch (error) { message.textContent = error.message; } }); load(); })();
   </script>
 </body>
 </html>

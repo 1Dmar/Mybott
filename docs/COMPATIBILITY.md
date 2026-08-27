@@ -10,6 +10,7 @@
 | Spigot/Purpur | Paper-compatible API target | Not runtime-proven here | Validate on the target server distribution before production rollout |
 | Fabric | Not supported by this Paper plugin artifact | No | A separate Fabric implementation would be required |
 | Railway | Docker deployment from default branch | Previously verified for the service | Required environment variables must be present for full functionality |
+| Dashboard server routes | `/myservers` plus authenticated `/servers` compatibility redirects | Local route/UI tests pass | Live OAuth acceptance still requires a real session; dynamic server pages are manager-only |
 
 The plugin artifact is compiled with Java 21 and contains `plugin.yml`, the plugin main class, `BackendClient`, and `TelemetryQueue`. Maven `clean test package` passes in the repository environment. This is build compatibility evidence, not a claim that every Paper-compatible server fork has been runtime-tested.
 

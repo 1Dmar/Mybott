@@ -37,7 +37,7 @@ navbar_html = """<nav class="navbar">
       <div class="dropdown-content" id="userDropdown">
         <div class="dropdown-header"><img data-user-avatar src="https://cdn.discordapp.com/embed/avatars/0.png" alt="" style="width:32px;height:32px;border-radius:50%;margin-right:8px"><span id="navUserName">User</span></div>
         <a href="/dashboard"><i class='bx bx-user'></i> My Profile</a>
-        <a href="/servers"><i class='bx bx-server'></i> My Servers</a>
+        <a href="/myservers"><i class='bx bx-server'></i> My Servers</a>
         <a href="/premium"><i class='bx bx-crown'></i> Premium</a>
         <div style="border-top:1px solid var(--border);margin:4px 0"></div>
         <a href="/api/logout" style="color:var(--danger)"><i class='bx bx-log-out'></i> Logout</a>
@@ -52,7 +52,7 @@ def get_sidebar_html(page_name):
     
     user_links = [
         ('/dashboard', 'bx bx-user', 'Profile', False),
-        ('/servers', 'bx bx-server', 'Servers', False),
+        ('/myservers', 'bx bx-server', 'My servers', False),
         ('/premium', 'bx bx-crown', 'Premium', True)
     ]
     for href, icon, text, is_new in user_links:

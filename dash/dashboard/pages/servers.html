@@ -3,117 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProMcBot — My Servers</title>
+  <title>My Servers — ProMcBot</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .servers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-      margin-top: 30px;
-    }
-    .server-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      transition: 0.3s;
-      position: relative;
-    }
-    .server-card:hover { transform: translateY(-5px); border-color: #FF512F; box-shadow: var(--shadow-xl); }
-    .server-banner { height: 80px; background: linear-gradient(135deg, #1e1b4b 0%, #311026 100%); }
-    .server-icon {
-      width: 70px; height: 70px; border-radius: 18px; border: 4px solid var(--surface);
-      position: absolute; top: 45px; left: 20px; background: var(--surface-2); object-fit: cover;
-    }
-    .server-info { padding: 45px 20px 20px; }
-    .server-name { font-size: 18px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
-    .server-id { font-size: 12px; color: var(--text-muted); font-family: monospace; margin-bottom: 16px; }
-    .btn-manage {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px; background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      color: white; border-radius: 10px; font-weight: 700; text-decoration: none; transition: 0.3s;
-    }
-    .btn-invite {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px; background: var(--surface-2); color: var(--text);
-      border-radius: 10px; font-weight: 700; text-decoration: none; border: 1px solid var(--border);
-    }
-    .badge-bot {
-      position: absolute; top: 12px; right: 12px; padding: 4px 10px;
-      background: rgba(16, 185, 129, 0.9); color: white; border-radius: 20px;
-      font-size: 10px; font-weight: 800; text-transform: uppercase;
-    }
+    .server-picker { max-width: 1180px; }
+    .picker-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .picker-hero h1 { margin: 0 0 8px; }
+    .picker-hero p { max-width: 560px; margin: 0; color: var(--text-muted); }
+    .picker-count { flex: 0 0 auto; min-width: 128px; padding: 16px 18px; border-radius: 16px; background: linear-gradient(135deg, var(--primary), #7c3aed); color: #fff; box-shadow: var(--shadow-md); }
+    .picker-count strong { display: block; font-size: 30px; line-height: 1; }
+    .picker-count span { display: block; margin-top: 5px; opacity: .84; font-size: 12px; }
+    .picker-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .search-box { position: relative; flex: 1; }
+    .search-box i { position: absolute; top: 50%; left: 14px; color: var(--text-muted); transform: translateY(-50%); }
+    .search-box input { padding-left: 42px; }
+    .server-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; }
+    .server-card { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), border-color 180ms ease; }
+    .server-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .server-card-top { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 18px 18px 14px; }
+    .server-icon { display: block; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 15px; object-fit: cover; background: var(--primary-soft); }
+    .server-name { min-width: 0; }
+    .server-name strong, .server-name span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .server-name strong { color: var(--text); font-size: 16px; }
+    .server-name span { margin-top: 3px; color: var(--text-muted); font-size: 11px; }
+    .permission-badge { display: inline-flex; align-items: center; gap: 5px; width: fit-content; margin: 0 18px 15px; padding: 5px 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 750; }
+    .server-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding: 13px 18px; border-top: 1px solid var(--border); }
+    .server-card-footer small { color: var(--text-muted); }
+    .server-open { display: inline-flex; align-items: center; gap: 5px; color: var(--primary); font-size: 13px; font-weight: 750; text-decoration: none; }
+    .server-open:hover { color: var(--primary-strong); }
+    .empty-state { grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: var(--surface); border: 1px dashed var(--border); border-radius: 18px; color: var(--text-muted); }
+    .empty-state i { display: block; margin-bottom: 8px; color: var(--primary); font-size: 34px; }
+    @media (max-width: 640px) { .picker-hero { display: block; } .picker-count { display: inline-block; min-width: 116px; margin-top: 16px; } .picker-toolbar { display: block; } .picker-toolbar > * + * { margin-top: 10px; } }
   </style>
 </head>
 <body class="dark">
   <nav class="navbar">
-    <div class="logo_item">
-      <i class="bx bx-menu" id="sidebarToggle"></i>
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span class="brand-name">ProMcBot</span>
-    </div>
-    <div class="navbar_content">
-      <div class="nav-icon-btn" id="darkLight"><i class='bx bx-sun'></i></div>
-      <img src="" class="user-avatar" data-user-avatar id="userBtn">
-    </div>
+    <div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div>
+    <div class="navbar_content"><div class="nav-icon-btn" id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><img src="" class="user-avatar" data-user-avatar id="userBtn" alt="Account"></div>
   </nav>
-
-  <nav class="sidebar" id="sidebar"></nav>
-
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
   <main class="main-content">
-    <div class="section-header">
-      <h1>My Servers</h1>
-      <p>Select a server to manage its Minecraft integration and Discord settings.</p>
-    </div>
-
-    <div class="servers-grid" id="serversGrid">
-      <!-- Servers will be loaded here -->
-      <div class="loading-state">Loading your servers...</div>
-    </div>
+    <section class="server-picker" aria-labelledby="pageTitle">
+      <div class="picker-hero">
+        <div><div class="eyebrow">Workspace</div><h1 id="pageTitle">My servers</h1><p>Only servers you can manage are shown here. Pick one to open its setup and live health workspace.</p></div>
+        <div class="picker-count"><strong id="serverCount">—</strong><span>managed servers</span></div>
+      </div>
+      <div class="picker-toolbar"><label class="search-box" for="serverSearch"><i class="bx bx-search" aria-hidden="true"></i><input id="serverSearch" type="search" placeholder="Search managed servers" autocomplete="off"></label></div>
+      <div class="server-grid" id="serversGrid"><div class="loading-state">Loading managed servers…</div></div>
+    </section>
   </main>
-
   <script src="/shared.js"></script>
   <script>
-    async function loadServers() {
-      try {
-        const res = await fetch('/callback/check/userData');
-        const data = await res.json();
-        if (!data.authenticated) return;
-
-        const grid = document.getElementById('serversGrid');
-        grid.innerHTML = '';
-
-        data.user.guilds.forEach(guild => {
-          const hasBot = guild.botInGuild; // This depends on your backend logic
-          const icon = guild.icon 
-            ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`
-            : `https://cdn.discordapp.com/embed/avatars/0.png`;
-          
-          const card = document.createElement('div');
-          card.className = 'server-card';
-          card.innerHTML = `
-            <div class="server-banner"></div>
-            <img src="${icon}" class="server-icon" alt="${guild.name}">
-            ${hasBot ? '<span class="badge-bot">Connected</span>' : ''}
-            <div class="server-info">
-              <div class="server-name">${guild.name}</div>
-              <div class="server-id">ID: ${guild.id}</div>
-              ${hasBot 
-                ? `<a href="/servers/${guild.id}/overview" class="btn-manage"><i class="bx bx-cog"></i> Manage</a>`
-                : `<a href="/invitebot" class="btn-invite"><i class="bx bx-plus"></i> Add Bot</a>`
-              }
-            </div>
-          `;
-          grid.appendChild(card);
-        });
-      } catch (e) {
-        console.error("Failed to load servers", e);
+    (() => {
+      const grid = document.getElementById('serversGrid');
+      const search = document.getElementById('serverSearch');
+      const count = document.getElementById('serverCount');
+      let servers = [];
+      const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+      const label = permission => ({ owner: 'Owner', administrator: 'Administrator', manage_guild: 'Manage Server' }[permission] || 'Manage Server');
+      const iconFor = guild => guild.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
+      function render() {
+        const query = search.value.trim().toLowerCase();
+        const visible = servers.filter(guild => !query || String(guild.name || '').toLowerCase().includes(query));
+        count.textContent = servers.length;
+        if (!visible.length) { grid.innerHTML = `<div class="empty-state"><i class="bx bx-server"></i><strong>${servers.length ? 'No matching server' : 'No managed servers yet'}</strong><div>${servers.length ? 'Try another name.' : 'Ask a server owner to grant you Manage Server or Administrator permission.'}</div></div>`; return; }
+        grid.innerHTML = visible.map(guild => `<article class="server-card"><div class="server-card-top"><img class="server-icon" src="${iconFor(guild)}" alt=""><div class="server-name"><strong>${esc(guild.name || 'Unnamed server')}</strong><span>Discord server · ${esc(guild.id)}</span></div></div><span class="permission-badge"><i class="bx bx-shield-quarter"></i>${label(guild.managePermission)}</span><div class="server-card-footer"><small>Server workspace</small><a class="server-open" href="/myservers/${encodeURIComponent(guild.id)}/overview">Open <i class="bx bx-right-arrow-alt"></i></a></div></article>`).join('');
       }
-    }
-    
-    document.addEventListener('DOMContentLoaded', loadServers);
+      async function loadServers() {
+        try {
+          const response = await fetch('/api/guilds', { headers: { Accept: 'application/json' } });
+          if (!response.ok) throw new Error('managed_servers_unavailable');
+          const data = await response.json();
+          servers = Array.isArray(data.guilds) ? data.guilds : [];
+          render();
+        } catch (_) {
+          grid.innerHTML = '<div class="empty-state"><i class="bx bx-error-circle"></i><strong>Managed servers could not load</strong><div>Refresh the page or sign in again.</div></div>';
+        }
+      }
+      search.addEventListener('input', render);
+      document.addEventListener('DOMContentLoaded', loadServers);
+    })();
   </script>
 </body>
 </html>

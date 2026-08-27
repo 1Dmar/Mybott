@@ -46,6 +46,7 @@ const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
+const { canManageGuild, getManageableGuilds } = require('./guildAccess');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -208,20 +209,8 @@ function isAuthenticated(req, res, next) {
   res.redirect('/loading-auth');
 }
 
-function canManageGuild(req, guildId) {
-  if (!req.user?.id || !guildId) return false;
-  const ownerIds = String(process.env.OWNER_ID || '').split(',').map(id => id.trim()).filter(Boolean);
-  if (ownerIds.includes(req.user.id)) return true;
-  const guild = (req.user.guilds || []).find(item => item.id === guildId);
-  if (!guild) return false;
-  try {
-    const permissions = BigInt(guild.permissions || 0);
-    return (permissions & BigInt(0x8)) === BigInt(0x8) || (permissions & BigInt(0x20)) === BigInt(0x20);
-  } catch (_) { return false; }
-}
-
 function requireGuildManager(req, res, next) {
-  if (!canManageGuild(req, req.params.guildId)) return res.status(403).json({ success: false, error: 'guild_access_required' });
+  if (!canManageGuild(req.user, req.params.guildId)) return res.status(403).json({ success: false, error: 'guild_access_required' });
   next();
 }
 
@@ -294,7 +283,7 @@ app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, asyn
 
 app.get('/api/billing/config', isAuthenticated, (req, res) => {
   const catalog = getPaymentCatalog();
-  res.json({ success: true, plans: Object.values(PLANS), ...catalog, webhookUrl: '/api/billing/webhook/paypal' });
+  res.json({ success: true, plans: Object.values(PLANS), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
 });
 
 app.get('/api/guilds/:guildId/billing', isAuthenticated, requireGuildManager, async (req, res) => {
@@ -332,7 +321,8 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 
 // ── Guild API ─────────────────────────────────────────────────────
 app.get('/api/guilds', isAuthenticated, (req, res) => {
-  res.json({ success: true, guilds: req.user.guilds || [] });
+  const guilds = getManageableGuilds(req.user);
+  res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_guilds_only' });
 });
 
 app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
@@ -367,14 +357,15 @@ app.get('/callback/check/userData', (req, res) => {
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-      guilds: req.user.guilds
+      guilds: getManageableGuilds(req.user)
     }
   });
 });
 
 // Dashboard Protected Pages
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
-app.get('/servers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
+app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
+app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/intelligence', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
 app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'intelligence.html')));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
@@ -383,14 +374,13 @@ app.get('/premium', isAuthenticated, (req, res) => res.sendFile(path.join(dashDi
 // Dynamic Server Pages
 const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence'];
 serverPages.forEach(page => {
-  app.get(`/servers/:guildId/${page}`, isAuthenticated, (req, res) => {
+  const serveServerPage = (req, res) => {
     const filePath = path.join(dashDir, 'pages', `${page}.html`);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).sendFile(path.join(dashDir, '404', '404.html'));
-    }
-  });
+    if (fs.existsSync(filePath)) return res.sendFile(filePath);
+    return res.status(404).sendFile(path.join(dashDir, '404', '404.html'));
+  };
+  app.get(`/myservers/:guildId/${page}`, isAuthenticated, requireGuildManager, serveServerPage);
+  app.get(`/servers/:guildId/${page}`, isAuthenticated, requireGuildManager, (req, res) => res.redirect(302, `/myservers/${encodeURIComponent(req.params.guildId)}/${page}`));
 });
 
 // Shared Assets

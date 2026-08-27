@@ -1,18 +1,21 @@
-# ProMcBot dashboard
+# Dashboard
 
-The dashboard uses the shared shell in `dash/dashboard/shared.css` and `dash/dashboard/shared.js`. The shell is designed mobile-first: navigation collapses into a controlled rail/drawer, a backdrop closes the drawer, profile controls stay inside the header, and cards use a single-column layout at phone widths before expanding on larger screens.
+The Dashboard is organized around the server a user can actually manage. The primary picker is `/myservers`; it consumes `/api/guilds`, whose response is explicitly scoped to Guilds where the authenticated Discord user is an owner or has Administrator/Manage Server permission. View-only Guilds are not rendered in the picker, Premium server selector, Intelligence setup selector, or Action Center source list. The former `/servers` and `/servers/:guildId/*` paths remain compatibility redirects to `/myservers` and `/myservers/:guildId/*`.
 
-The overview page intentionally shows an empty state when the account has no connected guild or measured telemetry. It does not display fabricated server counts, rankings, player totals, or subscription state. A user is guided to `/intelligence` to connect Minecraft and receive measured signals. The plan label uses the centralized Free/Pro/Ultimate vocabulary rather than the ambiguous `Elite Free` label.
+The shared shell in `dash/dashboard/shared.css` and `dash/dashboard/shared.js` is mobile-first and server-aware. Desktop shows an expanded navigation sidebar with Workspace and Server Control categories plus the selected server context. Phone widths start with a closed drawer and backdrop. The shell constrains the logo, avatar, profile, header, and cards so they cannot cover page content or introduce horizontal overflow.
 
 | Surface | Behavior | Evidence state |
 |---|---|---|
-| Profile header | Contained banner, bounded avatar, non-overlapping user controls | Verified in a 390×844 preview |
-| Navigation | Mobile toggle, backdrop, close-on-route behavior | Implemented in shared shell |
-| Overview cards | One-column phone stack and flexible desktop grid | Verified without horizontal overflow in preview |
-| Server Intelligence | Evidence-first copy and onboarding link | No metric appears before telemetry exists |
-| Active Sessions | Loading/error/empty states rather than invented values | Implemented in page script |
-| Premium Center | Reads server-side entitlement and usage | Requires authenticated backend and provider configuration for payments |
+| `/myservers` | Compact search and server cards; only manageable Guilds; permission badge per card | Backed by `getManageableGuilds` and deterministic guild-access tests |
+| Server overview | Four summary cards, live setup strip, four next-step rows, and three quick controls | Guild data, activation, entitlement, and settings APIs; no fabricated metric |
+| Setup & intelligence | Eight short activation rows, progress, connection evidence, one-time plugin provisioning, collapsed advanced modules | Backend evidence and server-side entitlement; missing data remains explicit |
+| Setup & settings | Prefix, language, optional address, and focused next-step guidance | Guild-manager protected settings API |
+| Premium | Manager-only server selector, current plan, provider state, three concise plan cards, collapsed billing history | PayPal provider boundary; checkout disabled until configured |
+| Action Center | Evidence chips, advisory recommendations, notification read/resolve controls | Guild-scoped notification lifecycle; no fake executable action |
+| Account home | Managed-server count, current plan, one focused CTA, sessions | `/api/guilds` filtered response and real session endpoint |
 
-The visual reference supplied with the prompt showed a clipped avatar, a profile/header overlap, an oversized dark sidebar, and horizontal layout failure. The new shared styles remove those failure modes in the tested static preview. A live authenticated browser acceptance test still requires a configured Discord OAuth session and real browser viewport checks at 360, 390, 768, 1024, and 1440 pixels.
+The design intentionally uses fewer, denser cards instead of long explanatory panels. Each card answers one operational question: **which server, what is its state, what should I do next, and where do I configure it?** Longer details are placed behind `details` disclosure where appropriate.
 
-The temporary preview used for visual QA is not an alternate production page. It only served the real dashboard HTML and CSS without authentication redirect so layout could be inspected deterministically; no preview data is used by the application.
+The visual reference supplied with the prompt exposed a stretched logo overlay, clipped avatar, profile/header overlap, uncontrolled sidebar, and excessive page density. The shared shell and rebuilt server pages address these defects. Local HTTP preview QA currently covers 49 page/viewport combinations across `/myservers`, server overview, setup, settings, Action Center, and Premium at 360, 390, 412, 768, 1024, 1280, and 1440 pixels. The measured result is no horizontal overflow, no page errors, and correct mobile drawer/backdrop behavior. This is deterministic fixture QA, not a replacement for live OAuth/browser acceptance.
+
+A live authenticated browser test still requires a configured Discord OAuth session and real Discord Guild data. The server API filter is enforced on the backend as well as in the UI; opening a dynamic server URL without manager permission returns `403 guild_access_required` instead of relying on the picker to hide it.

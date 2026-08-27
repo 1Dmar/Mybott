@@ -13,7 +13,7 @@ module.exports = {
   run: async (_client, interaction) => {
     const baseUrl = process.env.PUBLIC_BASE_URL || 'https://promcbot.dev';
     const guildId = interaction.guild?.id;
-    const destination = guildId ? `${baseUrl}/servers/${guildId}/intelligence` : `${baseUrl}/intelligence`;
+    const destination = guildId ? `${baseUrl}/myservers/${guildId}/intelligence` : `${baseUrl}/intelligence`;
     return interaction.reply({
       content: `ابدأ إعداد السيرفر من لوحة ProMcBot: ${destination}\n\nستظهر لك خطوات Discord وMinecraft وtelemetry والهدف التشغيلي في مكان واحد.`,
       ephemeral: true,
