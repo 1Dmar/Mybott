@@ -3,7 +3,7 @@
 **التاريخ:** 27 أغسطس 2026
 **المستودع:** `1Dmar/Mybott`
 **الفرع المستخدم:** `copilot/update-bot-design-and-translation-system`
-**Commits هذه الدورة:** `d376123e9` (implementation)، `b78283a02` (report)، `ae1968337` (PayPal checkout diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge)
+**Commits هذه الدورة:** `d376123e9` (implementation)، `b78283a02` (report)، `ae1968337` (PayPal checkout diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) + `e264de336` (checkout diagnostics) + `813b31c78` (latest Premium merge)
 
 ## الملخص التنفيذي
 
@@ -21,7 +21,7 @@
 | الفرع | `copilot/update-bot-design-and-translation-system` |
 | `main` | لم يُعدّل |
 | فرع جديد | لم يُنشأ |
-| Commits | `d376123e9` (implementation) + `b78283a02` (report) + `ae1968337` (PayPal diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) |
+| Commits | `d376123e9` (implementation) + `b78283a02` (report) + `ae1968337` (PayPal diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) + `e264de336` (checkout diagnostics) + `813b31c78` (latest Premium merge) |
 | Logs page | لم تُعدّل `dash/dashboard/pages/logs.html` |
 | Models | لم تُعدّل أي ملفات تحت `bot/Models/**` |
 | الأسرار | لم تُضف tokens أو secrets إلى Git أو التقرير |
@@ -150,7 +150,7 @@ Maven أثبت compile/package والاختبارات الموجودة فقط. �
 
 ## المطلوب خارجيًا قبل الإنتاج
 
-يحتاج acceptance النهائي إلى deploy حديث بالـcommit `76316a234`، والتأكد من `MONGODB_URI` وDiscord OAuth/bot credentials و`PLUGIN_ENCRYPTION_KEY` وPayPal variables في Railway، ثم توليد config جديد ووضعه مع JAR الحالي في server Bukkit/Spigot/Paper. بعد تشغيل لاعب فعليًا، يجب مراجعة activation evidence بدل اعتبار heartbeat وحده comparison window.
+يحتاج acceptance النهائي إلى deploy حديث بالـcommit `813b31c78`، والتأكد من `MONGODB_URI` وDiscord OAuth/bot credentials و`PLUGIN_ENCRYPTION_KEY` وPayPal variables في Railway، ثم توليد config جديد ووضعه مع JAR الحالي في server Bukkit/Spigot/Paper. بعد تشغيل لاعب فعليًا، يجب مراجعة activation evidence بدل اعتبار heartbeat وحده comparison window.
 
 كما يحتاج `stats.promcbot.dev` إلى domain وDNS records يدويًا، وتحتاج payment flow إلى PayPal sandbox/live setup. يجب تدوير أي credential تم مشاركته سابقًا خارج secret manager، وعدم وضعه في Git أو chat.
 
