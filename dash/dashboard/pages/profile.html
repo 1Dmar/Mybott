@@ -1,17 +1,101 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Public profile · ProMcBot</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Public profile · ProMC Bot</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/dashboard/shared.css">
   <style>
-    :root{color-scheme:dark;--bg:#050a17;--panel:#0e1b3b;--panel-2:#11264d;--line:rgba(152,201,255,.2);--muted:#94a8c7;--text:#f6fbff;--cyan:#6ce1ff;--blue:#3285ff;--violet:#8457ff;--green:#65efb1}*{box-sizing:border-box}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:radial-gradient(circle at 12% 0,rgba(41,102,255,.28),transparent 32rem),radial-gradient(circle at 100% 26%,rgba(120,65,255,.22),transparent 28rem),linear-gradient(145deg,#071d49 0%,var(--bg) 55%);overflow-x:hidden}body:before{position:fixed;inset:0;z-index:-1;opacity:.45;background-image:radial-gradient(circle at 12% 24%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 82% 13%,#9deaff 0 1px,transparent 1.5px),radial-gradient(circle at 63% 78%,#fff 0 1px,transparent 1.5px),radial-gradient(circle at 32% 88%,#84cbff 0 1px,transparent 1.5px);background-size:220px 220px,270px 270px,240px 240px,190px 190px;content:'';pointer-events:none}.wrap{width:min(760px,calc(100% - 28px));margin:0 auto;padding:28px 0 54px}.top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-size:13px;font-weight:850;text-decoration:none}.mark{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;color:#8eeaff;font-size:31px;font-weight:950;letter-spacing:-.12em;line-height:1;text-shadow:0 0 22px rgba(90,214,255,.4)}.mark:after{display:none}.mark:before{content:'P'}.top-links{display:flex;gap:8px}.top-links a{padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.045);color:#c8d9f2;font-size:11px;text-decoration:none}.profile-card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:28px;background:linear-gradient(160deg,rgba(17,48,107,.88),rgba(7,17,42,.93));box-shadow:0 30px 90px rgba(0,5,25,.45),inset 0 1px rgba(255,255,255,.1)}.profile-card:after{position:absolute;right:-130px;top:-140px;width:350px;height:350px;border:1px solid rgba(116,213,255,.22);border-radius:50%;box-shadow:0 0 0 25px rgba(116,213,255,.04),0 0 0 50px rgba(116,213,255,.025);content:'';pointer-events:none}.banner{height:150px;background:radial-gradient(circle at 20% 20%,rgba(106,227,255,.65),transparent 25%),linear-gradient(135deg,#1553b8,#6237b9);background-size:cover;background-position:center}.content{position:relative;padding:0 clamp(20px,5vw,38px) 32px}.identity{display:flex;align-items:flex-end;gap:18px;margin-top:-44px}.avatar{width:100px;height:100px;border:5px solid #0d1e46;border-radius:30px;object-fit:cover;background:#0c1c3f;box-shadow:0 14px 30px rgba(0,0,0,.28)}.identity-copy{min-width:0;padding-bottom:7px}.kicker{color:var(--cyan);font-size:10px;font-weight:850;letter-spacing:.17em;text-transform:uppercase}.name{overflow:hidden;margin:6px 0 4px;font-size:clamp(28px,6vw,44px);font-weight:850;letter-spacing:-.055em;line-height:1.05;text-overflow:ellipsis}.handle{overflow:hidden;color:var(--muted);font-size:13px;text-overflow:ellipsis;white-space:nowrap}.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.badge{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border:1px solid rgba(138,222,255,.25);border-radius:999px;background:rgba(101,210,255,.1);color:#b3f1ff;font-size:9px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}.badge.bot{border-color:rgba(171,132,255,.32);background:rgba(132,87,255,.14);color:#d2c1ff}.status{display:flex;align-items:center;gap:8px;margin:22px 0 0;padding:13px 14px;border:1px solid rgba(151,201,255,.16);border-radius:15px;background:rgba(6,21,57,.45);color:#d7e6fb;font-size:12px}.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 13px var(--green)}.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}.stat{min-width:0;padding:13px;border:1px solid rgba(151,201,255,.15);border-radius:14px;background:rgba(25,57,117,.33)}.stat small{display:block;overflow:hidden;color:var(--muted);font-size:9px;font-weight:750;letter-spacing:.08em;text-overflow:ellipsis;text-transform:uppercase;white-space:nowrap}.stat strong{display:block;overflow:hidden;margin-top:6px;font-size:13px;text-overflow:ellipsis;white-space:nowrap}.about{margin:18px 0 0;color:#aebfda;font-size:12px;line-height:1.65}.share-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:22px;padding:14px;border:1px solid rgba(139,216,255,.24);border-radius:15px;background:linear-gradient(135deg,rgba(34,117,210,.18),rgba(111,66,210,.16))}.share-panel strong,.share-panel span{display:block}.share-panel strong{font-size:12px}.share-panel span{margin-top:3px;overflow:hidden;color:var(--muted);font-size:10px;text-overflow:ellipsis;white-space:nowrap}.share-button{flex:0 0 auto;min-height:36px;padding:8px 11px;border:1px solid rgba(128,224,255,.4);border-radius:10px;background:rgba(82,199,255,.14);color:#a9efff;font:inherit;font-size:10px;font-weight:800;cursor:pointer}.share-button:hover{background:rgba(82,199,255,.24)}.error{padding:36px;text-align:center}.error h1{margin:0 0 8px}.error p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}footer{margin-top:16px;color:#7689a8;font-size:10px;text-align:center}@media(max-width:560px){.wrap{width:min(100% - 20px,760px);padding-top:16px}.top{align-items:flex-start}.top-links a{padding:7px 8px}.banner{height:120px}.content{padding:0 16px 22px}.identity{align-items:flex-start;flex-direction:column;gap:12px;margin-top:-38px}.avatar{width:82px;height:82px;border-radius:24px}.identity-copy{padding:0}.name{font-size:31px}.stats-grid{grid-template-columns:1fr}.share-panel{align-items:flex-start;flex-direction:column}.share-button{width:100%}}
+    .public-profile-main { max-width: 1180px; }
+    .public-profile-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:20px; }
+    .public-profile-header h1 { margin:0 0 6px; font-size:clamp(24px,3vw,34px); letter-spacing:-.04em; }
+    .public-profile-header p { margin:0; color:var(--text-muted); font-size:13px; }
+    .public-profile-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .public-profile-actions a { display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:9px 13px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font-size:12px; font-weight:800; text-decoration:none; }
+    .public-profile-actions a.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .public-profile-card { position:relative; overflow:hidden; border:1px solid rgba(152,201,255,.22); border-radius:26px; background:linear-gradient(155deg,rgba(17,48,107,.94),rgba(7,17,42,.98)); box-shadow:0 30px 90px rgba(0,5,25,.45),inset 0 1px rgba(255,255,255,.1); }
+    .public-profile-card::after { position:absolute; right:-150px; top:-170px; width:390px; height:390px; border:1px solid rgba(116,213,255,.22); border-radius:50%; box-shadow:0 0 0 26px rgba(116,213,255,.04),0 0 0 54px rgba(116,213,255,.025); content:''; pointer-events:none; }
+    .public-profile-banner { min-height:190px; background:radial-gradient(circle at 15% 18%,rgba(106,227,255,.7),transparent 25%),linear-gradient(135deg,#1553b8,#6237b9); background-size:cover; background-position:center; }
+    .public-profile-content { position:relative; z-index:1; padding:0 clamp(22px,4vw,42px) 34px; }
+    .public-profile-identity { display:flex; align-items:flex-end; gap:20px; margin-top:-54px; }
+    .public-profile-avatar { width:112px; height:112px; flex:0 0 112px; border:5px solid #0d1e46; border-radius:30px; object-fit:cover; background:#0c1c3f; box-shadow:0 14px 30px rgba(0,0,0,.28); }
+    .public-profile-identity-copy { min-width:0; padding-bottom:8px; }
+    .public-profile-kicker { color:#6ce1ff; font-size:10px; font-weight:850; letter-spacing:.17em; text-transform:uppercase; }
+    .public-profile-name { overflow:hidden; margin:6px 0 4px; color:#f6fbff; font-size:clamp(30px,5vw,48px); font-weight:850; letter-spacing:-.055em; line-height:1.05; text-overflow:ellipsis; }
+    .public-profile-handle { overflow:hidden; color:#94a8c7; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
+    .public-profile-badges { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
+    .public-profile-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid rgba(138,222,255,.25); border-radius:999px; background:rgba(101,210,255,.1); color:#b3f1ff; font-size:9px; font-weight:850; letter-spacing:.07em; text-transform:uppercase; }
+    .public-profile-badge.bot { border-color:rgba(171,132,255,.32); background:rgba(132,87,255,.14); color:#d2c1ff; }
+    .public-profile-dot { width:8px; height:8px; border-radius:50%; background:#65efb1; box-shadow:0 0 13px #65efb1; }
+    .public-profile-status { display:flex; align-items:center; gap:9px; margin:24px 0 0; padding:14px 15px; border:1px solid rgba(151,201,255,.16); border-radius:15px; background:rgba(6,21,57,.45); color:#d7e6fb; font-size:13px; }
+    .public-profile-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px; }
+    .public-profile-stat { min-width:0; padding:14px; border:1px solid rgba(151,201,255,.15); border-radius:14px; background:rgba(25,57,117,.33); }
+    .public-profile-stat small { display:block; overflow:hidden; color:#94a8c7; font-size:9px; font-weight:750; letter-spacing:.08em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+    .public-profile-stat strong { display:block; overflow:hidden; margin-top:6px; color:#f6fbff; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
+    .public-profile-about { max-width:760px; margin:20px 0 0; color:#aebfda; font-size:13px; line-height:1.7; }
+    .public-profile-share { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:22px; padding:15px; border:1px solid rgba(139,216,255,.24); border-radius:15px; background:linear-gradient(135deg,rgba(34,117,210,.18),rgba(111,66,210,.16)); }
+    .public-profile-share strong,.public-profile-share span { display:block; }
+    .public-profile-share strong { color:#f6fbff; font-size:13px; }
+    .public-profile-share span { max-width:600px; margin-top:3px; overflow:hidden; color:#94a8c7; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+    .public-profile-share button { flex:0 0 auto; min-height:38px; padding:9px 12px; border:1px solid rgba(128,224,255,.4); border-radius:10px; background:rgba(82,199,255,.14); color:#a9efff; font:inherit; font-size:11px; font-weight:800; cursor:pointer; }
+    .public-profile-share button:hover { background:rgba(82,199,255,.24); }
+    .public-profile-copyright { display:flex; align-items:center; justify-content:center; gap:8px; margin:18px 0 0; color:var(--text-muted); font-size:11px; text-align:center; }
+    .public-profile-copyright .p-mark { color:#8eeaff; font-size:21px; font-weight:950; line-height:1; text-shadow:0 0 18px rgba(90,214,255,.4); }
+    .public-profile-error { padding:44px 24px; color:var(--text); text-align:center; }
+    .public-profile-error h2 { margin:0 0 8px; }
+    .public-profile-error p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.6; }
+    @media (max-width: 900px) { .public-profile-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 640px) { .public-profile-header { display:block; } .public-profile-actions { margin-top:12px; } .public-profile-actions a { flex:1 1 150px; } .public-profile-banner { min-height:145px; } .public-profile-content { padding:0 16px 24px; } .public-profile-identity { align-items:flex-start; flex-direction:column; gap:12px; margin-top:-42px; } .public-profile-avatar { width:88px; height:88px; flex-basis:88px; border-radius:24px; } .public-profile-identity-copy { padding:0; } .public-profile-name { font-size:34px; } .public-profile-stats { grid-template-columns:1fr; } .public-profile-share { align-items:flex-start; flex-direction:column; } .public-profile-share button { width:100%; } }
   </style>
 </head>
-<body><main class="wrap"><header class="top"><a class="brand" href="/"><span class="mark" aria-hidden="true"></span><span>ProMC Bot <span style="color:var(--muted);font-weight:650">Public Profile</span></span></a><nav class="top-links"><a href="/stats">Public Stats</a><a href="/">Dashboard</a></nav></header><section class="profile-card" id="card"><div class="error"><h1>Loading profile</h1><p>Fetching the public identity and optional profile presentation.</p></div></section><footer><strong>ProMC Bot</strong> · © <span id="copyrightYear"></span> · Public profile · no private guild membership or hidden account data is displayed.</footer></main>
-<script>
-  const identifier = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
-  const esc = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const card = document.getElementById('card');
-  document.getElementById('copyrightYear').textContent = new Date().getFullYear();
-  (async()=>{try{const r=await fetch('/api/public/profile/'+encodeURIComponent(identifier));const d=await r.json();if(!r.ok)throw new Error(d.message||'Profile unavailable');const p=d.profile||{};const profileUrl=p.publicPath||location.href;card.innerHTML='<div class="banner" '+(p.banner?'style="background-image:linear-gradient(135deg,rgba(9,25,62,.25),rgba(66,37,133,.35)),url(\''+esc(p.banner)+'\')"':'')+'></div><div class="content"><div class="identity"><img class="avatar" src="'+esc(p.avatar)+'" alt=""><div class="identity-copy"><div class="kicker">Public Discord profile</div><div class="name">'+esc(p.globalName||p.username)+'</div><div class="handle">@'+esc(p.username)+'</div><div class="badges"><span class="badge"><span class="status-dot"></span>Public profile</span>'+(p.bot?'<span class="badge bot">Bot account</span>':'')+'</div></div></div>'+(p.customStatus?'<div class="status"><span class="status-dot"></span><span>'+esc(p.customStatus)+'</span></div>':'')+'<div class="stats-grid"><div class="stat"><small>Public username</small><strong>@'+esc(p.username)+'</strong></div><div class="stat"><small>Discord handle</small><strong>@'+esc(p.discordUsername||p.username)+'</strong></div><div class="stat"><small>Profile ID</small><strong>'+esc(p.id)+'</strong></div><div class="stat"><small>Data source</small><strong>Discord public profile</strong></div></div><p class="about">A shareable identity card for Discord communities. ProMC Bot shows only public profile information and optional profile presentation; it does not invent levels, XP, ranks, or private activity.</p><div class="share-panel"><div><strong>Share this profile</strong><span id="shareUrl">'+esc(new URL(profileUrl,location.origin).href)+'</span></div><button class="share-button" id="copyProfile" type="button">Copy public link</button></div></div>';document.getElementById('copyProfile').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(new URL(profileUrl,location.origin).href);document.getElementById('copyProfile').textContent='Copied';setTimeout(()=>document.getElementById('copyProfile').textContent='Copy public link',1800)}catch(_){document.getElementById('copyProfile').textContent='Copy unavailable'}});}catch(e){card.innerHTML='<div class="error"><h1>Profile unavailable</h1><p>'+esc(e.message||'This public profile could not be found or is not available through the connected Discord client.')+'</p></div>';}})();
-</script></body></html>
+<body class="dark">
+  <nav class="navbar" aria-label="Top navigation">
+    <div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div>
+    <div class="navbar_content"><div class="nav-icon-btn" id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><img src="/dashboard/logo.png" class="user-avatar" data-user-avatar id="userBtn" alt="Account"></div>
+  </nav>
+
+  <nav class="sidebar close" id="sidebar" aria-label="Primary navigation">
+    <div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot logo"></span><span class="logo_name">ProMcBot</span><button class="bx bx-x" id="sidebar-close" type="button" aria-label="Close navigation"></button></div>
+    <div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="Account avatar" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>Account</span></div></div></div></div>
+  </nav>
+
+  <main class="main-content public-profile-main">
+    <header class="public-profile-header">
+      <div><div class="eyebrow">ProMC Bot user page</div><h1>Public profile</h1><p>A shareable identity card with the same navigation shell as the main dashboard.</p></div>
+      <div class="public-profile-actions"><a class="primary" href="/dashboard"><i class="bx bx-home-alt-2"></i> Dashboard</a><a href="/stats"><i class="bx bx-bar-chart-alt-2"></i> Public stats</a></div>
+    </header>
+    <section class="public-profile-card" id="card" aria-live="polite"><div class="public-profile-error"><h2>Loading profile</h2><p>Fetching the public identity and optional profile presentation.</p></div></section>
+    <div class="public-profile-copyright"><span class="p-mark" aria-hidden="true">P</span><span>© <span id="copyrightYear"></span> ProMC Bot. All rights reserved.</span></div>
+  </main>
+
+  <script src="/dashboard/shared.js"></script>
+  <script>
+    (() => {
+      const identifier = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+      const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+      const card = document.getElementById('card');
+      document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      (async () => {
+        try {
+          const response = await fetch('/api/public/profile/' + encodeURIComponent(identifier));
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || 'Profile unavailable');
+          const profile = data.profile || {};
+          const profileUrl = profile.publicPath || location.href;
+          const safeUrl = esc(new URL(profileUrl, location.origin).href);
+          card.innerHTML = '<div class="public-profile-banner" ' + (profile.banner ? 'style="background-image:linear-gradient(135deg,rgba(9,25,62,.25),rgba(66,37,133,.35)),url(\'' + esc(profile.banner) + '\')"' : '') + '></div>' +
+            '<div class="public-profile-content"><div class="public-profile-identity"><img class="public-profile-avatar" src="' + esc(profile.avatar) + '" alt="' + esc(profile.globalName || profile.username) + '"><div class="public-profile-identity-copy"><div class="public-profile-kicker">Public Discord profile</div><div class="public-profile-name">' + esc(profile.globalName || profile.username) + '</div><div class="public-profile-handle">@' + esc(profile.username) + '</div><div class="public-profile-badges"><span class="public-profile-badge"><span class="public-profile-dot"></span>Public profile</span>' + (profile.bot ? '<span class="public-profile-badge bot">Bot account</span>' : '') + '</div></div></div>' +
+            (profile.customStatus ? '<div class="public-profile-status"><span class="public-profile-dot"></span><span>' + esc(profile.customStatus) + '</span></div>' : '') +
+            '<div class="public-profile-stats"><div class="public-profile-stat"><small>Public username</small><strong>@' + esc(profile.username) + '</strong></div><div class="public-profile-stat"><small>Discord handle</small><strong>@' + esc(profile.discordUsername || profile.username) + '</strong></div><div class="public-profile-stat"><small>Profile ID</small><strong>' + esc(profile.id) + '</strong></div><div class="public-profile-stat"><small>Data source</small><strong>Discord public profile</strong></div></div>' +
+            '<p class="public-profile-about">A shareable identity card for Discord communities. ProMC Bot shows only public profile information and optional profile presentation; it does not invent levels, XP, ranks, or private activity.</p>' +
+            '<div class="public-profile-share"><div><strong>Share this profile</strong><span>' + safeUrl + '</span></div><button id="copyProfile" type="button">Copy public link</button></div></div>';
+          document.getElementById('copyProfile').addEventListener('click', async () => { try { await navigator.clipboard.writeText(new URL(profileUrl, location.origin).href); document.getElementById('copyProfile').textContent = 'Copied'; setTimeout(() => document.getElementById('copyProfile').textContent = 'Copy public link', 1800); } catch (_) { document.getElementById('copyProfile').textContent = 'Copy unavailable'; } });
+        } catch (error) {
+          card.innerHTML = '<div class="public-profile-error"><h2>Profile unavailable</h2><p>' + esc(error.message || 'This public profile could not be found.') + '</p></div>';
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
