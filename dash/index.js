@@ -54,6 +54,7 @@ const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./setting
 const { getConfigurationStatus } = require('./configurationStatus');
 const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
 const { buildPublicStats } = require('./publicStats');
+const { validatePublicUsername, normalizePublicUsername } = require('./publicProfile');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -273,18 +274,42 @@ app.get('/api/logout', (req, res) => {
 });
 
 // ── User API ──────────────────────────────────────────────────────
-app.get('/api/user/profile', isAuthenticated, (req, res) => {
-  res.json({
-    success: true,
-    user: {
-      id: req.user.id,
-      username: req.user.username,
-      global_name: req.user.global_name || req.user.username,
-      avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-      banner: null,
-      accent_color: req.user.accent_color || '#FF512F'
-    }
-  });
+app.get('/api/user/profile', isAuthenticated, async (req, res) => {
+  try {
+    const settings = mongoose.connection.readyState === 1 ? await UserProfile.findOne({ userId: req.user.id }).lean() : null;
+    res.json({
+      success: true,
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        public_username: settings?.username || '',
+        public_url: settings?.username ? `/u/${encodeURIComponent(settings.username)}` : `/u/${encodeURIComponent(req.user.id)}`,
+        global_name: req.user.global_name || req.user.username,
+        avatar: req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png',
+        banner: settings?.bannerType === 'image' ? settings.banner : null,
+        accent_color: req.user.accent_color || '#3285ff',
+        custom_status: settings?.customStatus || ''
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'profile_unavailable' });
+  }
+});
+
+app.patch('/api/user/profile', isAuthenticated, async (req, res) => {
+  const validation = validatePublicUsername(req.body?.public_username);
+  if (!validation.ok) return res.status(validation.error === 'reserved_public_username' ? 409 : 400).json({ success: false, error: validation.error, message: validation.message });
+  const username = validation.username;
+  if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, error: 'database_unavailable', message: 'Profile settings are temporarily unavailable.' });
+  try {
+    const collision = await UserProfile.findOne({ username, userId: { $ne: req.user.id } }).select('_id').lean();
+    if (collision) return res.status(409).json({ success: false, error: 'public_username_taken', message: 'That public username is already in use.' });
+    const settings = await UserProfile.findOneAndUpdate({ userId: req.user.id }, { $set: { username, updatedAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+    res.json({ success: true, public_username: settings.username, public_url: `/u/${encodeURIComponent(settings.username)}` });
+  } catch (error) {
+    if (error?.code === 11000) return res.status(409).json({ success: false, error: 'public_username_taken', message: 'That public username is already in use.' });
+    res.status(500).json({ success: false, error: 'profile_update_failed' });
+  }
 });
 
 app.get('/api/user/sessions', isAuthenticated, (req, res) => {
@@ -593,21 +618,27 @@ app.get('/api/public/stats/:guildId', publicStatsLimiter, requireDatabaseReady, 
 
 app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) => {
   const identifier = String(req.params.identifier || '').trim();
-  if (!/^\d{5,25}$/.test(identifier) && !/^[A-Za-z0-9_.-]{2,32}$/.test(identifier)) return res.status(400).json({ success: false, error: 'invalid_public_profile_identifier' });
+  const normalizedIdentifier = normalizePublicUsername(identifier);
+  if (!/^\d{5,25}$/.test(identifier) && !/^[a-z0-9_.-]{3,32}$/.test(normalizedIdentifier)) return res.status(400).json({ success: false, error: 'invalid_public_profile_identifier' });
   try {
     const client = getBotClient();
-    let user = null;
-    if (/^\d{5,25}$/.test(identifier)) {
-      user = await client?.users?.fetch(identifier);
-    } else {
+    const databaseReady = mongoose.connection.readyState === 1;
+    let profileSettings = null;
+    if (databaseReady) {
+      const lookup = /^\d{5,25}$/.test(identifier) ? { userId: identifier } : { username: normalizedIdentifier };
+      profileSettings = await UserProfile.findOne(lookup).lean();
+    }
+    const resolvedUserId = profileSettings?.userId || (/^\d{5,25}$/.test(identifier) ? identifier : null);
+    let user = resolvedUserId ? await client?.users?.fetch(resolvedUserId) : null;
+    if (!user) {
       const needle = identifier.toLowerCase();
       user = client?.users?.cache?.find(candidate => [candidate.username, candidate.globalName, candidate.tag].filter(Boolean).some(value => String(value).toLowerCase() === needle)) || null;
     }
-    if (!user) return res.status(404).json({ success: false, error: 'public_profile_not_found', message: 'Public profile not found. Use a username already visible to the connected bot or the Discord user ID.' });
-    let profileSettings = null;
-    if (mongoose.connection.readyState === 1) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
+    if (!user) return res.status(404).json({ success: false, error: 'public_profile_not_found', message: 'Public profile not found. Set a public username in your profile settings or use the Discord user ID.' });
+    if (databaseReady && !profileSettings) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
+    const publicUsername = profileSettings?.username || user.username;
     const customBanner = profileSettings?.bannerType === 'image' && profileSettings.banner ? profileSettings.banner : null;
-    res.json({ success: true, profile: { id: user.id, username: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/user/${encodeURIComponent(user.username)}` }, privacy: { source: 'Discord public profile', privateGuildData: false, rawActivity: false } });
+    res.json({ success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } });
   } catch (error) {
     res.status(404).json({ success: false, error: 'public_profile_not_found' });
   }
@@ -615,9 +646,9 @@ app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) 
 
 app.get('/stats', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
 app.get('/stats/:guildId', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
-app.get('/profile/:identifier', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'profile.html')));
-app.get('/user/:username', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'profile.html')));
-app.get('/u/:identifier', (req, res) => res.redirect(302, `/profile/${encodeURIComponent(req.params.identifier)}`));
+app.get('/u/:identifier', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'profile.html')));
+app.get('/profile/:identifier', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.identifier)}`));
+app.get('/user/:username', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.username)}`));
 
 // Dashboard Protected Pages
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));

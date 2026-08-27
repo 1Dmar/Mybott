@@ -14,6 +14,17 @@
     .dashboard-actions a { display:inline-flex; align-items:center; gap:6px; padding:9px 12px; border-radius:10px; background:var(--primary); color:#fff; text-decoration:none; font-size:13px; font-weight:700; }
     .dashboard-actions a.secondary { background:var(--surface); color:var(--primary); border:1px solid var(--border); }
     .empty-state { padding:18px; border:1px dashed var(--border); border-radius:12px; color:var(--text-muted); background:var(--surface-2); }
+    .public-profile-settings { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:end; margin:0 0 24px; padding:20px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); box-shadow:var(--shadow-sm); }
+    .public-profile-settings h2 { margin:0 0 5px; font-size:18px; }
+    .public-profile-settings p { margin:0; color:var(--text-muted); font-size:12px; line-height:1.5; }
+    .profile-username-field { display:block; margin-top:15px; color:var(--text-secondary); font-size:12px; font-weight:750; }
+    .profile-username-field input { display:block; max-width:520px; margin-top:6px; }
+    .profile-settings-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .profile-settings-actions button,.profile-settings-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; font-weight:800; text-decoration:none; cursor:pointer; }
+    .profile-settings-actions button { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .profile-settings-actions button:disabled { cursor:wait; opacity:.6; }
+    .profile-settings-message { min-height:18px; margin-top:8px !important; color:var(--text-muted); }
+    @media (max-width:768px) { .public-profile-settings { grid-template-columns:1fr; } .profile-settings-actions button,.profile-settings-actions a { width:100%; } }
     @media (max-width:768px) { .dashboard-intro { display:block; } .dashboard-actions { margin-top:12px; } }
   </style>
 </head>
@@ -64,6 +75,11 @@
       </div>
     </section>
 
+    <section class="public-profile-settings" aria-labelledby="public-profile-title">
+      <div><h2 id="public-profile-title">Public profile link</h2><p>Choose the username people will see on your shareable ProMcBot user card. Use 3–32 lowercase letters, numbers, dots, underscores, or hyphens.</p><label class="profile-username-field" for="publicUsername">Username<input id="publicUsername" name="public_username" maxlength="32" pattern="[a-z0-9_.-]{3,32}" placeholder="alim" autocomplete="off"><span id="profileSettingsMessage" class="profile-settings-message" aria-live="polite"></span></label></div>
+      <div class="profile-settings-actions"><button type="button" id="savePublicUsername"><i class="bx bx-save"></i> Save username</button><a id="publicProfileLink" href="/u" target="_blank" rel="noopener"><i class="bx bx-link-external"></i> Open public card</a></div>
+    </section>
+
     <section class="dashboard-intro" aria-labelledby="overview-title">
       <div>
         <h1 id="overview-title">Overview</h1>
@@ -104,7 +120,11 @@
         try {
           const response = await fetch('/api/user/profile');
           const data = await response.json();
-          if (data.success && data.user.accent_color) $('userBanner').style.background = data.user.accent_color;
+          if (data.success) {
+            if (data.user.accent_color) $('userBanner').style.background = data.user.accent_color;
+            $('publicUsername').value = data.user.public_username || '';
+            $('publicProfileLink').href = data.user.public_url || `/u/${encodeURIComponent(data.user.id)}`;
+          }
         } catch (error) { console.warn('Profile details unavailable:', error.message); }
       }
 
@@ -144,6 +164,21 @@
         }
       }
 
+      $('savePublicUsername').addEventListener('click', async () => {
+        const username = $('publicUsername').value.trim().toLowerCase();
+        const message = $('profileSettingsMessage');
+        const button = $('savePublicUsername');
+        if (!/^[a-z0-9_.-]{3,32}$/.test(username)) { message.textContent = 'Use 3–32 lowercase letters, numbers, dots, underscores, or hyphens.'; return; }
+        button.disabled = true; message.textContent = 'Saving…';
+        try {
+          const response = await fetch('/api/user/profile', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ public_username: username }) });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || data.error || 'Could not save username.');
+          $('publicProfileLink').href = data.public_url;
+          message.textContent = `Saved. Your public card is ${data.public_url}`;
+        } catch (error) { message.textContent = error.message; }
+        finally { button.disabled = false; }
+      });
       $('year').textContent = new Date().getFullYear();
       loadProfile();
       loadSessions();

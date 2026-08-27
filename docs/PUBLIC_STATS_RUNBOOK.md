@@ -2,7 +2,7 @@
 
 ## النتيجة التي يقدّمها الكود
 
-يقدّم ProMcBot صفحة عامة في `/stats/<DISCORD_GUILD_ID>`، مع إبقاء `/stats?guildId=<DISCORD_GUILD_ID>` متاحًا للتوافق، وملف profile عام في `/profile/<DISCORD_USER_ID>` أو `/user/<USERNAME>` عندما يكون المستخدم ظاهرًا في cache الخاص بالـ bot. صفحة الإحصاءات تعرض **مجاميع telemetry فقط**: آخر عدد لاعبين مقاس، عدد أحداث الدخول والخروج خلال 24 ساعة، عدد أحداث telemetry، وحالة آخر heartbeat. لا تعرض أسماء اللاعبين، قائمة أعضاء Discord، raw events، أو بيانات guild الخاصة.
+يقدّم ProMcBot صفحة عامة في `/stats/<DISCORD_GUILD_ID>`، مع إبقاء `/stats?guildId=<DISCORD_GUILD_ID>` متاحًا للتوافق، وملف profile عام في `/u/<USERNAME>` أو `/u/<DISCORD_USER_ID>`. يحدد المستخدم الـusername من لوحة Dashboard في إعدادات Public profile link، ثم يصبح هذا الاسم هو الرابط العام الأساسي. صفحة الإحصاءات تعرض **مجاميع telemetry فقط**: آخر عدد لاعبين مقاس، عدد أحداث الدخول والخروج خلال 24 ساعة، عدد أحداث telemetry، وحالة آخر heartbeat. لا تعرض أسماء اللاعبين، قائمة أعضاء Discord، raw events، أو بيانات guild الخاصة.
 
 يستخدم أمر Discord `/stats` الخيار `Public Stats Card` لإنشاء embed يحتوي على الرابط العام وشرح الخصوصية. الرابط يعتمد على `PUBLIC_STATS_URL`، ثم يعود إلى `PUBLIC_BASE_URL`، ثم إلى `https://promcbot.dev` إذا لم يضبط أي منهما. يشارك الأمر الآن المسار النظيف `/stats/<DISCORD_GUILD_ID>`، ولا يدّعي أن `stats.promcbot.dev` جاهز قبل ربطه فعليًا بالخدمة.
 
@@ -33,7 +33,7 @@ https://stats.promcbot.dev/api/public/stats/<guild-id>
 
 ## الخصوصية والتشغيل
 
-الـpublic stats endpoint لا يتطلب OAuth. لذلك يجب مشاركة `guildId` فقط للسيرفر الذي يريد صاحبه نشر بطاقته، وعدم وضع raw telemetry أو player identifiers في response. endpoint profile العام يقبل Discord user ID أو username مرئيًا لدى Discord client؛ لا يوجد بحث عالمي عن usernames ولا uniqueness claim خارج cache. لذلك يبقى `/profile/<id>` الرابط الأكثر موثوقية، بينما `/user/<username>` رابط مريح للحسابات التي يستطيع bot حلّها، و`/u/<id-or-username>` alias للتوافق.
+الـpublic stats endpoint لا يتطلب OAuth. لذلك يجب مشاركة `guildId` فقط للسيرفر الذي يريد صاحبه نشر بطاقته، وعدم وضع raw telemetry أو player identifiers في response. endpoint profile العام يقبل username محفوظًا في UserProfile أو Discord user ID. يتم التحقق من تفرد username وصيغته عند الحفظ، ويجلب endpoint هوية Discord المرتبطة به. `/u/<username>` هو الرابط الأساسي، و`/u/<id>` يعمل للحالات التي لم يحدد صاحبها username بعد؛ أما `/profile/...` و`/user/...` فهما redirects للتوافق.
 
 إيقاف النشر العام على مستوى server يحتاج إعداد privacy صريحًا في دورة لاحقة؛ لا ينبغي إخفاء حقيقة أن المسار الحالي public بمجرد إخفاء الرابط. حتى يتم اعتماد ذلك الإعداد، لا تُعلن روابط stats إلا للسيرفرات التي وافق مالكوها على مشاركتها.
 
