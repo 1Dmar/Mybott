@@ -6,78 +6,804 @@
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <style>
-    .premium-page { max-width: 1180px; }
-    .premium-hero { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
-    .premium-hero h1 { margin: 0 0 7px; }
-    .premium-hero p { max-width: 620px; margin: 0; color: var(--text-muted); }
-    .server-field { min-width: min(300px, 100%); }
-    .server-field label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 11px; font-weight: 750; }
-    .server-context { display: flex; align-items: center; gap: 10px; min-width: min(300px, 100%); padding: 11px 13px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); }
-    .server-context img { width: 34px; height: 34px; border-radius: 10px; object-fit: cover; }
-    .server-context span { display: block; color: var(--text-muted); font-size: 11px; }
-    .server-context strong { display: block; margin-top: 2px; color: var(--text); font-size: 14px; }
-    .notice { margin: 0 0 16px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--warning) 10%, var(--surface)); color: var(--text); font-size: 13px; }
-    .premium-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(260px, .95fr); gap: 16px; }
-    .current-card, .payment-card, .plans-wrap, .history-card { min-width: 0; padding: 19px; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); }
-    .current-card { color: #fff; border: 0; background: radial-gradient(circle at 90% 0, rgba(255,255,255,.2), transparent 35%), linear-gradient(135deg, #252b75, #5b21b6); }
-    .current-card .muted, .current-card .meta-label { color: rgba(255,255,255,.7); }
-    .current-card h2, .payment-card h2, .plans-wrap h2, .history-card h2 { margin: 0 0 5px; font-size: 18px; }
-    .current-card h2 { font-size: 25px; }
-    .muted { color: var(--text-muted); }
-    .plan-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
-    .meta-label { display: block; margin-bottom: 3px; font-size: 10px; }
-    .meta-value { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 750; }
-    .payment-card { display: flex; flex-direction: column; }
-    .payment-card > p { margin: 0 0 15px; font-size: 13px; }
-    .method-list { display: grid; gap: 8px; margin-bottom: 14px; }
-    .method-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 11px; border-radius: 11px; background: var(--surface-2); font-size: 13px; }
-    .method-row small { color: var(--text-muted); text-align: right; }
-    .method-row .ready { color: var(--success); font-weight: 750; }
-    .diagnostic-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -4px 0 14px; }
-    .diagnostic-row button { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 750; }
-    .diagnostic-row button:disabled { cursor: wait; opacity: .65; }
-    .diagnostic-status { color: var(--text-muted); font-size: 12px; }
-    .diagnostic-result { margin: 0 0 14px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-2); color: var(--text-muted); font-size: 12px; line-height: 1.5; }
-    .diagnostic-result strong { color: var(--text); }
-    .plans-wrap { grid-column: 1 / -1; position: relative; overflow: hidden; }
-    .plans-wrap::after { content: 'PRO MCBOT'; position: absolute; top: 15px; right: 18px; color: color-mix(in srgb, var(--primary) 42%, transparent); font-size: 10px; letter-spacing: .16em; font-weight: 850; pointer-events: none; }
-    .plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-    .plan { display: flex; flex-direction: column; min-width: 0; padding: 15px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); }
-    .plan.active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
-    .plan h3 { margin: 0 0 4px; font-size: 16px; }
-    .plan-tag { display: inline-flex; width: max-content; margin-bottom: 10px; padding: 4px 7px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); font-size: 9px; font-weight: 850; letter-spacing: .11em; }
-    .plan.active .plan-tag { border-color: color-mix(in srgb, var(--primary) 55%, var(--border)); color: var(--primary); background: var(--primary-soft); }
-    .price { color: var(--text); font-size: 24px; font-weight: 850; }
-    .price small { color: var(--text-muted); font-size: 11px; font-weight: 500; }
-    .plan p { min-height: 38px; margin: 7px 0 12px; color: var(--text-muted); font-size: 12px; }
-    .plan-line { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 11px; }
-    .plan-line strong { color: var(--text); }
-    button.primary, button.secondary { min-height: 39px; margin-top: 13px; border-radius: 10px; font-weight: 750; cursor: pointer; }
-    button.primary { border: 0; background: var(--primary); color: #fff; }
-    button.secondary { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
-    button:disabled { cursor: not-allowed; opacity: .55; }
-    .history-card { grid-column: 1 / -1; }
-    .history-card details { margin-top: 8px; }
-    .history-card summary { cursor: pointer; color: var(--primary); font-size: 13px; font-weight: 750; }
-    .table-wrap { margin-top: 10px; }
-    .table { width: 100%; border-collapse: collapse; }
-    .table th, .table td { padding: 9px 6px; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; text-align: left; }
-    .table th { color: var(--text-muted); font-weight: 650; }
-    @media (max-width: 900px) { .premium-hero { display: block; } .server-field { margin-top: 14px; } .premium-grid { grid-template-columns: 1fr; } .plans-wrap, .history-card { grid-column: auto; } }
-    @media (max-width: 640px) { .plans { grid-template-columns: 1fr; } .plan-meta { gap: 6px; } .current-card, .payment-card, .plans-wrap, .history-card { padding: 15px; } }
+    :root {
+      --premium-ink: #07132e;
+      --premium-navy: #081a4b;
+      --premium-blue: #1d6dff;
+      --premium-cyan: #51d6ff;
+      --premium-violet: #8357ff;
+      --premium-line: rgba(164, 199, 255, .22);
+      --premium-glass: rgba(8, 25, 66, .72);
+      --premium-glass-soft: rgba(16, 43, 103, .52);
+    }
+
+    body {
+      background: #07142f;
+    }
+
+    body:not(.dark) {
+      background: #eaf2ff;
+    }
+
+    .premium-page {
+      position: relative;
+      isolation: isolate;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: clamp(22px, 4vw, 52px);
+      overflow: hidden;
+      border: 1px solid rgba(147, 193, 255, .18);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 8% 8%, rgba(52, 128, 255, .36), transparent 28%),
+        radial-gradient(circle at 92% 12%, rgba(127, 76, 255, .24), transparent 30%),
+        linear-gradient(145deg, #0b2768 0%, #081a47 42%, #07132e 100%);
+      box-shadow: 0 28px 80px rgba(1, 10, 32, .42), inset 0 1px rgba(255, 255, 255, .1);
+      color: #fff;
+    }
+
+    .premium-page::before,
+    .premium-page::after {
+      position: absolute;
+      z-index: -1;
+      content: '';
+      pointer-events: none;
+    }
+
+    .premium-page::before {
+      inset: 0;
+      opacity: .72;
+      background-image:
+        radial-gradient(circle at 14% 22%, rgba(255,255,255,.9) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 74% 14%, rgba(130,214,255,.8) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 42% 52%, rgba(255,255,255,.62) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 88% 67%, rgba(255,255,255,.72) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 24% 82%, rgba(108,190,255,.72) 0 1px, transparent 1.5px);
+      background-size: 180px 180px, 240px 240px, 210px 210px, 260px 260px, 220px 220px;
+      mix-blend-mode: screen;
+    }
+
+    .premium-page::after {
+      top: -160px;
+      right: -100px;
+      width: 360px;
+      height: 360px;
+      border: 1px solid rgba(103, 198, 255, .2);
+      border-radius: 50%;
+      box-shadow: 0 0 0 28px rgba(103, 198, 255, .035), 0 0 0 56px rgba(103, 198, 255, .025);
+    }
+
+    .premium-page h1,
+    .premium-page h2,
+    .premium-page h3,
+    .premium-page p {
+      position: relative;
+    }
+
+    .premium-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+      align-items: end;
+      gap: 28px;
+      margin-bottom: 22px;
+    }
+
+    .premium-hero-copy {
+      max-width: 740px;
+    }
+
+    .premium-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 17px;
+      padding: 7px 11px;
+      border: 1px solid rgba(130, 211, 255, .34);
+      border-radius: 999px;
+      background: rgba(75, 173, 255, .1);
+      color: #8be4ff;
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .premium-kicker i {
+      color: #dff8ff;
+      font-size: 15px;
+    }
+
+    .premium-hero h1 {
+      max-width: 720px;
+      margin: 0;
+      color: #fff;
+      font-size: clamp(35px, 5.7vw, 70px);
+      font-weight: 850;
+      letter-spacing: -.065em;
+      line-height: .98;
+    }
+
+    .premium-hero h1 span {
+      display: block;
+      color: #80dbff;
+      text-shadow: 0 0 26px rgba(71, 195, 255, .24);
+    }
+
+    .premium-hero p {
+      max-width: 650px;
+      margin: 20px 0 0;
+      color: rgba(226, 239, 255, .76);
+      font-size: clamp(14px, 1.7vw, 17px);
+      line-height: 1.72;
+    }
+
+    .server-field {
+      min-width: 0;
+    }
+
+    .server-field label {
+      display: block;
+      margin: 0 0 9px 4px;
+      color: rgba(210, 229, 255, .62);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .server-context {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid var(--premium-line);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(98, 177, 255, .2), rgba(23, 44, 97, .68));
+      box-shadow: inset 0 1px rgba(255, 255, 255, .1), 0 16px 30px rgba(2, 12, 40, .2);
+      backdrop-filter: blur(18px);
+    }
+
+    .server-context img {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 14px;
+      object-fit: cover;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .server-context div {
+      min-width: 0;
+    }
+
+    .server-context span {
+      display: block;
+      color: rgba(218, 234, 255, .62);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .server-context strong {
+      display: block;
+      overflow: hidden;
+      margin-top: 2px;
+      color: #fff;
+      font-size: 15px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .premium-proof {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+
+    .proof-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding: 12px 13px;
+      border: 1px solid rgba(160, 202, 255, .16);
+      border-radius: 15px;
+      background: rgba(9, 31, 77, .5);
+      color: rgba(225, 239, 255, .8);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .proof-item i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 27px;
+      height: 27px;
+      flex: 0 0 27px;
+      border-radius: 9px;
+      background: rgba(72, 192, 255, .14);
+      color: #7bdcff;
+      font-size: 16px;
+    }
+
+    .notice {
+      margin: 0 0 18px;
+      padding: 13px 15px;
+      border: 1px solid rgba(255, 197, 92, .38);
+      border-radius: 15px;
+      background: rgba(105, 69, 20, .34);
+      color: #ffe5ac;
+      font-size: 13px;
+      box-shadow: inset 0 1px rgba(255, 255, 255, .06);
+    }
+
+    .premium-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+      gap: 16px;
+    }
+
+    .current-card,
+    .payment-card,
+    .plans-wrap,
+    .history-card {
+      min-width: 0;
+      border: 1px solid rgba(164, 199, 255, .2);
+      border-radius: 23px;
+      box-shadow: 0 18px 40px rgba(0, 9, 35, .22), inset 0 1px rgba(255, 255, 255, .08);
+      backdrop-filter: blur(16px);
+    }
+
+    .current-card {
+      position: relative;
+      overflow: hidden;
+      padding: 26px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 88% 4%, rgba(146, 235, 255, .48), transparent 22%),
+        radial-gradient(circle at 2% 100%, rgba(73, 117, 255, .35), transparent 32%),
+        linear-gradient(138deg, rgba(37, 105, 201, .9), rgba(72, 37, 158, .94));
+    }
+
+    .current-card::after {
+      position: absolute;
+      right: -46px;
+      bottom: -90px;
+      width: 240px;
+      height: 240px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 50%;
+      box-shadow: 0 0 0 20px rgba(255,255,255,.035), 0 0 0 42px rgba(255,255,255,.025);
+      content: '';
+      pointer-events: none;
+    }
+
+    .card-overline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: rgba(242, 249, 255, .68);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .card-overline .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #b8ffdf;
+      letter-spacing: .08em;
+    }
+
+    .live-dot::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6ef2b0;
+      box-shadow: 0 0 13px #6ef2b0;
+      content: '';
+    }
+
+    .current-card h2 {
+      margin: 15px 0 5px;
+      color: #fff;
+      font-size: clamp(27px, 4vw, 39px);
+      letter-spacing: -.045em;
+      line-height: 1;
+    }
+
+    .current-card .muted {
+      max-width: 560px;
+      margin: 0;
+      color: rgba(241, 247, 255, .76);
+      font-size: 13px;
+    }
+
+    .plan-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 30px 0 24px;
+    }
+
+    .meta-block {
+      min-width: 0;
+      padding: 13px;
+      border: 1px solid rgba(255, 255, 255, .13);
+      border-radius: 15px;
+      background: rgba(3, 20, 62, .2);
+    }
+
+    .meta-label {
+      display: block;
+      margin-bottom: 5px;
+      color: rgba(238, 247, 255, .58);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .meta-value {
+      display: block;
+      overflow: hidden;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .payment-card,
+    .plans-wrap,
+    .history-card {
+      padding: 23px;
+      background: rgba(10, 29, 73, .66);
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 5px;
+    }
+
+    .section-heading i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 35px;
+      height: 35px;
+      border: 1px solid rgba(114, 202, 255, .26);
+      border-radius: 11px;
+      background: rgba(76, 177, 255, .12);
+      color: #80ddff;
+      font-size: 19px;
+    }
+
+    .payment-card h2,
+    .plans-wrap h2,
+    .history-card h2 {
+      margin: 0;
+      color: #fff;
+      font-size: 20px;
+      letter-spacing: -.025em;
+    }
+
+    .payment-card > p,
+    .plans-wrap > p,
+    .history-card > p {
+      margin: 5px 0 17px;
+      color: rgba(219, 235, 255, .65);
+      font-size: 12px;
+    }
+
+    .diagnostic-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: -2px 0 14px;
+    }
+
+    .diagnostic-row button {
+      min-height: 34px;
+      padding: 7px 10px;
+      border: 1px solid rgba(127, 220, 255, .34);
+      border-radius: 10px;
+      background: rgba(74, 181, 255, .12);
+      color: #9ae8ff;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .diagnostic-row button:hover:not(:disabled) {
+      background: rgba(74, 181, 255, .2);
+    }
+
+    .diagnostic-row button:disabled {
+      cursor: wait;
+    }
+
+    .diagnostic-status {
+      color: rgba(217, 233, 255, .56);
+      font-size: 10px;
+    }
+
+    .diagnostic-result {
+      margin: 0 0 14px;
+      padding: 10px 11px;
+      border: 1px solid rgba(151, 192, 255, .16);
+      border-radius: 12px;
+      background: rgba(30, 62, 126, .32);
+      color: rgba(217, 233, 255, .68);
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .diagnostic-result strong {
+      color: #fff;
+    }
+
+    .method-list {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 17px;
+    }
+
+    .method-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 13px;
+      border: 1px solid rgba(151, 192, 255, .12);
+      border-radius: 13px;
+      background: rgba(30, 62, 126, .38);
+      color: rgba(243, 248, 255, .92);
+      font-size: 13px;
+    }
+
+    .method-row small {
+      color: rgba(217, 233, 255, .54);
+      font-size: 10px;
+      text-align: right;
+    }
+
+    .method-row .ready {
+      color: #79efb4;
+      font-weight: 800;
+    }
+
+    .mini-note {
+      color: rgba(217, 233, 255, .57);
+      font-size: 11px;
+    }
+
+    select {
+      width: 100%;
+      min-height: 43px;
+      margin-top: 8px;
+      padding: 0 12px;
+      border: 1px solid rgba(151, 192, 255, .22);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(4, 18, 52, .68);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    select:focus {
+      border-color: #69d7ff;
+      box-shadow: 0 0 0 3px rgba(105, 215, 255, .14);
+    }
+
+    .plans-wrap {
+      grid-column: 1 / -1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .plans-wrap::after {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      color: rgba(128, 219, 255, .35);
+      content: 'PRO MCBOT';
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .2em;
+      pointer-events: none;
+    }
+
+    .plans {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 19px;
+    }
+
+    .plan {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid rgba(161, 199, 255, .18);
+      border-radius: 18px;
+      background: linear-gradient(155deg, rgba(40, 78, 151, .55), rgba(9, 28, 69, .62));
+      transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .plan:hover {
+      transform: translateY(-3px);
+      border-color: rgba(122, 216, 255, .5);
+      box-shadow: 0 15px 30px rgba(0, 8, 30, .22);
+    }
+
+    .plan.active {
+      border-color: rgba(113, 224, 255, .78);
+      background: linear-gradient(155deg, rgba(31, 124, 214, .62), rgba(65, 38, 153, .72));
+      box-shadow: 0 0 0 3px rgba(105, 210, 255, .12), 0 20px 35px rgba(0, 8, 30, .25);
+    }
+
+    .plan-tag {
+      display: inline-flex;
+      width: max-content;
+      margin-bottom: 13px;
+      padding: 5px 8px;
+      border: 1px solid rgba(166, 203, 255, .2);
+      border-radius: 999px;
+      color: rgba(215, 234, 255, .62);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .12em;
+    }
+
+    .plan.active .plan-tag {
+      border-color: rgba(135, 229, 255, .5);
+      background: rgba(109, 213, 255, .13);
+      color: #a3edff;
+    }
+
+    .plan h3 {
+      margin: 0 0 8px;
+      color: #fff;
+      font-size: 18px;
+    }
+
+    .price {
+      color: #fff;
+      font-size: 28px;
+      font-weight: 850;
+      letter-spacing: -.04em;
+    }
+
+    .price small {
+      color: rgba(215, 234, 255, .6);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .plan p {
+      min-height: 42px;
+      margin: 8px 0 14px;
+      color: rgba(215, 234, 255, .64);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .plan-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0;
+      border-top: 1px solid rgba(163, 201, 255, .14);
+      color: rgba(211, 232, 255, .6);
+      font-size: 11px;
+    }
+
+    .plan-line strong {
+      color: #fff;
+      font-weight: 750;
+      text-align: right;
+    }
+
+    button.primary,
+    button.secondary {
+      min-height: 42px;
+      margin-top: 15px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    }
+
+    button.primary {
+      border: 1px solid rgba(139, 234, 255, .46);
+      background: linear-gradient(135deg, #53cfff, #4772ff);
+      color: #061433;
+      box-shadow: 0 10px 20px rgba(61, 168, 255, .18);
+    }
+
+    button.secondary {
+      border: 1px solid rgba(255, 255, 255, .22);
+      background: rgba(255, 255, 255, .12);
+      color: #fff;
+    }
+
+    .current-card button.secondary {
+      position: relative;
+      z-index: 1;
+      margin-top: 0;
+    }
+
+    button.primary:hover:not(:disabled),
+    button.secondary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(0, 0, 0, .18);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .48;
+    }
+
+    .history-card {
+      grid-column: 1 / -1;
+    }
+
+    .history-card details {
+      margin-top: 8px;
+    }
+
+    .history-card summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      color: #88dcff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .history-card summary::before {
+      content: '＋';
+      font-size: 16px;
+    }
+
+    .table-wrap {
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+
+    .table {
+      width: 100%;
+      min-width: 520px;
+      border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+      padding: 10px 6px;
+      border-bottom: 1px solid rgba(163, 201, 255, .14);
+      color: rgba(218, 235, 255, .75);
+      font-size: 12px;
+      text-align: left;
+    }
+
+    .table th {
+      color: rgba(218, 235, 255, .5);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    body:not(.dark) .premium-page {
+      color: #fff;
+    }
+
+    @media (max-width: 900px) {
+      .premium-hero {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .server-field {
+        max-width: 520px;
+      }
+
+      .premium-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .plans-wrap,
+      .history-card {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .premium-page {
+        padding: 20px 14px 24px;
+        border-radius: 25px;
+      }
+
+      .premium-proof,
+      .plans {
+        grid-template-columns: 1fr;
+      }
+
+      .proof-item {
+        min-height: 48px;
+      }
+
+      .current-card,
+      .payment-card,
+      .plans-wrap,
+      .history-card {
+        padding: 18px;
+        border-radius: 19px;
+      }
+
+      .plan-meta {
+        gap: 6px;
+        margin-top: 22px;
+      }
+
+      .meta-block {
+        padding: 10px 8px;
+      }
+
+      .meta-label {
+        font-size: 9px;
+      }
+
+      .meta-value {
+        font-size: 12px;
+      }
+    }
   </style>
 </head>
 <body class="dark">
   <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><div class="user_profile_nav" id="userBtn"><img src="" alt="Account" data-user-avatar><span id="navUserName">User</span><i class="bx bx-chevron-down"></i><div class="dropdown-menu" id="userDropdown"><a href="/dashboard">Account home</a><a href="/api/logout">Logout</a></div></div></div></nav>
   <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
   <main class="main-content"><section class="premium-page">
-    <div class="premium-hero"><div><div class="eyebrow">Plans & access</div><h1>Premium</h1><p>One clear plan for each stage of your server. Entitlements are applied server-side after verified payment.</p></div><div class="server-field"><label>Managed server</label><div id="serverContext" class="server-context"><img id="serverIcon" src="/dashboard/logo.png" alt=""><div><span>Selected from My Servers</span><strong id="serverName">Loading…</strong></div></div></div></div>
-    <div id="message" class="notice" hidden></div>
+    <div class="premium-hero">
+      <div class="premium-hero-copy">
+        <div class="premium-kicker"><i class="bx bx-crown"></i> Premium control center</div>
+        <h1>Give your server <span>room to grow.</span></h1>
+        <p>Choose the level of intelligence, history, and automation that fits your community. Your plan is verified server-side and stays connected to the server you manage.</p>
+      </div>
+      <div class="server-field"><label for="serverContext">Managed server</label><div id="serverContext" class="server-context"><img id="serverIcon" src="/dashboard/logo.png" alt=""><div><span>Selected from My Servers</span><strong id="serverName">Loading…</strong></div></div></div>
+    </div>
+    <div class="premium-proof" aria-label="Premium assurances">
+      <div class="proof-item"><i class="bx bx-check-shield"></i><span>Verified access, applied server-side</span></div>
+      <div class="proof-item"><i class="bx bx-line-chart"></i><span>Built for growing communities</span></div>
+      <div class="proof-item"><i class="bx bx-support"></i><span>Clear status at every step</span></div>
+    </div>
+    <div id="message" class="notice" hidden role="status" aria-live="polite"></div>
     <div class="premium-grid">
-      <section class="current-card"><div class="eyebrow" style="color:rgba(255,255,255,.7)">Selected server</div><h2 id="currentPlan">Free plan</h2><p id="currentStatus" class="muted">Loading server status…</p><div class="plan-meta"><div><span class="meta-label">Renewal</span><span class="meta-value" id="renewal">—</span></div><div><span class="meta-label">Usage</span><span class="meta-value" id="usage">—</span></div><div><span class="meta-label">Payment</span><span class="meta-value" id="paymentStatus">—</span></div></div><button id="cancelButton" class="secondary" disabled>Cancel renewal</button></section>
-      <section class="payment-card"><h2>Payment method</h2><p id="providerStatus" class="muted">Checking provider…</p><div class="diagnostic-row"><button id="diagnosePayPal" type="button">Verify PayPal setup</button><span id="diagnosticStatus" class="diagnostic-status">Checks OAuth and configured plans.</span></div><div id="diagnosticResult" class="diagnostic-result" hidden></div><div id="methods" class="method-list"></div><label class="mini-note" for="methodSelect">Checkout method</label><select id="methodSelect"></select></section>
-      <section class="plans-wrap"><h2>Choose a plan</h2><p class="muted">Start with the smallest plan that matches the server you operate.</p><div id="plans" class="plans"><p class="muted">Loading plans…</p></div><p class="mini-note" style="margin:14px 0 0">Paid access is granted only after the configured provider confirms the payment. If no provider method is enabled, this page will not simulate success.</p></section>
-      <section class="history-card"><h2>Billing history</h2><p class="muted">Only provider records returned by the backend appear here.</p><details><summary>Show invoices and transactions</summary><div class="table-wrap"><table class="table"><thead><tr><th>Provider</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="invoices"><tr><td colspan="4">No records loaded.</td></tr></tbody></table></div></details></section>
+      <section class="current-card"><div class="card-overline"><span>Selected server</span><span class="live-dot">Live account state</span></div><h2 id="currentPlan">Free plan</h2><p id="currentStatus" class="muted">Loading server status…</p><div class="plan-meta"><div class="meta-block"><span class="meta-label">Renewal</span><span class="meta-value" id="renewal">—</span></div><div class="meta-block"><span class="meta-label">Usage</span><span class="meta-value" id="usage">—</span></div><div class="meta-block"><span class="meta-label">Payment</span><span class="meta-value" id="paymentStatus">—</span></div></div><button id="cancelButton" class="secondary" disabled>Cancel renewal</button></section>
+      <section class="payment-card"><div class="section-heading"><div><h2>Payment method</h2><p id="providerStatus" class="muted">Checking provider…</p></div><i class="bx bx-wallet"></i></div><div class="diagnostic-row"><button id="diagnosePayPal" type="button">Verify PayPal setup</button><span id="diagnosticStatus" class="diagnostic-status">Checks OAuth and configured plans.</span></div><div id="diagnosticResult" class="diagnostic-result" hidden></div><div id="methods" class="method-list"></div><label class="mini-note" for="methodSelect">Checkout method</label><select id="methodSelect"></select></section>
+      <section class="plans-wrap"><div class="section-heading"><div><h2>Choose your level</h2><p class="muted">Start with the plan that matches the way your server operates.</p></div><i class="bx bx-sparkles"></i></div><div id="plans" class="plans"><p class="muted">Loading plans…</p></div><p class="mini-note" style="margin:16px 0 0">Paid access is granted only after the configured provider confirms the payment. If no provider method is enabled, this page will not simulate success.</p></section>
+      <section class="history-card"><div class="section-heading"><div><h2>Billing history</h2><p class="muted">Only provider records returned by the backend appear here.</p></div><i class="bx bx-receipt"></i></div><details><summary>Show invoices and transactions</summary><div class="table-wrap"><table class="table"><thead><tr><th>Provider</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="invoices"><tr><td colspan="4">No records loaded.</td></tr></tbody></table></div></details></section>
     </div>
   </section></main>
   <script src="/shared.js"></script>
@@ -94,7 +820,7 @@
       function renderMethods() { const methods = catalog?.methods || {}; $('methods').innerHTML = Object.values(methods).map(method => `<div class="method-row"><strong>${esc(method.label)}</strong><small class="${method.enabled ? 'ready' : ''}">${method.enabled ? 'Available' : method.requiresProviderEnablement ? 'Provider enablement required' : 'Not configured'}</small></div>`).join(''); const available = Object.values(methods).filter(method => method.enabled); $('methodSelect').innerHTML = available.length ? available.map(method => `<option value="${esc(method.id)}">${esc(method.label)}</option>`).join('') : '<option value="">No checkout method configured</option>'; $('providerStatus').textContent = catalog?.configured ? `PayPal ${catalog.environment} is configured.` : 'PayPal is not configured. Checkout stays disabled.'; }
       function renderPlans() { const list = Array.isArray(plans) ? plans : []; $('plans').innerHTML = list.map(plan => { const active = billing?.entitlement?.plan === plan.id; const description = plan.id === 'ultimate' ? 'For networks and multi-instance operations.' : plan.id === 'pro' ? 'For deeper intelligence and retention.' : 'For essential server health and setup.'; const ready = plan.id !== 'free' && Boolean(catalog?.methods?.[methodId()]?.enabled) && planIsConfigured(plan.id); const button = plan.id === 'free' ? '' : `<button class="primary upgrade" data-plan="${esc(plan.id)}" ${active || !ready ? 'disabled' : ''}>${active ? 'Current plan' : ready ? `Upgrade to ${esc(plan.name)}` : planConfig(plan.id)?.providerPlanConfigured === false ? 'Plan ID not configured' : 'Checkout unavailable'}</button>`; const tag = plan.id === 'ultimate' ? 'ULTIMATE' : plan.id === 'pro' ? 'PRO' : 'FREE'; return `<article class="plan ${active ? 'active' : ''}"><span class="plan-tag">${tag}</span><h3>${esc(plan.name)}</h3><div class="price">$${Number(plan.priceUsdMonthly).toFixed(2)}<small>/month</small></div><p>${esc(description)}</p><div class="plan-line"><span>History</span><strong>${esc(plan.historyDays)} days</strong></div><div class="plan-line"><span>Automation</span><strong>${esc(plan.usage?.automation ?? '—')}</strong></div>${button}</article>`; }).join('') || '<p class="muted">No plans returned.</p>'; document.querySelectorAll('.upgrade').forEach(button => button.addEventListener('click', () => checkout(button.dataset.plan))); }
       async function checkout(plan) { try { const result = await api(`/api/guilds/${guildId}/billing/checkout`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ plan, method: methodId() }) }); if (result.checkoutUrl) window.location.href = result.checkoutUrl; else show('The provider did not return an approval URL.'); } catch (error) { show(error.message); } }
-      function renderDiagnostics(diagnostics) { const plans = diagnostics?.plans || {}; const planLine = ['pro', 'ultimate'].map(id => { const item = plans[id] || {}; const state = item.ok ? `${item.status || 'OK'}${item.name ? ` — ${item.name}` : ''}` : item.code || 'not checked'; return `${id.toUpperCase()}: ${state}`; }).join(' · '); $('diagnosticResult').hidden = false; $('diagnosticResult').innerHTML = `<strong>Environment:</strong> ${esc(diagnostics?.environment || 'unknown')} · <strong>OAuth:</strong> ${diagnostics?.oauth?.ok ? 'OK' : esc(diagnostics?.oauth?.code || 'failed')}<br><strong>Plans:</strong> ${esc(planLine)}`; }
+      function renderDiagnostics(diagnostics) { const diagnosticPlans = diagnostics?.plans || {}; const planLine = ['pro', 'ultimate'].map(id => { const item = diagnosticPlans[id] || {}; const state = item.ok ? `${item.status || 'OK'}${item.name ? ` — ${item.name}` : ''}` : item.code || 'not checked'; return `${id.toUpperCase()}: ${state}`; }).join(' · '); $('diagnosticResult').hidden = false; $('diagnosticResult').innerHTML = `<strong>Environment:</strong> ${esc(diagnostics?.environment || 'unknown')} · <strong>OAuth:</strong> ${diagnostics?.oauth?.ok ? 'OK' : esc(diagnostics?.oauth?.code || 'failed')}<br><strong>Plans:</strong> ${esc(planLine)}`; }
       async function diagnosePayPal() { const button = $('diagnosePayPal'); button.disabled = true; $('diagnosticStatus').textContent = 'Checking PayPal…'; try { const data = await api('/api/billing/diagnostics'); renderDiagnostics(data.diagnostics); $('diagnosticStatus').textContent = 'Check completed.'; } catch (error) { $('diagnosticResult').hidden = false; $('diagnosticResult').textContent = error.message; $('diagnosticStatus').textContent = 'Check failed.'; } finally { button.disabled = false; } }
       function renderBilling() { const entitlement = billing.entitlement || {}; $('currentPlan').textContent = `${entitlement.name || 'Free'} plan`; $('currentStatus').textContent = `${entitlement.status || 'active'} · ${entitlement.reason || 'server subscription authority'}`; $('renewal').textContent = entitlement.currentPeriodEnd ? new Date(entitlement.currentPeriodEnd).toLocaleDateString() : 'Not applicable'; const usage = Object.entries(billing.usage || {}); $('usage').textContent = usage.length ? `${usage.length} tracked limits` : 'No usage'; const last = billing.payments?.[0]; $('paymentStatus').textContent = last ? `${last.status} · ${last.currency}` : 'No payment'; $('cancelButton').disabled = !billing.subscription?.providerSubscriptionId || billing.subscription?.renewalState === 'will_cancel'; $('cancelButton').onclick = async () => { if (!confirm('Cancel renewal at the provider?')) return; try { await api(`/api/guilds/${guildId}/billing/cancel`, { method:'POST' }); show('Cancellation requested at the payment provider.'); await load(); } catch (error) { show(error.message); } }; $('invoices').innerHTML = (billing.invoices || []).length ? billing.invoices.map(item => `<tr><td>${esc(item.provider)}</td><td>${esc(item.currency)} ${(Number(item.amountMinor || 0) / 100).toFixed(2)}</td><td>${esc(item.status)}</td><td>${item.issuedAt ? new Date(item.issuedAt).toLocaleDateString() : '—'}</td></tr>`).join('') : '<tr><td colspan="4">No billing records yet.</td></tr>'; renderMethods(); renderPlans(); }
       async function load() { if (!guildId) return; try { billing = await api(`/api/guilds/${guildId}/billing`); const usage = await api(`/api/guilds/${guildId}/usage`); billing.usage = usage.usage; renderBilling(); } catch (error) { show(error.message); } }
