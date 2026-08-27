@@ -88,7 +88,49 @@ function formatPayPalError(error) {
   const reason = details.description || details.issue || details.name;
   if (reason) return `PayPal رفض إنشاء الاشتراك: ${reason}${details.debugId ? ` (debug ${details.debugId})` : ''}`;
   if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'انتهت مهلة الاتصال مع PayPal. حاول مرة أخرى وتحقق من deployment network.';
+  const transportCode = String(error?.code || '').trim();
+  if (transportCode) return `فشل اتصال PayPal (${transportCode}). تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.`;
+  if (details.status) return `PayPal أعاد HTTP ${details.status}. تحقق من Client credentials وPlan ID وكون الخطة Active في نفس البيئة.`;
   return 'فشل اتصال PayPal. تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.';
+}
+
+async function inspectPayPalConfiguration() {
+  const result = {
+    environment: paypalApiBase() === PAYPAL_LIVE_API ? 'live' : 'sandbox',
+    credentials: {
+      clientIdPresent: Boolean(process.env.PAYPAL_CLIENT_ID),
+      clientSecretPresent: Boolean(process.env.PAYPAL_CLIENT_SECRET),
+      webhookIdPresent: Boolean(process.env.PAYPAL_WEBHOOK_ID),
+    },
+    oauth: { ok: false },
+    plans: {},
+  };
+  if (!result.credentials.clientIdPresent || !result.credentials.clientSecretPresent) {
+    result.oauth = { ok: false, code: 'paypal_credentials_missing' };
+    return result;
+  }
+  try {
+    await getPayPalAccessToken();
+    result.oauth = { ok: true };
+  } catch (error) {
+    result.oauth = { ok: false, code: String(error?.response?.data?.error || error?.code || error?.message || 'paypal_auth_failed').slice(0, 80) };
+    return result;
+  }
+  for (const plan of ['pro', 'ultimate']) {
+    const planId = planIdFor(plan);
+    if (!planId) {
+      result.plans[plan] = { configured: false, ok: false, code: 'plan_id_missing' };
+      continue;
+    }
+    try {
+      const data = await paypalRequest('GET', `/v1/billing/plans/${encodeURIComponent(planId)}`);
+      result.plans[plan] = { configured: true, ok: true, status: String(data?.status || '').toUpperCase() || 'UNKNOWN', name: String(data?.name || '').slice(0, 120) };
+    } catch (error) {
+      const details = getPayPalErrorDetails(error);
+      result.plans[plan] = { configured: true, ok: false, code: details.issue || details.name || String(error?.code || 'plan_lookup_failed').slice(0, 80), status: details.status };
+    }
+  }
+  return result;
 }
 
 async function getPayPalAccessToken() {
@@ -237,4 +279,4 @@ async function processVerifiedEvent(provider, event) {
   return { duplicate: false, processed: true, guildId: update.guildId, plan: subscription.plan, status: subscription.status };
 }
 
-module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };
+module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };

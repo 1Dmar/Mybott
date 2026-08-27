@@ -3,7 +3,21 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog, getPublicPlans } = require('../bot/utils/billingService');
+const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration } = require('../bot/utils/billingService');
+
+test('PayPal diagnostics fail safely when credentials are absent', async () => {
+  const previous = { id: process.env.PAYPAL_CLIENT_ID, secret: process.env.PAYPAL_CLIENT_SECRET };
+  delete process.env.PAYPAL_CLIENT_ID;
+  delete process.env.PAYPAL_CLIENT_SECRET;
+  const diagnostics = await inspectPayPalConfiguration();
+  assert.equal(diagnostics.oauth.ok, false);
+  assert.equal(diagnostics.oauth.code, 'paypal_credentials_missing');
+  assert.equal(diagnostics.credentials.clientIdPresent, false);
+  if (previous.id === undefined) delete process.env.PAYPAL_CLIENT_ID;
+  else process.env.PAYPAL_CLIENT_ID = previous.id;
+  if (previous.secret === undefined) delete process.env.PAYPAL_CLIENT_SECRET;
+  else process.env.PAYPAL_CLIENT_SECRET = previous.secret;
+});
 
 test('Premium UI reads array-shaped billing plans and checks each plan readiness', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'dash/dashboard/pages/premium.html'), 'utf8');
