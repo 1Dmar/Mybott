@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog } = require('../bot/utils/billingService');
+const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog, getPublicPlans } = require('../bot/utils/billingService');
 
 test('PayPal catalog allows Pro when only the Pro plan is configured', () => {
   const previous = {};
@@ -16,6 +16,9 @@ test('PayPal catalog allows Pro when only the Pro plan is configured', () => {
   assert.equal(catalog.plans.pro.providerPlanConfigured, true);
   assert.equal(catalog.plans.ultimate.providerPlanConfigured, false);
   assert.equal(catalog.methods.paypal.enabled, true);
+  const publicPlans = getPublicPlans();
+  assert.equal(publicPlans.find(plan => plan.id === 'pro').providerPlanConfigured, true);
+  assert.equal(publicPlans.find(plan => plan.id === 'ultimate').providerPlanConfigured, false);
   for (const [key, value] of Object.entries(previous)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;

@@ -6,7 +6,7 @@ const Subscription = require('../Models/Subscription');
 const Payment = require('../Models/Payment');
 const Invoice = require('../Models/Invoice');
 const BillingEvent = require('../Models/BillingEvent');
-const { normalizePlan } = require('./entitlements');
+const { normalizePlan, PLANS } = require('./entitlements');
 
 const WEBHOOK_TOLERANCE_SECONDS = 300;
 const PAYPAL_SANDBOX_API = 'https://api-m.sandbox.paypal.com';
@@ -50,6 +50,14 @@ function getPaymentCatalog() {
       google_pay: { id: 'google_pay', label: 'Google Pay', enabled: configured && hasAnyPlan && process.env.PAYPAL_GOOGLE_PAY_ENABLED === 'true', provider: 'paypal-google-pay', requiresProviderEnablement: true },
     },
   };
+}
+
+function getPublicPlans() {
+  const catalog = getPaymentCatalog();
+  return Object.values(PLANS).map(plan => ({
+    ...plan,
+    providerPlanConfigured: Boolean(catalog.plans?.[plan.id]?.providerPlanConfigured),
+  }));
 }
 
 function providerConfigured(provider = 'paypal') {
@@ -229,4 +237,4 @@ async function processVerifiedEvent(provider, event) {
   return { duplicate: false, processed: true, guildId: update.guildId, plan: subscription.plan, status: subscription.status };
 }
 
-module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };
+module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, getPayPalAccessToken, paypalRequest, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, extractSubscriptionUpdate, processVerifiedEvent };

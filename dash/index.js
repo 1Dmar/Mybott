@@ -41,7 +41,7 @@ const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
 const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
-const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
+const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, getPublicPlans, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
@@ -321,7 +321,7 @@ app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, requ
 
 app.get('/api/billing/config', isAuthenticated, (req, res) => {
   const catalog = getPaymentCatalog();
-  res.json({ success: true, plans: Object.values(PLANS), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
+  res.json({ success: true, plans: getPublicPlans(), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
 });
 
 app.get('/api/configuration/status', isAuthenticated, (req, res) => {
