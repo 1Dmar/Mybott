@@ -25,9 +25,14 @@ https://promcbot.dev/u/<username>
 | `PATCH /api/user/profile` | حفظ username للمستخدم المصادق عليه. |
 | `GET /api/user/profile` | إرجاع username المحفوظ والرابط العام للوحة Dashboard. |
 | `GET /api/public/profile/:identifier` | حل username المحفوظ أو Discord user ID وإرجاع البطاقة العامة الآمنة. |
-| `GET /u/:identifier` | عرض صفحة البطاقة العامة. |
+| `GET /api/public/profile-card/:identifier` | توليد صورة PNG بقياس 1200×630 لاستخدامها في Discord/Open Graph. |
+| `GET /u/:identifier` | عرض صفحة البطاقة العامة مع `og:image` وTwitter metadata ديناميكية. |
 | `GET /profile/:identifier` | redirect توافق إلى `/u/:identifier`. |
 
 ## ملاحظات التشغيل
 
-يجب أن يكون bot قادرًا على جلب Discord user ID المرتبط بالusername المحفوظ حتى تُعرض الهوية الحالية والصورة من Discord. الحفظ نفسه يعتمد على قاعدة البيانات، لذلك يبقى username فريدًا حتى لو لم يكن الاسم ظاهرًا في cache. أسماء المسارات مثل `admin` و`api` و`profile` و`stats` و`u` و`premium` محجوزة ولا يمكن claim لها.
+يجب أن يكون bot قادرًا على جلب Discord user ID المرتبط بالusername المحفوظ حتى تُعرض الهوية الحالية والصورة من Discord. الحفظ نفسه يعتمد على قاعدة البيانات، لذلك يبقى username فريدًا حتى لو لم يكن الاسم ظاهرًا في cache. أسماء المسارات مثل `admin` و`api` و`profile` و`stats` و`u` و`premium` محجوزة ولا يمكن claim لها. عند إرسال الرابط في Discord، يقرأ Discord metadata من `/u/<username>` ثم يطلب صورة `/api/public/profile-card/<username>`؛ لذلك يجب أن يكون النطاق العام متاحًا عبر HTTPS، ويجب إعادة إرسال الرابط أو انتظار تحديث cache إذا كان Discord قد حفظ معاينة قديمة.
+
+## Visual QA
+
+The mobile public profile render uses the same fixed homepage shell: hamburger, ProMcBot logo, theme control, account avatar, sidebar-backed main window spacing, and responsive card layout. The generated Discord card is a 1200×630 PNG with a blue/violet glass gradient, stars, avatar ring, display name, `@username`, Discord handle, user ID, and a borderless `P` plus `© ProMC Bot` attribution.

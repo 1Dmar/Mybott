@@ -55,6 +55,7 @@ const { getConfigurationStatus } = require('./configurationStatus');
 const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
 const { buildPublicStats } = require('./publicStats');
 const { validatePublicUsername, normalizePublicUsername } = require('./publicProfile');
+const { renderPublicProfileCard } = require('./publicProfileCard');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -616,37 +617,92 @@ app.get('/api/public/stats/:guildId', publicStatsLimiter, requireDatabaseReady, 
   }
 });
 
-app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) => {
-  const identifier = String(req.params.identifier || '').trim();
+async function resolvePublicProfile(identifier) {
   const normalizedIdentifier = normalizePublicUsername(identifier);
-  if (!/^\d{5,25}$/.test(identifier) && !/^[a-z0-9_.-]{3,32}$/.test(normalizedIdentifier)) return res.status(400).json({ success: false, error: 'invalid_public_profile_identifier' });
+  if (!/^\d{5,25}$/.test(identifier) && !/^[a-z0-9_.-]{3,32}$/.test(normalizedIdentifier)) {
+    const error = new Error('Invalid public profile identifier.');
+    error.status = 400;
+    error.code = 'invalid_public_profile_identifier';
+    throw error;
+  }
+  const client = getBotClient();
+  const databaseReady = mongoose.connection.readyState === 1;
+  let profileSettings = null;
+  if (databaseReady) {
+    const lookup = /^\d{5,25}$/.test(identifier) ? { userId: identifier } : { username: normalizedIdentifier };
+    profileSettings = await UserProfile.findOne(lookup).lean();
+  }
+  const resolvedUserId = profileSettings?.userId || (/^\d{5,25}$/.test(identifier) ? identifier : null);
+  let user = resolvedUserId ? await client?.users?.fetch(resolvedUserId) : null;
+  if (!user) {
+    const needle = normalizedIdentifier;
+    user = client?.users?.cache?.find(candidate => [candidate.username, candidate.globalName, candidate.tag].filter(Boolean).some(value => String(value).toLowerCase() === needle)) || null;
+  }
+  if (!user) {
+    const error = new Error('Public profile not found. Set a public username in your profile settings or use the Discord user ID.');
+    error.status = 404;
+    error.code = 'public_profile_not_found';
+    throw error;
+  }
+  if (databaseReady && !profileSettings) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
+  const publicUsername = profileSettings?.username || user.username;
+  const customBanner = profileSettings?.bannerType === 'image' && profileSettings.banner ? profileSettings.banner : null;
+  return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } };
+}
+
+app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) => {
   try {
-    const client = getBotClient();
-    const databaseReady = mongoose.connection.readyState === 1;
-    let profileSettings = null;
-    if (databaseReady) {
-      const lookup = /^\d{5,25}$/.test(identifier) ? { userId: identifier } : { username: normalizedIdentifier };
-      profileSettings = await UserProfile.findOne(lookup).lean();
-    }
-    const resolvedUserId = profileSettings?.userId || (/^\d{5,25}$/.test(identifier) ? identifier : null);
-    let user = resolvedUserId ? await client?.users?.fetch(resolvedUserId) : null;
-    if (!user) {
-      const needle = identifier.toLowerCase();
-      user = client?.users?.cache?.find(candidate => [candidate.username, candidate.globalName, candidate.tag].filter(Boolean).some(value => String(value).toLowerCase() === needle)) || null;
-    }
-    if (!user) return res.status(404).json({ success: false, error: 'public_profile_not_found', message: 'Public profile not found. Set a public username in your profile settings or use the Discord user ID.' });
-    if (databaseReady && !profileSettings) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
-    const publicUsername = profileSettings?.username || user.username;
-    const customBanner = profileSettings?.bannerType === 'image' && profileSettings.banner ? profileSettings.banner : null;
-    res.json({ success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } });
+    res.json(await resolvePublicProfile(String(req.params.identifier || '').trim()));
   } catch (error) {
-    res.status(404).json({ success: false, error: 'public_profile_not_found' });
+    res.status(error.status || 404).json({ success: false, error: error.code || 'public_profile_not_found', message: error.message });
+  }
+});
+
+app.get('/api/public/profile-card/:identifier', publicStatsLimiter, async (req, res) => {
+  try {
+    const data = await resolvePublicProfile(String(req.params.identifier || '').trim());
+    const card = await renderPublicProfileCard(data.profile);
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' }).send(card);
+  } catch (error) {
+    res.status(error.status || 404).json({ success: false, error: error.code || 'public_profile_card_not_found', message: error.message });
   }
 });
 
 app.get('/stats', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
 app.get('/stats/:guildId', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
-app.get('/u/:identifier', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'profile.html')));
+const publicProfilePagePath = path.join(dashDir, 'pages', 'profile.html');
+const publicProfilePageTemplate = fs.readFileSync(publicProfilePagePath, 'utf8');
+const escapeMeta = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[character]));
+
+app.get('/u/:identifier', async (req, res) => {
+  const identifier = String(req.params.identifier || '').trim();
+  const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  let profile = null;
+  try { profile = (await resolvePublicProfile(identifier)).profile; } catch (_) {}
+  const username = profile?.username || identifier;
+  const displayName = profile?.globalName || username || 'ProMC Bot user';
+  const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
+  const cardUrl = `${baseUrl}/api/public/profile-card/${encodeURIComponent(username)}`;
+  const description = `${displayName} (@${username}) · Public Discord profile card powered by ProMC Bot.`;
+  const meta = `
+    <link rel="canonical" href="${escapeMeta(publicUrl)}">
+    <meta name="theme-color" content="#1553b8">
+    <meta property="og:type" content="profile">
+    <meta property="og:site_name" content="ProMC Bot">
+    <meta property="og:title" content="${escapeMeta(displayName)} · @${escapeMeta(username)}">
+    <meta property="og:description" content="${escapeMeta(description)}">
+    <meta property="og:url" content="${escapeMeta(publicUrl)}">
+    <meta property="og:image" content="${escapeMeta(cardUrl)}">
+    <meta property="og:image:secure_url" content="${escapeMeta(cardUrl)}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="${escapeMeta(displayName)} · @${escapeMeta(username)}">
+    <meta name="twitter:description" content="${escapeMeta(description)}">
+    <meta name="twitter:image" content="${escapeMeta(cardUrl)}">`;
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300').type('html').send(publicProfilePageTemplate.replace('</head>', `${meta}\n</head>`));
+});
 app.get('/profile/:identifier', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.identifier)}`));
 app.get('/user/:username', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.username)}`));
 
