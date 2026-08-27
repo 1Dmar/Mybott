@@ -59,6 +59,9 @@ test('PayPal formatter exposes checkout stage when provider returns no structure
   error.billingStage = 'create_subscription';
   assert.match(formatPayPalError(error), /create_subscription/);
   assert.match(formatPayPalError(error), /422/);
+  const noMessage = new Error('');
+  noMessage.billingStage = 'create_subscription';
+  assert.match(formatPayPalError(noMessage), /create_subscription/);
 });
 
 test('PayPal formatter exposes safe provider issue and debug id', () => {

@@ -90,7 +90,7 @@ function formatPayPalError(error) {
   if (reason) return `PayPal رفض إنشاء الاشتراك: ${reason}${details.debugId ? ` (debug ${details.debugId})` : ''}`;
   const rawMessage = String(error?.message || '').trim();
   const stage = String(error?.billingStage || '').trim();
-  if (stage && rawMessage) return `فشل PayPal في مرحلة ${stage}: ${rawMessage.slice(0, 180)}`;
+  if (stage) return `فشل PayPal في مرحلة ${stage}${rawMessage ? `: ${rawMessage.slice(0, 180)}` : ': لم تصل رسالة provider. تحقق من سجل PayPal وبيئة التشغيل.'}`;
   if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'انتهت مهلة الاتصال مع PayPal. حاول مرة أخرى وتحقق من deployment network.';
   const transportCode = String(error?.code || '').trim();
   if (transportCode) return `فشل اتصال PayPal (${transportCode}). تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.`;
@@ -182,7 +182,7 @@ async function createCheckout({ guildId, plan, method = 'paypal', returnUrl, can
       },
     }, {
       Prefer: 'return=representation',
-      'PayPal-Request-Id': `promcbot-${crypto.randomUUID()}`,
+      'PayPal-Request-Id': crypto.randomUUID(),
     });
   } catch (error) {
     error.billingStage = 'create_subscription';
