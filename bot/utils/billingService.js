@@ -34,19 +34,20 @@ function paypalConfigured() {
 function getPaymentCatalog() {
   const configured = paypalConfigured();
   const planCatalog = {
-    free: { plan: 'free', amount: 0, currency: 'USD', interval: 'month' },
+    free: { plan: 'free', amount: 0, currency: 'USD', interval: 'month', providerPlanConfigured: false },
     pro: { plan: 'pro', amount: 4.99, currency: 'USD', interval: 'month', providerPlanConfigured: Boolean(planIdFor('pro')) },
     ultimate: { plan: 'ultimate', amount: 9.99, currency: 'USD', interval: 'month', providerPlanConfigured: Boolean(planIdFor('ultimate')) },
   };
+  const hasAnyPlan = Object.values(planCatalog).some(plan => plan.providerPlanConfigured);
   return {
     provider: 'paypal',
     environment: paypalApiBase() === PAYPAL_LIVE_API ? 'live' : 'sandbox',
     configured,
     plans: planCatalog,
     methods: {
-      paypal: { id: 'paypal', label: 'PayPal', enabled: configured && Boolean(planIdFor('pro')) && Boolean(planIdFor('ultimate')) },
-      card: { id: 'card', label: 'Credit/debit card', enabled: configured && process.env.PAYPAL_CARD_CHECKOUT_ENABLED === 'true' && Boolean(planIdFor('pro')) && Boolean(planIdFor('ultimate')), provider: 'paypal-hosted' },
-      google_pay: { id: 'google_pay', label: 'Google Pay', enabled: configured && process.env.PAYPAL_GOOGLE_PAY_ENABLED === 'true' && Boolean(planIdFor('pro')) && Boolean(planIdFor('ultimate')), provider: 'paypal-google-pay', requiresProviderEnablement: true },
+      paypal: { id: 'paypal', label: 'PayPal', enabled: configured && hasAnyPlan },
+      card: { id: 'card', label: 'Credit/debit card', enabled: configured && hasAnyPlan && process.env.PAYPAL_CARD_CHECKOUT_ENABLED === 'true', provider: 'paypal-hosted' },
+      google_pay: { id: 'google_pay', label: 'Google Pay', enabled: configured && hasAnyPlan && process.env.PAYPAL_GOOGLE_PAY_ENABLED === 'true', provider: 'paypal-google-pay', requiresProviderEnablement: true },
     },
   };
 }
@@ -72,7 +73,8 @@ function getPayPalErrorDetails(error) {
 function formatPayPalError(error) {
   const code = String(error?.message || '');
   if (code === 'paypal_credentials_missing') return 'PayPal Client ID أو Client Secret غير مضبوط في بيئة التشغيل.';
-  if (code === 'payment_method_not_configured') return 'طريقة الدفع أو PayPal plan ID غير مهيأة بالكامل في بيئة التشغيل.';
+  if (code === 'payment_method_not_configured') return 'طريقة الدفع غير مهيأة أو غير مفعلة من PayPal.';
+  if (code === 'payment_plan_not_configured') return 'PayPal Plan ID لهذه الخطة غير مضبوط. أنشئ الخطة ثم ضع Plan ID في متغيرها الصحيح.';
   if (code === 'paypal_approval_url_missing') return 'PayPal أنشأ الطلب دون رابط موافقة؛ راجع حالة الخطة والبيئة.';
   const details = getPayPalErrorDetails(error);
   const reason = details.description || details.issue || details.name;
@@ -109,6 +111,7 @@ async function createCheckout({ guildId, plan, method = 'paypal', returnUrl, can
   if (!['pro', 'ultimate'].includes(normalizedPlan)) throw new Error('invalid_paid_plan');
   if (!SUPPORTED_METHODS.includes(method)) throw new Error('unsupported_payment_method');
   if (!catalog.methods[method]?.enabled) throw new Error('payment_method_not_configured');
+  if (!catalog.plans[normalizedPlan]?.providerPlanConfigured) throw new Error('payment_plan_not_configured');
   const providerPlanId = planIdFor(normalizedPlan);
   const data = await paypalRequest('POST', '/v1/billing/subscriptions', {
     plan_id: providerPlanId,

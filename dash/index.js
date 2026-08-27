@@ -344,7 +344,7 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
     res.json({ success: true, ...checkout });
   } catch (error) {
-    const configurationError = ['payment_method_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
+    const configurationError = ['payment_method_not_configured', 'payment_plan_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
     const providerMessage = formatPayPalError(error);
     const providerDetails = getPayPalErrorDetails(error);
     console.error('[billing checkout] provider error:', error.message, providerDetails.debugId ? `debug=${providerDetails.debugId}` : '');

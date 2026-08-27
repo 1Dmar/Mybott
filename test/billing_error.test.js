@@ -1,11 +1,31 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
+const { formatPayPalError, getPayPalErrorDetails, getPaymentCatalog } = require('../bot/utils/billingService');
+
+test('PayPal catalog allows Pro when only the Pro plan is configured', () => {
+  const previous = {};
+  for (const key of ['PAYPAL_ENV', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_WEBHOOK_ID', 'PAYPAL_PRO_PLAN_ID', 'PAYPAL_ULTIMATE_PLAN_ID']) previous[key] = process.env[key];
+  process.env.PAYPAL_ENV = 'sandbox';
+  process.env.PAYPAL_CLIENT_ID = 'client';
+  process.env.PAYPAL_CLIENT_SECRET = 'secret';
+  process.env.PAYPAL_WEBHOOK_ID = 'webhook';
+  process.env.PAYPAL_PRO_PLAN_ID = 'P-pro';
+  delete process.env.PAYPAL_ULTIMATE_PLAN_ID;
+  const catalog = getPaymentCatalog();
+  assert.equal(catalog.plans.pro.providerPlanConfigured, true);
+  assert.equal(catalog.plans.ultimate.providerPlanConfigured, false);
+  assert.equal(catalog.methods.paypal.enabled, true);
+  for (const [key, value] of Object.entries(previous)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
 
 test('PayPal formatter explains local configuration errors', () => {
   assert.match(formatPayPalError(new Error('paypal_credentials_missing')), /Client ID/);
-  assert.match(formatPayPalError(new Error('payment_method_not_configured')), /plan ID/);
+  assert.match(formatPayPalError(new Error('payment_method_not_configured')), /طريقة الدفع/);
+  assert.match(formatPayPalError(new Error('payment_plan_not_configured')), /Plan ID/);
   assert.match(formatPayPalError(new Error('paypal_approval_url_missing')), /رابط موافقة/);
 });
 
