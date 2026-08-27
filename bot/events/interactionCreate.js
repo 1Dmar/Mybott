@@ -19,6 +19,7 @@ const Serverdb = require('../Models/Server');
 const Server = require('../Models/User');
 const StatusBar = require('../Models/StatusBar');
 const BlackList = require("../Models/BlackList");
+const { getActiveBlacklist } = require('../utils/blacklistGuard');
 // Helper to format emoji for Discord
 const formatEmoji = (emoji) => {
     if (!emoji) return "";
@@ -511,6 +512,11 @@ const interactionCreateEvent = {
                 }
 
                 try {
+                    const ownerBypass = ['804999528129363998', '1071690719418396752'].includes(String(interaction.user?.id || '')) && interaction.commandName === 'blacklist';
+                    if (interaction.guild && !ownerBypass) {
+                        const activeBlacklist = await getActiveBlacklist(interaction.guild.id);
+                        if (activeBlacklist) return await interaction.reply({ content: `هذا السيرفر محظور من استخدام ProMcBot.${activeBlacklist.reason ? ` السبب: ${activeBlacklist.reason}` : ''}`, ephemeral: true });
+                    }
                     if (!hasRequiredPermission(interaction, command.userPermissions)) {
                         return await interaction.reply({ content: 'لا تملك الصلاحية المطلوبة لهذا الأمر في هذا السيرفر.', ephemeral: true });
                     }
