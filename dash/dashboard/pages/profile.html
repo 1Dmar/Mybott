@@ -40,13 +40,22 @@
     .public-profile-share span { max-width:600px; margin-top:3px; overflow:hidden; color:#94a8c7; font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
     .public-profile-share button { flex:0 0 auto; min-height:38px; padding:9px 12px; border:1px solid rgba(128,224,255,.4); border-radius:10px; background:rgba(82,199,255,.14); color:#a9efff; font:inherit; font-size:11px; font-weight:800; cursor:pointer; }
     .public-profile-share button:hover { background:rgba(82,199,255,.24); }
-    .public-profile-copyright { display:flex; align-items:center; justify-content:center; gap:8px; margin:18px 0 0; color:var(--text-muted); font-size:11px; text-align:center; }
+    .public-profile-social { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; margin-top:16px; padding:16px 18px; border:1px solid var(--border); border-radius:18px; background:var(--surface); box-shadow:var(--shadow-sm); }
+    .public-profile-social-copy { display:flex; flex-wrap:wrap; gap:16px; }
+    .public-profile-social-stat { display:flex; align-items:baseline; gap:6px; color:var(--text-muted); font-size:11px; }
+    .public-profile-social-stat strong { color:var(--text); font-size:18px; }
+    .public-profile-social-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .public-profile-social-actions button { min-width:104px; min-height:38px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+    .public-profile-social-actions button.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .public-profile-social-actions button.active { border-color:var(--success); background:color-mix(in srgb,var(--success) 14%,var(--surface-2)); color:var(--success); }
+    .public-profile-social-actions button:disabled { cursor:wait; opacity:.6; }
+    .public-profile-social-note { grid-column:1 / -1; margin:0; color:var(--text-muted); font-size:11px; }
     .public-profile-copyright .p-mark { color:#8eeaff; font-size:21px; font-weight:950; line-height:1; text-shadow:0 0 18px rgba(90,214,255,.4); }
     .public-profile-error { padding:44px 24px; color:var(--text); text-align:center; }
     .public-profile-error h2 { margin:0 0 8px; }
     .public-profile-error p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.6; }
     @media (max-width: 900px) { .public-profile-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-    @media (max-width: 640px) { .public-profile-header { display:block; } .public-profile-actions { margin-top:12px; } .public-profile-actions a { flex:1 1 150px; } .public-profile-banner { min-height:145px; } .public-profile-content { padding:0 16px 24px; } .public-profile-identity { align-items:flex-start; flex-direction:column; gap:12px; margin-top:-42px; } .public-profile-avatar { width:88px; height:88px; flex-basis:88px; border-radius:24px; } .public-profile-identity-copy { padding:0; } .public-profile-name { font-size:34px; } .public-profile-stats { grid-template-columns:1fr; } .public-profile-share { align-items:flex-start; flex-direction:column; } .public-profile-share button { width:100%; } }
+    @media (max-width: 640px) { .public-profile-social { grid-template-columns:1fr; gap:12px; } .public-profile-social-actions button { flex:1 1 0; } .public-profile-header { display:block; } .public-profile-actions { margin-top:12px; } .public-profile-actions a { flex:1 1 150px; } .public-profile-banner { min-height:145px; } .public-profile-content { padding:0 16px 24px; } .public-profile-identity { align-items:flex-start; flex-direction:column; gap:12px; margin-top:-42px; } .public-profile-avatar { width:88px; height:88px; flex-basis:88px; border-radius:24px; } .public-profile-identity-copy { padding:0; } .public-profile-name { font-size:34px; } .public-profile-stats { grid-template-columns:1fr; } .public-profile-share { align-items:flex-start; flex-direction:column; } .public-profile-share button { width:100%; } }
   </style>
 </head>
 <body class="dark">
@@ -66,6 +75,7 @@
       <div class="public-profile-actions"><a class="primary" href="/dashboard"><i class="bx bx-home-alt-2"></i> Dashboard</a><a href="/stats"><i class="bx bx-bar-chart-alt-2"></i> Public stats</a></div>
     </header>
     <section class="public-profile-card" id="card" aria-live="polite"><div class="public-profile-error"><h2>Loading profile</h2><p>Fetching the public identity and optional profile presentation.</p></div></section>
+    <section class="public-profile-social" id="socialPanel" hidden aria-label="Public profile actions"><div class="public-profile-social-copy"><div class="public-profile-social-stat"><strong id="followerCount">0</strong><span>followers</span></div><div class="public-profile-social-stat"><strong id="likeCount">0</strong><span>likes</span></div></div><div class="public-profile-social-actions"><button id="followButton" class="primary" type="button">Follow</button><button id="likeButton" type="button">Like</button></div><p class="public-profile-social-note" id="socialNotice"></p></section>
     <div class="public-profile-copyright"><span class="p-mark" aria-hidden="true">P</span><span>© <span id="copyrightYear"></span> ProMC Bot. All rights reserved.</span></div>
   </main>
 
@@ -75,13 +85,47 @@
       const identifier = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
       const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
       const card = document.getElementById('card');
+      const socialPanel = document.getElementById('socialPanel');
+      let socialState = { followers: 0, likes: 0, following: false, liked: false };
+      let viewerAuthenticated = false;
       document.getElementById('copyrightYear').textContent = new Date().getFullYear();
+      const renderSocial = () => {
+        socialPanel.hidden = false;
+        document.getElementById('followerCount').textContent = Number(socialState.followers || 0).toLocaleString();
+        document.getElementById('likeCount').textContent = Number(socialState.likes || 0).toLocaleString();
+        const followButton = document.getElementById('followButton');
+        const likeButton = document.getElementById('likeButton');
+        followButton.textContent = socialState.following ? 'Unfollow' : 'Follow';
+        followButton.classList.toggle('active', socialState.following);
+        likeButton.textContent = socialState.liked ? 'Unlike' : 'Like';
+        likeButton.classList.toggle('active', socialState.liked);
+        document.getElementById('socialNotice').textContent = viewerAuthenticated ? 'Your action is counted once and can be changed at any time.' : 'Sign in to follow or like this public profile.';
+      };
+      const socialAction = async kind => {
+        if (!viewerAuthenticated) { window.location.href = '/auth/discord'; return; }
+        const button = document.getElementById(kind === 'follow' ? 'followButton' : 'likeButton');
+        const active = kind === 'follow' ? socialState.following : socialState.liked;
+        button.disabled = true;
+        try {
+          const response = await fetch('/api/public/profile/' + encodeURIComponent(identifier) + '/' + kind, { method: active ? 'DELETE' : 'PUT', credentials: 'same-origin' });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || data.error || 'Profile action failed.');
+          socialState = data.social || socialState;
+          renderSocial();
+        } catch (error) { document.getElementById('socialNotice').textContent = error.message; }
+        finally { button.disabled = false; }
+      };
+      document.getElementById('followButton').addEventListener('click', () => socialAction('follow'));
+      document.getElementById('likeButton').addEventListener('click', () => socialAction('like'));
       (async () => {
         try {
           const response = await fetch('/api/public/profile/' + encodeURIComponent(identifier));
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || 'Profile unavailable');
           const profile = data.profile || {};
+          socialState = data.social || socialState;
+          viewerAuthenticated = Boolean(data.viewer?.authenticated);
+          renderSocial();
           const profileUrl = profile.publicPath || location.href;
           const safeUrl = esc(new URL(profileUrl, location.origin).href);
           card.innerHTML = '<div class="public-profile-banner" ' + (profile.banner ? 'style="background-image:linear-gradient(135deg,rgba(9,25,62,.25),rgba(66,37,133,.35)),url(\'' + esc(profile.banner) + '\')"' : '') + '></div>' +

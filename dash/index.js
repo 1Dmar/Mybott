@@ -62,6 +62,8 @@ const ServerInfo     = require('../bot/Models/Server');
 const GuildSettings  = require('../bot/Models/GuildSettings');
 const BotConfig       = require('../bot/Models/BotConfig');
 const UserProfile      = require('../bot/Models/UserProfile');
+const ProfileFollow    = require('../bot/Models/ProfileFollow');
+const ProfileLike      = require('../bot/Models/ProfileLike');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -227,6 +229,17 @@ function isAuthenticated(req, res, next) {
   res.redirect('/loading-auth');
 }
 
+const DEFAULT_PROFILE_OWNER_ID = '804999528129363998';
+
+async function ensureDefaultProfileFollow(followerId) {
+  if (!followerId || followerId === DEFAULT_PROFILE_OWNER_ID || mongoose.connection.readyState !== 1) return;
+  try {
+    await ProfileFollow.updateOne({ followerId, profileUserId: DEFAULT_PROFILE_OWNER_ID }, { $setOnInsert: { followerId, profileUserId: DEFAULT_PROFILE_OWNER_ID, createdAt: new Date() } }, { upsert: true });
+  } catch (error) {
+    if (error?.code !== 11000) console.warn('[profile follow] automatic follow skipped:', error.message);
+  }
+}
+
 async function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
   const guild = resolveWorkspaceGuildReference(req.user, reference);
@@ -266,7 +279,8 @@ app.get('/auth/discord', (req, res, next) => {
 app.get('/auth/discord/callback', (req, res, next) => {
   if (!discordOAuthConfigured) return res.status(503).send('Discord login is not configured.');
   return passport.authenticate('discord', { failureRedirect: '/' })(req, res, next);
-}, (req, res) => {
+}, async (req, res) => {
+  await ensureDefaultProfileFollow(req.user?.id);
   res.redirect('/dashboard');
 });
 
@@ -650,9 +664,29 @@ async function resolvePublicProfile(identifier) {
   return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } };
 }
 
+async function getProfileSocialState(profileUserId, viewerId = null) {
+  if (mongoose.connection.readyState !== 1) return { followers: 0, likes: 0, following: false, liked: false };
+  const [followers, likes, following, liked] = await Promise.all([
+    ProfileFollow.countDocuments({ profileUserId }),
+    ProfileLike.countDocuments({ profileUserId }),
+    viewerId ? ProfileFollow.exists({ followerId: viewerId, profileUserId }) : null,
+    viewerId ? ProfileLike.exists({ likerId: viewerId, profileUserId }) : null
+  ]);
+  return { followers, likes, following: Boolean(following), liked: Boolean(liked) };
+}
+
+async function resolveSocialTarget(identifier) {
+  const data = await resolvePublicProfile(String(identifier || '').trim());
+  return { data, profileUserId: data.profile.id };
+}
+
+const profileMutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'profile_action_rate_limited' } });
+
 app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) => {
   try {
-    res.json(await resolvePublicProfile(String(req.params.identifier || '').trim()));
+    const data = await resolvePublicProfile(String(req.params.identifier || '').trim());
+    const social = await getProfileSocialState(data.profile.id, req.isAuthenticated?.() ? req.user.id : null);
+    res.json({ ...data, social, viewer: { authenticated: Boolean(req.isAuthenticated?.()) } });
   } catch (error) {
     res.status(error.status || 404).json({ success: false, error: error.code || 'public_profile_not_found', message: error.message });
   }
@@ -660,12 +694,56 @@ app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) 
 
 app.get('/api/public/profile-card/:identifier', publicStatsLimiter, async (req, res) => {
   try {
-    const data = await resolvePublicProfile(String(req.params.identifier || '').trim());
-    const card = await renderPublicProfileCard(data.profile);
+    const data = await resolveSocialTarget(req.params.identifier);
+    const social = await getProfileSocialState(data.profileUserId);
+    const card = await renderPublicProfileCard({ ...data.profile, followers: social.followers, likes: social.likes });
     res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' }).send(card);
   } catch (error) {
     res.status(error.status || 404).json({ success: false, error: error.code || 'public_profile_card_not_found', message: error.message });
   }
+});
+
+async function requireSocialDatabase(res) {
+  if (mongoose.connection.readyState === 1) return true;
+  res.status(503).json({ success: false, error: 'database_unavailable', message: 'Profile actions are temporarily unavailable.' });
+  return false;
+}
+
+app.put('/api/public/profile/:identifier/follow', isAuthenticated, profileMutationLimiter, async (req, res) => {
+  if (!(await requireSocialDatabase(res))) return;
+  try {
+    const { profileUserId } = await resolveSocialTarget(req.params.identifier);
+    if (profileUserId === req.user.id) return res.status(400).json({ success: false, error: 'cannot_follow_self', message: 'You cannot follow your own profile.' });
+    await ProfileFollow.updateOne({ followerId: req.user.id, profileUserId }, { $setOnInsert: { followerId: req.user.id, profileUserId, createdAt: new Date() } }, { upsert: true });
+    res.json({ success: true, following: true, social: await getProfileSocialState(profileUserId, req.user.id) });
+  } catch (error) { res.status(error.status || 404).json({ success: false, error: error.code || 'follow_failed', message: error.message }); }
+});
+
+app.delete('/api/public/profile/:identifier/follow', isAuthenticated, profileMutationLimiter, async (req, res) => {
+  if (!(await requireSocialDatabase(res))) return;
+  try {
+    const { profileUserId } = await resolveSocialTarget(req.params.identifier);
+    await ProfileFollow.deleteOne({ followerId: req.user.id, profileUserId });
+    res.json({ success: true, following: false, social: await getProfileSocialState(profileUserId, req.user.id) });
+  } catch (error) { res.status(error.status || 404).json({ success: false, error: error.code || 'unfollow_failed', message: error.message }); }
+});
+
+app.put('/api/public/profile/:identifier/like', isAuthenticated, profileMutationLimiter, async (req, res) => {
+  if (!(await requireSocialDatabase(res))) return;
+  try {
+    const { profileUserId } = await resolveSocialTarget(req.params.identifier);
+    await ProfileLike.updateOne({ likerId: req.user.id, profileUserId }, { $setOnInsert: { likerId: req.user.id, profileUserId, createdAt: new Date() } }, { upsert: true });
+    res.json({ success: true, liked: true, social: await getProfileSocialState(profileUserId, req.user.id) });
+  } catch (error) { res.status(error.status || 404).json({ success: false, error: error.code || 'like_failed', message: error.message }); }
+});
+
+app.delete('/api/public/profile/:identifier/like', isAuthenticated, profileMutationLimiter, async (req, res) => {
+  if (!(await requireSocialDatabase(res))) return;
+  try {
+    const { profileUserId } = await resolveSocialTarget(req.params.identifier);
+    await ProfileLike.deleteOne({ likerId: req.user.id, profileUserId });
+    res.json({ success: true, liked: false, social: await getProfileSocialState(profileUserId, req.user.id) });
+  } catch (error) { res.status(error.status || 404).json({ success: false, error: error.code || 'unlike_failed', message: error.message }); }
 });
 
 app.get('/stats', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
@@ -678,12 +756,17 @@ app.get('/u/:identifier', async (req, res) => {
   const identifier = String(req.params.identifier || '').trim();
   const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
   let profile = null;
-  try { profile = (await resolvePublicProfile(identifier)).profile; } catch (_) {}
+  let social = { followers: 0, likes: 0 };
+  try {
+    const data = await resolvePublicProfile(identifier);
+    profile = data.profile;
+    social = await getProfileSocialState(profile.id);
+  } catch (_) {}
   const username = profile?.username || identifier;
   const displayName = profile?.globalName || username || 'ProMC Bot user';
   const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
   const cardUrl = `${baseUrl}/api/public/profile-card/${encodeURIComponent(username)}`;
-  const description = `${displayName} (@${username}) · Public Discord profile card powered by ProMC Bot.`;
+  const description = `${displayName} (@${username}) · ${social.followers} followers · ${social.likes} likes · Public Discord profile powered by ProMcBot.`;
   const meta = `
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
     <meta name="theme-color" content="#1553b8">

@@ -25,7 +25,8 @@
 
   async function checkAuth() {
     const publicPaths = ['/', '/loading-auth', '/privacy', '/auth/discord'];
-    const isPublicPage = publicPaths.includes(window.location.pathname);
+    const isPublicProfile = /^\/(?:u|profile|user)\/[^/]+$/.test(window.location.pathname);
+    const isPublicPage = publicPaths.includes(window.location.pathname) || isPublicProfile;
     try {
       const res = await fetch('/callback/check/userData');
       const data = await res.json();

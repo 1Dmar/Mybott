@@ -35,4 +35,12 @@ https://promcbot.dev/u/<username>
 
 ## Visual QA
 
-The mobile public profile render uses the same fixed homepage shell: hamburger, ProMcBot logo, theme control, account avatar, sidebar-backed main window spacing, and responsive card layout. The generated Discord card is a 1200×630 PNG with a blue/violet glass gradient, stars, avatar ring, display name, `@username`, Discord handle, user ID, and a borderless `P` plus `© ProMC Bot` attribution.
+The mobile public profile render uses the same fixed homepage shell: hamburger, ProMcBot logo, theme control, account avatar, sidebar-backed main window spacing, and responsive card layout. The generated Discord card is a 1200×630 PNG with a blue/violet glass gradient, stars, avatar ring, display name, `@username`, Discord handle, user ID, follower/like totals, and the official project logo with `Powered by ProMcBot` in the upper-right. The former blue P substitute and lower watermark copy are intentionally absent.
+
+## Social profile actions
+
+Authenticated visitors can follow or unfollow a public profile and like or unlike it directly from the public `/u/<username>` page. Each action is idempotent: a compound unique index allows one follow and one like per authenticated account and target profile, so repeated clicks cannot inflate the counters. Mutations require a valid authenticated session, resolve the target through the connected Discord profile, reject following yourself, and are limited to 30 mutation requests per minute per client address.
+
+On a successful new Discord OAuth login, the dashboard creates an idempotent follow record for profile owner `804999528129363998`. This does not create duplicates and is skipped safely when the database is unavailable; it also never forces the owner to follow their own profile.
+
+The embed card includes the current follower and like totals. The public page exposes only aggregate counts and the viewer’s own boolean state; it does not expose follower identities, liker identities, private guild membership, or raw activity.
