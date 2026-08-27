@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { canManageGuild, getManageableGuilds, managePermissionFor } = require('../dash/guildAccess');
+const { canManageGuild, getManageableGuilds, managePermissionFor, resolveGuildReference } = require('../dash/guildAccess');
 
 test('guild access includes only owner, administrator, and manage-guild permissions', () => {
   const user = {
@@ -30,6 +30,13 @@ test('guild access does not throw for malformed permissions and supports configu
   assert.equal(managePermissionFor(user.guilds[0], user.id, ['owner-1']), 'owner');
   assert.equal(managePermissionFor(user.guilds[1], 'other-user', []), null);
   assert.deepEqual(getManageableGuilds(user, ['owner-1']).map(guild => guild.id), ['owned', 'broken']);
+});
+
+test('guild references resolve by managed server name without widening access', () => {
+  const user = { id: 'user-3', guilds: [{ id: '123', name: 'Testing', permissions: '32' }, { id: '456', name: 'Read Only', permissions: '0' }] };
+  assert.equal(resolveGuildReference(user, 'Testing', [])?.id, '123');
+  assert.equal(resolveGuildReference(user, '123', [])?.name, 'Testing');
+  assert.equal(resolveGuildReference(user, 'Read Only', []), null);
 });
 
 test('guild access preserves Discord permission strings above JavaScript safe integer range', () => {

@@ -52,44 +52,39 @@
     <div class="server-hero"><div class="server-identity"><img src="" class="server-lg-icon" id="guildIcon" alt=""><div><div class="eyebrow" style="color:rgba(255,255,255,.72)">Server workspace</div><h1 id="guildName">Loading server…</h1><p id="guildIdText">Checking access…</p></div></div><a class="button-secondary" href="/myservers"><i class="bx bx-left-arrow-alt"></i> My servers</a></div>
     <div class="health-strip"><strong>Live setup</strong><span class="health-item"><span id="discordDot" class="status-dot"></span><span id="discordState">Discord checking</span></span><span class="health-item"><span id="pluginDot" class="status-dot"></span><span id="pluginState">Minecraft checking</span></span><span class="health-item"><span class="status-dot good"></span><span>Server access verified</span></span></div>
     <div class="overview-grid" aria-label="Server summary"><div class="overview-card"><span class="card-icon"><i class="bx bx-group"></i></span><span class="label">Discord members</span><span class="value" id="memberCount">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-pulse"></i></span><span class="label">Telemetry events</span><span class="value" id="telemetryCount">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-crown"></i></span><span class="label">Current plan</span><span class="value" id="planValue">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-command"></i></span><span class="label">Command prefix</span><span class="value" id="prefixValue">—</span></div></div>
-    <div class="home-columns"><section class="setup-card"><h2>Setup path</h2><p id="setupSummary">Checking the next useful step for this server.</p><ul class="setup-list" id="setupList"><li class="setup-row"><i class="bx bx-loader-alt bx-spin"></i><span><strong>Loading connection evidence</strong><small>Measured server state will appear here.</small></span></li></ul></section><aside class="quick-card"><h2>Server control</h2><p>Keep the important actions one click away.</p><div class="quick-links"><a class="quick-link" id="intelligenceLink" href="#"><i class="bx bx-line-chart"></i><span>Intelligence<small>See measured signals</small></span></a><a class="quick-link" id="settingsLink" href="#"><i class="bx bx-cog"></i><span>Setup & settings<small>Connect and configure</small></span></a><a class="quick-link" href="/actions"><i class="bx bx-check-shield"></i><span>Action center<small>Review important signals</small></span></a></div></aside></div>
+    <div class="home-columns"><section class="setup-card"><h2>Setup path</h2><p id="setupSummary">Checking the next useful step for this server.</p><ul class="setup-list" id="setupList"><li class="setup-row"><i class="bx bx-loader-alt bx-spin"></i><span><strong>Loading connection evidence</strong><small>Measured server state will appear here.</small></span></li></ul></section><aside class="quick-card"><h2>Server control</h2><p>Keep the important actions one click away.</p><div class="quick-links"><a class="quick-link" id="intelligenceLink" href="#"><i class="bx bx-line-chart"></i><span>Intelligence<small>See measured signals</small></span></a><a class="quick-link" id="settingsLink" href="#"><i class="bx bx-cog"></i><span>Setup & settings<small>Connect and configure</small></span></a><a class="quick-link" id="modulesLink" href="#"><i class="bx bx-extension"></i><span>Modules<small>Enable bot features</small></span></a><a class="quick-link" href="/actions"><i class="bx bx-check-shield"></i><span>Action center<small>Review important signals</small></span></a></div></aside></div>
   </section></main>
   <script src="/shared.js"></script>
   <script>
     (() => {
-      const guildId = (window.location.pathname.match(/\/myservers\/(\d+)/) || [])[1];
+      const guildId = (window.location.pathname.match(/\/myservers\/([^/]+)/) || [])[1];
       const path = page => `/myservers/${encodeURIComponent(guildId)}/${page}`;
       document.getElementById('intelligenceLink').href = path('intelligence');
       document.getElementById('settingsLink').href = path('settings');
+      document.getElementById('modulesLink').href = path('modules');
       const iconFor = guild => guild?.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
       const setDot = (id, good) => { document.getElementById(id).className = `status-dot ${good ? 'good' : 'warn'}`; };
       async function loadOverview() {
         try {
-          const [userRes, activationRes, entitlementRes, settingsRes] = await Promise.all([
-            fetch('/callback/check/userData'), fetch(`/api/guilds/${guildId}/activation`), fetch(`/api/guilds/${guildId}/entitlements`), fetch(`/api/guilds/${guildId}/settings`)
-          ]);
-          const userData = await userRes.json();
-          const guild = (userData.user?.guilds || []).find(item => item.id === guildId);
-          if (!guild) throw new Error('server_access_required');
-          document.getElementById('guildName').textContent = guild.name || 'Unnamed server';
+          const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/overview`, { credentials: 'same-origin' });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'overview_unavailable');
+          const server = data.server || {};
+          const plugin = data.plugin || {};
+          const telemetry = data.telemetry || {};
+          const entitlement = data.entitlement || {};
+          document.getElementById('guildName').textContent = server.name || 'Managed server';
           document.getElementById('guildIdText').textContent = 'Discord server · Managed access';
-          document.getElementById('guildIcon').src = iconFor(guild);
-          document.getElementById('memberCount').textContent = Number.isFinite(guild.member_count) ? guild.member_count.toLocaleString() : 'Not measured';
-          const activation = await activationRes.json();
-          const entitlement = await entitlementRes.json();
-          const settings = await settingsRes.json();
-          const evidence = activation.evidence || {};
-          document.getElementById('telemetryCount').textContent = Number.isFinite(evidence.telemetry24h) ? evidence.telemetry24h.toLocaleString() : 'Not measured';
-          document.getElementById('planValue').textContent = String(entitlement.entitlement?.plan || 'free').toUpperCase();
-          document.getElementById('prefixValue').textContent = settings.settings?.prefix || '—';
-          const discordConnected = Boolean(activation.steps?.find(step => step.key === 'discord_runtime_connected')?.complete);
-          const pluginConnected = Boolean(activation.steps?.find(step => step.key === 'plugin_heartbeat_recent')?.complete);
-          setDot('discordDot', discordConnected); setDot('pluginDot', pluginConnected);
-          document.getElementById('discordState').textContent = discordConnected ? 'Discord connected' : 'Discord not connected';
-          document.getElementById('pluginState').textContent = pluginConnected ? 'Minecraft online' : 'Minecraft not connected';
-          document.getElementById('setupSummary').textContent = activation.nextValue || 'Setup evidence is not available yet.';
-          const labels = { account_authenticated: 'Account', discord_runtime_connected: 'Discord bot', minecraft_plugin_provisioned: 'Minecraft plugin', plugin_heartbeat_recent: 'Heartbeat', telemetry_received: 'Telemetry', player_activity_observed: 'Player activity', comparison_window_ready: 'Comparison window', server_intelligence_active: 'Intelligence' };
-          document.getElementById('setupList').innerHTML = (activation.steps || []).slice(0, 4).map(step => `<li class="setup-row"><i class="bx ${step.complete ? 'bx-check-circle' : 'bx-circle'}"></i><span><strong>${labels[step.key] || step.label}</strong><small>${step.complete ? 'Ready' : (step.evidence || 'Not ready')}</small></span>${step.complete ? '' : `<a href="${path(step.key.includes('plugin') || step.key.includes('heartbeat') ? 'settings' : 'intelligence')}">Open</a>`}</li>`).join('');
+          document.getElementById('guildIcon').src = iconFor({ id: guildId, icon: server.icon });
+          document.getElementById('memberCount').textContent = Number.isFinite(server.memberCount) ? server.memberCount.toLocaleString() : 'Not measured';
+          document.getElementById('telemetryCount').textContent = Number.isFinite(telemetry.events24h) ? telemetry.events24h.toLocaleString() : 'Not measured';
+          document.getElementById('planValue').textContent = String(entitlement.plan || 'free').toUpperCase();
+          document.getElementById('prefixValue').textContent = data.settings?.prefix || '!';
+          setDot('discordDot', server.discordConnected); setDot('pluginDot', plugin.status === 'online');
+          document.getElementById('discordState').textContent = server.discordConnected ? 'Discord connected' : 'Discord not connected';
+          document.getElementById('pluginState').textContent = plugin.status === 'online' ? `Minecraft online · ${plugin.onlinePlayers ?? 0} players` : 'Minecraft not connected';
+          document.getElementById('setupSummary').textContent = plugin.status === 'online' ? 'Heartbeat is recent. Telemetry will appear as the plugin reports events.' : 'Open Setup & intelligence to generate the one-time Paper config.';
+          document.getElementById('setupList').innerHTML = [[server.discordConnected, 'Discord bot', server.discordConnected ? 'Bot can see this server.' : 'Invite or reconnect the bot.', 'settings'], [Boolean(data.plugin), 'Minecraft plugin', data.plugin ? `Instance ${data.plugin.instanceId} registered.` : 'Generate one-time plugin config.', 'intelligence'], [plugin.status === 'online', 'Recent heartbeat', plugin.lastSeenAt ? `Last seen ${new Date(plugin.lastSeenAt).toLocaleString()}.` : 'Waiting for Paper plugin heartbeat.', 'intelligence'], [telemetry.events24h > 0, 'Telemetry', telemetry.events24h > 0 ? `${telemetry.events24h.toLocaleString()} events in 24h.` : 'No telemetry measured yet.', 'intelligence']].map(([complete, label, detail, page]) => `<li class="setup-row"><i class="bx ${complete ? 'bx-check-circle' : 'bx-circle'}"></i><span><strong>${label}</strong><small>${detail}</small></span>${complete ? '' : `<a href="${path(page)}">Open</a>`}</li>`).join('');
         } catch (_) {
           document.getElementById('setupSummary').textContent = 'This server could not be loaded. Return to My servers and choose a server you can manage.';
           document.getElementById('setupList').innerHTML = '<li class="empty-inline">No server evidence available.</li>';

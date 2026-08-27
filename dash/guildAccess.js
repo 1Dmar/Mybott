@@ -20,12 +20,6 @@ function managePermissionFor(guild, userId, ownerIds = ownerIdsFromEnv()) {
   return null;
 }
 
-function canManageGuild(user, guildId, ownerIds = ownerIdsFromEnv()) {
-  if (!user?.id || !guildId) return false;
-  const guild = (Array.isArray(user.guilds) ? user.guilds : []).find(item => item?.id === guildId);
-  return Boolean(guild && managePermissionFor(guild, user.id, ownerIds));
-}
-
 function getManageableGuilds(user, ownerIds = ownerIdsFromEnv()) {
   const guilds = Array.isArray(user?.guilds) ? user.guilds : [];
   return guilds.reduce((result, guild) => {
@@ -35,4 +29,15 @@ function getManageableGuilds(user, ownerIds = ownerIdsFromEnv()) {
   }, []);
 }
 
-module.exports = { ADMINISTRATOR, MANAGE_GUILD, canManageGuild, getManageableGuilds, managePermissionFor, ownerIdsFromEnv };
+function resolveGuildReference(user, reference, ownerIds = ownerIdsFromEnv()) {
+  const value = String(reference || '').trim();
+  if (!value) return null;
+  const manageable = getManageableGuilds(user, ownerIds);
+  return manageable.find(guild => String(guild.id) === value || String(guild.name || '').toLowerCase() === value.toLowerCase()) || null;
+}
+
+function canManageGuild(user, guildId, ownerIds = ownerIdsFromEnv()) {
+  return Boolean(resolveGuildReference(user, guildId, ownerIds));
+}
+
+module.exports = { ADMINISTRATOR, MANAGE_GUILD, canManageGuild, getManageableGuilds, managePermissionFor, ownerIdsFromEnv, resolveGuildReference };

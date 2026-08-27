@@ -1,132 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit Logs - ProMcBot</title>
-    <link rel="stylesheet" href="/shared.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audit — ProMcBot</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    .audit-page { max-width: 1100px; }
+    .audit-header { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .audit-header h1 { margin: 0 0 6px; }
+    .audit-header p { margin: 0; color: var(--text-muted); }
+    .audit-card { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow-sm); }
+    .audit-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+    .audit-toolbar strong { font-size: 15px; }
+    .audit-toolbar span { color: var(--text-muted); font-size: 12px; }
+    .audit-list { display: grid; }
+    .audit-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+    .audit-row:last-child { border-bottom: 0; }
+    .audit-dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: var(--text-muted); }
+    .audit-dot.success { background: var(--success); }.audit-dot.failure { background: var(--danger); }.audit-dot.denied { background: var(--warning); }
+    .audit-main { min-width: 0; }
+    .audit-main strong, .audit-main small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .audit-main strong { color: var(--text); font-size: 13px; }
+    .audit-main small { margin-top: 4px; color: var(--text-muted); font-size: 11px; }
+    .audit-result { align-self: start; padding: 4px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .audit-result.success { color: var(--success); }.audit-result.failure { color: var(--danger); }.audit-result.denied { color: var(--warning); }
+    .state { padding: 28px 18px; color: var(--text-muted); text-align: center; }
+    .state.error { color: var(--danger); }
+    @media (max-width: 600px) { .audit-header { display: block; } .audit-toolbar { align-items: flex-start; flex-direction: column; } .audit-row { grid-template-columns: 10px minmax(0, 1fr); } .audit-result { grid-column: 2; width: fit-content; } }
+  </style>
 </head>
-<body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="logo_item">
-            <i class="bx bx-menu" id="sidebarToggle"></i>
-            <span class="logo_name">ProMcBot</span>
-        </div>
-        <div class="navbar_content">
-            <i class='bx bx-sun' id="darkLight"></i>
-            <div class="nav_btn" id="notificationBtn">
-                <i class='bx bx-bell'></i>
-            </div>
-            <div class="user_profile" id="userBtn">
-                <img src="" alt="Profile" class="profile_img" data-user-avatar>
-                <span class="user_name" data-user-name>User</span>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <!-- Sidebar content injected by shared.js -->
-        <div class="sidebar-footer">
-            <button class="collapse-btn"><i class='bx bx-chevron-left'></i> Collapse</button>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Page Header -->
-        <div class="page-breadcrumb">
-            <a href="/myservers">Servers</a> <span class="sep">/</span> <span id="breadServerName">Loading...</span> <span class="sep">/</span> <span>Logs</span>
-        </div>
-        <div class="page-title-row">
-            <div class="page-title-icon"><i class='bx bx-list-ul'></i></div>
-            <div>
-                <h1 class="page-title">Audit Logs</h1>
-                <p class="page-subtitle">Recent administrative actions performed by the bot or users.</p>
-            </div>
-        </div>
-
-        <div class="card animated">
-            <div class="card-header">
-                <div class="card-icon"><i class='bx bx-history'></i></div>
-                <div>
-                    <h2 class="card-title">Recent Activity</h2>
-                    <p class="card-subtitle">Showing the most recent actions logged on this server.</p>
-                </div>
-            </div>
-
-            <div class="timeline" id="logsContainer">
-                <div class="skeleton" style="height: 100px; margin-bottom: 20px;"></div>
-                <div class="skeleton" style="height: 100px; margin-bottom: 20px;"></div>
-                <div class="skeleton" style="height: 100px;"></div>
-            </div>
-        </div>
-    </main>
-
-    <script src="/shared.js"></script>
-    <script>
-        const guildId = window.location.pathname.split('/')[2];
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('breadServerName').textContent = localStorage.getItem(`guild_name_${guildId}`) || guildId;
-            loadLogs();
-        });
-
-        async function loadLogs() {
-            try {
-                const res = await fetch(`/api/server/${guildId}/logs`);
-                const data = await res.json();
-                const container = document.getElementById('logsContainer');
-
-                if (!res.ok || !data.success) {
-                    container.innerHTML = `<div class="alert alert-danger"><i class='bx bx-error-circle'></i> Error loading logs: ${data.error || 'Unknown error'}</div>`;
-                    return;
-                }
-
-                if (!data.logs || data.logs.length === 0) {
-                    container.innerHTML = `<div class="alert alert-info"><i class='bx bx-info-circle'></i> No logs found for this server.</div>`;
-                    return;
-                }
-
-                container.innerHTML = '';
-                
-                data.logs.forEach(log => {
-                    const date = new Date(log.createdAt);
-                    const timeString = date.toLocaleString();
-                    
-                    let dotClass = 'info';
-                    if (log.action.toLowerCase().includes('delete') || log.action.toLowerCase().includes('remove') || log.action.toLowerCase().includes('ban')) {
-                        dotClass = 'error';
-                    } else if (log.action.toLowerCase().includes('create') || log.action.toLowerCase().includes('add') || log.action.toLowerCase().includes('unban')) {
-                        dotClass = 'success';
-                    } else if (log.action.toLowerCase().includes('warn') || log.action.toLowerCase().includes('update')) {
-                        dotClass = 'warn';
-                    }
-
-                    const item = document.createElement('div');
-                    item.className = 'timeline-item';
-                    item.innerHTML = `
-                        <div class="timeline-dot ${dotClass}"></div>
-                        <div class="timeline-card">
-                            <div class="timeline-meta">
-                                <span class="timeline-type">${log.action}</span>
-                                <span class="timeline-time">${timeString}</span>
-                            </div>
-                            <div class="timeline-content">
-                                <span class="timeline-user">${log.user}</span>: ${log.reason || 'No reason provided'}
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(item);
-                });
-            } catch (error) {
-                console.error(error);
-                document.getElementById('logsContainer').innerHTML = `<div class="alert alert-danger"><i class='bx bx-error-circle'></i> Failed to load logs.</div>`;
-            }
-        }
-    </script>
+<body class="dark">
+  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><img src="" class="user-avatar" data-user-avatar id="userBtn" alt="Account"></div></nav>
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
+  <main class="main-content"><section class="audit-page"><header class="audit-header"><div><div class="eyebrow">Server control</div><h1>Audit logs</h1><p>Administrative activity recorded for this managed server.</p></div><a class="button-secondary" href="/myservers"><i class="bx bx-left-arrow-alt"></i> My servers</a></header><section class="audit-card"><div class="audit-toolbar"><strong>Recent activity</strong><span id="auditCount">Loading…</span></div><div id="logsContainer" class="audit-list"><div class="state">Loading audit records…</div></div></section></section></main>
+  <script src="/shared.js"></script>
+  <script>
+    (() => { const match = window.location.pathname.match(/\/myservers\/([^/]+)/); const guildId = match?.[1]; const container = document.getElementById('logsContainer'); const count = document.getElementById('auditCount'); const esc = value => { const node = document.createElement('span'); node.textContent = String(value ?? '—'); return node.innerHTML; }; const time = value => { const date = new Date(value); return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString(); }; async function load() { if (!guildId) { container.innerHTML = '<div class="state error">No managed server was selected.</div>'; return; } try { const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/audit`, { credentials: 'same-origin' }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Audit unavailable'); const logs = Array.isArray(data.logs) ? data.logs : []; count.textContent = `${logs.length} record${logs.length === 1 ? '' : 's'}`; if (!logs.length) { container.innerHTML = '<div class="state"><i class="bx bx-history" style="display:block;font-size:30px;color:var(--primary);margin-bottom:7px"></i>No audit activity has been recorded yet.</div>'; return; } container.innerHTML = logs.map(log => { const result = ['success','failure','denied'].includes(log.result) ? log.result : 'failure'; return `<article class="audit-row"><span class="audit-dot ${result}"></span><div class="audit-main"><strong>${esc(log.action)} · ${esc(log.feature)}</strong><small>${esc(log.source)}${log.target ? ` · ${esc(log.target)}` : ''} · actor ${esc(log.actorId || 'system')} · ${esc(time(log.timestamp || log.createdAt))}</small></div><span class="audit-result ${result}">${result}</span></article>`; }).join(''); } catch (error) { count.textContent = 'Unavailable'; container.innerHTML = `<div class="state error"><i class="bx bx-error-circle" style="display:block;font-size:30px;margin-bottom:7px"></i>${esc(error.message)}.</div>`; } } load(); })();
+  </script>
 </body>
 </html>

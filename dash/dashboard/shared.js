@@ -71,12 +71,12 @@
   }
 
   function extractGuildId() {
-    const match = window.location.pathname.match(/\/(?:servers|myservers)\/(\d+)/);
+    const match = window.location.pathname.match(/\/(?:servers|myservers)\/([^/]+)/);
     if (match) state.currentGuildId = match[1];
   }
 
   function selectedGuild() {
-    return (state.user?.guilds || []).find(guild => guild.id === state.currentGuildId) || null;
+    return (state.user?.guilds || []).find(guild => String(guild.id) === String(state.currentGuildId) || String(guild.name || '').toLowerCase() === String(state.currentGuildId || '').toLowerCase()) || null;
   }
 
   function buildSidebar() {

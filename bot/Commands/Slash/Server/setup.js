@@ -15,7 +15,7 @@ module.exports = {
     const guildId = interaction.guild?.id;
     const destination = guildId ? `${baseUrl}/myservers/${guildId}/intelligence` : `${baseUrl}/intelligence`;
     return interaction.reply({
-      content: `ابدأ إعداد السيرفر من لوحة ProMcBot: ${destination}\n\nستظهر لك خطوات Discord وMinecraft وtelemetry والهدف التشغيلي في مكان واحد.`,
+      content: `ابدأ إعداد السيرفر من لوحة ProMcBot: ${destination}\n\n1) اضغط Generate one-time config.\n2) ثبّت JAR داخل Paper ثم الصق config.yml الناتج في plugins/ProMcBot/config.yml.\n3) أعد تشغيل Paper ونفّذ /promcbot status.\n4) ارجع للوحة وانتظر Heartbeat وTelemetry.\n\nIP وport اختياريان للمعلومة الأساسية فقط؛ بيانات اللاعبين والأوامر عن بُعد تحتاج Minecraft plugin.`,
       ephemeral: true,
     });
   },

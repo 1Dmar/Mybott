@@ -7,15 +7,17 @@ The shared shell in `dash/dashboard/shared.css` and `dash/dashboard/shared.js` i
 | Surface | Behavior | Evidence state |
 |---|---|---|
 | `/myservers` | Compact search and server cards; only manageable Guilds; permission badge per card | Backed by `getManageableGuilds` and deterministic guild-access tests |
-| Server overview | Four summary cards, live setup strip, four next-step rows, and three quick controls | Guild data, activation, entitlement, and settings APIs; no fabricated metric |
-| Setup & intelligence | Eight short activation rows, progress, connection evidence, one-time plugin provisioning, collapsed advanced modules | Backend evidence and server-side entitlement; missing data remains explicit |
-| Setup & settings | Prefix, language, optional address, and focused next-step guidance | Guild-manager protected settings API |
+| Server overview | Four summary cards, live setup strip, four next-step rows, and four quick controls | Unified `/api/guilds/:guildId/overview` contract from Discord runtime, PluginInstance, TelemetryEvent, entitlement, and GuildSettings; missing values remain explicit |
+| Setup & intelligence | Eight short activation rows, progress, connection evidence, one-time plugin provisioning, copyable Paper `config.yml`, and collapsed advanced modules | Activation evidence plus exact plugin config contract; generated secrets are one-time and not stored in the browser |
+| Setup & settings | Prefix, language, optional address, and focused next-step guidance | Guild-manager protected settings API backed by persisted `GuildSettings` fields |
 | Premium | Manager-only server selector, current plan, provider state, three concise plan cards, collapsed billing history | PayPal provider boundary; checkout disabled until configured |
+| Modules | BotConfig-backed enable/disable controls for Discord features plus plugin connection status | `/api/guilds/:guildId/modules`; toggles persist to BotConfig and plugin status comes from PluginInstance |
+| Audit logs | Compact audit records with result/source/actor/time | `/api/guilds/:guildId/audit` backed by AuditLog; empty activity is shown explicitly |
 | Action Center | Evidence chips, advisory recommendations, notification read/resolve controls | Guild-scoped notification lifecycle; no fake executable action |
 | Account home | Managed-server count, current plan, one focused CTA, sessions | `/api/guilds` filtered response and real session endpoint |
 
 The design intentionally uses fewer, denser cards instead of long explanatory panels. Each card answers one operational question: **which server, what is its state, what should I do next, and where do I configure it?** Longer details are placed behind `details` disclosure where appropriate.
 
-The visual reference supplied with the prompt exposed a stretched logo overlay, clipped avatar, profile/header overlap, uncontrolled sidebar, and excessive page density. The shared shell and rebuilt server pages address these defects. Local HTTP preview QA currently covers 49 page/viewport combinations across `/myservers`, server overview, setup, settings, Action Center, and Premium at 360, 390, 412, 768, 1024, 1280, and 1440 pixels. The measured result is no horizontal overflow, no page errors, and correct mobile drawer/backdrop behavior. This is deterministic fixture QA, not a replacement for live OAuth/browser acceptance.
+The visual reference supplied with the prompt exposed a stretched logo overlay, clipped avatar, profile/header overlap, uncontrolled sidebar, and excessive page density. The shared shell and rebuilt server pages address these defects. Local HTTP preview QA currently covers 63 page/viewport combinations across `/myservers`, server overview, setup, settings, Logs, Modules, Action Center, and Premium at 360, 390, 412, 768, 1024, 1280, and 1440 pixels. The measured result is no horizontal overflow, no page errors, and correct mobile drawer/backdrop behavior. This is deterministic fixture QA, not a replacement for live OAuth/browser acceptance.
 
 A live authenticated browser test still requires a configured Discord OAuth session and real Discord Guild data. The server API filter is enforced on the backend as well as in the UI; opening a dynamic server URL without manager permission returns `403 guild_access_required` instead of relying on the picker to hide it.

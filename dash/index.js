@@ -46,11 +46,13 @@ const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
-const { canManageGuild, getManageableGuilds } = require('./guildAccess');
+const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
+const { getManageableGuilds, resolveGuildReference } = require('./guildAccess');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
 const GuildSettings  = require('../bot/Models/GuildSettings');
+const BotConfig       = require('../bot/Models/BotConfig');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -135,9 +137,9 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
       return { serverId: auth.serverId, instanceId: auth.instanceId, type: String(event.type || 'unknown').slice(0, 64), occurredAt, receivedAt: new Date(now), requestId: `${req.get('x-promcbot-nonce')}:${index}`, data: safeData, expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000) };
     });
     await TelemetryEvent.insertMany(documents, { ordered: false });
-    const latestCount = documents.map(d => d.type === 'player_count' ? Number(d.data.onlinePlayers) : NaN).find(Number.isFinite);
+    const latestCount = latestOnlinePlayers(documents);
     const headerValue = name => String(req.get(name) || '').trim().slice(0, 120) || null;
-    await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === undefined ? {} : { lastOnlinePlayers: Math.max(0, latestCount) }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
+    await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === null ? {} : { lastOnlinePlayers: latestCount }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
     res.status(202).json({ success: true, accepted: documents.length, serverId: auth.serverId, instanceId: auth.instanceId });
   } catch (error) {
     if (error?.code === 11000) return res.status(202).json({ success: true, accepted: 0, duplicate: true });
@@ -210,7 +212,11 @@ function isAuthenticated(req, res, next) {
 }
 
 function requireGuildManager(req, res, next) {
-  if (!canManageGuild(req.user, req.params.guildId)) return res.status(403).json({ success: false, error: 'guild_access_required' });
+  const reference = req.params.guildId;
+  const guild = resolveGuildReference(req.user, reference);
+  if (!guild) return res.status(403).json({ success: false, error: 'guild_access_required' });
+  req.managedGuild = guild;
+  req.params.guildId = guild.id;
   next();
 }
 
@@ -340,11 +346,80 @@ app.post('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, 
     await GuildSettings.findOneAndUpdate(
       { guildId: req.params.guildId },
       { prefix, language, mcIp },
-      { upsert: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+const moduleKeys = ['autoResponder', 'welcomeMessages', 'moderation', 'logs', 'tickets', 'serverStatus'];
+const moduleMeta = {
+  autoResponder: { label: 'Auto responder', description: 'Reply to configured phrases.', href: 'configuration' },
+  welcomeMessages: { label: 'Welcome messages', description: 'Greet new members in a chosen channel.', href: 'welcome' },
+  moderation: { label: 'Moderation', description: 'Apply the server moderation module.', href: 'moderation' },
+  logs: { label: 'Audit logging', description: 'Keep administrative activity visible.', href: 'logs' },
+  tickets: { label: 'Support tickets', description: 'Give members a support entry point.', href: 'ticket' },
+  serverStatus: { label: 'Server status', description: 'Show Minecraft health and status signals.', href: 'intelligence' },
+};
+
+app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const guildId = req.params.guildId;
+    const now = Date.now();
+    const botGuild = getBotClient()?.guilds?.cache?.get(guildId) || null;
+    const [plugin, telemetry24h, settings, entitlement, botConfig] = await Promise.all([
+      PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
+      TelemetryEvent.countDocuments({ serverId: guildId, occurredAt: { $gte: new Date(now - 24 * 60 * 60 * 1000) } }),
+      GuildSettings.findOne({ guildId }).lean(),
+      getForGuild(guildId),
+      BotConfig.findOne({ guildId }).lean(),
+    ]);
+    const pluginOnline = Boolean(plugin && (plugin.status === 'online' || (plugin.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000)));
+    res.json({ success: true, source: 'discord+plugin+telemetry+entitlement', server: { id: guildId, name: botGuild?.name || plugin?.serverName || null, icon: botGuild?.icon || null, memberCount: Number.isFinite(botGuild?.memberCount) ? botGuild.memberCount : null, discordConnected: Boolean(botGuild) }, plugin: plugin ? { instanceId: plugin.instanceId, status: pluginOnline ? 'online' : plugin.status || 'offline', lastSeenAt: plugin.lastSeenAt || null, onlinePlayers: plugin.lastOnlinePlayers ?? null } : null, telemetry: { events24h: telemetry24h }, entitlement: { plan: entitlement.plan, name: entitlement.name, status: entitlement.status, currentPeriodEnd: entitlement.currentPeriodEnd || null }, settings: { prefix: settings?.prefix || '!', language: settings?.language || 'en', mcIp: settings?.mcIp || null }, modules: botConfig?.modules || {} });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'overview_unavailable' });
+  }
+});
+
+app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const [config, pluginInstances, settings] = await Promise.all([
+      BotConfig.findOne({ guildId: req.params.guildId }).lean(),
+      PluginInstance.find({ serverId: req.params.guildId }).sort({ lastSeenAt: -1 }).limit(20).lean(),
+      GuildSettings.findOne({ guildId: req.params.guildId }).lean(),
+    ]);
+    const configuredModules = config?.modules || {};
+    const moduleEnabled = id => id === 'moderation' ? (configuredModules[id] === true || settings?.automod?.enabled === true) : configuredModules[id] === true;
+    const moduleToggleable = id => id === 'autoResponder' || id === 'moderation';
+    const modules = moduleKeys.map(id => ({
+      id,
+      ...moduleMeta[id],
+      enabled: moduleEnabled(id),
+      configured: Boolean(config),
+      statusLabel: moduleToggleable(id) ? (moduleEnabled(id) ? 'Enabled' : 'Off') : (moduleEnabled(id) ? 'Configured' : 'Open setup'),
+      href: `/myservers/${encodeURIComponent(req.params.guildId)}/${moduleMeta[id].href}`,
+      toggleable: moduleToggleable(id),
+    }));
+    const recentCutoff = Date.now() - 5 * 60 * 1000;
+    const pluginOnline = pluginInstances.some(instance => instance.status === 'online' || (instance.lastSeenAt && new Date(instance.lastSeenAt).getTime() >= recentCutoff));
+    modules.push({ id: 'minecraftPlugin', label: 'Minecraft plugin', description: 'Required for player data and remote server commands.', enabled: pluginOnline, configured: pluginInstances.length > 0, statusLabel: pluginOnline ? 'Connected' : pluginInstances.length ? 'Waiting for heartbeat' : 'Not connected', href: `/myservers/${encodeURIComponent(req.params.guildId)}/intelligence`, toggleable: false });
+    res.json({ success: true, guildId: req.params.guildId, modules, source: 'BotConfig+PluginInstance' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'modules_unavailable' });
+  }
+});
+
+app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuildManager, async (req, res) => {
+  const moduleId = String(req.params.moduleId || '');
+  if (!moduleKeys.includes(moduleId) || typeof req.body?.enabled !== 'boolean') return res.status(400).json({ success: false, error: 'invalid_module_update' });
+  try {
+    const config = await BotConfig.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { [`modules.${moduleId}`]: req.body.enabled } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+    if (moduleId === 'moderation') await GuildSettings.findOneAndUpdate({ guildId: req.params.guildId }, { $set: { 'automod.enabled': req.body.enabled } }, { upsert: true, setDefaultsOnInsert: true });
+    res.json({ success: true, moduleId, enabled: req.body.enabled });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'module_update_failed' });
   }
 });
 

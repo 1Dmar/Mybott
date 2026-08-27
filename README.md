@@ -24,6 +24,10 @@ Use `.env.example` or the environment configuration used by the deployment platf
 
 Install dependencies with `npm ci --ignore-scripts` in environments where the optional native renderer is unavailable. Run `npm test` for the deterministic Node suite and `npm run check` for entry-point syntax checks. Build the plugin with `cd plugin && mvn -q clean test package`. The optional `canvas` renderer has an explicit unavailable response when its native binary is not built; this does not prevent bot startup.
 
+## First setup
+
+For the operator-facing path from `/myservers` to Paper plugin, `config.yml`, `/promcbot status`, heartbeat, and telemetry, read [`docs/QUICKSTART.md`](docs/QUICKSTART.md).
+
 ## Documentation map
 
 The implementation and limitation matrix is in `docs/IMPLEMENTATION_STATUS.md`. Architecture, security, plugin protocol, compatibility, migration, Dashboard, commands, Premium, Payments, Entitlements, and Glossary documents are maintained under `docs/`. `PRO_MCBOT_FINAL_QA.md` records the latest verification boundary and external blockers. Do not interpret a local pass as live Discord, MongoDB, PayPal, or Paper acceptance.

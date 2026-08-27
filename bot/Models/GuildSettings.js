@@ -6,6 +6,21 @@ const GuildSettingsSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    prefix: {
+        type: String,
+        default: '!',
+        maxlength: 5
+    },
+    language: {
+        type: String,
+        enum: ['en', 'ar'],
+        default: 'en'
+    },
+    mcIp: {
+        type: String,
+        default: null,
+        maxlength: 255
+    },
     automod: {
         enabled: {
             type: Boolean,

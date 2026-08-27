@@ -23,6 +23,7 @@ const ApiKey = require('../Models/apiKey');
 const BumpedServer = require('../Models/bumpedServer');
 const BlackList = require("../Models/BlackList");
 const AutoResponder = require("../Models/AutoResponder");
+const BotConfig = require("../Models/BotConfig");
 const { DateTime } = require('luxon');
 const Log = require('../Models/Log');
 const EMOJIS_CONFIG = require("../settings/emojis");
@@ -70,6 +71,31 @@ const EMOJIS = {
 };
 
 const url = "https://promcbot.dev";
+const botConfigCache = new Map();
+
+async function getBotConfig(guildId) {
+    const cached = botConfigCache.get(guildId);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    const value = await BotConfig.findOne({ guildId }).lean().catch(() => null);
+    botConfigCache.set(guildId, { value, expiresAt: Date.now() + 15000 });
+    return value;
+}
+
+const handleAutoResponder = async (message) => {
+    if (!message?.guild || message.author?.bot || !message.content?.trim() || message.content.startsWith(PREFIX)) return;
+    try {
+        const config = await getBotConfig(message.guild.id);
+        if (config?.modules?.autoResponder !== true) return;
+        const rules = await AutoResponder.find({ guildId: message.guild.id }).limit(25).lean();
+        const content = message.content.trim().toLowerCase();
+        const rule = rules.find(item => String(item.trigger || '').trim() && content.startsWith(String(item.trigger).trim().toLowerCase()));
+        if (!rule?.response) return;
+        const response = String(rule.response).replace(/\{user\}/gi, `<@${message.author.id}>`).replace(/\{server\}/gi, message.guild.name).slice(0, 1900);
+        await message.reply({ content: response, allowedMentions: { users: [message.author.id] } });
+    } catch (error) {
+        console.error('Auto responder error:', error.message);
+    }
+};
 
 const handleMainMessage = async (client, message) => {
     if (message.author.bot || !message.guild) return;
@@ -407,6 +433,7 @@ const addFieldsToEmbed = (serverType, serverData, ip, port) => {
 module.exports = {
     name: "messageCreate",
     async execute(message, client) {
+        await handleAutoResponder(message);
         await handleMainMessage(client, message);
         await handleMcMessage(client, message);
         await handleAutoMod(client, message);
