@@ -54,6 +54,13 @@ test('PayPal formatter explains local configuration errors', () => {
   assert.match(formatPayPalError(new Error('paypal_approval_url_missing')), /رابط موافقة/);
 });
 
+test('PayPal formatter exposes checkout stage when provider returns no structured details', () => {
+  const error = new Error('Request failed with status code 422');
+  error.billingStage = 'create_subscription';
+  assert.match(formatPayPalError(error), /create_subscription/);
+  assert.match(formatPayPalError(error), /422/);
+});
+
 test('PayPal formatter exposes safe provider issue and debug id', () => {
   const error = {
     response: {

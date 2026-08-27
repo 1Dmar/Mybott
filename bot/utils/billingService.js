@@ -88,10 +88,14 @@ function formatPayPalError(error) {
   const details = getPayPalErrorDetails(error);
   const reason = details.description || details.issue || details.name;
   if (reason) return `PayPal رفض إنشاء الاشتراك: ${reason}${details.debugId ? ` (debug ${details.debugId})` : ''}`;
+  const rawMessage = String(error?.message || '').trim();
+  const stage = String(error?.billingStage || '').trim();
+  if (stage && rawMessage) return `فشل PayPal في مرحلة ${stage}: ${rawMessage.slice(0, 180)}`;
   if (error?.code === 'ECONNABORTED' || error?.code === 'ETIMEDOUT') return 'انتهت مهلة الاتصال مع PayPal. حاول مرة أخرى وتحقق من deployment network.';
   const transportCode = String(error?.code || '').trim();
   if (transportCode) return `فشل اتصال PayPal (${transportCode}). تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.`;
   if (details.status) return `PayPal أعاد HTTP ${details.status}. تحقق من Client credentials وPlan ID وكون الخطة Active في نفس البيئة.`;
+  if (/^Request failed with status code \d+$/.test(rawMessage)) return `فشل طلب PayPal: ${rawMessage.slice(0, 180)}`;
   return 'فشل اتصال PayPal. تحقق من تطابق Sandbox/Live وClient credentials وPlan ID ثم حاول مرة أخرى.';
 }
 
@@ -164,17 +168,26 @@ async function createCheckout({ guildId, plan, method = 'paypal', returnUrl, can
   if (!catalog.methods[method]?.enabled) throw new Error('payment_method_not_configured');
   if (!catalog.plans[normalizedPlan]?.providerPlanConfigured) throw new Error('payment_plan_not_configured');
   const providerPlanId = planIdFor(normalizedPlan);
-  const data = await paypalRequest('POST', '/v1/billing/subscriptions', {
-    plan_id: providerPlanId,
-    custom_id: String(guildId),
-    application_context: {
-      brand_name: 'ProMcBot',
-      user_action: 'SUBSCRIBE_NOW',
-      shipping_preference: 'NO_SHIPPING',
-      return_url: returnUrl,
-      cancel_url: cancelUrl,
-    },
-  });
+  let data;
+  try {
+    data = await paypalRequest('POST', '/v1/billing/subscriptions', {
+      plan_id: providerPlanId,
+      custom_id: String(guildId),
+      application_context: {
+        brand_name: 'ProMcBot',
+        user_action: 'SUBSCRIBE_NOW',
+        shipping_preference: 'NO_SHIPPING',
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+      },
+    }, {
+      Prefer: 'return=representation',
+      'PayPal-Request-Id': `promcbot-${crypto.randomUUID()}`,
+    });
+  } catch (error) {
+    error.billingStage = 'create_subscription';
+    throw error;
+  }
   const approval = Array.isArray(data?.links) ? data.links.find(link => link.rel === 'approve')?.href : null;
   if (!approval) throw new Error('paypal_approval_url_missing');
   return { provider: 'paypal', method, providerSubscriptionId: data.id, status: data.status, checkoutUrl: approval };
@@ -182,7 +195,12 @@ async function createCheckout({ guildId, plan, method = 'paypal', returnUrl, can
 
 async function cancelSubscription(providerSubscriptionId, reason = 'Cancelled by guild manager') {
   if (!providerSubscriptionId) throw new Error('provider_subscription_missing');
-  await paypalRequest('POST', `/v1/billing/subscriptions/${encodeURIComponent(providerSubscriptionId)}/cancel`, { reason: String(reason).slice(0, 128) });
+  try {
+    await paypalRequest('POST', `/v1/billing/subscriptions/${encodeURIComponent(providerSubscriptionId)}/cancel`, { reason: String(reason).slice(0, 128) });
+  } catch (error) {
+    error.billingStage = 'cancel_subscription';
+    throw error;
+  }
   return { provider: 'paypal', providerSubscriptionId, renewalState: 'will_cancel' };
 }
 

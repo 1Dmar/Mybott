@@ -350,7 +350,11 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
     const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
     const serverPremiumPath = `/myservers/${encodeURIComponent(req.params.guildId)}/premium`;
     const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}${serverPremiumPath}?billing=pending`, cancelUrl: `${baseUrl}${serverPremiumPath}?billing=cancelled` });
-    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
+    try {
+      await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_checkout_created', feature: `billing.${plan}`, result: 'pending_provider_approval', source: `paypal:${method}`, target: checkout.providerSubscriptionId });
+    } catch (auditError) {
+      console.error('[billing checkout] audit write failed after provider checkout:', auditError.message);
+    }
     res.json({ success: true, ...checkout });
   } catch (error) {
     const configurationError = ['payment_method_not_configured', 'payment_plan_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
@@ -368,7 +372,11 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
   try {
     const result = await cancelSubscription(subscription.providerSubscriptionId);
     await Subscription.updateOne({ guildId: req.params.guildId }, { $set: { renewalState: 'will_cancel', cancellationAt: new Date() } });
-    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'paypal', target: subscription.providerSubscriptionId });
+    try {
+      await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'billing_cancel_requested', feature: 'billing.subscription', result: 'success', source: 'paypal', target: subscription.providerSubscriptionId });
+    } catch (auditError) {
+      console.error('[billing cancel] audit write failed after provider cancellation:', auditError.message);
+    }
     res.json({ success: true, ...result });
   } catch (error) {
     const details = getPayPalErrorDetails(error);
