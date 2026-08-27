@@ -6,6 +6,8 @@ import com.promcbot.plugin.telemetry.TelemetryQueue;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +27,9 @@ class PlatformSecurityTest {
     void queueIsBoundedAndReportsDroppedEvents() {
         TelemetryQueue queue = new TelemetryQueue(10);
         for (int i = 0; i < 12; i++) {
-            queue.offer(new TelemetryEvent("test", Instant.now(), "server", "instance", Map.of("i", i)));
+            Map<String, Object> data = new HashMap<String, Object>();
+            data.put("i", i);
+            queue.offer(new TelemetryEvent("test", Instant.now(), "server", "instance", data));
         }
         assertEquals(10, queue.size());
         assertEquals(2, queue.dropped());

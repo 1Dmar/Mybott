@@ -42,8 +42,8 @@ The first plugin implementation sends `player_join`, `player_leave`, `player_cou
 
 ## Failure behavior
 
-Network calls are performed by Java's asynchronous HTTP client from Bukkit async scheduler tasks. The plugin does not block the Minecraft main thread, and a bounded in-memory queue protects memory. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the queue is flushed or discarded after the bounded queue is full. The plugin's local `/promcbot status` command reports queue size, dropped events, and last backend state.
+Network calls use Java 8-compatible `HttpURLConnection` work executed through `CompletableFuture` from Bukkit async scheduler tasks. The plugin does not block the Minecraft main thread, and a bounded in-memory queue protects memory. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the queue is flushed or discarded after the bounded queue is full. The plugin's local `/promcbot status` command reports queue size, dropped events, and last backend state.
 
 ## Compatibility statement
 
-The artifact is compiled against Paper API `1.21.4-R0.1-SNAPSHOT` and declares `api-version: '1.20'`. This repository verifies compilation and unit tests, but does not claim runtime compatibility with a specific Paper, Spigot, Purpur, Fabric, or Minecraft server release until an integration test is run on that server software.
+The artifact is compiled against the shared Spigot/Bukkit API `1.8.8-R0.1-SNAPSHOT` and emits Java 8 bytecode. Its `plugin.yml` intentionally omits the modern `api-version` field so 1.8.x servers can load it. It is intended for Spigot and Paper targets 1.8.x, 1.12.x, 1.16.x, 1.20.x, and 1.21.x. This repository verifies compilation, tests, bytecode level, and descriptor contents; live runtime acceptance still requires starting the JAR on each actual server target. PocketMine-MP is not supported by this Java JAR.

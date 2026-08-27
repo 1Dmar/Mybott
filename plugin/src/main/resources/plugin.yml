@@ -1,7 +1,6 @@
 name: ProMcBot
 version: '${project.version}'
 main: dev.promcbot.plugin.ProMcBotPlugin
-api-version: '1.20'
 author: ProMcBot
 website: https://promcbot.dev
 description: Asynchronous telemetry bridge for ProMcBot.

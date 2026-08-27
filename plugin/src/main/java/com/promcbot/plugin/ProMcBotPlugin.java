@@ -13,20 +13,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ProMcBotPlugin extends JavaPlugin implements Listener, CommandExecutor {
-    private final Map<UUID, Instant> sessions = new ConcurrentHashMap<>();
+    private final Map<UUID, Instant> sessions = new ConcurrentHashMap<UUID, Instant>();
     private TelemetryQueue telemetryQueue;
     private BackendClient backend;
-    private int flushTask = -1;
     private int snapshotTask = -1;
-    private int heartbeatTask = -1;
+    private BukkitTask flushTask;
+    private BukkitTask heartbeatTask;
     private volatile int lastOnlineCount;
     private volatile boolean entitlementAvailable;
 
@@ -65,17 +67,17 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
                 20L * snapshotSeconds, 20L * snapshotSeconds);
         // Network calls are always asynchronous and never block the Minecraft thread.
         flushTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, () -> flush(batchSize),
-                20L * 5, 20L * 5).getTaskId();
+                20L * 5, 20L * 5);
         heartbeatTask = Bukkit.getScheduler().runTaskTimerAsynchronously(this, this::heartbeat,
-                20L * heartbeatSeconds, 20L * heartbeatSeconds).getTaskId();
+                20L * heartbeatSeconds, 20L * heartbeatSeconds);
         getLogger().info("ProMcBot plugin enabled. Queue=" + maxQueue + ", batch=" + batchSize + ", protocol=v" + protocolVersion);
     }
 
     @Override
     public void onDisable() {
         if (snapshotTask != -1) Bukkit.getScheduler().cancelTask(snapshotTask);
-        if (flushTask != -1) Bukkit.getScheduler().cancelTask(flushTask);
-        if (heartbeatTask != -1) Bukkit.getScheduler().cancelTask(heartbeatTask);
+        if (flushTask != null) flushTask.cancel();
+        if (heartbeatTask != null) heartbeatTask.cancel();
         if (backend != null && telemetryQueue != null) flush(250);
         getLogger().info("ProMcBot plugin disabled. Pending telemetry is discarded safely after the local queue limit.");
     }
@@ -84,33 +86,33 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         sessions.put(player.getUniqueId(), Instant.now());
-        enqueue("player_join", Map.of("uuid", player.getUniqueId().toString(), "username", player.getName()));
+        enqueue("player_join", data("uuid", player.getUniqueId().toString(), "username", player.getName()));
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         Instant started = sessions.remove(player.getUniqueId());
-        long duration = started == null ? 0 : Math.max(0, java.time.Duration.between(started, Instant.now()).getSeconds());
-        enqueue("player_leave", Map.of("uuid", player.getUniqueId().toString(), "username", player.getName(), "sessionSeconds", duration));
+        long duration = started == null ? 0 : Math.max(0, Duration.between(started, Instant.now()).getSeconds());
+        enqueue("player_leave", data("uuid", player.getUniqueId().toString(), "username", player.getName(), "sessionSeconds", duration));
     }
 
     private void captureSnapshot() {
         // Identity is collected on join/leave; periodic snapshots contain only the aggregate count.
         lastOnlineCount = Bukkit.getOnlinePlayers().size();
-        enqueue("player_count", Map.of("onlinePlayers", lastOnlineCount));
+        enqueue("player_count", data("onlinePlayers", lastOnlineCount));
     }
 
-    private void enqueue(String type, Map<String, Object> data) {
+    private void enqueue(String type, Map<String, Object> eventData) {
         if (telemetryQueue == null) return;
         String serverId = getConfig().getString("backend.server-id", "unconfigured");
         String instanceId = getConfig().getString("backend.instance-id", "unconfigured");
-        telemetryQueue.offer(new TelemetryEvent(type, Instant.now(), serverId, instanceId, data));
+        telemetryQueue.offer(new TelemetryEvent(type, Instant.now(), serverId, instanceId, eventData));
     }
 
     private void flush(int batchSize) {
         if (backend == null || telemetryQueue == null || telemetryQueue.size() == 0) return;
-        var batch = telemetryQueue.drain(batchSize);
+        java.util.List<TelemetryEvent> batch = telemetryQueue.drain(batchSize);
         backend.sendBatchWithRetry(batch).thenAccept(ok -> {
             if (!ok) telemetryQueue.requeue(batch);
         });
@@ -119,6 +121,14 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private void heartbeat() {
         if (backend == null) return;
         backend.sendHeartbeat(lastOnlineCount);
+    }
+
+    private static Map<String, Object> data(Object... values) {
+        Map<String, Object> result = new HashMap<String, Object>();
+        for (int i = 0; i + 1 < values.length; i += 2) {
+            result.put(String.valueOf(values[i]), values[i + 1]);
+        }
+        return result;
     }
 
     @Override

@@ -23,14 +23,13 @@
 
 ## Minecraft Plugin
 
-يوجد plugin فعلي قابل للبناء داخل `plugin/`. يتطلب JDK 21 وMaven 3.8 أو أحدث:
+يوجد plugin فعلي قابل للبناء داخل `plugin/`. يستهدف Java 8 وواجهة Spigot/Bukkit المشتركة، ولذلك فهو مخصص لـSpigot وPaper على 1.8.x و1.12.x و1.16.x و1.20.x و1.21.x. يتطلب JDK 8 أو أحدث وMaven 3.8 أو أحدث:
 
 ```bash
-cd plugin
-mvn clean test package
+npm run build:plugin
 ```
 
-ينتج البناء `plugin/target/promcbot-plugin-0.1.0.jar`. ثبّت الـJAR في مجلد `plugins` لسيرفر Paper، ثم استخدم صفحة `/intelligence` أو `/onboarding` في dashboard لتوليد credentials لمعرّف instance فريد. انسخ الإعدادات إلى `plugin/config.yml` ولا ترفع الملف بعد تعبئته إلى Git.
+ينتج البناء `plugin/target/promcbot-plugin-0.1.0.jar`. ثبّت الـJAR في مجلد `plugins` لسيرفر Spigot أو Paper، ثم افتح **My Servers → اختر السيرفر → Setup & Intelligence** لتوليد credentials لمعرّف instance فريد. انسخ الإعدادات إلى `plugins/ProMcBot/config.yml` ولا ترفع الملف بعد تعبئته إلى Git. Bukkit هنا هو API المشترك؛ PocketMine-MP ليس مدعومًا بهذا JAR.
 
 الـplugin يجمع join/leave/count/heartbeat فقط في الدفعة الأولى، ويرسلها asynchronously بتوقيع HMAC وبـnonce وtimestamp. عدم توفر backend لا يوقف Minecraft gameplay. تفاصيل البروتوكول في `docs/PLUGIN_PROTOCOL.md`.
 

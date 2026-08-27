@@ -3,21 +3,22 @@ package com.promcbot.plugin.backend;
 import com.promcbot.plugin.telemetry.TelemetryEvent;
 import com.promcbot.plugin.telemetry.TelemetryQueue;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class BackendClient {
-    private final HttpClient http;
     private final TelemetryQueue queue;
     private final String baseUrl;
     private final String serverId;
@@ -49,91 +50,94 @@ public final class BackendClient {
         this.signingSecret = require(signingSecret, "signingSecret");
         this.protocolVersion = require(protocolVersion, "protocolVersion");
         this.queue = queue;
-        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     }
 
     public CompletableFuture<Boolean> sendBatch(List<TelemetryEvent> events) {
         if (events == null || events.isEmpty()) return CompletableFuture.completedFuture(true);
-        String body = batchJson(events);
-        String timestamp = Long.toString(Instant.now().getEpochSecond());
-        String nonce = UUID.randomUUID().toString();
-        String signature = HmacSigner.sign(signingSecret, timestamp, nonce, body);
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/telemetry/events"))
-                .timeout(Duration.ofSeconds(8))
-                .header("Authorization", "Bearer " + accessToken)
-                .header("X-ProMcBot-Server", serverId)
-                .header("X-ProMcBot-Instance", instanceId)
-                .header("X-ProMcBot-Version", protocolVersion)
-                .header("X-ProMcBot-Network", networkId)
-                .header("X-ProMcBot-Minecraft-Server", minecraftServerId)
-                .header("X-ProMcBot-Server-Name", serverName)
-                .header("X-ProMcBot-Timestamp", timestamp)
-                .header("X-ProMcBot-Nonce", nonce)
-                .header("X-ProMcBot-Signature", signature)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-        return http.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    boolean ok = response.statusCode() >= 200 && response.statusCode() < 300;
-                    if (ok) {
-                        online = true;
-                        consecutiveFailures.set(0);
-                    } else {
-                        online = false;
-                        consecutiveFailures.incrementAndGet();
-                    }
-                    return ok;
-                })
-                .exceptionally(error -> {
-                    online = false;
-                    consecutiveFailures.incrementAndGet();
-                    return false;
-                });
+        final String body = batchJson(events);
+        return sendAsync("/api/v1/telemetry/events", "POST", body);
     }
 
     public CompletableFuture<Boolean> sendBatchWithRetry(List<TelemetryEvent> events) {
         return sendBatchWithRetry(events, 3);
     }
 
-    private CompletableFuture<Boolean> sendBatchWithRetry(List<TelemetryEvent> events, int attemptsLeft) {
+    private CompletableFuture<Boolean> sendBatchWithRetry(final List<TelemetryEvent> events, final int attemptsLeft) {
         return sendBatch(events).thenCompose(ok -> {
             if (ok || attemptsLeft <= 1) return CompletableFuture.completedFuture(ok);
-            long delaySeconds = (long) Math.pow(2, 3 - attemptsLeft);
-            return CompletableFuture.supplyAsync(() -> true, CompletableFuture.delayedExecutor(delaySeconds, TimeUnit.SECONDS))
-                    .thenCompose(ignored -> sendBatchWithRetry(events, attemptsLeft - 1));
+            final long delaySeconds = (long) Math.pow(2, 3 - attemptsLeft);
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    TimeUnit.SECONDS.sleep(delaySeconds);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+                return true;
+            }).thenCompose(ignored -> sendBatchWithRetry(events, attemptsLeft - 1));
         });
     }
 
     public CompletableFuture<Boolean> refreshCapabilities() {
-        String body = "";
-        String timestamp = Long.toString(Instant.now().getEpochSecond());
-        String nonce = UUID.randomUUID().toString();
-        String signature = HmacSigner.sign(signingSecret, timestamp, nonce, body);
-        HttpRequest request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/v1/plugin/capabilities"))
-                .timeout(Duration.ofSeconds(8))
-                .header("Authorization", "Bearer " + accessToken)
-                .header("X-ProMcBot-Server", serverId)
-                .header("X-ProMcBot-Instance", instanceId)
-                .header("X-ProMcBot-Version", protocolVersion)
-                .header("X-ProMcBot-Network", networkId)
-                .header("X-ProMcBot-Minecraft-Server", minecraftServerId)
-                .header("X-ProMcBot-Server-Name", serverName)
-                .header("X-ProMcBot-Timestamp", timestamp)
-                .header("X-ProMcBot-Nonce", nonce)
-                .header("X-ProMcBot-Signature", signature)
-                .build();
-        return http.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> response.statusCode() >= 200 && response.statusCode() < 300).exceptionally(error -> false);
+        return sendAsync("/api/v1/plugin/capabilities", "GET", "");
     }
 
     public CompletableFuture<Boolean> sendHeartbeat(int onlinePlayers) {
-        TelemetryEvent heartbeat = new TelemetryEvent("heartbeat", Instant.now(), serverId, instanceId,
-                Map.of("onlinePlayers", onlinePlayers, "queueSize", queue.size(), "droppedEvents", queue.dropped()));
-        return sendBatch(List.of(heartbeat));
+        Map<String, Object> data = new HashMap<String, Object>();
+        data.put("onlinePlayers", onlinePlayers);
+        data.put("queueSize", queue == null ? 0 : queue.size());
+        data.put("droppedEvents", queue == null ? 0 : queue.dropped());
+        TelemetryEvent heartbeat = new TelemetryEvent("heartbeat", Instant.now(), serverId, instanceId, data);
+        return sendBatch(Collections.singletonList(heartbeat));
     }
 
     public boolean isOnline() { return online; }
     public int consecutiveFailures() { return consecutiveFailures.get(); }
+
+    private CompletableFuture<Boolean> sendAsync(final String path, final String method, final String body) {
+        return CompletableFuture.supplyAsync(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = URI.create(baseUrl + path).toURL();
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod(method);
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(8000);
+                connection.setUseCaches(false);
+                connection.setRequestProperty("Authorization", "Bearer " + accessToken);
+                connection.setRequestProperty("X-ProMcBot-Server", serverId);
+                connection.setRequestProperty("X-ProMcBot-Instance", instanceId);
+                connection.setRequestProperty("X-ProMcBot-Version", protocolVersion);
+                connection.setRequestProperty("X-ProMcBot-Network", networkId);
+                connection.setRequestProperty("X-ProMcBot-Minecraft-Server", minecraftServerId);
+                connection.setRequestProperty("X-ProMcBot-Server-Name", serverName);
+                String timestamp = Long.toString(Instant.now().getEpochSecond());
+                String nonce = UUID.randomUUID().toString();
+                connection.setRequestProperty("X-ProMcBot-Timestamp", timestamp);
+                connection.setRequestProperty("X-ProMcBot-Nonce", nonce);
+                connection.setRequestProperty("X-ProMcBot-Signature", HmacSigner.sign(signingSecret, timestamp, nonce, body));
+                if ("POST".equals(method)) {
+                    byte[] payload = body.getBytes(StandardCharsets.UTF_8);
+                    connection.setDoOutput(true);
+                    connection.setRequestProperty("Content-Type", "application/json");
+                    connection.setFixedLengthStreamingMode(payload.length);
+                    connection.getOutputStream().write(payload);
+                }
+                int status = connection.getResponseCode();
+                InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
+                if (stream != null) stream.close();
+                boolean ok = status >= 200 && status < 300;
+                online = ok;
+                if (ok) consecutiveFailures.set(0); else consecutiveFailures.incrementAndGet();
+                return ok;
+            } catch (Exception error) {
+                online = false;
+                consecutiveFailures.incrementAndGet();
+                return false;
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        });
+    }
 
     private static String trimBaseUrl(String value) {
         String url = require(value, "baseUrl").trim();
@@ -144,7 +148,7 @@ public final class BackendClient {
     }
 
     private static String require(String value, String field) {
-        if (value == null || value.isBlank()) throw new IllegalArgumentException(field + " is required");
+        if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException(field + " is required");
         return value;
     }
 

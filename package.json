@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test test/**/*.test.js",
-    "check": "node --check server.js && node --check dash/index.js"
+    "check": "node --check server.js && node --check dash/index.js",
+    "build:plugin": "mvn -q -f plugin/pom.xml clean test package"
   },
   "engines": {
     "node": ">=22.13.0 <23"
