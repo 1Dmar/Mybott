@@ -7,21 +7,39 @@ const sharp = require('sharp');
 const CARD_WIDTH = 1536;
 const CARD_HEIGHT = 1024;
 const TEMPLATE_PATH = path.join(__dirname, 'dashboard', 'assets', 'public-profile-template-clean.png');
+const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
+const PROFILE_IMAGE_HOSTS = new Set(['cdn.discordapp.com', 'media.discordapp.net', 'images-ext-1.discordapp.net']);
+
+function isAllowedProfileImageUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return url.protocol === 'https:' && !url.port && PROFILE_IMAGE_HOSTS.has(url.hostname.toLowerCase());
+  } catch (_) {
+    return false;
+  }
+}
 
 function escapeXml(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[character]));
 }
 
 async function imageDataUri(url) {
-  if (!url) return null;
+  if (!isAllowedProfileImageUrl(url)) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
   try {
-    const response = await fetch(url, { headers: { 'User-Agent': 'ProMC-Bot/1.0 public-profile-card' } });
+    const response = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'ProMC-Bot/1.0 public-profile-card' } });
     if (!response.ok) return null;
-    const contentType = response.headers.get('content-type') || 'image/png';
+    const contentType = String(response.headers.get('content-type') || '').split(';', 1)[0].toLowerCase();
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    if (!/^image\/(png|jpeg|jpg|webp|gif)$/.test(contentType) || (contentLength > MAX_PROFILE_IMAGE_BYTES)) return null;
     const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > MAX_PROFILE_IMAGE_BYTES) return null;
     return `data:${contentType};base64,${buffer.toString('base64')}`;
   } catch (_) {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -77,4 +95,4 @@ async function renderPublicProfileCard(profile = {}) {
     .toBuffer();
 }
 
-module.exports = { renderPublicProfileCard };
+module.exports = { renderPublicProfileCard, isAllowedProfileImageUrl };

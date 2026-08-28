@@ -4,13 +4,13 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const { renderPublicProfileCard } = require('../dash/publicProfileCard');
+const { renderPublicProfileCard, isAllowedProfileImageUrl } = require('../dash/publicProfileCard');
 
 const rendererSource = fs.readFileSync(require.resolve('../dash/publicProfileCard'), 'utf8');
 const profilePageSource = fs.readFileSync(require.resolve('../dash/dashboard/pages/profile.html'), 'utf8');
 const serverSource = fs.readFileSync(require.resolve('../dash/index.js'), 'utf8');
 
- test('public profile card renders the supplied 3:2 template with dynamic profile fields', async () => {
+test('public profile card renders the supplied 3:2 template with dynamic profile fields', async () => {
   const buffer = await renderPublicProfileCard({
     id: '804999528129363998',
     username: 'alim',
@@ -49,6 +49,15 @@ test('public profile page keeps the official footer logo and current copy', () =
   assert.doesNotMatch(profilePageSource, /Building with ProMC Bot/);
   assert.doesNotMatch(profilePageSource, /A shareable identity card powered by ProMC Bot/);
   assert.doesNotMatch(profilePageSource, /class="p-mark"/);
+});
+
+test('public profile image policy only allows HTTPS Discord CDN hosts', () => {
+  assert.equal(isAllowedProfileImageUrl('https://cdn.discordapp.com/avatars/1/hash.png'), true);
+  assert.equal(isAllowedProfileImageUrl('https://media.discordapp.net/attachments/1/2/image.webp'), true);
+  assert.equal(isAllowedProfileImageUrl('http://cdn.discordapp.com/avatars/1/hash.png'), false);
+  assert.equal(isAllowedProfileImageUrl('https://127.0.0.1/admin'), false);
+  assert.equal(isAllowedProfileImageUrl('https://evil.example/image.png'), false);
+  assert.equal(isAllowedProfileImageUrl('data:image/png;base64,AAAA'), false);
 });
 
 test('canonical /u route uses the fixed-template Open Graph contract', () => {
