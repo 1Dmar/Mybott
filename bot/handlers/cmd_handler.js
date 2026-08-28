@@ -3,12 +3,17 @@ const { readdirSync } = require("fs");
 const path = require('path');
 const Command = require('../Models/Command');
 const { isConnected } = require('../utils/dbManager');
+const { legacyPrefixEnabled } = require('../utils/legacyCommandPolicy');
 
 /**
  *
  * @param {Client} client
  */
 module.exports = async (client) => {
+  if (!legacyPrefixEnabled()) {
+    console.log('ℹ️ Legacy prefix commands are disabled; canonical slash commands remain active.');
+    return;
+  }
   try {
     // إنشاء مصفوفة لتخزين الأوامر
     const loadedCommands = [];

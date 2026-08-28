@@ -5,6 +5,11 @@ const { hashToken, signRequest, safeEqual } = require('./pluginCrypto');
 
 const REPLAY_WINDOW_SECONDS = 300;
 const MAX_BODY_BYTES = 512 * 1024;
+const MAX_HEADER_BYTES = 256;
+const ID_PATTERN = /^[A-Za-z0-9._:-]{1,64}$/;
+const NONCE_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/;
+const SIGNATURE_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const VERSION_PATTERN = /^[A-Za-z0-9._-]{1,32}$/;
 
 function encryptionKey() {
   const raw = process.env.PLUGIN_ENCRYPTION_KEY || '';
@@ -41,7 +46,9 @@ async function authenticatePluginRequest(req, rawBody) {
   const nonce = String(req.get('x-promcbot-nonce') || '');
   const signature = String(req.get('x-promcbot-signature') || '');
   const protocolVersion = String(req.get('x-promcbot-version') || '');
-  if (!accessToken || !serverId || !instanceId || !nonce || !signature || !protocolVersion || !validateTimestamp(timestamp)) {
+  const headerLengthsValid = [accessToken, serverId, instanceId, timestamp, nonce, signature, protocolVersion].every(value => value.length <= MAX_HEADER_BYTES);
+  const formatValid = ID_PATTERN.test(serverId) && ID_PATTERN.test(instanceId) && NONCE_PATTERN.test(nonce) && SIGNATURE_PATTERN.test(signature) && VERSION_PATTERN.test(protocolVersion);
+  if (!accessToken || !serverId || !instanceId || !nonce || !signature || !protocolVersion || !headerLengthsValid || !formatValid || !validateTimestamp(timestamp)) {
     return { ok: false, status: 401, error: 'invalid_plugin_headers' };
   }
   const body = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(String(rawBody || ''), 'utf8');
@@ -65,6 +72,7 @@ async function authenticatePluginRequest(req, rawBody) {
 module.exports = {
   REPLAY_WINDOW_SECONDS,
   MAX_BODY_BYTES,
+  MAX_HEADER_BYTES,
   encryptSecret,
   decryptSecret,
   hashToken,

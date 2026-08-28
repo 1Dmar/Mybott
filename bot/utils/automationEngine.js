@@ -1,5 +1,7 @@
 'use strict';
 
+const crypto = require('crypto');
+const mongoose = require('mongoose');
 const AutomationRule = require('../Models/AutomationRule');
 const AutomationExecution = require('../Models/AutomationExecution');
 const TelemetryEvent = require('../Models/TelemetryEvent');
@@ -9,6 +11,54 @@ const { getForGuild } = require('./entitlementService');
 const { hasFeature } = require('./entitlements');
 
 const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const LOCK_LEASE_MS = 5 * 60 * 1000;
+const LOCK_OWNER = `${process.pid}:${crypto.randomUUID()}`;
+const LOCK_COLLECTION = 'promcbot_automation_locks';
+const activeRuleExecutions = new Set();
+let lockIndexesReady;
+
+function tryAcquireExecutionSlot(ruleId) {
+  const key = String(ruleId || '').trim();
+  if (!key || activeRuleExecutions.has(key)) return false;
+  activeRuleExecutions.add(key);
+  return true;
+}
+
+function releaseExecutionSlot(ruleId) {
+  activeRuleExecutions.delete(String(ruleId || '').trim());
+}
+
+function automationLockKey(rule, now) {
+  return `automation:${String(rule?.serverId || '').trim()}:${String(rule?._id || '').trim()}:${dedupeKey(rule, now)}`;
+}
+
+async function acquireDistributedLock(lockKey, now = Date.now()) {
+  if (mongoose.connection.readyState !== 1 || !lockKey) return false;
+  const collection = mongoose.connection.collection(LOCK_COLLECTION);
+  if (!lockIndexesReady) {
+    lockIndexesReady = Promise.all([
+      collection.createIndex({ lockKey: 1 }, { unique: true }),
+      collection.createIndex({ leaseUntil: 1 }, { expireAfterSeconds: 3600 }),
+    ]);
+  }
+  await lockIndexesReady;
+  try {
+    const result = await collection.findOneAndUpdate(
+      { lockKey, $or: [{ leaseUntil: { $lte: new Date(now) } }, { leaseUntil: { $exists: false } }] },
+      { $set: { lockKey, owner: LOCK_OWNER, leaseUntil: new Date(now + LOCK_LEASE_MS), updatedAt: new Date(now) }, $setOnInsert: { createdAt: new Date(now) } },
+      { upsert: true, returnDocument: 'after' },
+    );
+    return result?.value?.owner === LOCK_OWNER || result?.owner === LOCK_OWNER;
+  } catch (error) {
+    if (error?.code === 11000) return false;
+    throw error;
+  }
+}
+
+async function releaseDistributedLock(lockKey) {
+  if (mongoose.connection.readyState !== 1 || !lockKey) return;
+  await mongoose.connection.collection(LOCK_COLLECTION).deleteOne({ lockKey, owner: LOCK_OWNER });
+}
 
 function renderMessage(template, summary) {
   const activity = summary.analysis.find(item => item.key === 'activity_trend');
@@ -60,6 +110,21 @@ async function writeExecution({ rule, now, status, evidence, message, dedupe }) 
 
 async function runRule(rule, discordClient, now = Date.now()) {
   if (!rule?.enabled) return { status: 'skipped', reason: 'disabled' };
+  const executionKey = String(rule._id || '').trim();
+  if (!tryAcquireExecutionSlot(executionKey)) return { status: 'skipped', reason: 'already_running' };
+  const lockKey = automationLockKey(rule, now);
+  let distributedLock;
+  try {
+    distributedLock = await acquireDistributedLock(lockKey, now);
+    if (!distributedLock) return { status: 'skipped', reason: 'lock_unavailable' };
+    return await runRuleInternal(rule, discordClient, now);
+  } finally {
+    if (distributedLock) await releaseDistributedLock(lockKey).catch(() => null);
+    releaseExecutionSlot(executionKey);
+  }
+}
+
+async function runRuleInternal(rule, discordClient, now = Date.now()) {
   const entitlement = await getForGuild(rule.serverId);
   const requiredFeature = rule.trigger === 'weekly_summary' ? 'automation.advanced' : 'automation.basic';
   const dedupe = dedupeKey(rule, now);
@@ -111,4 +176,4 @@ async function runEnabledRules(discordClient) {
   return results;
 }
 
-module.exports = { runRule, runEnabledRules, renderMessage, dedupeKey, deliverWithRetry };
+module.exports = { runRule, runEnabledRules, renderMessage, dedupeKey, deliverWithRetry, tryAcquireExecutionSlot, releaseExecutionSlot, automationLockKey, acquireDistributedLock, releaseDistributedLock };

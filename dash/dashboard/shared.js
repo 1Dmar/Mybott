@@ -178,6 +178,20 @@
   function setupEventListeners() {
     const themeBtn = document.getElementById('darkLight');
     if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+    document.addEventListener('click', async event => {
+      const logout = event.target.closest('a[href="/api/logout"]');
+      if (!logout) return;
+      event.preventDefault();
+      logout.setAttribute('aria-busy', 'true');
+      try {
+        const response = await fetch('/api/logout', { method: 'POST', credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        if (response.ok) window.location.assign('/');
+        else throw new Error('Logout failed');
+      } catch (_) {
+        logout.removeAttribute('aria-busy');
+        window.showToast('Logout could not be completed. Please try again.', 'error');
+      }
+    });
   }
 
   window.showToast = function (message, type = 'success') {

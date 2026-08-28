@@ -20,7 +20,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public final class ProMcBotPlugin extends JavaPlugin implements Listener, CommandExecutor {
     private final Map<UUID, Instant> sessions = new ConcurrentHashMap<UUID, Instant>();
@@ -29,6 +31,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private int snapshotTask = -1;
     private BukkitTask flushTask;
     private BukkitTask heartbeatTask;
+    private volatile CompletableFuture<Boolean> flushInFlight;
     private volatile int lastOnlineCount;
     private volatile boolean entitlementAvailable;
 
@@ -84,8 +87,16 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (snapshotTask != -1) Bukkit.getScheduler().cancelTask(snapshotTask);
         if (flushTask != null) flushTask.cancel();
         if (heartbeatTask != null) heartbeatTask.cancel();
-        if (backend != null && telemetryQueue != null) flush(250);
-        getLogger().info("ProMcBot plugin disabled. Pending telemetry is discarded safely after the local queue limit.");
+        int pendingAtShutdown = telemetryQueue == null ? 0 : telemetryQueue.size();
+        if (backend != null && telemetryQueue != null && pendingAtShutdown > 0) {
+            try {
+                boolean delivered = Boolean.TRUE.equals(flush(250).get(9, TimeUnit.SECONDS));
+                if (!delivered) getLogger().warning("Final telemetry flush was not acknowledged; " + telemetryQueue.size() + " event(s) may be lost because the queue is memory-only.");
+            } catch (Exception error) {
+                getLogger().warning("Final telemetry flush timed out or failed; " + pendingAtShutdown + " event(s) may be lost because the queue is memory-only.");
+            }
+        }
+        getLogger().info("ProMcBot plugin disabled. Final flush is best-effort and bounded; no backend availability is required for gameplay.");
     }
 
     @EventHandler
@@ -116,12 +127,17 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         telemetryQueue.offer(new TelemetryEvent(type, Instant.now(), serverId, instanceId, eventData));
     }
 
-    private void flush(int batchSize) {
-        if (backend == null || telemetryQueue == null || telemetryQueue.size() == 0) return;
+    private synchronized CompletableFuture<Boolean> flush(int batchSize) {
+        if (flushInFlight != null && !flushInFlight.isDone()) return flushInFlight;
+        if (backend == null || telemetryQueue == null || telemetryQueue.size() == 0) {
+            return CompletableFuture.completedFuture(true);
+        }
         java.util.List<TelemetryEvent> batch = telemetryQueue.drain(batchSize);
-        backend.sendBatchWithRetry(batch).thenAccept(ok -> {
-            if (!ok) telemetryQueue.requeue(batch);
+        flushInFlight = backend.sendBatchWithRetry(batch).handle((ok, error) -> {
+            if (error != null || !Boolean.TRUE.equals(ok)) telemetryQueue.requeue(batch);
+            return error == null && Boolean.TRUE.equals(ok);
         });
+        return flushInFlight;
     }
 
     private void heartbeat() {

@@ -96,7 +96,9 @@ async function initBot() {
   global.__dashClients = [client];
 
   // Load handlers
-  const handlesFiles = ['event_handler','slash_handler','cmd_handler','membership_handler','blacklist_handler','bump_handler'];
+  // Subscription/entitlementService is the only Premium authority. The old
+  // membership_handler used User.ismembership and is intentionally not loaded.
+  const handlesFiles = ['event_handler','slash_handler','cmd_handler','blacklist_handler','bump_handler'];
   handlesFiles.forEach((file) => {
     try { require(`./handlers/${file}`)(client); } catch (e) { console.error(`❌ Error loading handler ${file}:`, e.message); }
   });

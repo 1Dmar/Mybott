@@ -17,6 +17,7 @@ const path = require('path');
 const fs = require('fs');
 const ServerInfo = require("../Models/Server");
 const { getForGuild } = require('../utils/entitlementService');
+const { legacyPrefixEnabled } = require('../utils/legacyCommandPolicy');
 const { generateServerStatusImage, WALLPAPERS } = require("./interactionCreate");
 const WelcomeChannel = require("../Models/WelcomeChannel");
 const ApiKey = require('../Models/apiKey');
@@ -99,7 +100,7 @@ const handleAutoResponder = async (message) => {
 };
 
 const handleMainMessage = async (client, message) => {
-    if (message.author.bot || !message.guild) return;
+    if (!legacyPrefixEnabled() || message.author.bot || !message.guild) return;
 
     let prefix = PREFIX;
     if (!message.content.startsWith(prefix)) return;
@@ -273,6 +274,7 @@ const handleAutoMod = async (client, message) => {
 };
 
 const handleMcMessage = async (client, message) => {
+    if (!legacyPrefixEnabled()) return;
     if (/^mc\b/i.test(message.content)) {
         const serverId = message.guild.id;
         let icon;

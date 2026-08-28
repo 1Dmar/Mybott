@@ -157,7 +157,8 @@ public final class BackendClient {
         for (int i = 0; i < events.size(); i++) {
             if (i > 0) json.append(',');
             TelemetryEvent event = events.get(i);
-            json.append("{\"type\":").append(q(event.type()))
+            json.append("{\"eventId\":").append(q(event.eventId()))
+                    .append(",\"type\":").append(q(event.type()))
                     .append(",\"occurredAt\":").append(q(event.occurredAt().toString()))
                     .append(",\"serverId\":").append(q(event.serverId()))
                     .append(",\"instanceId\":").append(q(event.instanceId()))

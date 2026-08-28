@@ -15,7 +15,6 @@ const session    = require('express-session');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const cors       = require('cors');
-const { nanoid } = require('nanoid');
 const DiscordStrategy = require('passport-discord').Strategy;
 const { MongoStore } = require('connect-mongo');
 const crypto = require('crypto');
@@ -56,6 +55,10 @@ const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
 const { buildPublicStats } = require('./publicStats');
 const { validatePublicUsername, normalizePublicUsername } = require('./publicProfile');
 const { renderPublicProfileCard } = require('./publicProfileCard');
+const { buildTelemetryRequestId } = require('./telemetryIdentity');
+const { isAllowedCorsOrigin, isSameOriginMutation } = require('./securityPolicy');
+const { buildPublicBaseUrl } = require('./urlPolicy');
+const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -67,8 +70,13 @@ const ProfileLike      = require('../bot/Models/ProfileLike');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
+const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => callback(null, isAllowedCorsOrigin(origin)),
+  credentials: true,
+  methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 app.use(express.json({
   limit: '512kb',
   verify: (req, res, buffer) => {
@@ -76,7 +84,13 @@ app.use(express.json({
   }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  const isExternalProtocol = req.path.startsWith('/api/v1/') || req.path.startsWith('/api/billing/webhook/');
+  if (!isExternalProtocol && !isSameOriginMutation(req)) return res.status(403).json({ success: false, error: 'cross_origin_request_blocked' });
+  next();
+});
 app.use(cookieParser());
+app.use('/api/guilds', dashboardApiLimiter);
 
 // Trust proxy for Railway/Cloudflare
 app.set('trust proxy', 1);
@@ -103,7 +117,7 @@ app.use((req, res, next) => {
 });
 
 // Provider webhooks are verified from the exact raw body before changing subscription state.
-app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max: 60 }), async (req, res) => {
+app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max: 60 }), requireDatabaseReady, async (req, res) => {
   const provider = String(req.params.provider || '').toLowerCase();
   if (provider !== 'paypal') return res.status(501).json({ success: false, error: 'billing_provider_not_implemented' });
   if (!providerConfigured(provider)) return res.status(503).json({ success: false, error: 'billing_provider_not_configured' });
@@ -126,7 +140,7 @@ app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max:
 });
 
 // First-party Minecraft plugin telemetry. Signature verification uses the exact raw body.
-app.get('/api/v1/plugin/capabilities', rateLimit({ windowMs: 60 * 1000, max: 120 }), async (req, res) => {
+app.get('/api/v1/plugin/capabilities', rateLimit({ windowMs: 60 * 1000, max: 120 }), requireDatabaseReady, async (req, res) => {
   try {
     const auth = await authenticatePluginRequest(req, req.rawBody || Buffer.from(''));
     if (!auth.ok) return res.status(auth.status).json({ success: false, error: auth.error });
@@ -137,7 +151,7 @@ app.get('/api/v1/plugin/capabilities', rateLimit({ windowMs: 60 * 1000, max: 120
   } catch (error) { console.error('[plugin capabilities] error:', error.message); res.status(500).json({ success: false, error: 'capabilities_failed' }); }
 });
 
-app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }), async (req, res) => {
+app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }), requireDatabaseReady, async (req, res) => {
   try {
     const auth = await authenticatePluginRequest(req, req.rawBody || Buffer.from(''));
     if (!auth.ok) {
@@ -152,15 +166,24 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
       if (Number.isNaN(occurredAt.getTime())) throw new Error('invalid_occurredAt');
       const data = (event.data && typeof event.data === 'object' && !Array.isArray(event.data)) ? event.data : {};
       const safeData = Object.fromEntries(Object.entries(data).slice(0, 32).map(([key, value]) => [String(key).slice(0, 64), typeof value === 'string' ? value.slice(0, 512) : (typeof value === 'number' || typeof value === 'boolean' ? value : String(value).slice(0, 512))]));
-      return { serverId: auth.serverId, instanceId: auth.instanceId, type: String(event.type || 'unknown').slice(0, 64), occurredAt, receivedAt: new Date(now), requestId: `${req.get('x-promcbot-nonce')}:${index}`, data: safeData, expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000) };
+      const eventId = String(event.eventId || `${req.get('x-promcbot-nonce') || 'legacy-request'}:${index}`).slice(0, 128);
+      return { serverId: auth.serverId, instanceId: auth.instanceId, type: String(event.type || 'unknown').slice(0, 64), occurredAt, receivedAt: new Date(now), requestId: buildTelemetryRequestId(auth.serverId, auth.instanceId, eventId), data: safeData, expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000) };
     });
-    await TelemetryEvent.insertMany(documents, { ordered: false });
+    const writeResult = await TelemetryEvent.bulkWrite(documents.map(document => ({
+      updateOne: {
+        filter: { requestId: document.requestId },
+        update: { $setOnInsert: document },
+        upsert: true,
+      },
+    })), { ordered: false });
+    const acceptedCount = Number(writeResult?.upsertedCount || 0);
+    const duplicateCount = Math.max(0, documents.length - acceptedCount);
     const latestCount = latestOnlinePlayers(documents);
     const headerValue = name => String(req.get(name) || '').trim().slice(0, 120) || null;
     await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === null ? {} : { lastOnlinePlayers: latestCount }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
-    res.status(202).json({ success: true, accepted: documents.length, serverId: auth.serverId, instanceId: auth.instanceId });
+    res.status(202).json({ success: true, accepted: acceptedCount, duplicate: duplicateCount > 0, duplicates: duplicateCount, serverId: auth.serverId, instanceId: auth.instanceId });
   } catch (error) {
-    if (error?.code === 11000) return res.status(202).json({ success: true, accepted: 0, duplicate: true });
+    if (error?.code === 11000) return res.status(202).json({ success: true, accepted: 0, duplicate: true, duplicates: 1 });
     if (error?.message === 'invalid_occurredAt') return res.status(400).json({ success: false, error: error.message });
     console.error('[plugin telemetry] error:', error.message);
     res.status(500).json({ success: false, error: 'telemetry_ingest_failed' });
@@ -176,7 +199,7 @@ if (!sessionStore) {
   console.warn('⚠️ MONGO_URL is not configured; dashboard sessions use non-persistent memory storage until MongoDB is configured.');
 }
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET || nanoid(48),
+  secret: getSessionSecret(),
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -211,20 +234,19 @@ if (discordOAuthConfigured) {
       scope: ["identify", "guilds", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
-      profile.accessToken = accessToken;
-      return done(null, profile);
+      return done(null, sanitizeDiscordProfile(profile));
     }
   ));
 }
 
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((user, done) => done(null, user));
+passport.serializeUser((user, done) => done(null, sanitizeDiscordProfile(user)));
+passport.deserializeUser((user, done) => done(null, sanitizeDiscordProfile(user)));
 
 // ── Auth Guard ──────────────────────────────────────────────────────
 function isAuthenticated(req, res, next) {
   if (req.isAuthenticated()) return next();
-  if (req.xhr || req.headers.accept?.includes('application/json')) {
-    return res.status(401).json({ authenticated: false });
+  if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) {
+    return res.status(401).json({ authenticated: false, error: 'authentication_required' });
   }
   res.redirect('/loading-auth');
 }
@@ -284,8 +306,12 @@ app.get('/auth/discord/callback', (req, res, next) => {
   res.redirect('/dashboard');
 });
 
-app.get('/api/logout', (req, res) => {
+app.post('/api/logout', (req, res) => {
   req.logout(() => res.redirect('/'));
+});
+
+app.get('/api/logout', (req, res) => {
+  res.status(405).set('Allow', 'POST').json({ success: false, error: 'logout_requires_post' });
 });
 
 // ── User API ──────────────────────────────────────────────────────
@@ -388,7 +414,7 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
   const method = String(req.body?.method || 'paypal').toLowerCase();
   if (!['pro', 'ultimate'].includes(plan)) return res.status(400).json({ success: false, error: 'invalid_paid_plan' });
   try {
-    const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+    const baseUrl = buildPublicBaseUrl(req);
     const serverPremiumPath = `/myservers/${encodeURIComponent(req.params.guildId)}/premium`;
     const checkout = await createCheckout({ guildId: req.params.guildId, plan, method, returnUrl: `${baseUrl}${serverPremiumPath}?billing=pending`, cancelUrl: `${baseUrl}${serverPremiumPath}?billing=cancelled` });
     try {
@@ -398,7 +424,7 @@ app.post('/api/guilds/:guildId/billing/checkout', isAuthenticated, requireGuildM
     }
     res.json({ success: true, ...checkout });
   } catch (error) {
-    const configurationError = ['payment_method_not_configured', 'payment_plan_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing'].includes(error.message);
+    const configurationError = ['payment_method_not_configured', 'payment_plan_not_configured', 'paypal_credentials_missing', 'paypal_approval_url_missing', 'public_base_url_not_configured', 'public_base_url_must_use_https', 'request_host_invalid'].includes(error.message);
     const providerMessage = formatPayPalError(error);
     const providerDetails = getPayPalErrorDetails(error);
     console.error('[billing checkout] provider error:', error.message, providerDetails.debugId ? `debug=${providerDetails.debugId}` : '');
@@ -977,6 +1003,9 @@ app.get('/api/guilds/:guildId/intelligence', isAuthenticated, requireGuildManage
 app.post('/api/guilds/:guildId/plugin/provision', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     if (!process.env.PLUGIN_ENCRYPTION_KEY) return res.status(503).json({ success: false, error: 'plugin_provisioning_not_configured' });
+    let publicBaseUrl;
+    try { publicBaseUrl = buildPublicBaseUrl(req); }
+    catch (error) { return res.status(503).json({ success: false, error: error.message }); }
     const instanceId = String(req.body?.instanceId || '').trim().slice(0, 64);
     if (!/^[A-Za-z0-9._-]{3,64}$/.test(instanceId)) return res.status(400).json({ success: false, error: 'invalid_instance_id' });
     const networkId = String(req.body?.networkId || '').trim().slice(0, 64) || null;
@@ -987,7 +1016,7 @@ app.post('/api/guilds/:guildId/plugin/provision', isAuthenticated, requireGuildM
     await PluginCredential.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { serverId: req.params.guildId, instanceId, accessTokenHash: hashToken(accessToken), encryptedSigningSecret: encryptSecret(signingSecret), protocolVersion: '1', revokedAt: null, lastRotatedAt: new Date() }, { upsert: true, new: true, setDefaultsOnInsert: true });
     await PluginInstance.findOneAndUpdate({ serverId: req.params.guildId, instanceId }, { $set: { networkId, minecraftServerId, serverName, protocolVersion: '1', status: 'offline', revokedAt: null }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'plugin_provisioned', feature: 'plugin.connection', result: 'success', source: 'dashboard', target: instanceId, metadata: { networkId, minecraftServerId } });
-    res.status(201).json({ success: true, oneTimeConfig: { baseUrl: `${req.protocol}://${req.get('host')}`, serverId: req.params.guildId, instanceId, networkId, minecraftServerId, serverName, accessToken, signingSecret, protocolVersion: '1' }, warning: 'Store these credentials in the plugin config.yml. They are not returned again.' });
+    res.status(201).json({ success: true, oneTimeConfig: { baseUrl: publicBaseUrl, serverId: req.params.guildId, instanceId, networkId, minecraftServerId, serverName, accessToken, signingSecret, protocolVersion: '1' }, warning: 'Store these credentials in the plugin config.yml. They are not returned again.' });
   } catch (error) { console.error('[plugin provision] error:', error.message); res.status(500).json({ success: false, error: 'plugin_provision_failed' }); }
 });
 
