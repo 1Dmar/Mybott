@@ -14,14 +14,21 @@ function escapeXml(value) {
 
 async function imageDataUri(url) {
   if (!url) return null;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   try {
-    const response = await fetch(url, { headers: { 'User-Agent': 'ProMC-Bot/1.0 public-profile-card' } });
+    const response = await fetch(url, { headers: { 'User-Agent': 'ProMC-Bot/1.0 public-profile-card' }, signal: controller.signal });
     if (!response.ok) return null;
     const contentType = response.headers.get('content-type') || 'image/png';
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    if (contentLength > 8 * 1024 * 1024) return null;
     const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > 8 * 1024 * 1024) return null;
     return `data:${contentType};base64,${buffer.toString('base64')}`;
   } catch (_) {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
