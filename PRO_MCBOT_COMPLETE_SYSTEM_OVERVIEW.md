@@ -434,7 +434,7 @@ cea140221 Make legacy command compatibility explicit
 489246fd4 Refresh verified plugin artifact
 ```
 
-local وremote متطابقان على `489246fd49d17aa36da4ea2248ea1842f03fe762`.
+في آخر closeout push تطابق local وremote وأصبح `ahead/behind = 0/0`؛ استخدم `git rev-parse HEAD` لاستخراج SHA الحالي على الفرع.
 
 الفرع هو:
 
