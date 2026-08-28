@@ -13,11 +13,47 @@ try {
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const dns = require('dns').promises;
+const net = require('net');
+const { normalizeMinecraftAddress } = require('./minecraftAddressPolicy');
 
 // Register fonts if they exist
 const fontsDir = path.join(__dirname, '../src/fonts');
 if (fs.existsSync(path.join(fontsDir, 'd.ttf'))) {
     // registerFont(path.join(fontsDir, 'd.ttf'), { family: 'Minecraft' });
+}
+
+function isPrivateOrReservedIp(address) {
+    const normalized = String(address || '').toLowerCase();
+    const version = net.isIP(normalized);
+    if (version === 4) {
+        const octets = normalized.split('.').map(Number);
+        const [a, b] = octets;
+        return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) ||
+            (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
+            (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)) ||
+            a >= 224;
+    }
+    if (version === 6) {
+        return normalized === '::1' || normalized === '::' || normalized.startsWith('fc') ||
+            normalized.startsWith('fd') || normalized.startsWith('fe8') || normalized.startsWith('fe9') ||
+            normalized.startsWith('fea') || normalized.startsWith('feb');
+    }
+    return false;
+}
+
+async function isPublicCustomApiHost(value) {
+    const normalized = normalizeMinecraftAddress(value);
+    if (!normalized) return false;
+    const host = normalized.startsWith('[') ? normalized.slice(1, -1) : normalized;
+    if (host === 'localhost' || host.endsWith('.local') || isPrivateOrReservedIp(host)) return false;
+    if (net.isIP(host)) return true;
+    try {
+        const records = await dns.lookup(host, { all: true, verbatim: true });
+        return records.length > 0 && records.every(record => !isPrivateOrReservedIp(record.address));
+    } catch (_) {
+        return false;
+    }
 }
 
 /**
@@ -57,8 +93,13 @@ async function getPlayerData(ign, serverConfig = null) {
         // إذا كان السيرفر يحتوي على إعدادات الـ API (Token + Port)
         if (serverConfig && serverConfig.apiToken) {
             const serverIP = serverConfig.javaIP || serverConfig.bedrockIP;
-            const apiPort = serverConfig.apiPort || 8080;
-            const protocol = "http"; 
+            const apiPort = Number(serverConfig.apiPort || 8080);
+            const protocol = "http";
+
+            if (!Number.isInteger(apiPort) || apiPort < 1 || apiPort > 65535 || !(await isPublicCustomApiHost(serverIP))) {
+                data.endpointOffline = true;
+                return data;
+            }
             
             try {
                 // التأكد من وجود كلمة Bearer قبل التوكن لأن Postman يضيفها تلقائياً
@@ -67,12 +108,15 @@ async function getPlayerData(ign, serverConfig = null) {
                     : `Bearer ${serverConfig.apiToken}`;
 
                 // جلب معلومات اللاعب من Lobby السيرفر
-                const response = await axios.get(`${protocol}://${serverIP}:${apiPort}/player/${ign}`, {
-                    headers: { 
+                const normalizedServerIP = normalizeMinecraftAddress(serverIP);
+                const response = await axios.get(`${protocol}://${normalizedServerIP}:${apiPort}/player/${encodeURIComponent(ign)}`, {
+                    headers: {
                         'Authorization': authHeader,
-                        'X-Premium-Key': serverConfig.premiumKey || '' 
+                        'X-Premium-Key': serverConfig.premiumKey || ''
                     },
-                    timeout: 5000
+                    timeout: 5000,
+                    maxRedirects: 0,
+                    validateStatus: status => status >= 200 && status < 300
                 });
 
                 if (response.data && response.data.success) {
@@ -678,4 +722,4 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     return canvas.toBuffer();
 }
 
-module.exports = { getPlayerData, generatePlayerCard, rendererAvailable };
+module.exports = { getPlayerData, generatePlayerCard, rendererAvailable, isPublicCustomApiHost };

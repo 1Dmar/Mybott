@@ -33,6 +33,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private final Map<UUID, Instant> sessions = new ConcurrentHashMap<UUID, Instant>();
     private TelemetryQueue telemetryQueue;
     private TelemetrySpool telemetrySpool;
+    private com.promcbot.plugin.telemetry.TelemetrySpoolWriter telemetrySpoolWriter;
     private BackendClient backend;
     private int snapshotTask = -1;
     private BukkitTask flushTask;
@@ -41,6 +42,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private volatile int lastOnlineCount;
     private volatile boolean entitlementAvailable;
     private volatile long lastSpoolWarningAt;
+    private volatile int lastKnownSpoolCount;
 
     @Override
     public void onEnable() {
@@ -63,10 +65,10 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
             long spoolMaxBytes = Math.max(64 * 1024L, getConfig().getLong("telemetry.spool-max-bytes", 8 * 1024 * 1024L));
             try {
                 telemetrySpool = new TelemetrySpool(new File(getDataFolder(), "telemetry.spool"), spoolMaxBytes);
-                List<TelemetryEvent> recovered = telemetrySpool.load(maxQueue);
-                telemetryQueue.requeue(recovered);
-                if (!recovered.isEmpty()) getLogger().info("Recovered " + recovered.size() + " durable telemetry event(s) from local spool.");
-            } catch (IOException error) {
+                telemetrySpoolWriter = new com.promcbot.plugin.telemetry.TelemetrySpoolWriter(telemetrySpool, maxQueue,
+                        "promcbot-telemetry-spool-writer");
+                CompletableFuture.runAsync(() -> recoverSpool(maxQueue));
+            } catch (RuntimeException error) {
                 getLogger().warning("Durable telemetry spool is unavailable; in-memory fallback is active: " + error.getMessage());
             }
         } else {
@@ -107,15 +109,28 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (snapshotTask != -1) Bukkit.getScheduler().cancelTask(snapshotTask);
         if (flushTask != null) flushTask.cancel();
         if (heartbeatTask != null) heartbeatTask.cancel();
-        int pendingAtShutdown = pendingCount();
-        if (backend != null && telemetryQueue != null && pendingAtShutdown > 0) {
-            flush(250).whenComplete((delivered, error) -> {
-                if (error != null || !Boolean.TRUE.equals(delivered)) {
-                    getLogger().warning("Final telemetry flush was not acknowledged; " + pendingCount() + " event(s) remain in the durable spool for a later retry.");
-                }
-            });
+        CompletableFuture<Void> finalShutdown;
+        if (backend != null && telemetryQueue != null) {
+            finalShutdown = CompletableFuture.supplyAsync(() -> flush(250))
+                    .thenCompose(flushFuture -> flushFuture)
+                    .handle((delivered, error) -> {
+                        if (error != null || !Boolean.TRUE.equals(delivered)) {
+                            getLogger().warning("Final telemetry flush was not acknowledged; durable retry remains enabled.");
+                        }
+                        return (Void) null;
+                    })
+                    .thenCompose(ignored -> telemetrySpoolWriter == null
+                            ? CompletableFuture.completedFuture(null) : telemetrySpoolWriter.shutdownAsync());
+        } else if (telemetrySpoolWriter != null) {
+            finalShutdown = telemetrySpoolWriter.shutdownAsync();
+        } else {
+            finalShutdown = CompletableFuture.completedFuture(null);
         }
-        getLogger().info("ProMcBot plugin disabled. Final flush is asynchronous and best-effort; durable spool protects pending events without blocking the Minecraft thread.");
+        finalShutdown.whenComplete((ignored, error) -> {
+            if (error != null) getLogger().warning("Final telemetry flush/spool drain was not completed: " + error.getMessage());
+            else if (pendingCount() > 0) getLogger().warning("Final telemetry flush was not acknowledged; pending events remain for a later retry.");
+        });
+        getLogger().info("ProMcBot plugin disabled. Final flush and durable spool drain are asynchronous and best-effort; Bukkit callbacks never perform disk I/O.");
     }
 
     @EventHandler
@@ -144,16 +159,10 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         String serverId = getConfig().getString("backend.server-id", "unconfigured");
         String instanceId = getConfig().getString("backend.instance-id", "unconfigured");
         TelemetryEvent event = new TelemetryEvent(type, Instant.now(), serverId, instanceId, eventData);
-        if (telemetrySpool != null) {
-            try {
-                telemetrySpool.append(event);
-            } catch (IOException error) {
-                long now = System.currentTimeMillis();
-                if (now - lastSpoolWarningAt > 60_000L) {
-                    lastSpoolWarningAt = now;
-                    getLogger().warning("Could not persist telemetry locally; in-memory fallback is active: " + error.getMessage());
-                }
-            }
+        if (telemetrySpoolWriter != null) {
+            telemetrySpoolWriter.enqueue(event).whenComplete((ignored, error) -> {
+                if (error != null) warnSpoolFailure(error);
+            });
         }
         telemetryQueue.offer(event);
     }
@@ -176,16 +185,24 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
             }
         }
         if (batch.isEmpty()) return CompletableFuture.completedFuture(true);
-        flushInFlight = backend.sendBatchWithRetry(batch).handle((ok, error) -> {
+        CompletableFuture<Void> persisted = telemetrySpoolWriter == null
+                ? CompletableFuture.completedFuture(null)
+                : telemetrySpoolWriter.awaitPersisted(selected);
+        flushInFlight = persisted.handle((ignored, persistenceError) -> {
+            if (persistenceError != null) warnSpoolFailure(persistenceError);
+            return null;
+        }).thenCompose(ignored -> backend.sendBatchWithRetry(batch)).handle((ok, error) -> {
             if (error == null && Boolean.TRUE.equals(ok)) {
                 try {
                     if (telemetrySpool != null) telemetrySpool.acknowledge(selected);
+                    refreshSpoolCountAsync();
                 } catch (IOException spoolError) {
                     getLogger().warning("Telemetry was acknowledged by backend but local spool cleanup failed; retry will be idempotent: " + spoolError.getMessage());
                 }
                 return true;
             }
             telemetryQueue.requeue(batch);
+            refreshSpoolCountAsync();
             return false;
         });
         return flushInFlight;
@@ -193,11 +210,38 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
 
     private int pendingCount() {
         int memory = telemetryQueue == null ? 0 : telemetryQueue.size();
-        if (telemetrySpool == null) return memory;
+        int staged = telemetrySpoolWriter == null ? 0 : telemetrySpoolWriter.stagedCount();
+        return Math.max(memory + staged, lastKnownSpoolCount);
+    }
+
+    private void recoverSpool(int maxQueue) {
+        if (telemetrySpool == null || telemetryQueue == null) return;
         try {
-            return Math.max(memory, telemetrySpool.pendingCount());
+            List<TelemetryEvent> recovered = telemetrySpool.load(maxQueue);
+            telemetryQueue.requeue(recovered);
+            lastKnownSpoolCount = telemetrySpool.pendingCount();
+            if (!recovered.isEmpty()) getLogger().info("Recovered " + recovered.size() + " durable telemetry event(s) from local spool.");
         } catch (IOException error) {
-            return memory;
+            warnSpoolFailure(error);
+        }
+    }
+
+    private void refreshSpoolCountAsync() {
+        if (telemetrySpool == null) return;
+        CompletableFuture.runAsync(() -> {
+            try {
+                lastKnownSpoolCount = telemetrySpool.pendingCount();
+            } catch (IOException error) {
+                warnSpoolFailure(error);
+            }
+        });
+    }
+
+    private void warnSpoolFailure(Throwable error) {
+        long now = System.currentTimeMillis();
+        if (now - lastSpoolWarningAt > 60_000L) {
+            lastSpoolWarningAt = now;
+            getLogger().warning("Could not persist or read telemetry locally; in-memory fallback is active: " + error.getMessage());
         }
     }
 
@@ -219,7 +263,8 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (!command.getName().equalsIgnoreCase("promcbot")) return false;
         if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
             sender.sendMessage("ProMcBot: queue=" + (telemetryQueue == null ? 0 : telemetryQueue.size())
-                    + ", durable=" + (telemetrySpool == null ? 0 : pendingCount())
+                    + ", staged=" + (telemetrySpoolWriter == null ? 0 : telemetrySpoolWriter.stagedCount())
+                    + ", durable=" + lastKnownSpoolCount
                     + ", dropped=" + (telemetryQueue == null ? 0 : telemetryQueue.dropped())
                     + ", backend=" + (backend != null && backend.isOnline() ? "online" : "offline")
                     + ", capabilities=" + (entitlementAvailable ? "available" : "degraded"));
