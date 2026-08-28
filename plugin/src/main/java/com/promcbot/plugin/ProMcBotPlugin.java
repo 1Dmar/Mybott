@@ -3,6 +3,7 @@ package dev.promcbot.plugin;
 import com.promcbot.plugin.backend.BackendClient;
 import com.promcbot.plugin.telemetry.TelemetryEvent;
 import com.promcbot.plugin.telemetry.TelemetryQueue;
+import com.promcbot.plugin.telemetry.TelemetrySpool;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -15,18 +16,23 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public final class ProMcBotPlugin extends JavaPlugin implements Listener, CommandExecutor {
     private final Map<UUID, Instant> sessions = new ConcurrentHashMap<UUID, Instant>();
     private TelemetryQueue telemetryQueue;
+    private TelemetrySpool telemetrySpool;
     private BackendClient backend;
     private int snapshotTask = -1;
     private BukkitTask flushTask;
@@ -34,6 +40,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     private volatile CompletableFuture<Boolean> flushInFlight;
     private volatile int lastOnlineCount;
     private volatile boolean entitlementAvailable;
+    private volatile long lastSpoolWarningAt;
 
     @Override
     public void onEnable() {
@@ -52,6 +59,19 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         long snapshotSeconds = Math.max(30, getConfig().getLong("telemetry.snapshot-seconds", 60));
         long heartbeatSeconds = Math.max(30, getConfig().getLong("backend.heartbeat-seconds", 60));
         telemetryQueue = new TelemetryQueue(maxQueue);
+        if (getConfig().getBoolean("telemetry.spool-enabled", true)) {
+            long spoolMaxBytes = Math.max(64 * 1024L, getConfig().getLong("telemetry.spool-max-bytes", 8 * 1024 * 1024L));
+            try {
+                telemetrySpool = new TelemetrySpool(new File(getDataFolder(), "telemetry.spool"), spoolMaxBytes);
+                List<TelemetryEvent> recovered = telemetrySpool.load(maxQueue);
+                telemetryQueue.requeue(recovered);
+                if (!recovered.isEmpty()) getLogger().info("Recovered " + recovered.size() + " durable telemetry event(s) from local spool.");
+            } catch (IOException error) {
+                getLogger().warning("Durable telemetry spool is unavailable; in-memory fallback is active: " + error.getMessage());
+            }
+        } else {
+            getLogger().warning("Durable telemetry spool is disabled; telemetry may be lost on restart or crash.");
+        }
 
         try {
             backend = new BackendClient(baseUrl, serverId, instanceId, networkId, minecraftServerId,
@@ -87,16 +107,15 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (snapshotTask != -1) Bukkit.getScheduler().cancelTask(snapshotTask);
         if (flushTask != null) flushTask.cancel();
         if (heartbeatTask != null) heartbeatTask.cancel();
-        int pendingAtShutdown = telemetryQueue == null ? 0 : telemetryQueue.size();
+        int pendingAtShutdown = pendingCount();
         if (backend != null && telemetryQueue != null && pendingAtShutdown > 0) {
-            try {
-                boolean delivered = Boolean.TRUE.equals(flush(250).get(9, TimeUnit.SECONDS));
-                if (!delivered) getLogger().warning("Final telemetry flush was not acknowledged; " + telemetryQueue.size() + " event(s) may be lost because the queue is memory-only.");
-            } catch (Exception error) {
-                getLogger().warning("Final telemetry flush timed out or failed; " + pendingAtShutdown + " event(s) may be lost because the queue is memory-only.");
-            }
+            flush(250).whenComplete((delivered, error) -> {
+                if (error != null || !Boolean.TRUE.equals(delivered)) {
+                    getLogger().warning("Final telemetry flush was not acknowledged; " + pendingCount() + " event(s) remain in the durable spool for a later retry.");
+                }
+            });
         }
-        getLogger().info("ProMcBot plugin disabled. Final flush is best-effort and bounded; no backend availability is required for gameplay.");
+        getLogger().info("ProMcBot plugin disabled. Final flush is asynchronous and best-effort; durable spool protects pending events without blocking the Minecraft thread.");
     }
 
     @EventHandler
@@ -124,20 +143,62 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (telemetryQueue == null) return;
         String serverId = getConfig().getString("backend.server-id", "unconfigured");
         String instanceId = getConfig().getString("backend.instance-id", "unconfigured");
-        telemetryQueue.offer(new TelemetryEvent(type, Instant.now(), serverId, instanceId, eventData));
+        TelemetryEvent event = new TelemetryEvent(type, Instant.now(), serverId, instanceId, eventData);
+        if (telemetrySpool != null) {
+            try {
+                telemetrySpool.append(event);
+            } catch (IOException error) {
+                long now = System.currentTimeMillis();
+                if (now - lastSpoolWarningAt > 60_000L) {
+                    lastSpoolWarningAt = now;
+                    getLogger().warning("Could not persist telemetry locally; in-memory fallback is active: " + error.getMessage());
+                }
+            }
+        }
+        telemetryQueue.offer(event);
     }
 
     private synchronized CompletableFuture<Boolean> flush(int batchSize) {
         if (flushInFlight != null && !flushInFlight.isDone()) return flushInFlight;
-        if (backend == null || telemetryQueue == null || telemetryQueue.size() == 0) {
-            return CompletableFuture.completedFuture(true);
+        if (backend == null || telemetryQueue == null) return CompletableFuture.completedFuture(true);
+        List<TelemetryEvent> batch = telemetryQueue.drain(batchSize);
+        Set<String> selected = new HashSet<String>();
+        for (TelemetryEvent event : batch) selected.add(event.eventId());
+        if (batch.size() < batchSize && telemetrySpool != null) {
+            try {
+                List<TelemetryEvent> durable = telemetrySpool.load(batchSize);
+                for (TelemetryEvent event : durable) {
+                    if (batch.size() >= batchSize) break;
+                    if (selected.add(event.eventId())) batch.add(event);
+                }
+            } catch (IOException error) {
+                getLogger().warning("Could not read durable telemetry spool: " + error.getMessage());
+            }
         }
-        java.util.List<TelemetryEvent> batch = telemetryQueue.drain(batchSize);
+        if (batch.isEmpty()) return CompletableFuture.completedFuture(true);
         flushInFlight = backend.sendBatchWithRetry(batch).handle((ok, error) -> {
-            if (error != null || !Boolean.TRUE.equals(ok)) telemetryQueue.requeue(batch);
-            return error == null && Boolean.TRUE.equals(ok);
+            if (error == null && Boolean.TRUE.equals(ok)) {
+                try {
+                    if (telemetrySpool != null) telemetrySpool.acknowledge(selected);
+                } catch (IOException spoolError) {
+                    getLogger().warning("Telemetry was acknowledged by backend but local spool cleanup failed; retry will be idempotent: " + spoolError.getMessage());
+                }
+                return true;
+            }
+            telemetryQueue.requeue(batch);
+            return false;
         });
         return flushInFlight;
+    }
+
+    private int pendingCount() {
+        int memory = telemetryQueue == null ? 0 : telemetryQueue.size();
+        if (telemetrySpool == null) return memory;
+        try {
+            return Math.max(memory, telemetrySpool.pendingCount());
+        } catch (IOException error) {
+            return memory;
+        }
     }
 
     private void heartbeat() {
@@ -158,6 +219,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         if (!command.getName().equalsIgnoreCase("promcbot")) return false;
         if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
             sender.sendMessage("ProMcBot: queue=" + (telemetryQueue == null ? 0 : telemetryQueue.size())
+                    + ", durable=" + (telemetrySpool == null ? 0 : pendingCount())
                     + ", dropped=" + (telemetryQueue == null ? 0 : telemetryQueue.dropped())
                     + ", backend=" + (backend != null && backend.isOnline() ? "online" : "offline")
                     + ", capabilities=" + (entitlementAvailable ? "available" : "degraded"));

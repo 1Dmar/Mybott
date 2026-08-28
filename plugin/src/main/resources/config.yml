@@ -15,3 +15,6 @@ telemetry:
   batch-size: 100
   max-queue-size: 5000
   snapshot-seconds: 60
+  # Durable local retry spool. Set false only when deliberate data loss is acceptable.
+  spool-enabled: true
+  spool-max-bytes: 8388608
