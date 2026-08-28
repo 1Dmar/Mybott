@@ -1,181 +1,313 @@
-# ProMcBot — التقرير النهائي لتطبيق `pasted_content(2).txt`
+# ProMcBot — Master Execution Result 1.6
 
-**التاريخ:** 27 أغسطس 2026
+**المؤلف:** Manus AI
+
+**التاريخ:** 28 أغسطس 2026
+
 **المستودع:** `1Dmar/Mybott`
-**الفرع المستخدم:** `copilot/update-bot-design-and-translation-system`
-**Commits هذه الدورة:** `d376123e9` (implementation)، `b78283a02` (report)، `ae1968337` (PayPal checkout diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) + `e264de336` (checkout diagnostics) + `813b31c78` (latest Premium merge)
 
-## الملخص التنفيذي
+**الفرع:** `copilot/update-bot-design-and-translation-system`
 
-تم تطبيق دورة المواصفة الجديدة على Discord bot وDashboard وbackend وMinecraft plugin، مع الالتزام بالعمل على الفرع الافتراضي فقط. شملت التغييرات server scoping فعليًا، حراسة وجود bot في Discord، Premium gating من الخادم والواجهة وأوامر AutoMod، تحسين Premium وAction Center وModeration، إصلاح outputs الخاصة بـAutoMod وblacklist، وإضافة تجربة عامة لـStats/Profile مع Discord embed وrunbook للدومين `stats.promcbot.dev`.
+> **الحكم التنفيذي:** تم تنفيذ وتصحيح واختبار كل ما يمكن إثباته داخل المستودع. النتيجة ليست Production Ready بعد؛ قبول Discord/Mongo/PayPal الحقيقي، وتشغيل Spigot/Paper الفعلي، وإصلاح TLS الخاص بـ`stats.promcbot.dev` متطلبات خارجية إلزامية.
 
-النتيجة لا تدعي أن الخدمات الخارجية أصبحت مهيأة تلقائيًا. الدفع الحقيقي، OAuth وMongoDB وDiscord الحي، DNS/Railway، وruntime acceptance على خوادم Minecraft خارجية تحتاج إعدادًا واختبارًا خارج Git. عند غياب الدليل تعرض الواجهة `not configured` أو `not enough data` بدل metric أو payment وهمي.
+## قاموس الحالات
 
-> **المبدأ التشغيلي:** لا يتحول heartbeat إلى player analytics كاملة إلا بعد استقبال telemetry حقيقية، ولا يتحول checkout إلى اشتراك إلا بعد provider webhook موثق.
-
-## هوية الإصدار والقيود المحترمة
-
-| البند | النتيجة |
+| الحالة | معناها |
 |---|---|
-| Repository | `1Dmar/Mybott` |
-| الفرع | `copilot/update-bot-design-and-translation-system` |
-| `main` | لم يُعدّل |
-| فرع جديد | لم يُنشأ |
-| Commits | `d376123e9` (implementation) + `b78283a02` (report) + `ae1968337` (PayPal diagnostics) + `bac57a840` (Pro-only plan fix) + `b55714846` (Premium array contract fix) + `b43768739` (PayPal diagnostics) + `e06d87db6` (verified-payment entitlement gate) + `da810fd1f` (Premium visual redesign) + `80aa1c95a` (non-force merge) + `578d64132` (checkout hardening) + `76316a234` (remote merge) + `e264de336` (checkout diagnostics) + `813b31c78` (latest Premium merge) |
-| Logs page | لم تُعدّل `dash/dashboard/pages/logs.html` |
-| Models | لم تُعدّل أي ملفات تحت `bot/Models/**` |
-| الأسرار | لم تُضف tokens أو secrets إلى Git أو التقرير |
-| health المنشور | `https://promcbot.dev/health` = HTTP 200؛ `https://stats.promcbot.dev/health` = HTTP 525 Cloudflare |
+| **DONE** | نُفّذ داخل الكود أو الوثيقة. |
+| **VERIFIED** | نُفّذ ونجح اختبار أو فحص حتمي محلي. |
+| **PARTIAL** | جزء عملي موجود مع فجوة موثقة. |
+| **IMPLEMENTED BUT UNVERIFIED** | الكود أو artifact موجود دون runtime حي كافٍ. |
+| **NOT IMPLEMENTED** | غير موجود في هذه الجولة. |
+| **REQUIRES EXTERNAL CREDENTIALS** | يحتاج حسابًا أو سرًا خارجيًا. |
+| **REQUIRES EXTERNAL RUNTIME** | يحتاج خادمًا أو deployment حقيقيًا. |
+| **FUTURE** | نطاق لاحق. |
 
-## ما تم تغييره
+## 1. Executive Summary
 
-| المجال | التنفيذ الفعلي | التحقق |
-|---|---|---|
-| My Servers وworkspace | حصر القائمة في Discord Owner أو Administrator فقط، واستبعاد العضو العادي وManage Server وحدها، مع فصل platform override عن تسمية Discord Owner | اختبارات guild access ناجحة |
-| Bot membership | فحص cache ثم `guilds.fetch()` عند غياب cache، وتمييز installed/absent/unknown، مع invite URL عند الغياب | اختبارات cache/fetch/invite ناجحة |
-| Server context | صفحات Intelligence وAction Center وPremium أصبحت server-scoped تحت `/myservers/:guildId/...` ولا تعرض dropdown شاملًا عند اختيار server | فحص routes والواجهة ناجح |
-| Discord banners | endpoint visual يجلب banner من Discord ثم يستخدم icon وdominant-color fallback دون كشف secrets | اختبارات server visuals ناجحة؛ يلزم Discord حي للـacceptance |
-| Settings | حفظ Minecraft IP وJava port مع validation وبدون اختراع اتصال عند غياب العنوان | اختبارات settings ناجحة |
-| Activation وIntelligence | حالات degraded واضحة، خطوات setup مبنية على evidence، وcatalog لا يختفي عند فشل entitlement | اختبارات intelligence وtelemetry ناجحة |
-| Modules وModeration | إضافة `moderation.advanced: pro`، lock metadata، HTTP 402 من الخادم، disabled controls في الواجهة، وruntime gate لأوامر AutoMod الستة | اختبارات gate وconfiguration ناجحة |
-| AutoMod outputs | defaults آمنة لـenabled/filters/limits/action/logChannel، وإضافة emoji aliases `USER` و`WRENCH`، وعدم ظهور `undefined` في النصوص | syntax وgrep وtests ناجحة |
-| Blacklist | parser صريح لـ`ms,s,m,h,d,w,mo,inf`، دعم `5mo`، رفض القيم غير الصحيحة، ورسالة permission واضحة | اختبارات parser ناجحة |
-| Action Center | عرض confidence وsample evidence وcomparison window، أفعال read/resolve الفعلية للتنبيهات، ورابط navigation حقيقي إلى Setup & Intelligence، بلا remote action وهمي | backend contract وQA محلي |
-| Premium | صفحة server-scoped بهوية server محدد، tags `FREE/PRO/ULTIMATE`، hierarchy أوضح، methods صادقة، وcheckout/cancel dynamic return URLs | اختبارات billing وfull QA؛ provider حي غير مهيأ |
-| Stats العامة | `/stats?guildId=<id>` و`/api/public/stats/:guildId` تعرض aggregates خلال 24 ساعة: joins/leaves/count/telemetry وحالة plugin | اختبارات public stats وvisual QA محلي |
-| Profile العامة | `/profile/<DiscordUserId>` وalias `/u/<id>` يعرضان Discord public identity فقط؛ لا claims عن XP/ranking غير المخزن | فحص بصري محلي؛ Discord حي يلزم للجلب |
-| Discord announcement embed | خيار `Public Stats Card` داخل أمر `/stats` ينشئ embed ورابطًا عامًا ويشرح privacy | command catalog وsyntax ناجحان |
-| Minecraft plugin | Maven artifact في `plugin/target`، وdeliverable محدث في `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، Java major version 52 | Maven test/package وفحص JAR ناجحان |
+**الحالة: VERIFIED / REQUIRES EXTERNAL RUNTIME.** أصبح ProMcBot بنية تشغيلية تربط Discord بالـDashboard وبـMinecraft Plugin، مع فصل واضح بين إثبات الاتصال والقياس والتحليل والفعل. أُغلقت authority القديمة للـPremium، وأضيفت idempotency للـTelemetry، وتشددت session وOAuth وCORS وCSRF وPlugin headers، وأضيف distributed lease للأتمتة، وعُطّل prefix compatibility افتراضيًا. نجحت آخر دورة Node بـ`96/96`، وبُني JAR بــJava 8 bytecode.
 
-## My Servers والصلاحيات
+## 2. Original Project State
 
-المسار `/myservers` يعتمد على guilds التي يعيدها Discord OAuth بعد تطبيق workspace filter. لا يظهر server لمجرد أن المستخدم عضو فيه، ولا تكفي Manage Server وحدها في هذا النظام. routes وAPIs server-scoped محمية كذلك بـ`resolveWorkspaceGuildReference` و`requireGuildManager`، لذلك لا يكفي تغيير `guildId` يدويًا للوصول إلى server غير مُدار.
+**الحالة: DONE.** كان المشروع Node.js CommonJS/Express مع Discord.js وPassport وMongoose، إضافة إلى Java/Maven Bukkit Plugin. كشف audit وجود legacy membership authority تستخدم `User.ismembership`، وprefix commands محملة بالتوازي مع slash catalog، وtelemetry retry بلا event identity ثابتة، وscheduler process-local، وsecret session يتولد عند غيابه، وCORS أوسع من المطلوب، وshutdown flush غير مثبت بعد إيقاف Bukkit.
 
-تم فصل **Platform access** عن دور Discord الحقيقي. إذا كان المستخدم platform owner فقد يملك صلاحية إدارية على مستوى المنصة، لكن ذلك لا يجعل كل guild يظهر كأنه Owner في Discord. الـbadge يعرض الدور المثبت من Discord، بينما override يظهر كتسمية منفصلة.
+## 3. Verified Working Systems
 
-## Bot membership وbanners
+**الحالة: VERIFIED.** تم إثبات server-scoped authorization، Owner/Administrator workspace filtering، bot membership decisions، settings normalization، visual fallback، telemetry projection، insufficient-data intelligence، notification tenant scoping، CORS/URL policy، entitlement fail-closed، plugin cryptography، automation dedupe، وpublic-card contracts. هذا إثبات محلي، وليس بديلًا عن runtime خارجي.
 
-عند غياب guild من cache، يحاول backend استخدام Discord `guilds.fetch()` قبل تقرير أن bot غير موجود. أخطاء Discord التي تثبت الغياب فقط مثل 10004/404 تتحول إلى `absent`، بينما أخطاء rate limit أو الشبكة غير الحاسمة تبقى `unknown` ولا تُعرض للمستخدم كغياب مؤكد. إذا كان bot غائبًا فعلًا، يعيد server-scoped flow إلى My Servers أو يعرض invite URL بحسب المسار.
+## 4. Implemented but Previously Unverified Systems
 
-endpoint visual يحاول جلب banner الحقيقي، ثم icon الحقيقي، ثم يحسب dominant color عند عدم وجود banner، ثم يستخدم fallback ثابتًا عند فشل الصور. الاختبارات تثبت بناء CDN/fallback وحساب اللون، لكن ظهور banner الحقيقي يحتاج جلسة Discord وguild فعلية في deployment.
+**الحالة: IMPLEMENTED BUT UNVERIFIED.** تم تنفيذ provisioning وconfig generation وsigned telemetry ingestion وactivation وIntelligence وAction Center وPublic Stats/Profile. أضيفت اختبارات regression للمسارات الحرجة. لم يتم الادعاء بأن Plugin أو OAuth أو PayPal اختُبر حيًا في هذه البيئة.
 
-## Settings وSetup & Intelligence
+## 5. Broken Systems Found
 
-عند حفظ Minecraft settings، تتم validation للـIP والـport، وتُكتب `mcIp` إلى `GuildSettings`، بينما تُحفظ `javaIP` و`javaPort` في `ServerInfo` للمستهلكين الأساسيين. ترك العنوان فارغًا لا ينشئ اتصالًا وهميًا. حفظ IP وport لا يكفي لإظهار players أو intelligence؛ هذه البيانات تأتي من plugin telemetry.
+**الحالة: DONE.** عولجت نقاط الفشل التالية: authority Premium المتنافسة؛ surface prefix المكرر؛ duplicate telemetry بعد فقد response؛ منح Premium من `APPROVED` أو `trialing` بلا proof؛ Host header غير الموثوق في provisioning؛ GET logout؛ حفظ OAuth token؛ session secret process-local؛ وbars زخرفية توحي بقياس غير موجود.
 
-المسار التشغيلي المقصود هو:
+## 6. Partial Systems Found
+
+**الحالة: PARTIAL.** automation يملك dedupe وcooldown وlocal overlap guard وMongo lease، لكن لا يوجد اختبار race بين مثيلين حيّين. Plugin final flush bounded best-effort والqueue في الذاكرة. PayPal adapter مكتمل برمجيًا لكن acceptance الخارجي غير منفذ.
+
+## 7. Missing Systems
+
+**الحالة: NOT IMPLEMENTED / FUTURE.** لا يوجد PocketMine-MP/Bedrock adapter، ولا Fabric/Forge adapter، ولا remote Minecraft command execution، ولا cohort retention طولية كاملة، ولا causal impact attribution، ولا multi-process load test، ولا session revocation كاملة للأجهزة.
+
+## 8. P0 Work Completed
+
+**الحالة: VERIFIED.** أُغلقت P0 العملية: إلغاء تحميل `membership_handler`، توحيد Subscription authority، stable event IDs وbulk upsert، DB fail-fast لمسارات Plugin/webhook، session/OAuth hardening، CORS/mutation guard، config YAML الصحيح، وcompatibility matrix الصادقة.
+
+## 9. P1 Work Completed
+
+**الحالة: PARTIAL.** تم تنفيذ P1 في command compatibility وautomation lease وrate limiting وpublic URL hardening وtruthful Stats/Action Center. ما بقي متعلق بــDiscord/PayPal/Paper/Mongo الحي مصنف خارجيًا لا مخفيًا.
+
+## 10. P2 Work Completed
+
+**الحالة: PARTIAL.** تم الحفاظ على server-scoped Dashboard وactivation UX وpublic Stats/Profile وvisual fallbacks وModeration gating وdocumentation. لم تُستخدم fake metrics لتغطية أي نقص.
+
+## 11. P3 Work Completed
+
+**الحالة: PARTIAL / FUTURE.** تم الحفاظ على shell مهني، mobile drawer، server sidebar، banners/icons/fallback colors، وصفحات عامة. إعادة تصميم كل surface إلى منتج commercial كامل وتحسينات branding اللاحقة P3.
+
+## 12. Discord Command Audit
+
+**الحالة: VERIFIED.** المصدر canonical هو `bot/commands/commandCatalog.js` مع registration عبر `bot/handlers/slash_handler.js`. التصنيف ثماني مجموعات: `server`، `minecraft`، `intelligence`، `moderation`، `premium`، `utility`، `admin`، `help`. Premium وModeration محميان في runtime لا بإخفاء الواجهة فقط.
+
+## 13. Commands Removed
+
+**الحالة: DONE.** لم تُحذف وظائف مفيدة عشوائيًا. `membership_handler` لم يعد محملًا، وlegacy prefix أصبح opt-in، بينما بقيت الملفات القديمة للمرجعية. Discord REST registration الحي يحتاج bot credentials.
+
+## 14. Commands Consolidated
+
+**الحالة: VERIFIED.** `ENABLE_LEGACY_PREFIX_COMMANDS=true` هو التفعيل الصريح الوحيد للـprefix compatibility. عند غيابه لا يحمل `cmd_handler` message commands ولا ينفذ `testing` أو `wallp` أو `mc`. AutoResponder وAutoMod بقيا فعالين، والاختبار يثبت ذلك.
+
+## 15. Final Command Taxonomy
+
+**الحالة: DONE.** السطح النهائي لصاحب السيرفر هو Server administration، Minecraft، Intelligence، Moderation، Premium، Utility، Admin، Help. الروابط التي تغيّر أو تقرأ حالة server يجب أن تبقى server-scoped.
+
+## 16. Dashboard Redesign
+
+**الحالة: VERIFIED / PARTIAL.** بعد اختيار server يعرض sidebar: Overview، Configuration، Intelligence، Action Center، Modules، Moderation، Audit، Premium، وBack to My Servers. لم يتم تعديل `dash/dashboard/pages/logs.html` ولا `bot/Models/**`.
+
+## 17. Dashboard UX Changes
+
+**الحالة: VERIFIED.** My Servers يعرض Owner/Administrator الفعليين فقط، ويفصل platform override عن Discord role. visual path هو banner ثم icon ثم dominant color ثم fallback. banner الحقيقي يحتاج Discord runtime.
+
+## 18. Mobile Changes
+
+**الحالة: VERIFIED.** shared shell يتضمن drawer/backdrop وإغلاقًا للهاتف، والصفحات المهمة تملك loading/error/empty states وتمنع overflow وفق smoke tests الموجودة. لا أدعي browser certification شاملًا في هذه الجولة.
+
+## 19. Backend/API Changes
+
+**الحالة: VERIFIED.** أضيفت CORS allowlist، mutation guard، JSON API 401، server API rate limit، `PUBLIC_BASE_URL` policy، DB readiness، telemetry idempotency، وPlugin provisioning آمن. `requireGuildManager` يطبق tenant authorization.
+
+## 20. MongoDB Changes
+
+**الحالة: PARTIAL.** لم تُمس models. telemetry تستفيد من unique request identity الموجودة، وأضيفت native collection `promcbot_automation_locks` مع unique lock key وlease وTTL index. عند غياب Mongo يتوقف lock fail-closed.
+
+## 21. Minecraft Plugin Changes
+
+**الحالة: IMPLEMENTED BUT UNVERIFIED.** `TelemetryEvent` يحمل UUID ثابتًا، و`BackendClient` يرسل event ID ويستخدم HMAC/timestamp/nonce وtimeouts. `onDisable()` ينفذ final flush بحد تسع ثوانٍ ويسجل الفقد المحتمل؛ gameplay لا يعتمد على backend. لا توجد شهادة runtime لكل version.
+
+## 22. Telemetry Changes
+
+**الحالة: VERIFIED.** event identity scoped إلى server/instance/event، و`bulkWrite` مع `$setOnInsert` يمنع duplicate events عند retry. `accepted` يحسب upserts، و`duplicates` يصف replay. events القديمة بلا ID لها fallback محدود.
+
+## 23. Security Changes
+
+**الحالة: VERIFIED.** لا يُحفظ OAuth access token في Passport profile، وproduction يتطلب `SESSION_SECRET`. CORS credentials مقيدة، mutations cross-origin مرفوضة، Plugin headers bounded قبل DB lookup، وlogout أصبح POST؛ GET يعيد 405.
+
+## 24. Intelligence Changes
+
+**الحالة: VERIFIED / PARTIAL.** Intelligence يحلل player counts وjoins/leaves ومتوسطات comparison windows وreturning-player overlap من telemetry حقيقية. نقص العينة يعيد `insufficient` بلا trend أو retention مختلق. Network intelligence يتطلب instances حقيقية.
+
+## 25. Action Center Changes
+
+**الحالة: VERIFIED.** يعرض evidence وconfidence وsample وwhy-it-matters وnext step والحالة. `executable:false` عندما لا يوجد backend action موثق. الأفعال الحقيقية هي read/resolve والتنقل؛ لا remote command وهمي.
+
+## 26. Automation Changes
+
+**الحالة: PARTIAL.** بقي dedupe وcooldown وbounded retry وexecution evidence، وأضيف local overlap guard وMongo lease مدته خمس دقائق مع TTL. لم يتم إثبات multi-process race على Mongo حي، لذلك الحالة ليست Verified كاملة.
+
+## 27. Premium Feature Matrix
+
+**الحالة: VERIFIED.** Subscription/entitlementService هما المرجع المدفوع الوحيد. `APPROVAL_PENDING` و`APPROVED` و`active` أو `trialing` بلا `metadata.paymentVerified === true` لا تفتح paid plan.
+
+## 28. Free Features
+
+**الحالة: DONE.** Free يوفر الإعداد الأساسي، access المحمي، رؤية activation، telemetry إذا وصلت، وbasic intelligence ضمن العينة. لا يعد retention أو network أو Moderation Pro بلا entitlement.
+
+## 29. Pro Features
+
+**الحالة: PARTIAL / REQUIRES EXTERNAL CREDENTIALS.** Pro catalog وgates وModeration/automation/intelligence paths موجودة، لكن checkout وwebhook يحتاجان PayPal Sandbox/Live credentials وPlan ID مطابقًا.
+
+## 30. Ultimate Features
+
+**الحالة: PARTIAL / REQUIRES EXTERNAL CREDENTIALS.** Ultimate network/security gating موجود، وغياب Plan ID لا يفتح الخطة. Card وGoogle Pay provider-mediated عبر PayPal، وليس processor مستقلًا.
+
+## 31. Billing Architecture
+
+**الحالة: VERIFIED.** المسار PayPal-only: OAuth token، hosted subscription، cancellation، webhook verification، event idempotency، وSubscription update. لا raw card storage ولا Stripe في runtime.
+
+## 32. Billing Validation Status
+
+**الحالة: PARTIAL / REQUIRES EXTERNAL CREDENTIALS.** الاختبارات المحلية تثبت mapping وpayment proof وfail-closed وerror handling. لم يُرسل checkout أو webhook حقيقي، ولا تم تحويل أموال، ولا يجوز اعتبار refresh دليل دفع.
+
+## 33. Authentication Status
+
+**الحالة: VERIFIED / REQUIRES EXTERNAL CREDENTIALS.** Passport/session/API guards موجودة ومشددة، لكن OAuth الحي يحتاج Discord client credentials وcallback URL وMongo store. لا توجد دعوى login حي.
+
+## 34. Authorization Status
+
+**الحالة: VERIFIED.** workspace filter يقصر المستخدم على Owner/Administrator، ويمنع العضو العادي وManage Server وحدها حسب policy الحالية. route guard يتحقق من guild reference وbot membership ويقيد queries بالـguild.
+
+## 35. Testing Performed
+
+**الحالة: VERIFIED.** نُفذت دورة inspect → implement → build → test → failure analysis → fix → retest. شملت Node، syntax، whitespace، protected-path، conflict-marker، static secret review، Maven، JAR inspection، وhealth checks.
+
+## 36. Tests Passed
+
+**الحالة: VERIFIED.** النتيجة النهائية:
 
 ```text
-/myservers
-→ /myservers/:guildId/overview
-→ /myservers/:guildId/intelligence
+npm test: 96/96 PASS
+npm run check: PASS
+changed JavaScript syntax checks: PASS
+git diff --check: PASS
+protected paths check: PASS
+Maven clean package: PASS
+JAR bytecode: major version 52 (Java 8)
 ```
 
-صفحة Setup تعرض server المحدد من route فقط، ولا تعرض dropdown بجميع السيرفرات. بطاقة Activation تعرض مهامًا حقيقية مثل حالة bot، provisioning، وضع JAR، تشغيل Paper، heartbeat، وصول telemetry، ثم كفاية البيانات. عند غياب Mongo أو plugin تعرض حالة degraded/waiting صريحة بدل `Loading` دائم أو checkmark مصطنع.
+## 37. Tests Failed
 
-إذا ظهر `plugin_provisioning_not_configured`، فالحل هو إضافة `PLUGIN_ENCRYPTION_KEY` إلى deployment environment ثم redeploy وإعادة Generate. لا توجد قيمة افتراضية آمنة يمكن للكود اختراعها لهذا السر، ولا ينبغي وضعه في chat أو Git.
+**الحالة: DONE.** لا توجد failures في آخر run. ظهرت regression أثناء تشديد nonce/signature، وتم إصلاحها مع إبقاء semantics والاختبارات، ثم عاد الاختبار إلى `96/96 PASS`. لم يُحذف اختبار فاشل.
 
-## Premium وPayPal
+## 38. Runtime Tests
 
-الـbilling authority بقيت PayPal فقط. الواجهة لا تمكن checkout إذا كان provider أو method المطلوب غير مهيأ، ولا تعطي paid entitlement من زر أو browser redirect. Card وGoogle Pay لا يظهران كجاهزين إلا عندما تسمح إعدادات PayPal الحالية بهما؛ لم تُضف Stripe ولم تُخزّن بيانات card خام. بعد ظهور `billing_checkout_failed` في الاختبار، أضيفت معالجة آمنة تعرض سبب PayPal القابل للتنفيذ وPayPal debug ID الاختياري بدل الرسالة العامة وحدها، مع بقاء entitlement على Free حتى يصل webhook موثق. كما تم إصلاح شرط سابق كان يحجب PayPal إذا كان Ultimate Plan ID غير موجود؛ أصبح Pro قابلًا للشراء عند إعداد Pro فقط، بينما يبقى Ultimate معطلًا حتى إنشاء خطته. وكُشف وأُصلح mismatch إضافي: endpoint يعيد `plans` كمصفوفة، بينما كانت الواجهة تقرأها ككائن؛ أصبحت الواجهة تتعامل مع الشكلين وتتحقق من Plan ID الخاص بالخطة المختارة. أضيف أيضًا زر `Verify PayPal setup` وendpoint authenticated يفحص OAuth وPlan IDs داخل Sandbox/Live دون إعادة credentials. وأُغلقت ثغرة refresh: `APPROVAL_PENDING` و`APPROVED` و`active`/`trialing` بلا `metadata.paymentVerified === true` تعود إلى Free، ولا تُثبت علامة الدفع إلا من أحداث payment completed الموثقة؛ كما أُصلحت رسائل cancel لتُظهر سبب provider الآمن بدل `billing_cancel_failed` العامة. أضيفت أيضًا headers PayPal الموصى بها (`Prefer` و`PayPal-Request-Id`) وتحديد مرحلة `create_subscription` عند فشل provider، مع حماية نجاح checkout من فشل Audit غير الجوهري. دُمجت إعادة تصميم Premium البصرية وتغييرات remote دون فقد gating الأمني.
+**الحالة: PARTIAL / REQUIRES EXTERNAL RUNTIME.** `https://promcbot.dev/health` أعاد HTTP 200. `https://stats.promcbot.dev/health` أعاد HTTP 525 من Cloudflare، وهو Origin SSL blocker خارجي. لم يُشغل Discord أو PayPal أو Paper/Spigot حيًا.
 
-لتشغيل Sandbox، اضبط في خدمة backend المتغيرات المطلوبة في البيئة نفسها كما هو موثق في `docs/PAYMENTS.md` و`docs/PREMIUM.md`، ومنها `PAYPAL_ENV=sandbox` وبيانات PayPal sandbox وplan IDs وwebhook ID. استخدم حسابات PayPal sandbox، ثم أنشئ checkout من صفحة server-scoped Premium، واترك provider يعيد المستخدم إلى مسار server المحدد. منح الوصول لا يثبت إلا عند وصول webhook صحيح والتحقق منه.
+## 39. Security Tests
 
-في Production يجب استبدال بيانات sandbox ببيانات live، وضبط webhook endpoint على `/api/billing/webhook/paypal`، والتأكد من `PUBLIC_BASE_URL` وOAuth callback وTLS. لم يتم تنفيذ تحويل مال أو claim بأن الحساب التجاري أو webhook live مهيأ، لأن ذلك يحتاج حساب المستخدم واعتماداته خارج Git.
+**الحالة: VERIFIED.** الاختبارات تغطي malformed headers، body limit، bearer/HMAC، duplicate nonce، encryption، CORS، mutation policy، session secret، token stripping، legacy premium fail-closed، وautomation lock scoping. static scan لم يجد private key أو open `cors()` أو assignment لـ`profile.accessToken`.
 
-## Action Center وModeration
+## 40. Performance/Scale Considerations
 
-Action Center يعرض فقط observations مبنية على telemetry، مع confidence وrecent/comparison sample. إذا لم توجد بيانات كافية، يشرح أن المطلوب هو إبقاء plugin متصلًا وجمع events، ولا ينشئ trend أو action وهميًا. `Mark read` و`Resolve` مرتبطان بعمليات backend فعلية. أما recommendation فتعرض كـ`Recommendation only`، والرابط المتاح هو navigation آمن إلى Setup & Intelligence وليس remote Minecraft command غير مثبت.
+**الحالة: PARTIAL.** telemetry batch حدها 250، body حدها 512KB، headers bounded، وقواعد automation المقروءة حدها 250. يوجد server API limiter وMongo lease، لكن لا benchmark أو cluster load test أو إثبات throughput موزع.
 
-Moderation gated من ثلاث طبقات: metadata وlock tag في Modules، HTTP 402 من moderation API حتى مع تعديل الواجهة عبر F12، و`moderationGate` داخل أوامر AutoMod runtime. هذا gate يغطي action/filter/log/settings/toggle/whitelist. عند فشل التحقق من entitlement لا تُنفذ قراءة أو كتابة إعدادات moderation.
+## 41. External Credentials Required
 
-## Stats/Profile العامة و`stats.promcbot.dev`
+**الحالة: REQUIRES EXTERNAL CREDENTIALS.** يلزم Secret Store لـ`MONGO_URL` و`SESSION_SECRET` وDiscord OAuth/bot credentials و`PUBLIC_BASE_URL` و`PLUGIN_ENCRYPTION_KEY` ومتغيرات PayPal. يجب تدوير أي token سبق كشفه؛ لا توجد أسرار في التقرير أو Git.
 
-صفحة Stats العامة صممت كبطاقة compact/luxury بدل dashboard مزدحم. endpoint العام يعرض aggregates فقط: عدد joins/leaves خلال 24 ساعة، أحدث player count المقاس، عدد telemetry events، وحالة آخر heartbeat. لا يعرض أسماء اللاعبين أو قائمة Discord members أو raw events. عند عدم وجود evidence حديث يظهر dash ورسالة واضحة؛ لا يتم تحويل heartbeat وحده إلى retention أو trend.
+## 42. External Runtime Requirements
 
-صفحة Profile العامة canonical هي ID-based لأن username ليس registry فريدًا في هذه الدورة. endpoint يجلب Discord public identity فقط عندما يستطيع bot client الوصول إليه، ولا يخترع XP أو levels أو rankings. `/u/:id` alias إلى `/profile/:id`.
+**الحالة: REQUIRES EXTERNAL RUNTIME.** يلزم تشغيل Bot/Dashboard مع Mongo، OAuth داخل Discord، guild حقيقي، provisioning، JAR في Spigot/Paper، heartbeat وplayer events، PayPal Sandbox webhook، ثم اختبار domain بعد إصلاح Origin SSL.
 
-خطوات ربط `stats.promcbot.dev` موثقة في [`docs/PUBLIC_STATS_RUNBOOK.md`](docs/PUBLIC_STATS_RUNBOOK.md). الخلاصة هي إضافة domain إلى Railway، وضع **CNAME وTXT معًا** كما تعرضهما Railway، ثم ضبط:
+## 43. Remaining Limitations
 
-```env
-PUBLIC_STATS_URL=https://stats.promcbot.dev
+**الحالة: PARTIAL / FUTURE.** نطاق Plugin هو Spigot/Paper/Bukkit-compatible في 1.8.x و1.12.x و1.16.x و1.20.x و1.21.x بــJava 8؛ لا PocketMine. queue ذاكرية، remote actions غير موجودة، retention/cohorts المتقدمة جزئية، وAI ليس مصدر الحقيقة.
+
+## 44. Exact Files Changed
+
+**الحالة: VERIFIED.** فوق remote baseline، الملفات المعدلة هي:
+
+```text
+PLUGIN_COMPATIBILITY.md
+bot/events/messageCreate.js
+bot/handlers/cmd_handler.js
+bot/index.js
+bot/utils/automationEngine.js
+bot/utils/pluginSecurity.js
+bot/utils/premiumCode.js
+dash/dashboard/pages/stats.html
+dash/dashboard/shared.js
+dash/index.js
+deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar
+plugin/src/main/java/com/promcbot/plugin/ProMcBotPlugin.java
+plugin/src/main/java/com/promcbot/plugin/backend/BackendClient.java
+plugin/src/main/java/com/promcbot/plugin/telemetry/TelemetryEvent.java
+test/automation.test.js
 ```
 
-بعدها تُختبر `/health` و`/stats?guildId=<guild-id>` و`/api/public/stats/<guild-id>`. تم فحص النطاق بعد push: DNS لـ`stats.promcbot.dev` يحل عبر Cloudflare، لكن HTTPS يعيد **525 Origin SSL Handshake Failed**؛ لذلك الصفحة والكود جاهزان، أما origin SSL/Cloudflare mode فيحتاج إصلاحًا خارجيًا في Railway/Cloudflare. `https://promcbot.dev/health` أعاد HTTP 200. لا يدعي المستودع أن هذا الإصلاح الخارجي تم تلقائيًا.[1] [2]
+## 45. Files Deleted
 
-## Minecraft plugin
+**الحالة: DONE.** لم تُحذف ملفات. legacy membership/message files بقيت محفوظة لكنها غير محملة افتراضيًا. لم يتم تعديل logs.html أو `bot/Models/**`.
 
-الـJAR مبني على Bukkit/Spigot API compatibility وبـJava 8 bytecode، ويستهدف عائلة Spigot/Paper/Bukkit في الإصدارات المطلوبة 1.8.x و1.12.x و1.16.x و1.20.x و1.21.x. لا يشمل ذلك PocketMine-MP/Bedrock، ولا يعني أن كل إصدار تم تشغيله في server خارجي.
+## 46. Files Added
 
-Maven أثبت compile/package والاختبارات الموجودة فقط. لا ينبغي إعلان runtime certification لكل إصدار أو منصة قبل تشغيل خوادم Spigot/Paper حقيقية. الـdeliverable الحالي:
+**الحالة: VERIFIED.** الملفات الجديدة هي:
 
-| العنصر | القيمة |
-|---|---|
-| الملف | `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar` |
-| Maven output | `plugin/target/promcbot-plugin-0.1.0.jar` |
-| plugin descriptor | `plugin.yml` |
-| main class | `dev/promcbot/plugin/ProMcBotPlugin.class` |
-| Java major version | `52` |
-| SHA-256 | `baa37d35c04669475148562401d4ed13abf2f2c0bbb9c4861c727914f6faff65` |
+```text
+bot/utils/legacyCommandPolicy.js
+dash/authPolicy.js
+dash/securityPolicy.js
+dash/telemetryIdentity.js
+dash/urlPolicy.js
+test/auth_policy.test.js
+test/bot_loader.test.js
+test/legacy_command_policy.test.js
+test/plugin_security_limits.test.js
+test/premium_code.test.js
+test/security_policy.test.js
+test/telemetry_identity.test.js
+test/url_policy.test.js
+```
 
-## الاختبارات المنفذة
+## 47. Git Branch
 
-تم تشغيل المجموعة الكاملة بعد إصلاح PayPal الأخير، وكانت النتيجة **72/72 ناجحة**. شملت guild access وentitlements/billing وcommand catalog وintelligence وtelemetry وmoderation defaults/gate وblacklist parser وpublic stats وserver visuals وsettings وplugin security وYAML generation.
+**الحالة: VERIFIED.** كل العمل تم على `copilot/update-bot-design-and-translation-system`. لم يُعدل `main`، ولم يُنشأ branch جديد، ولم يُستخدم force push. تم fetch ثم fast-forward للـremote public-profile commits قبل hardening.
 
-كما نجح `npm run check`، وsyntax checks لكل JavaScript متغير، و`git diff --check`. نجح `npm run build:plugin` عبر `mvn -q -f plugin/pom.xml clean test package`. تم فحص `plugin.yml` وmain class وJava major version 52. أُجري فحص بصري محلي لصفحات Stats/Profile في Chromium؛ هذا لا يثبت DNS أو OAuth أو Discord REST أو MongoDB أو Paper runtime.
+## 48. Git Commits
 
-## مصفوفة المطابقة النهائية
+**الحالة: VERIFIED.** commits Master 1.6:
 
-| البند | الحالة | الملاحظة الدقيقة |
-|---|---|---|
-| العمل على الفرع الافتراضي فقط | **DONE** | لا `main` ولا feature branch جديد |
-| Owner/Administrator فقط في My Servers | **DONE** | العضوية العادية وManage Server وحدها خارج workspace |
-| منع server غير المسموح | **DONE** | server middleware وbot membership guard |
-| منع false-negative عند cache miss | **DONE** | fallback إلى `guilds.fetch()` مع `unknown` للأخطاء غير الحاسمة |
-| Minecraft IP والport | **DONE** | validation وحفظ فعلي في settings/server info |
-| Plugin config YAML | **DONE** | line breaks فعلية لا `\\n` حرفية |
-| Activation/heartbeat | **PARTIAL** | الكود يعرض evidence صادقًا؛ telemetry حي يحتاج plugin وdeployment وplayers |
-| Premium server-scoped | **DONE** | لا dropdown في server Premium وreturn URLs dynamic |
-| Premium provider live | **BLOCKED EXTERNAL** | يحتاج PayPal credentials وplan IDs وwebhook وdeployment |
-| Moderation Pro UI/server/runtime | **DONE** | lock و402 وruntime gate لأوامر AutoMod |
-| Audit Enable/Disable | **DONE** | module API/UI toggleable؛ Logs page لم تُمس |
-| Action Center مفيد وآمن | **DONE** | evidence وread/resolve وsetup navigation؛ بلا remote action وهمي |
-| Intelligence models nonempty | **DONE** | catalog/verification state لا يختفي عند failure |
-| Blacklist وAutoMod undefined | **DONE** | parser/defaults/emoji aliases واختبارات مباشرة |
-| banners وfallback colors | **DONE WITH LIVE LIMIT** | code واختبارات جاهزة؛ banner حي يحتاج Discord guild |
-| Stats/Profile public experience | **DONE** | public aggregates، profile ID-based، embed ورابط عام |
-| `stats.promcbot.dev` | **PARTIAL EXTERNAL** | DNS يحل، لكن HTTPS حاليًا 525؛ يلزم إصلاح origin SSL/Cloudflare خارج Git |
-| runtime acceptance لكل Minecraft versions | **BLOCKED EXTERNAL** | compile/package فقط؛ لا توجد خوادم Spigot/Paper خارجية |
-| Logs وModels untouched | **DONE** | لا تغييرات في المسارين المحميين |
+```text
+2dd545ee7 Harden Master 1.6 runtime boundaries
+cea140221 Make legacy command compatibility explicit
+```
 
-## المطلوب خارجيًا قبل الإنتاج
+remote baseline قبلها هو `d9db02254`. يجب اعتبار push النهائي ناجحًا فقط بعد `git ls-remote` ومقارنة SHA.
 
-يحتاج acceptance النهائي إلى deploy حديث بالـcommit `813b31c78`، والتأكد من `MONGODB_URI` وDiscord OAuth/bot credentials و`PLUGIN_ENCRYPTION_KEY` وPayPal variables في Railway، ثم توليد config جديد ووضعه مع JAR الحالي في server Bukkit/Spigot/Paper. بعد تشغيل لاعب فعليًا، يجب مراجعة activation evidence بدل اعتبار heartbeat وحده comparison window.
+## 49. Final Architecture Summary
 
-كما يحتاج `stats.promcbot.dev` إلى domain وDNS records يدويًا، وتحتاج payment flow إلى PayPal sandbox/live setup. يجب تدوير أي credential تم مشاركته سابقًا خارج secret manager، وعدم وضعه في Git أو chat.
+**الحالة: DONE.**
 
-## الملفات الأهم
+```text
+Discord OAuth + Discord Bot
+        │ owner/admin + bot membership
+        ▼
+Server-scoped Dashboard / Express API
+        │ entitlement + CORS/CSRF + DB readiness
+        ├── Subscription / verified PayPal webhook authority
+        ├── Mongo telemetry + automation lease
+        ▼
+Bukkit-compatible Minecraft Plugin
+        │ bearer + HMAC + timestamp + nonce + stable eventId
+        ▼
+heartbeat / player_count / player_join / player_leave
+        ▼
+Activation → Intelligence → Action Center → public aggregates
+```
 
-| الملف | الغرض |
-|---|---|
-| `dash/index.js` | routes وauthorization وsettings وactivation وbilling وpublic stats APIs |
-| `dash/botAccess.js` | bot membership decision وinvite fallback |
-| `dash/moderationConfig.js` | defaults وتطبيع AutoMod |
-| `bot/utils/moderationGate.js` | Pro gate لأوامر AutoMod runtime |
-| `dash/publicStats.js` | aggregate-only public stats helper |
-| `dash/dashboard/pages/stats.html` | public Stats card |
-| `dash/dashboard/pages/profile.html` | public Discord profile card |
-| `docs/PUBLIC_STATS_RUNBOOK.md` | DNS/Railway runbook لـ`stats.promcbot.dev` |
-| `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar` | JAR قابل للتنزيل |
+المعيار هنا أن heartbeat لا يثبت retention، وcheckout لا يثبت payment، ووجود زر لا يثبت execution.
 
-## Readiness
+## 50. Final Readiness Assessment
 
-**Readiness: READY FOR REVIEW** — الكود والاختبارات وartifact وإغلاق ثغرة paid entitlement وإصلاح رسائل PayPal جاهزة للمراجعة على الفرع الافتراضي، مع بقاء PayPal/DNS وDiscord/Mongo وMinecraft runtime acceptance كمتطلبات تشغيل خارجية صريحة.
+**الحالة النهائية: REQUIRES EXTERNAL RUNTIME.**
 
-## References
+**A — القيمة:** النظام يحل مشكلة تشغيلية حقيقية عندما يصل Plugin telemetry فعلية، لأنه يجمع Discord management وMinecraft evidence والتحليل في workspace واحد.
 
-[1]: docs/PUBLIC_STATS_RUNBOOK.md "ProMcBot Public Stats Runbook"
-[2]: https://docs.railway.com/networking/domains/working-with-domains "Railway — Working with Domains"
-[3]: https://docs.railway.com/variables "Railway — Using Variables"
-[4]: docs/PAYMENTS.md "ProMcBot Payment Configuration"
-[5]: docs/PREMIUM.md "ProMcBot Premium"
+**B — قابلية البناء:** نعم؛ `96/96`، `npm run check`، Maven، وJava major `52` ناجحة.
+
+**C — blockers:** Discord/Mongo/PayPal credentials، Paper/Spigot runtime، heartbeat داخل guild حقيقي، وCloudflare 525 لـ`stats.promcbot.dev`.
+
+**D — الخطوة التالية:** اضبط secrets في Secret Store، تأكد من `PUBLIC_BASE_URL` و`SESSION_SECRET`، شغّل Mongo/Bot/Dashboard، اختبر PayPal Sandbox، ثبت JAR في خوادم versions المستهدفة، ثم أعد Activation/Intelligence/Premium acceptance.
+
+**E — هل هو Production Ready؟** لا. الوصف الصادق: **جاهز للمراجعة والتجربة المنظمة، مع runtime وcredentials خارجية إلزامية قبل الإنتاج الكامل**.
+
+## مراجع
+
+[1]: https://github.com/1Dmar/Mybott/tree/copilot/update-bot-design-and-translation-system "ProMcBot default branch"
+[2]: https://github.com/1Dmar/Mybott/blob/copilot/update-bot-design-and-translation-system/dash/index.js "Dashboard Express boundary"
+[3]: https://github.com/1Dmar/Mybott/blob/copilot/update-bot-design-and-translation-system/PLUGIN_COMPATIBILITY.md "Plugin compatibility matrix"
+[4]: https://developer.paypal.com/docs/subscriptions/ "PayPal Subscriptions"
+[5]: https://docs.papermc.io/paper/dev/getting-started/project-setup "Paper project setup"
+[6]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS "CORS reference"
