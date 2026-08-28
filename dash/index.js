@@ -723,16 +723,18 @@ app.get('/api/public/profile/:identifier', publicStatsLimiter, async (req, res) 
   }
 });
 
-app.get('/api/public/profile-card/:identifier', publicStatsLimiter, async (req, res) => {
+async function servePublicProfileCard(req, res) {
   try {
     const data = await resolveSocialTarget(req.params.identifier);
     const social = await getProfileSocialState(data.profileUserId);
     const card = await renderPublicProfileCard({ ...data.profile, followers: social.followers, likes: social.likes });
-    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' }).send(card);
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' }).send(card);
   } catch (error) {
     res.status(error.status || 404).json({ success: false, error: error.code || 'public_profile_card_not_found', message: error.message });
   }
-});
+}
+app.get('/api/public/profile-card/:identifier', publicStatsLimiter, servePublicProfileCard);
+app.get('/api/public/profile-card-v2/:identifier', publicStatsLimiter, servePublicProfileCard);
 
 async function requireSocialDatabase(res) {
   if (mongoose.connection.readyState === 1) return true;
@@ -796,7 +798,7 @@ app.get('/u/:identifier', async (req, res) => {
   const username = profile?.username || identifier;
   const displayName = profile?.globalName || username || 'ProMC Bot user';
   const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
-  const cardUrl = `${baseUrl}/api/public/profile-card/${encodeURIComponent(username)}`;
+  const cardUrl = `${baseUrl}/api/public/profile-card-v2/${encodeURIComponent(username)}`;
   const description = `${displayName} (@${username}) · Public Discord profile on ProMcBot.`;
   const meta = `
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
