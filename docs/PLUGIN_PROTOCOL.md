@@ -42,7 +42,7 @@ The first plugin implementation sends `player_join`, `player_leave`, `player_cou
 
 ## Failure behavior
 
-Network calls use Java 8-compatible `HttpURLConnection` work executed through `CompletableFuture` from Bukkit async scheduler tasks. The plugin does not block the Minecraft main thread, and a bounded in-memory queue protects memory. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the queue is flushed or discarded after the bounded queue is full. The plugin's local `/promcbot status` command reports queue size, dropped events, and last backend state.
+Network calls use Java 8-compatible `HttpURLConnection` work executed through `CompletableFuture` from Bukkit async scheduler tasks. The plugin does not block the Minecraft main thread. Events are appended to a bounded durable local spool before queueing, recovered after restart, and removed after acknowledged backend delivery. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the spool/queue is flushed or discarded after the configured bound. The plugin's local `/promcbot status` command reports queue size, durable pending count, dropped events, and last backend state.
 
 ## Compatibility statement
 

@@ -1,6 +1,6 @@
 # ProMcBot
 
-ProMcBot is a Discord bot, Minecraft/Paper plugin, and server-scoped operations dashboard for small Minecraft communities and larger networks. The project favors a small canonical command surface, measured telemetry, server-side entitlements, explicit degraded states, and safe failure over fake metrics, fake AI, or fake payment success.
+ProMcBot is a Discord bot, Bukkit-compatible Spigot/Paper Minecraft plugin, and server-scoped operations dashboard for small Minecraft communities and larger networks. The project favors a small canonical command surface, measured telemetry, server-side entitlements, explicit degraded states, and safe failure over fake metrics, fake AI, or fake payment success.
 
 ## Current readiness
 
@@ -8,7 +8,7 @@ The default branch is `copilot/update-bot-design-and-translation-system`. Local 
 
 ## Runtime components
 
-The Node.js runtime uses Node 22.13.0 and CommonJS modules. The Express dashboard and API use MongoDB/Mongoose when `MONGO_URL` or `MONGO_URI` is configured. The Discord runtime is created once and exposed to the dashboard lazily. The Paper plugin targets Java 21 and uses a bounded asynchronous telemetry queue with bearer authentication, HMAC signing, timestamp freshness, nonce replay protection, and encrypted provisioned secrets.
+The Node.js runtime uses Node 22.13.0 and CommonJS modules. The Express dashboard and API use MongoDB/Mongoose when `MONGO_URL` or `MONGO_URI` is configured. The Discord runtime is created once and exposed to the dashboard lazily. The Bukkit-compatible Spigot/Paper plugin is compiled to Java 8 bytecode against the Spigot 1.8.8 API baseline and uses asynchronous telemetry, a bounded durable local spool, bearer authentication, HMAC signing, timestamp freshness, nonce replay protection, and provisioned credentials. Runtime compatibility still requires acceptance on each target server distribution/version.
 
 ## Canonical Discord commands
 
@@ -22,7 +22,7 @@ Use `.env.example` or the environment configuration used by the deployment platf
 
 ## Development and verification
 
-Install dependencies with `npm ci --ignore-scripts` in environments where the optional native renderer is unavailable. Run `npm test` for the deterministic Node suite and `npm run check` for entry-point syntax checks. Build the plugin with `cd plugin && mvn -q clean test package`. The optional `canvas` renderer has an explicit unavailable response when its native binary is not built; this does not prevent bot startup.
+Install dependencies with `npm ci --ignore-scripts` in environments where the optional native renderer is unavailable. Run `npm test` for the deterministic Node suite and `npm run check` for entry-point syntax checks. Build the plugin with `cd plugin && mvn -q clean test package`. The optional `canvas` renderer has an explicit unavailable response when its native binary is not built; this does not prevent bot startup. The Plugin JAR is produced under `plugin/target/` and copied to `deliverables/` for download.
 
 ## First setup
 

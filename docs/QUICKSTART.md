@@ -1,29 +1,29 @@
 # ProMcBot quick start
 
-هذا هو المسار الصحيح للسيرفر الذي تريد منه بيانات Minecraft ولاعبين وأوامر remote. **IP وport وحدهما لا يربطان Minecraft بالـDashboard**؛ يمكن حفظ العنوان كمعلومة اختيارية، لكن البيانات الغنية تأتي من ProMcBot Paper plugin.
+هذا هو المسار الصحيح للسيرفر الذي تريد منه بيانات Minecraft ولاعبين وtelemetry تشغيلية. **IP وport وحدهما لا يربطان Minecraft بالـDashboard**؛ يمكن حفظ العنوان كمعلومة اختيارية، لكن البيانات الغنية تأتي من ProMcBot Bukkit-compatible Spigot/Paper plugin. تنفيذ أوامر Minecraft عن بُعد غير متاح في هذا الإصدار.
 
 ## المسار المختصر
 
 | المرحلة | ما تفعله | علامة النجاح |
 |---|---|---|
-| 1. اختر السيرفر | افتح `/myservers` واختر سيرفرًا يظهر لك فيه `Owner` أو `Administrator` أو `Manage Server` | تفتح صفحة `Server overview` |
+| 1. اختر السيرفر | افتح `/myservers` واختر سيرفرًا يظهر لك فيه `Owner` أو `Administrator` فقط | تفتح صفحة `Server overview` |
 | 2. افتح الإعداد | من sidebar اختر `Setup & intelligence` | ترى `Activation` و`Connection health` |
 | 3. ولّد الإعداد | اكتب Instance ID مثل `primary` واضغط `Generate one-time config` | يظهر لك block بصيغة `config.yml` مرة واحدة |
-| 4. ثبّت الـplugin | ضع JAR الخاص بـProMcBot داخل مجلد `plugins/` في Paper server، ثم أعد تشغيل Paper | يظهر plugin في startup بدون خطأ configuration |
+| 4. ثبّت الـplugin | ضع JAR الخاص بـProMcBot داخل مجلد `plugins/` في خادم Spigot أو Paper/Bukkit-compatible، ثم أعد تشغيله | يظهر plugin في startup بدون خطأ configuration |
 | 5. الصق الإعداد | الصق block الناتج في `plugins/ProMcBot/config.yml`، ولا تشاركه أو تضعه في Git | يحتوي الملف على `backend.base-url` و`server-id` و`instance-id` و`access-token` و`signing-secret` |
 | 6. افحص الاتصال | بعد restart نفّذ `/promcbot status` من console أو داخل اللعبة | ترى حالة backend والـqueue والقدرات دون ظهور secrets |
 | 7. انتظر القياس | ارجع إلى Dashboard واضغط refresh وانتظر heartbeat؛ نفّذ join/leave أو انتظر snapshots | تتحول خطوات heartbeat/telemetry إلى `Ready` وتظهر الأرقام المقاسة |
 
 ## بناء الـJAR من المستودع
 
-إذا لم يكن لديك JAR جاهز، تحتاج Java 21 ثم تنفذ:
+إذا لم يكن لديك JAR جاهز، تحتاج JDK متوافقًا مع Java 8 ثم تنفذ:
 
 ```bash
 cd plugin
 mvn clean test package
 ```
 
-بعد نجاح البناء استخدم artifact الموجود في `plugin/target/` داخل مجلد Paper `plugins/`. لا ترفع `config.yml` الحقيقي أو أي access token أو signing secret إلى GitHub.
+بعد نجاح البناء استخدم `plugin/target/promcbot-plugin-0.1.0.jar` أو النسخة المنسوخة إلى `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar` داخل مجلد `plugins/` في خادم Spigot أو Paper/Bukkit-compatible. لا ترفع `config.yml` الحقيقي أو أي access token أو signing secret إلى GitHub.
 
 ## ماذا يعرض كل جزء؟
 
@@ -35,7 +35,7 @@ mvn clean test package
 
 ## إذا بقيت البيانات فارغة
 
-إذا كانت خطوة Discord غير مكتملة، فتأكد أن البوت موجود في السيرفر وأنه يستطيع رؤيته. إذا كان plugin غير provisioned، ولّد config من Setup. إذا كان provisioned لكن heartbeat غير حديث، افحص `base-url` و`server-id` و`instance-id` ووجود JAR ثم شغّل `/promcbot status`. إذا كان heartbeat موجودًا ولا توجد player metrics، انتظر snapshot أو نفّذ join/leave؛ القياسات لا تُخترع من IP وport.
+إذا كانت خطوة Discord غير مكتملة، فتأكد أن البوت موجود في السيرفر وأنه يستطيع رؤيته. إذا كان plugin غير provisioned، ولّد config من Setup. إذا كان provisioned لكن heartbeat غير حديث، افحص `base-url` و`server-id` و`instance-id` ووجود JAR ثم شغّل `/promcbot status`. إذا كان heartbeat موجودًا ولا توجد player metrics، انتظر snapshot أو نفّذ join/leave؛ القياسات لا تُخترع من IP وport، ولا يوجد remote command path في الإصدار الحالي.
 
 إذا ظهر `plugin_provisioning_not_configured` فإعداد الخادم ينقصه `PLUGIN_ENCRYPTION_KEY`. وإذا كانت صفحة Dashboard تعيد `guild_access_required` فالحساب الحالي لا يملك صلاحية إدارة ذلك Guild، حتى لو كان قد دخل السيرفر فقط.
 

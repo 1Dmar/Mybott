@@ -14,8 +14,8 @@
 | الفرع المطلوب | `copilot/update-bot-design-and-translation-system` |
 | `main` | لم يُعدّل |
 | runtime | Node.js 22.13.0؛ Docker image `node:22.13.0-slim` |
-| plugin | Java 21 وPaper API عبر Maven |
-| الحالة | **READY FOR REAL SERVER TESTING** |
+| plugin | Java 8 bytecode عبر Maven، Spigot API 1.8.8، Bukkit-compatible Spigot/Paper scope |
+| الحالة | **SHIP WITH EXTERNAL SETUP**؛ جاهز لـstaging واختبار الخوادم الحقيقية وليس Production Ready |
 
 ## لماذا ركز التنفيذ على هذه النقاط؟
 
@@ -49,7 +49,7 @@
 
 ### Automation وNotifications وimpact language
 
-تم تثبيت dedupe keys، وcooldown، وbounded retries، وweekly behavior، وcondition checks، وexecution audit. تحتوي Notification على `dedupeKey` و`status` (`open|resolved|snoozed`) و`resolvedAt` و`readAt`، مع resolve endpoint محمي. يعرض النظام تغيرًا ملاحظًا بعد action إن توفر، ولا يصفه بأنه causal impact. بقي distributed scheduler متعدد العمليات وimpact tracking الطولي **PARTIAL/FUTURE**؛ التشغيل الحالي process-local.
+تم تثبيت dedupe keys، وcooldown، وbounded retries، وweekly behavior، وcondition checks، وexecution audit. تحتوي Notification على `dedupeKey` و`status` (`open|resolved|snoozed`) و`resolvedAt` و`readAt`، مع resolve endpoint محمي. يعرض النظام تغيرًا ملاحظًا بعد action إن توفر، ولا يصفه بأنه causal impact. أضيف Mongo lease وlocal overlap guard لمنع تزامن automation نفسه، بينما يبقى scheduler wake-up process-local وimpact tracking الطولي **PARTIAL/FUTURE**.
 
 ### PayPal وEntitlements
 
@@ -59,26 +59,26 @@
 
 ### Minecraft/Paper plugin
 
-تم تثبيت plugin مبنيًا على Java 21 وMaven/Paper، مع server/instance identity، bearer token، HMAC-SHA256، timestamp freshness، nonce replay protection، encrypted backend secret، bounded queue، asynchronous HTTP، retry/requeue، heartbeat، capability refresh، و`/promcbot status`. telemetry مقتصرة على join وleave وsession duration وaggregate player count وheartbeat.
+تم تثبيت plugin مبنيًا على Java 8 وMaven ضد Spigot API 1.8.8 وباستخدام Bukkit-compatible APIs، مع server/instance identity، bearer token، HMAC-SHA256، timestamp freshness، nonce replay protection، bounded durable local spool، asynchronous HTTP، retry/requeue، heartbeat، capability refresh، و`/promcbot status`. telemetry مقتصرة على join وleave وsession duration وaggregate player count وheartbeat.
 
-اختبارات Node الجديدة تغطي encryption round-trip، malformed headers، payload limit، bearer hash، invalid signature، valid authentication، وduplicate nonce replay. Maven packaging ينجح ويحتوي الـJAR على entry point و`BackendClient` و`TelemetryQueue` و`plugin.yml`. **REQUIRES EXTERNAL CREDENTIALS:** Paper runtime وplugin-to-backend acceptance الحي لم يُنفذا.
+اختبارات Node وJava الجديدة تغطي encryption round-trip، malformed headers، payload limit، bearer hash، invalid signature، valid authentication، duplicate nonce replay، durable spool persistence/recovery، tenant guards، bounded concurrency، وimage/address URL policies. Maven packaging ينجح ويحتوي الـJAR على entry point و`BackendClient` و`TelemetryEvent` و`TelemetryQueue` و`TelemetrySpool` و`plugin.yml`. **REQUIRES EXTERNAL CREDENTIALS/RUNTIME:** Spigot/Paper runtime وplugin-to-backend acceptance الحي لم يُنفذا.
 
 ## ما حُذف ولماذا
 
-حُذفت loaders وcommands legacy التي ثبت عدم ارتباطها بالمسار canonical، وlistener AutoMod المكرر، ومرجع Node dependency الذي كان يثبت runtime 18 داخل بيئة يفترض أنها Node 22، ومسارات payment القديمة التابعة لـStripe. لم تُحذف بيانات تشغيلية أو collections. لم تُحذف وظائف حية بلا فحص references.
+تم تعطيل loaders وcommands legacy افتراضيًا عبر compatibility policy، وإزالة listener AutoMod المكرر، وإزالة مرجع Node dependency الذي كان يثبت runtime 18 داخل بيئة يفترض أنها Node 22، وإبعاد مسارات payment القديمة التابعة لـStripe من runtime. لم تُحذف بيانات تشغيلية أو collections. لم تُحذف وظائف حية بلا فحص references.
 
 ## الاختبارات والنتائج
 
 | الفحص | النتيجة |
 |---|---|
 | `npm ci --ignore-scripts` | PASS سابقًا |
-| `npm test` | **PASS: 24 tests، 0 failures** |
+| `npm test` | **PASS: 116 tests، 0 failures** |
 | `npm run check` | PASS في بوابة الجودة النهائية |
 | JavaScript syntax checks | PASS للملفات المتغيرة |
 | `git diff --check` | PASS في الدورات الأخيرة |
 | Command acceptance | PASS: 8 groups، بلا duplicate canonical names |
-| Bot startup smoke | PASS: 5 events، 8 slash groups، 3 message commands في degraded mode |
-| Plugin security tests | PASS: headers/limit/hash/HMAC/replay/encryption |
+| Bot/config startup smoke | PASS: 8 canonical slash groups وdegraded-mode handling صريح |
+| Plugin/security tests | PASS: headers/limit/hash/HMAC/replay/encryption، spool، SSRF/address policy، public-profile image policy |
 | PayPal hardening tests | PASS: catalog/mapping/malformed/unknown-plan/fail-closed |
 | Maven `clean test package` | PASS سابقًا؛ سيعاد ضمن البوابة النهائية |
 | Responsive Dashboard | **PASS: 21 combinations** عبر 3 صفحات و7 أحجام |
@@ -91,11 +91,11 @@
 |---|---|
 | Discord REST registration/fetch/execution | REQUIRES BOT TOKEN وtest guild |
 | OAuth وMongoDB persistence | REQUIRES external credentials/runtime |
-| Paper plugin runtime | REQUIRES real Paper server |
+| Spigot/Paper plugin runtime | REQUIRES real Spigot/Paper server |
 | PayPal sandbox/live checkout/webhooks | REQUIRES provider account/configuration |
 | 1/7/30-day cohort retention | PARTIAL؛ يحتاج longitudinal telemetry |
 | causal impact tracking | PARTIAL؛ before/action/after linkage غير مكتمل |
-| distributed scheduler/lock | PARTIAL؛ process-local حاليًا |
+| distributed scheduler/lock | PARTIAL؛ Mongo lease وlocal overlap guard موجودان، وmulti-worker race يحتاج Mongo حيًا |
 | Fabric compatibility | NOT IMPLEMENTED |
 | production-scale tracing/metrics | FUTURE |
 

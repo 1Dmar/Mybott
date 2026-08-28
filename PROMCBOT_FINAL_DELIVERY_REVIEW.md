@@ -8,7 +8,7 @@ This review covers the implementation of `ProMcBot_FINAL_MASTER_EXECUTION_PROMPT
 |---|---|
 | Repository | `1Dmar/Mybott` |
 | Default branch | `copilot/update-bot-design-and-translation-system` |
-| Code verification commit | `2808734ca329c79d5fe34c76c764d857e31b3ee1` (documentation-only commits followed) |
+| Latest ship commit | `487de0426` plus subsequent safe remote merges and documentation updates on the same default branch |
 | Runtime baseline | Node.js `22.13.0` in Docker |
 | Plugin artifact | `plugin/target/promcbot-plugin-0.1.0.jar` |
 | Readiness | **READY FOR REAL SERVER TESTING** |
@@ -27,30 +27,30 @@ Automation and notification records support dedupe, cooldown, bounded retries, e
 
 The payment boundary is PayPal-based. The adapter implements OAuth access-token acquisition, hosted subscription creation, cancellation, server-side webhook signature verification, event idempotency, and shared subscription updates. Card checkout and Google Pay are provider-mediated availability flags; raw card data is never stored, and a frontend redirect never grants entitlement. Malformed webhook JSON and unknown PayPal plan IDs fail closed. Stripe is not used by the runtime billing path.
 
-The Java 21 Paper plugin retains offline-safe gameplay and minimizes telemetry to join, leave/session duration, aggregate player count, and heartbeat. It uses server/instance identity, encrypted provisioned secrets, bearer authentication, HMAC-SHA256 canonical signing, timestamp freshness, nonce replay protection, bounded queue, asynchronous HTTP, retry/requeue, capability refresh, and `/promcbot status`.
+The Bukkit-compatible Spigot/Paper plugin is compiled to Java 8 bytecode against the Spigot 1.8.8 API baseline. It retains offline-safe gameplay and minimizes telemetry to join, leave/session duration, aggregate player count, and heartbeat. It uses server/instance identity, provisioned credentials, bearer authentication, HMAC-SHA256 canonical signing, timestamp freshness, nonce replay protection, a bounded durable local spool, asynchronous HTTP, retry/requeue, capability refresh, and `/promcbot status`. Live runtime acceptance remains external.
 
 ## Verification results
 
 | Check | Result |
 |---|---|
 | `npm ci --ignore-scripts` | PASS in the earlier dependency-install gate |
-| `npm test` | **PASS: 24 tests, 0 failures** |
+| `npm test` | **PASS: 116 tests, 0 failures** |
 | Command acceptance | PASS: eight groups, unique names, descriptions, permissions, help parity |
-| Plugin security coverage | PASS: encryption, malformed headers, body limit, token hash, HMAC, valid auth, replay |
+| Plugin/security coverage | PASS: encryption boundary, malformed headers, body limit, token hash, HMAC, valid auth, replay, SSRF/address policy, public-profile image policy |
 | PayPal hardening coverage | PASS: catalog, event mapping, malformed event, unknown plan, missing configuration |
 | Changed JavaScript syntax | PASS |
 | `npm run check` | PASS in the final quality gate |
 | `git diff --check` | PASS in the final quality gate |
-| Bot startup smoke | PASS: five events, eight slash groups, three message commands in degraded mode |
+| Bot startup/config smoke | PASS: canonical eight slash groups and explicit degraded-mode handling; live Discord registration remains external |
 | Maven `clean test package` | PASS in the earlier plugin gate |
-| Plugin JAR content | PASS in the earlier plugin gate |
+| Plugin JAR content | PASS: Java 8 bytecode, plugin.yml, main class, BackendClient, TelemetryEvent, TelemetryQueue, TelemetrySpool |
 | Responsive Dashboard preview | **PASS: 21 combinations**; no overflow/page errors and mobile drawer/backdrop behavior verified |
 
 The responsive test used an HTTP preview with an authenticated fixture and exercised Actions, Intelligence, and Premium at widths `360, 390, 412, 768, 1024, 1280, 1440`. It measured `scrollWidth <= innerWidth` and checked drawer opening/backdrop behavior at mobile widths. This is not a substitute for a real OAuth session.
 
 ## External blockers
 
-Live Discord command registration, REST fetch, and command execution require a valid bot token and test guild. Authenticated Dashboard persistence requires OAuth and MongoDB credentials. Plugin-to-backend acceptance requires a real Paper server and provisioned credentials. PayPal sandbox/live checkout and webhook acceptance require a configured provider account, client credentials, plan IDs, webhook ID, and any regional/device method enablement.
+Live Discord command registration, REST fetch, and command execution require a valid bot token and test guild. Authenticated Dashboard persistence requires OAuth and MongoDB credentials. Plugin-to-backend acceptance requires a real Spigot/Paper server and provisioned credentials. PayPal sandbox/live checkout and webhook acceptance require a configured provider account, client credentials, plan IDs, webhook ID, and any regional/device method enablement.
 
 The dependency tree still contains advisories. No forced audit upgrade was applied because it could break the Discord, Minecraft, or browser runtime. Production operators must rotate any previously exposed credentials and must not commit tokens, provider secrets, or one-time plugin configuration.
 
@@ -58,4 +58,4 @@ The dependency tree still contains advisories. No forced audit upgrade was appli
 
 The repository is materially cleaner and safer: the public command surface is consolidated, duplicate message handling is removed, mobile Dashboard defects are addressed, Action Center and Intelligence show real-data boundaries, PayPal fails closed without configuration, and plugin/backend security paths are tested locally. The remaining limitations are intentionally visible rather than hidden.
 
-**Readiness label: READY FOR REAL SERVER TESTING.**
+**Readiness label: SHIP WITH EXTERNAL SETUP.** The repository is ready for staging and real-server acceptance, not certified as fully production-live.

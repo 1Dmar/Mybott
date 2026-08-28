@@ -1,15 +1,16 @@
-# Plugin compatibility research notes
+# Plugin Compatibility Research
 
-## Official PaperMC findings (2026-08-27)
+## Official PaperMC context
 
-Source: https://docs.papermc.io/paper/dev/plugin-yml/
+Sources:
 
-Paper's `plugin.yml` documentation states that `api-version` identifies the Paper API version used by a plugin and that servers with a lower version than the declared value refuse to load it. The documentation lists valid versions from 1.13 through 26.2 and explains that minor versions are supported from 1.20.5 onward. A plugin without `api-version` is treated as a legacy plugin with a console warning.
+- [Paper plugin.yml documentation](https://docs.papermc.io/paper/dev/plugin-yml/)
+- [Paper userdev documentation](https://docs.papermc.io/paper/dev/userdev/)
 
-Source: https://docs.papermc.io/paper/dev/userdev/
+Paper documents that `api-version` communicates the API version a plugin targets and that modern Paper compatibility metadata has its own versioning rules. Paper userdev and NMS guidance also changes across Minecraft generations. Those documents are useful context, but they do not certify this repository's artifact on every server distribution or Minecraft version.
 
-Paper's userdev documentation explains that the supported tooling and mappings changed for modern versions. It specifically notes removal of obfuscations from Minecraft 26.1 onward and that Paper no longer supports obfuscated plugins from that point. This means a single build strategy must not assume one modern NMS/mapping approach works across 1.8.x and 26.x.
+## Current repository implication
 
-## Implementation implication
+The current ProMcBot plugin intentionally avoids NMS and modern Paper-only APIs. It is compiled with Java 8 bytecode against `org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT`, and its `plugin.yml` has no modern `api-version` declaration. This supports a conservative Bukkit-compatible strategy, but it may cause a normal legacy-plugin warning on modern Paper.
 
-The current plugin is compiled with Java 21 against Paper API 1.21.4 and declares `api-version: 1.20`. A truthful compatibility plan must either use a lowest-common-denominator Bukkit API/reflection strategy with Java-8-compatible bytecode, or publish separate artifacts for legacy Java 8/1.8.x and modern Java 21/1.21+ servers. A single current Java-21 JAR cannot run on a Java-8 1.8.x server. Paper/Spigot/Bukkit runtime acceptance must be tested on actual server versions; declaration alone is not proof of compatibility.
+The target acceptance matrix is Spigot/Paper/Bukkit-compatible 1.8.x, 1.12.x, 1.16.x, 1.20.x, and 1.21.x. Build evidence is verified; live load, connect, heartbeat, telemetry, retry, reconnect, outage, and shutdown behavior remains **IMPLEMENTED BUT UNVERIFIED** until a real server is exercised for each target combination. PocketMine-MP/Bedrock, Fabric, and Forge require separate implementations and are not claimed by this artifact.

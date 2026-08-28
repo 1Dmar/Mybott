@@ -1,14 +1,26 @@
-# ProMcBot Compatibility
+# ProMcBot Plugin Compatibility
 
-The plugin is a Maven project compiled against Paper API `1.21.4-R0.1-SNAPSHOT` with Java 21 and `api-version: '1.20'`. The repository verifies Maven compilation, Java unit tests, plugin metadata, HMAC behavior, and bounded queue behavior.
+The current artifact is a Bukkit-compatible Minecraft plugin compiled with **Java 8 bytecode** against the `org.spigotmc:spigot-api:1.8.8-R0.1-SNAPSHOT` baseline. The implementation deliberately uses the lowest-common-denominator Bukkit/Spigot API rather than NMS or modern Paper-only APIs.
 
-The project does not claim runtime compatibility with a specific Paper, Spigot, Purpur, Fabric, or Minecraft server release until the artifact is installed and exercised on that server software. Fabric is not a Bukkit/Paper API target for this plugin; a Fabric adapter would be a separate implementation.
+| Target | Build evidence | Runtime status |
+|---|---|---|
+| Spigot/Bukkit-compatible 1.8.x | Maven build and Java 8 bytecode verified | **IMPLEMENTED BUT UNVERIFIED** |
+| Spigot/Paper/Bukkit-compatible 1.12.x | Lowest-common-denominator API strategy | **IMPLEMENTED BUT UNVERIFIED** |
+| Spigot/Paper/Bukkit-compatible 1.16.x | Lowest-common-denominator API strategy | **IMPLEMENTED BUT UNVERIFIED** |
+| Spigot/Paper/Bukkit-compatible 1.20.x | Lowest-common-denominator API strategy | **IMPLEMENTED BUT UNVERIFIED** |
+| Spigot/Paper/Bukkit-compatible 1.21.x | Lowest-common-denominator API strategy | **IMPLEMENTED BUT UNVERIFIED** |
+| PocketMine-MP/Bedrock | Not a Bukkit API target | **NOT IMPLEMENTED** |
+| Fabric/Forge | Not a Bukkit API target | **NOT IMPLEMENTED** |
 
-The exact verification command is:
+`plugin.yml` intentionally has no modern `api-version` declaration, so Paper may treat the plugin as a legacy Bukkit plugin and emit its normal compatibility warning. That metadata does not certify runtime support. Each target server distribution and Minecraft version must be installed and exercised before production acceptance.
+
+The repository verifies Maven compilation, Java tests for the durable telemetry spool, plugin metadata, Java 8 bytecode, asynchronous backend transport, bounded retries, HMAC/timestamp/nonce handling, stable event IDs, and durable local recovery. This is build and deterministic-test evidence, not proof that every target runtime has been live-tested.
+
+Build the artifact with:
 
 ```bash
 cd plugin
 mvn clean test package
 ```
 
-A future compatibility matrix should record server software, Minecraft version, Java version, plugin version, join/leave telemetry, heartbeat, reconnect, and shutdown behavior for every tested combination.
+The resulting file is `plugin/target/promcbot-plugin-0.1.0.jar`. The downloadable copy is `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`.
