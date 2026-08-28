@@ -708,7 +708,7 @@ async function getProfileSocialState(profileUserId, viewerId = null) {
 
 async function resolveSocialTarget(identifier) {
   const data = await resolvePublicProfile(String(identifier || '').trim());
-  return { data, profileUserId: data.profile.id };
+  return { ...data, profileUserId: data.profile.id };
 }
 
 const profileMutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'profile_action_rate_limited' } });

@@ -47,6 +47,7 @@ test('canonical /u route keeps the modern Open Graph HTML contract', () => {
   assert.match(serverSource, /meta property="og:image:width" content="1200"/);
   assert.match(serverSource, /meta property="og:image:height" content="630"/);
   assert.match(serverSource, /profile-card-v2\//);
+  assert.match(serverSource, /return \{ \.\.\.data, profileUserId: data\.profile\.id \}/);
   assert.match(serverSource, /Public Discord profile on ProMcBot/);
   assert.doesNotMatch(serverSource, /const description = `\$\{displayName\} \(@\$\{username\}\) · \$\{social\.followers\}/);
 });
