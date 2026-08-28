@@ -348,13 +348,12 @@ app.get('/auth/discord/callback', (req, res, next) => {
   res.redirect('/dashboard');
 });
 
-app.post('/api/logout', (req, res) => {
+function completeLogout(req, res) {
   req.logout(() => res.redirect('/'));
-});
+}
 
-app.get('/api/logout', (req, res) => {
-  res.status(405).set('Allow', 'POST').json({ success: false, error: 'logout_requires_post' });
-});
+app.post('/api/logout', completeLogout);
+app.get('/api/logout', completeLogout);
 
 // ── User API ──────────────────────────────────────────────────────
 app.get('/api/user/profile', isAuthenticated, async (req, res) => {
