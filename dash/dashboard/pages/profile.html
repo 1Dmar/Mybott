@@ -50,7 +50,26 @@
     .public-profile-social-actions button.active { border-color:var(--success); background:color-mix(in srgb,var(--success) 14%,var(--surface-2)); color:var(--success); }
     .public-profile-social-actions button:disabled { cursor:wait; opacity:.6; }
     .public-profile-social-note { grid-column:1 / -1; margin:0; color:var(--text-muted); font-size:11px; }
-    .public-profile-copyright .p-mark { color:#8eeaff; font-size:21px; font-weight:950; line-height:1; text-shadow:0 0 18px rgba(90,214,255,.4); }
+    .public-profile-copyright { display:flex; align-items:center; justify-content:center; gap:9px; margin:18px 0 0; color:var(--text-muted); font-size:11px; text-align:center; }
+    .public-profile-copyright-logo { width:24px; height:24px; border:1px solid rgba(142,234,255,.45); border-radius:50%; object-fit:cover; box-shadow:0 0 18px rgba(90,214,255,.28); }
+    body:not(.dark) .public-profile-card { border-color:rgba(80,118,190,.22); background:linear-gradient(155deg,rgba(239,246,255,.98),rgba(224,235,255,.98)); box-shadow:0 24px 70px rgba(67,87,126,.18),inset 0 1px rgba(255,255,255,.92); }
+    body:not(.dark) .public-profile-card::after { border-color:rgba(88,101,242,.17); box-shadow:0 0 0 26px rgba(88,101,242,.035),0 0 0 54px rgba(88,101,242,.02); }
+    body:not(.dark) .public-profile-banner { background:radial-gradient(circle at 15% 18%,rgba(255,255,255,.82),transparent 25%),linear-gradient(135deg,#6b93e8,#a287dc); }
+    body:not(.dark) .public-profile-avatar { border-color:#f8fbff; background:#dbeafe; box-shadow:0 14px 30px rgba(54,76,130,.2); }
+    body:not(.dark) .public-profile-name { color:#101a32; }
+    body:not(.dark) .public-profile-handle { color:#4b628a; }
+    body:not(.dark) .public-profile-kicker { color:#3167c7; }
+    body:not(.dark) .public-profile-badge { border-color:rgba(49,103,199,.2); background:rgba(49,103,199,.08); color:#27549d; }
+    body:not(.dark) .public-profile-status { border-color:#cfdbef; background:rgba(255,255,255,.7); color:#334155; }
+    body:not(.dark) .public-profile-stat { border-color:#cfdbef; background:rgba(255,255,255,.66); }
+    body:not(.dark) .public-profile-stat small { color:#64748b; }
+    body:not(.dark) .public-profile-stat strong { color:#17233e; }
+    body:not(.dark) .public-profile-about { color:#526783; }
+    body:not(.dark) .public-profile-share { border-color:#c4d5f0; background:linear-gradient(135deg,rgba(219,234,254,.8),rgba(237,233,254,.9)); }
+    body:not(.dark) .public-profile-share strong { color:#17233e; }
+    body:not(.dark) .public-profile-share span { color:#526783; }
+    body:not(.dark) .public-profile-share button { border-color:#7696d8; background:rgba(88,101,242,.12); color:#3458a4; }
+    body:not(.dark) .public-profile-copyright-logo { border-color:#9bb4df; box-shadow:0 0 16px rgba(88,101,242,.2); }
     .public-profile-error { padding:44px 24px; color:var(--text); text-align:center; }
     .public-profile-error h2 { margin:0 0 8px; }
     .public-profile-error p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.6; }
@@ -71,12 +90,12 @@
 
   <main class="main-content public-profile-main">
     <header class="public-profile-header">
-      <div><div class="eyebrow">ProMC Bot user page</div><h1>Public profile</h1><p>A shareable identity card with the same navigation shell as the main dashboard.</p></div>
+      <div><div class="eyebrow">ProMcBot user page</div><h1>Public profile</h1><p>A polished public Discord identity with community-ready sharing.</p></div>
       <div class="public-profile-actions"><a class="primary" href="/dashboard"><i class="bx bx-home-alt-2"></i> Dashboard</a><a href="/stats"><i class="bx bx-bar-chart-alt-2"></i> Public stats</a></div>
     </header>
     <section class="public-profile-card" id="card" aria-live="polite"><div class="public-profile-error"><h2>Loading profile</h2><p>Fetching the public identity and optional profile presentation.</p></div></section>
     <section class="public-profile-social" id="socialPanel" hidden aria-label="Public profile actions"><div class="public-profile-social-copy"><div class="public-profile-social-stat"><strong id="followerCount">0</strong><span>followers</span></div><div class="public-profile-social-stat"><strong id="likeCount">0</strong><span>likes</span></div></div><div class="public-profile-social-actions"><button id="followButton" class="primary" type="button">Follow</button><button id="likeButton" type="button">Like</button></div><p class="public-profile-social-note" id="socialNotice"></p></section>
-    <div class="public-profile-copyright"><span class="p-mark" aria-hidden="true">P</span><span>© <span id="copyrightYear"></span> ProMC Bot. All rights reserved.</span></div>
+    <div class="public-profile-copyright"><img class="public-profile-copyright-logo" src="/dashboard/logo.png" alt="ProMcBot logo"><span>© <span id="copyrightYear"></span> ProMcBot. All rights reserved.</span></div>
   </main>
 
   <script src="/dashboard/shared.js"></script>
@@ -124,15 +143,15 @@
           if (!response.ok) throw new Error(data.message || 'Profile unavailable');
           const profile = data.profile || {};
           socialState = data.social || socialState;
+          const memberSince = profile.memberSince ? new Date(profile.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }) : '—';
           viewerAuthenticated = Boolean(data.viewer?.authenticated);
           renderSocial();
           const profileUrl = profile.publicPath || location.href;
           const safeUrl = esc(new URL(profileUrl, location.origin).href);
           card.innerHTML = '<div class="public-profile-banner" ' + (profile.banner ? 'style="background-image:linear-gradient(135deg,rgba(9,25,62,.25),rgba(66,37,133,.35)),url(\'' + esc(profile.banner) + '\')"' : '') + '></div>' +
             '<div class="public-profile-content"><div class="public-profile-identity"><img class="public-profile-avatar" src="' + esc(profile.avatar) + '" alt="' + esc(profile.globalName || profile.username) + '"><div class="public-profile-identity-copy"><div class="public-profile-kicker">Public Discord profile</div><div class="public-profile-name">' + esc(profile.globalName || profile.username) + '</div><div class="public-profile-handle">@' + esc(profile.username) + '</div><div class="public-profile-badges"><span class="public-profile-badge"><span class="public-profile-dot"></span>Public profile</span>' + (profile.bot ? '<span class="public-profile-badge bot">Bot account</span>' : '') + '</div></div></div>' +
-            (profile.customStatus ? '<div class="public-profile-status"><span class="public-profile-dot"></span><span>' + esc(profile.customStatus) + '</span></div>' : '') +
-            '<div class="public-profile-stats"><div class="public-profile-stat"><small>Public username</small><strong>@' + esc(profile.username) + '</strong></div><div class="public-profile-stat"><small>Discord handle</small><strong>@' + esc(profile.discordUsername || profile.username) + '</strong></div><div class="public-profile-stat"><small>Profile ID</small><strong>' + esc(profile.id) + '</strong></div><div class="public-profile-stat"><small>Data source</small><strong>Discord public profile</strong></div></div>' +
-            '<p class="public-profile-about">A shareable identity card for Discord communities. ProMC Bot shows only public profile information and optional profile presentation; it does not invent levels, XP, ranks, or private activity.</p>' +
+            '<div class="public-profile-stats"><div class="public-profile-stat"><small>Public username</small><strong>@' + esc(profile.username) + '</strong></div><div class="public-profile-stat"><small>Discord handle</small><strong>@' + esc(profile.discordUsername || profile.username) + '</strong></div><div class="public-profile-stat"><small>Member since</small><strong>' + esc(memberSince) + '</strong></div><div class="public-profile-stat"><small>Profile ID</small><strong>' + esc(profile.id) + '</strong></div></div>' +
+            '<p class="public-profile-about">This page shows public profile information synced from Discord and the community actions available for this profile. It never invents levels, XP, ranks, or private activity.</p>' +
             '<div class="public-profile-share"><div><strong>Share this profile</strong><span>' + safeUrl + '</span></div><button id="copyProfile" type="button">Copy public link</button></div></div>';
           document.getElementById('copyProfile').addEventListener('click', async () => { try { await navigator.clipboard.writeText(new URL(profileUrl, location.origin).href); document.getElementById('copyProfile').textContent = 'Copied'; setTimeout(() => document.getElementById('copyProfile').textContent = 'Copy public link', 1800); } catch (_) { document.getElementById('copyProfile').textContent = 'Copy unavailable'; } });
         } catch (error) {

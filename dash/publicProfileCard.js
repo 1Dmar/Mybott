@@ -30,46 +30,64 @@ async function imageDataUri(url) {
   }
 }
 
+function formatMemberSince(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+}
+
 async function renderPublicProfileCard(profile = {}) {
-  const displayName = escapeXml(String(profile.globalName || profile.username || 'ProMC Bot user').slice(0, 28));
-  const username = escapeXml(String(profile.username || 'user').slice(0, 32));
-  const discordUsername = escapeXml(String(profile.discordUsername || profile.username || 'user').slice(0, 32));
-  const profileId = escapeXml(String(profile.id || '—'));
-  const followers = Math.max(0, Number(profile.followers || 0));
-  const likes = Math.max(0, Number(profile.likes || 0));
+  const displayName = escapeXml(String(profile.globalName || profile.username || 'ProMC Bot user').slice(0, 24));
+  const username = escapeXml(String(profile.username || 'user').slice(0, 28));
+  const memberSince = escapeXml(formatMemberSince(profile.memberSince));
   const avatar = await imageDataUri(profile.avatar);
   const officialLogo = localLogoDataUri();
   const avatarMarkup = avatar
-    ? `<image href="${avatar}" x="100" y="176" width="290" height="290" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>`
-    : `<text x="245" y="360" text-anchor="middle" font-family="Arial,sans-serif" font-size="125" font-weight="900" fill="#f4f9ff">?</text>`;
-  const watermark = officialLogo ? `<image href="${officialLogo}" x="930" y="36" width="34" height="34" preserveAspectRatio="xMidYMid meet"/>` : '';
+    ? `<image href="${avatar}" x="104" y="184" width="252" height="252" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)"/>`
+    : `<text x="230" y="355" text-anchor="middle" font-family="Arial,sans-serif" font-size="110" font-weight="900" fill="#f4f9ff">?</text>`;
+  const logoMarkup = officialLogo ? `<image href="${officialLogo}" x="967" y="59" width="44" height="44" preserveAspectRatio="xMidYMid meet" clip-path="url(#logoClip)"/>` : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
     <defs>
-      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071b43"/><stop offset=".56" stop-color="#0b1025"/><stop offset="1" stop-color="#21112c"/></linearGradient>
-      <radialGradient id="blueGlow" cx="22%" cy="52%" r="42%"><stop offset="0" stop-color="#3493ff" stop-opacity=".42"/><stop offset="1" stop-color="#3493ff" stop-opacity="0"/></radialGradient>
-      <radialGradient id="violetGlow" cx="88%" cy="26%" r="42%"><stop offset="0" stop-color="#7d46ff" stop-opacity=".3"/><stop offset="1" stop-color="#7d46ff" stop-opacity="0"/></radialGradient>
-      <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".12"/><stop offset="1" stop-color="#ffffff" stop-opacity=".035"/></linearGradient>
-      <clipPath id="avatarClip"><circle cx="245" cy="321" r="145"/></clipPath>
-      <filter id="glow"><feGaussianBlur stdDeviation="16"/></filter>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#02050c"/><stop offset=".52" stop-color="#071126"/><stop offset="1" stop-color="#160b1f"/></linearGradient>
+      <radialGradient id="blueLight" cx="20%" cy="50%" r="45%"><stop offset="0" stop-color="#315bff" stop-opacity=".55"/><stop offset=".45" stop-color="#113eae" stop-opacity=".18"/><stop offset="1" stop-color="#113eae" stop-opacity="0"/></radialGradient>
+      <radialGradient id="pinkLight" cx="84%" cy="43%" r="42%"><stop offset="0" stop-color="#e451bd" stop-opacity=".34"/><stop offset=".5" stop-color="#7d38aa" stop-opacity=".1"/><stop offset="1" stop-color="#7d38aa" stop-opacity="0"/></radialGradient>
+      <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10182a" stop-opacity=".83"/><stop offset=".58" stop-color="#070d1c" stop-opacity=".82"/><stop offset="1" stop-color="#0c0b18" stop-opacity=".9"/></linearGradient>
+      <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecf6ff"/><stop offset=".35" stop-color="#6b93ff"/><stop offset=".72" stop-color="#7a63ff"/><stop offset="1" stop-color="#f28bd8"/></linearGradient>
+      <linearGradient id="accentText" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#73a4ff"/><stop offset="1" stop-color="#b59bff"/></linearGradient>
+      <linearGradient id="pill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".09"/><stop offset="1" stop-color="#ffffff" stop-opacity=".025"/></linearGradient>
+      <clipPath id="avatarClip"><circle cx="230" cy="310" r="126"/></clipPath>
+      <clipPath id="logoClip"><circle cx="989" cy="81" r="22"/></clipPath>
+      <filter id="avatarGlow"><feGaussianBlur stdDeviation="18"/></filter>
+      <filter id="softBlur"><feGaussianBlur stdDeviation="38"/></filter>
     </defs>
-    <rect width="1200" height="630" fill="url(#bg)"/>
-    <rect width="1200" height="630" fill="url(#blueGlow)"/>
-    <rect width="1200" height="630" fill="url(#violetGlow)"/>
-    <g fill="#dff8ff" opacity=".7"><circle cx="70" cy="106" r="3"/><circle cx="158" cy="530" r="2"/><circle cx="284" cy="80" r="2"/><circle cx="510" cy="560" r="3"/><circle cx="780" cy="94" r="2"/><circle cx="1100" cy="120" r="3"/><circle cx="1142" cy="495" r="2"/><circle cx="960" cy="545" r="2"/><circle cx="635" cy="44" r="2"/><circle cx="410" cy="150" r="2"/></g>
-    ${watermark}
-    <text x="1180" y="61" text-anchor="end" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#b8d7f6">Powered by ProMcBot</text>
-    <circle cx="245" cy="321" r="163" fill="#47bfff" opacity=".3" filter="url(#glow)"/>
-    <circle cx="245" cy="321" r="155" fill="none" stroke="#8eeaff" stroke-opacity=".82" stroke-width="8"/>
-    <circle cx="245" cy="321" r="145" fill="#1e3d7b"/>
+    <rect width="1200" height="630" fill="#01030a"/>
+    <rect width="1200" height="630" fill="url(#background)"/>
+    <ellipse cx="178" cy="322" rx="350" ry="275" fill="url(#blueLight)" filter="url(#softBlur)"/>
+    <ellipse cx="1015" cy="280" rx="310" ry="260" fill="url(#pinkLight)" filter="url(#softBlur)"/>
+    <rect x="20" y="20" width="1160" height="590" rx="30" fill="url(#panel)" stroke="#66749c" stroke-opacity=".44" stroke-width="2"/>
+    <path d="M46 165 C260 54 525 58 715 126 S1018 226 1154 112" fill="none" stroke="#8cb4ff" stroke-opacity=".08" stroke-width="2"/>
+    <path d="M48 492 C278 580 520 558 735 488 S1016 402 1154 498" fill="none" stroke="#b687f5" stroke-opacity=".07" stroke-width="2"/>
+    <g fill="#d9e8ff" opacity=".64"><circle cx="62" cy="78" r="2"/><circle cx="112" cy="536" r="2"/><circle cx="304" cy="74" r="2"/><circle cx="390" cy="566" r="2"/><circle cx="618" cy="78" r="2"/><circle cx="806" cy="102" r="2"/><circle cx="960" cy="544" r="2"/><circle cx="1144" cy="198" r="2"/><circle cx="1122" cy="546" r="2"/></g>
+    <circle cx="230" cy="310" r="158" fill="#3477ff" opacity=".24" filter="url(#avatarGlow)"/>
+    <circle cx="230" cy="310" r="146" fill="none" stroke="#6c7a9d" stroke-opacity=".46" stroke-width="2"/>
+    <circle cx="230" cy="310" r="137" fill="none" stroke="url(#ring)" stroke-width="7"/>
+    <circle cx="230" cy="310" r="126" fill="#152d61"/>
     ${avatarMarkup}
-    <text x="490" y="267" font-family="Arial,sans-serif" font-size="66" font-weight="900" fill="#f7fbff">${displayName}</text>
-    <text x="490" y="322" font-family="Arial,sans-serif" font-size="34" font-weight="700" fill="#4aa7ff">@${username}</text>
-    <rect x="490" y="365" width="230" height="48" rx="24" fill="url(#chip)" stroke="#a4dbff" stroke-opacity=".23" stroke-width="2"/>
-    <circle cx="514" cy="389" r="6" fill="#65efb1"/>
-    <text x="530" y="397" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#f4f9ff">Public profile</text>
-    <text x="490" y="465" font-family="Arial,sans-serif" font-size="20" font-weight="500" fill="#9ab0cf">Discord handle: @${discordUsername}</text>
-    <text x="490" y="505" font-family="Arial,sans-serif" font-size="17" font-weight="500" fill="#7188aa">Profile ID ${profileId}</text>
-    <text x="490" y="538" font-family="Arial,sans-serif" font-size="17" font-weight="500" fill="#7188aa">${followers.toLocaleString()} followers · ${likes.toLocaleString()} likes</text>
+    <circle cx="230" cy="310" r="126" fill="none" stroke="#f4f9ff" stroke-opacity=".66" stroke-width="2"/>
+    <circle cx="989" cy="81" r="25" fill="#060a13" stroke="#8ea7dd" stroke-opacity=".52" stroke-width="2"/>
+    ${logoMarkup}
+    <text x="1023" y="87" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#c7d7f4">Powered by ProMcBot</text>
+    <text x="430" y="292" font-family="Arial,sans-serif" font-size="64" font-weight="900" letter-spacing="-1.5" fill="#f8fbff">${displayName}</text>
+    <text x="434" y="347" font-family="Arial,sans-serif" font-size="25" font-weight="700" fill="url(#accentText)">@${username}</text>
+    <rect x="430" y="383" width="194" height="42" rx="21" fill="url(#pill)" stroke="#8295c0" stroke-opacity=".34" stroke-width="2"/>
+    <circle cx="454" cy="404" r="5" fill="#65efb1"/>
+    <text x="471" y="411" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#eef5ff">Public Profile</text>
+    <line x1="430" y1="474" x2="1096" y2="474" stroke="#8ca0c7" stroke-opacity=".26" stroke-width="2"/>
+    <rect x="430" y="509" width="34" height="34" rx="9" fill="#172a59" stroke="#6fa7ff" stroke-opacity=".48" stroke-width="2"/>
+    <path d="M440 521h14M440 529h14M443 516v6M451 516v6M440 536h14" fill="none" stroke="#76a5ff" stroke-width="1.5" stroke-linecap="round"/>
+    <text x="486" y="524" font-family="Arial,sans-serif" font-size="12" font-weight="700" letter-spacing="2" fill="#8799bb">MEMBER SINCE</text>
+    <text x="486" y="551" font-family="Arial,sans-serif" font-size="22" font-weight="500" fill="#f4f8ff">${memberSince}</text>
   </svg>`;
   return sharp(Buffer.from(svg)).png().toBuffer();
 }

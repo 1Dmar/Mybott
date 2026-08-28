@@ -687,7 +687,8 @@ async function resolvePublicProfile(identifier) {
   if (databaseReady && !profileSettings) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
   const publicUsername = profileSettings?.username || user.username;
   const customBanner = profileSettings?.bannerType === 'image' && profileSettings.banner ? profileSettings.banner : null;
-  return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } };
+  const memberSince = user.createdAt instanceof Date ? user.createdAt.toISOString() : (user.createdTimestamp ? new Date(user.createdTimestamp).toISOString() : null);
+  return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', memberSince, bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } };
 }
 
 async function getProfileSocialState(profileUserId, viewerId = null) {
@@ -792,7 +793,7 @@ app.get('/u/:identifier', async (req, res) => {
   const displayName = profile?.globalName || username || 'ProMC Bot user';
   const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
   const cardUrl = `${baseUrl}/api/public/profile-card/${encodeURIComponent(username)}`;
-  const description = `${displayName} (@${username}) · ${social.followers} followers · ${social.likes} likes · Public Discord profile powered by ProMcBot.`;
+  const description = `${displayName} (@${username}) · Public Discord profile on ProMcBot.`;
   const meta = `
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
     <meta name="theme-color" content="#1553b8">

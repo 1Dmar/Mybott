@@ -14,7 +14,7 @@ https://promcbot.dev/u/<username>
 
 ## محتوى البطاقة العامة
 
-تعرض البطاقة اسم Discord العام، username العام، avatar، Discord handle، Profile ID، مصدر البيانات، وحالة الخصوصية. وتحتوي على زر نسخ الرابط. في أسفل الصفحة يظهر attribution واضح: **ProMcBot** مع حرف **P** بدون خلفية، إضافة إلى حقوق النشر.
+تعرض صفحة البطاقة العامة اسم Discord العام، username العام، avatar، Discord handle، **Member since**، وProfile ID، مع زر نسخ الرابط. يظهر تاريخ **Member since** كتاريخ إنشاء حساب Discord المستنتج من snowflake الخاص بالمستخدم؛ وهو ليس تاريخ الانضمام إلى سيرفر. أسفل الصفحة يظهر attribution بتصميم خفيف يستخدم ملف الشعار الرسمي نفسه الموجود في الـ navbar، مع حقوق النشر.
 
 لا تعرض البطاقة عضويات السيرفرات الخاصة، أسماء اللاعبين، raw activity، أو بيانات غير عامة. إذا لم يحدد المستخدم username، يمكن فتح البطاقة باستخدام Discord user ID عبر `/u/<id>`.
 
@@ -35,7 +35,9 @@ https://promcbot.dev/u/<username>
 
 ## Visual QA
 
-The mobile public profile render uses the same fixed homepage shell: hamburger, ProMcBot logo, theme control, account avatar, sidebar-backed main window spacing, and responsive card layout. The generated Discord card is a 1200×630 PNG with a blue/violet glass gradient, stars, avatar ring, display name, `@username`, Discord handle, user ID, follower/like totals, and the official project logo with `Powered by ProMcBot` in the upper-right. The former blue P substitute and lower watermark copy are intentionally absent.
+The mobile public profile render uses the same fixed homepage shell: hamburger, ProMcBot logo, theme control, account avatar, sidebar-backed main window spacing, and responsive card layout. The theme control is shared with Dashboard through `pmcbot_theme`; in Light Mode the public identity card, statistics, sharing panel, text, borders, and footer switch to high-contrast light tokens rather than retaining the dark blue hard-coded treatment.
+
+The generated Discord/Open Graph card is a 1200×630 PNG with a modern dark glass composition, luminous avatar ring, and the official ProMcBot logo clipped to a circle in the upper-right beside `Powered by ProMcBot`. The only profile-specific values rendered in the image are display name, `@username`, avatar, and the Discord account-creation month/year. The former top-left logo/label, custom status, generic marketing sentence, and lower watermark are intentionally absent.
 
 ## Social profile actions
 
@@ -43,4 +45,4 @@ Authenticated visitors can follow or unfollow a public profile and like or unlik
 
 On a successful new Discord OAuth login, the dashboard creates an idempotent follow record for profile owner `804999528129363998`. This does not create duplicates and is skipped safely when the database is unavailable; it also never forces the owner to follow their own profile.
 
-The embed card includes the current follower and like totals. The public page exposes only aggregate counts and the viewer’s own boolean state; it does not expose follower identities, liker identities, private guild membership, or raw activity.
+Follower and like totals remain available on the public web page for community use, while the metadata image stays intentionally minimal and does not include social totals. The public page exposes only aggregate counts and the viewer’s own boolean state; it does not expose follower identities, liker identities, private guild membership, or raw activity.
