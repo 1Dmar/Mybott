@@ -72,13 +72,13 @@
 | الفحص | النتيجة |
 |---|---|
 | `npm ci --ignore-scripts` | PASS سابقًا |
-| `npm test` | **PASS: 116 tests، 0 failures** |
+| `npm test` | **PASS: 119 tests، 0 failures** |
 | `npm run check` | PASS في بوابة الجودة النهائية |
 | JavaScript syntax checks | PASS للملفات المتغيرة |
 | `git diff --check` | PASS في الدورات الأخيرة |
 | Command acceptance | PASS: 8 groups، بلا duplicate canonical names |
 | Bot/config startup smoke | PASS: 8 canonical slash groups وdegraded-mode handling صريح |
-| Plugin/security tests | PASS: headers/limit/hash/HMAC/replay/encryption، spool، SSRF/address policy، public-profile image policy |
+| Plugin/security tests | PASS: headers/limit/hash/HMAC/replay/encryption، spool وdedicated async writer، SSRF/address policy، public-profile image policy |
 | PayPal hardening tests | PASS: catalog/mapping/malformed/unknown-plan/fail-closed |
 | Maven `clean test package` | PASS سابقًا؛ سيعاد ضمن البوابة النهائية |
 | Responsive Dashboard | **PASS: 21 combinations** عبر 3 صفحات و7 أحجام |

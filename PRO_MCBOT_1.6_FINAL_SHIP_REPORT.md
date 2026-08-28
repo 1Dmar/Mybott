@@ -14,7 +14,7 @@
 
 ## B. What Was Implemented
 
-**الحالة: DONE.** تم إبقاء Discord slash catalog مصدر التسجيل الأساسي، وتعطيل prefix compatibility افتراضيًا، ومنع legacy Premium authority من التأثير في runtime. أضيفت حماية session/OAuth وCORS/CSRF وURL policy وDB fail-fast، وتحسن telemetry إلى stable event identity وbulk upsert. أضيف durable local spool bounded بصيغة dependency-free NDJSON، وnon-blocking shutdown flush، وcommand cooldown، وbounded Discord workspace fetch، وMinecraft address validation، وoperation IDs.
+**الحالة: DONE.** تم إبقاء Discord slash catalog مصدر التسجيل الأساسي، وتعطيل prefix compatibility افتراضيًا، ومنع legacy Premium authority من التأثير في runtime. أضيفت حماية session/OAuth وCORS/CSRF وURL policy وDB fail-fast، وتحسن telemetry إلى stable event identity وbulk upsert. أضيف durable local spool bounded بصيغة dependency-free base64/tab (سجل واحد لكل سطر)، مع `TelemetrySpoolWriter` ذي staging queue محدودة؛ لذلك لا ينفذ Bukkit main thread `FileOutputStream` أو `fsync`، ويظل shutdown flush/drain asynchronous وbest-effort. أضيف أيضًا command cooldown، وbounded Discord workspace fetch، وMinecraft address validation، وoperation IDs.
 
 ## C. What Was Verified
 
@@ -54,7 +54,7 @@
 
 ## L. Minecraft Plugin Audit
 
-**الحالة: IMPLEMENTED BUT UNVERIFIED.** Plugin يبني Java 8 bytecode `major version 52` ويستخدم Bukkit-compatible APIs. Backend transport asynchronous مع timeout وretry وHMAC/timestamp/nonce وstable event ID. أضيف durable local spool bounded، recovery عند startup، acknowledgement بعد backend success، وshutdown flush asynchronous لا يحجب Minecraft main thread. لا تزال certification لكل Paper/Spigot runtime خارجية.
+**الحالة: IMPLEMENTED BUT UNVERIFIED.** Plugin يبني Java 8 bytecode `major version 52` ويستخدم Bukkit-compatible APIs. Backend transport asynchronous مع timeout وretry وHMAC/timestamp/nonce وstable event ID. أضيف durable local spool bounded بصيغة base64/tab، و`TelemetrySpoolWriter` يعمل بخيط daemon وstaging queue محدودة؛ recovery والـappend والـfsync والـshutdown drain لا تُنفذ من Bukkit main thread. يبقى فشل disk أو امتلاء staging queue مسار fallback إلى in-memory queue مع warning محدود، وتبقى certification لكل Paper/Spigot runtime خارجية.
 
 ## M. Telemetry Audit
 
@@ -104,11 +104,12 @@
 
 | الفحص | النتيجة الأخيرة |
 |---|---|
-| `npm test` | **114/114 PASS** |
+| `npm test` | **119/119 PASS** |
 | `npm run check` | **PASS** |
 | Node syntax checks | **PASS** |
 | Java/Maven `clean test package` | **PASS** |
 | Java bytecode | `major version: 52` — Java 8 |
+| Final plugin artifact | `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`; SHA-256 `eef9ced479e5927eb5f3531bb4f12f5432b49fa9fd9a7b916a092ec760009276` |
 | TelemetrySpool tests | **PASS** |
 | Tenant/IDOR structural tests | **PASS** |
 | Command cooldown tests | **PASS** |
@@ -120,7 +121,7 @@
 
 ## الملفات الجديدة أو المتغيرة في دورة Ship Mission
 
-تمت إضافة أو تعديل ملفات reliability وsecurity وcontracts والاختبارات، ومن أهمها `TelemetrySpool.java` و`TelemetrySpoolTest.java` و`commandCooldown.js` و`minecraftAddressPolicy.js` و`observability.js` و`telemetryIngest.js` و`asyncPool.js` واختباراتها، مع تحديث `ProMcBotPlugin.java` و`dash/index.js` و`settingsValidation.js` وPublic Profile و`PLUGIN_COMPATIBILITY.md`. لم تُحذف ملفات، ولم تُلمس صفحة Logs أو Models.
+تمت إضافة أو تعديل ملفات reliability وsecurity وcontracts والاختبارات، ومن أهمها `TelemetrySpool.java` و`TelemetrySpoolWriter.java` و`TelemetrySpoolTest.java` و`TelemetrySpoolWriterTest.java` و`player_card_security.test.js` و`commandCooldown.js` و`minecraftAddressPolicy.js` و`observability.js` و`telemetryIngest.js` و`asyncPool.js` واختباراتها، مع تحديث `ProMcBotPlugin.java` و`dash/index.js` و`settingsValidation.js` وPublic Profile و`PLUGIN_COMPATIBILITY.md`. لم تُحذف ملفات، ولم تُلمس صفحة Logs أو Models.
 
 ## قرار الشحن النهائي
 

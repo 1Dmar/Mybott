@@ -9,7 +9,7 @@ The verified code is on `copilot/update-bot-design-and-translation-system`, the 
 | Check | Result |
 |---|---|
 | `npm ci --ignore-scripts` | Passed |
-| `npm test` | Passed: 116 tests, 0 failures after the final Ship Mission hardening pass |
+| `npm test` | Passed: 119 tests, 0 failures after the final Ship Mission hardening pass |
 | `npm run check` | Passed |
 | Recursive JavaScript syntax checks | Passed for changed bot/dashboard/test modules |
 | `git diff --check` | Passed in the final quality gate |
@@ -23,7 +23,7 @@ The verified code is on `copilot/update-bot-design-and-translation-system`, the 
 
 ## What the current tests cover
 
-The suite covers centralized Free/Pro/Ultimate boundaries, expiration fallback, PayPal catalog and subscription-event mapping, fail-closed webhook configuration, plugin request cryptography, durable spool recovery, telemetry idempotency, image/address SSRF policies, intelligence confidence and measured trends, player journey/session calculations, network comparison, command automation dedupe/lock behavior, tenant guards, bounded concurrency, message rendering, and bounded retry behavior.
+The suite covers centralized Free/Pro/Ultimate boundaries, expiration fallback, PayPal catalog and subscription-event mapping, fail-closed webhook configuration, plugin request cryptography, durable spool recovery and dedicated async writer, telemetry idempotency, image/address SSRF policies, intelligence confidence and measured trends, player journey/session calculations, network comparison, command automation dedupe/lock behavior, tenant guards, bounded concurrency, message rendering, and bounded retry behavior.
 
 The command acceptance test loads the canonical catalog and every referenced implementation. It verifies the eight top-level groups, permission metadata, help parity, and catches duplicate canonical names. The bot startup smoke verifies that the process loads handlers without Discord or MongoDB credentials. The Dashboard preview checks the screenshot defects through a production-like static HTTP preview rather than treating a `file://` render as proof.
 

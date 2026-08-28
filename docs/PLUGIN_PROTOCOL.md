@@ -42,7 +42,7 @@ The first plugin implementation sends `player_join`, `player_leave`, `player_cou
 
 ## Failure behavior
 
-Network calls use Java 8-compatible `HttpURLConnection` work executed through `CompletableFuture` from Bukkit async scheduler tasks. The plugin does not block the Minecraft main thread. Events are appended to a bounded durable local spool before queueing, recovered after restart, and removed after acknowledged backend delivery. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the spool/queue is flushed or discarded after the configured bound. The plugin's local `/promcbot status` command reports queue size, durable pending count, dropped events, and last backend state.
+Network calls use Java 8-compatible `HttpURLConnection` work executed through `CompletableFuture` from Bukkit async scheduler tasks. Bukkit callbacks perform only bounded in-memory handoff: they never open files, call `fsync`, or wait for disk. Accepted events are appended by a dedicated bounded `TelemetrySpoolWriter` thread, and the flush future waits for that append to finish before backend delivery can acknowledge and remove the event. Recovery, spool reads, acknowledgement rewrites, and shutdown drain are asynchronous/best-effort operations outside the Minecraft main thread. If ProMcBot is unavailable, the Minecraft server remains playable; telemetry is delayed until the spool/queue is flushed. If either bounded queue fills or disk persistence fails, the event stays subject to the in-memory queue's explicit drop counter and a rate-limited warning. The local `/promcbot status` command reports queue size, staged writer count, durable pending count, dropped events, and last backend state.
 
 ## Compatibility statement
 

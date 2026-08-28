@@ -45,7 +45,7 @@
 
 ## 6. Partial Systems Found
 
-**الحالة: PARTIAL.** automation يملك dedupe وcooldown وlocal overlap guard وMongo lease، لكن لا يوجد اختبار race بين مثيلين حيّين. Plugin يملك durable local spool وfinal flush asynchronous غير حاجب، مع بقاء runtime shutdown الحقيقي غير مثبت. PayPal adapter مكتمل برمجيًا لكن acceptance الخارجي غير منفذ.
+**الحالة: PARTIAL.** automation يملك dedupe وcooldown وlocal overlap guard وMongo lease، لكن لا يوجد اختبار race بين مثيلين حيّين. Plugin يملك durable local spool وdedicated writer thread وfinal flush/drain asynchronous، مع بقاء runtime shutdown الحقيقي غير مثبت. PayPal adapter مكتمل برمجيًا لكن acceptance الخارجي غير منفذ.
 
 ## 7. Missing Systems
 
@@ -105,7 +105,7 @@
 
 ## 21. Minecraft Plugin Changes
 
-**الحالة: IMPLEMENTED BUT UNVERIFIED.** `TelemetryEvent` يحمل UUID ثابتًا، و`BackendClient` يرسل event ID ويستخدم HMAC/timestamp/nonce وtimeouts. أضيف durable local spool bounded مع recovery وacknowledgement، وأصبح `onDisable()` يطلق final flush asynchronous غير حاجب؛ gameplay لا يعتمد على backend. لا توجد شهادة runtime لكل version.
+**الحالة: IMPLEMENTED BUT UNVERIFIED.** `TelemetryEvent` يحمل UUID ثابتًا، و`BackendClient` يرسل event ID ويستخدم HMAC/timestamp/nonce وtimeouts. أضيف durable local spool bounded بصيغة base64/tab مع `TelemetrySpoolWriter` ذي staging queue محدودة؛ append/fsync وrecovery وshutdown drain تعمل خارج Bukkit primary thread، و`onDisable()` يطلق final flush asynchronous best-effort. gameplay لا يعتمد على backend. لا توجد شهادة runtime لكل version.
 
 ## 22. Telemetry Changes
 
@@ -168,7 +168,7 @@
 **الحالة: VERIFIED.** النتيجة الأخيرة في دورة Ship Mission:
 
 ```text
-npm test: 114/114 PASS
+npm test: 119/119 PASS
 npm run check: PASS
 changed JavaScript syntax checks: PASS
 git diff --check: PASS
@@ -179,7 +179,7 @@ JAR bytecode: major version 52 (Java 8)
 
 ## 37. Tests Failed
 
-**الحالة: DONE.** لا توجد failures في آخر run. ظهرت regression أثناء تشديد nonce/signature، وتم إصلاحها مع إبقاء semantics والاختبارات، ثم عاد الاختبار إلى `96/96 PASS`. لم يُحذف اختبار فاشل.
+**الحالة: DONE.** لا توجد failures في آخر run. ظهرت regressions أثناء تشديد nonce/signature وإضافة player-card SSRF guard وasync spool writer، وتم إصلاحها مع إبقاء semantics والاختبارات، ثم عاد الاختبار إلى `119/119 PASS`. لم يُحذف اختبار فاشل.
 
 ## 38. Runtime Tests
 
@@ -229,6 +229,8 @@ deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar
 plugin/src/main/java/com/promcbot/plugin/ProMcBotPlugin.java
 plugin/src/main/java/com/promcbot/plugin/backend/BackendClient.java
 plugin/src/main/java/com/promcbot/plugin/telemetry/TelemetryEvent.java
+plugin/src/main/java/com/promcbot/plugin/telemetry/TelemetrySpoolWriter.java
+plugin/src/test/java/com/promcbot/plugin/telemetry/TelemetrySpoolWriterTest.java
 test/automation.test.js
 ```
 
@@ -260,11 +262,12 @@ test/command_cooldown.test.js
 test/minecraft_address_policy.test.js
 test/observability.test.js
 test/tenant_route_guard.test.js
+test/player_card_security.test.js
 ```
 
 ## 47. Git Branch
 
-**الحالة: VERIFIED.** كل العمل تم على `copilot/update-bot-design-and-translation-system`. لم يُعدل `main`، ولم يُنشأ branch جديد، ولم يُستخدم force push. تم fetch ثم fast-forward للـremote public-profile commits قبل hardening.
+**الحالة: VERIFIED.** كل العمل تم على `copilot/update-bot-design-and-translation-system`. لم يُعدل `main`، ولم يُنشأ branch جديد، ولم يُستخدم force push. تم fetch ثم safe merge/fast-forward للـremote public-profile commits قبل hardening.
 
 ## 48. Git Commits
 
@@ -307,13 +310,13 @@ Activation → Intelligence → Action Center → public aggregates
 
 ## 50. Final Readiness Assessment
 
-**الحالة النهائية: REQUIRES EXTERNAL RUNTIME.**
+**الحالة النهائية: SHIP WITH EXTERNAL SETUP (ليس Production Ready).**
 
 **آخر remote verification:** local و`origin/copilot/update-bot-design-and-translation-system` متطابقان بعد push غير قسري، مع `ahead/behind = 0/0`.
 
 **A — القيمة:** النظام يحل مشكلة تشغيلية حقيقية عندما يصل Plugin telemetry فعلية، لأنه يجمع Discord management وMinecraft evidence والتحليل في workspace واحد.
 
-**B — قابلية البناء:** نعم؛ `114/114`، `npm run check`، Maven، وJava major `52` ناجحة.
+**B — قابلية البناء:** نعم؛ `119/119`، `npm run check`، Maven، وJava major `52` ناجحة. JAR النهائي مفحوص وSHA-256 الخاص به `eef9ced479e5927eb5f3531bb4f12f5432b49fa9fd9a7b916a092ec760009276`.
 
 **C — blockers:** Discord/Mongo/PayPal credentials، Paper/Spigot runtime، heartbeat داخل guild حقيقي، وCloudflare 525 لـ`stats.promcbot.dev`.
 

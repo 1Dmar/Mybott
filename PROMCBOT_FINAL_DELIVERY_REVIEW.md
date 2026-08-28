@@ -34,16 +34,16 @@ The Bukkit-compatible Spigot/Paper plugin is compiled to Java 8 bytecode against
 | Check | Result |
 |---|---|
 | `npm ci --ignore-scripts` | PASS in the earlier dependency-install gate |
-| `npm test` | **PASS: 116 tests, 0 failures** |
+| `npm test` | **PASS: 119 tests, 0 failures** |
 | Command acceptance | PASS: eight groups, unique names, descriptions, permissions, help parity |
-| Plugin/security coverage | PASS: encryption boundary, malformed headers, body limit, token hash, HMAC, valid auth, replay, SSRF/address policy, public-profile image policy |
+| Plugin/security coverage | PASS: encryption boundary, malformed headers, body limit, token hash, HMAC, valid auth, replay, async durable writer, SSRF/address policy, public-profile image policy |
 | PayPal hardening coverage | PASS: catalog, event mapping, malformed event, unknown plan, missing configuration |
 | Changed JavaScript syntax | PASS |
 | `npm run check` | PASS in the final quality gate |
 | `git diff --check` | PASS in the final quality gate |
 | Bot startup/config smoke | PASS: canonical eight slash groups and explicit degraded-mode handling; live Discord registration remains external |
 | Maven `clean test package` | PASS in the earlier plugin gate |
-| Plugin JAR content | PASS: Java 8 bytecode, plugin.yml, main class, BackendClient, TelemetryEvent, TelemetryQueue, TelemetrySpool |
+| Plugin JAR content | PASS: Java 8 bytecode, plugin.yml, main class, BackendClient, TelemetryEvent, TelemetryQueue, TelemetrySpool, TelemetrySpoolWriter |
 | Responsive Dashboard preview | **PASS: 21 combinations**; no overflow/page errors and mobile drawer/backdrop behavior verified |
 
 The responsive test used an HTTP preview with an authenticated fixture and exercised Actions, Intelligence, and Premium at widths `360, 390, 412, 768, 1024, 1280, 1440`. It measured `scrollWidth <= innerWidth` and checked drawer opening/backdrop behavior at mobile widths. This is not a substitute for a real OAuth session.

@@ -292,7 +292,7 @@ Spigot / Paper / Bukkit-compatible
 
 > **تنبيه مهم:** PocketMine-MP/Bedrock ليس ضمن هذا artifact. كما أن compile/package الناجح لا يساوي runtime certification لكل إصدار. يلزم تشغيل خوادم Spigot/Paper فعلية لكل إصدار تريد اعتماده تجاريًا.
 
-لضمان عدم فقد telemetry عند تعطل backend أو إعادة تشغيل الخادم، يحفظ Plugin الأحداث في durable local spool bounded بصيغة dependency-free، ويستعيدها عند startup ويحذفها بعد acknowledgement. عند shutdown يطلق final flush asynchronous غير حاجب؛ لذلك لا يعتمد gameplay على توفر backend ولا يتجمد Minecraft main thread.
+لضمان تقليل فقد telemetry عند تعطل backend أو إعادة تشغيل الخادم، يحفظ Plugin الأحداث في durable local spool bounded بصيغة dependency-free base64/tab، ويستعيدها عند startup ويحذفها بعد acknowledgement. يدخل الحدث أولًا إلى bounded in-memory queue سريع، ثم يكتبه `TelemetrySpoolWriter` في خيط مستقل مع `fsync` خارج Bukkit main thread؛ وعند shutdown يطلق final flush/drain asynchronous best-effort. لذلك لا يعتمد gameplay على توفر backend ولا ينفذ callback اللاعب disk I/O متزامنًا.
 
 ### ملفات Plugin
 
@@ -302,6 +302,7 @@ Spigot / Paper / Bukkit-compatible
 | `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar` | artifact قابل للتنزيل |
 | `plugin.yml` | تعريف Plugin وأوامره وmain class |
 | `dev/promcbot/plugin/ProMcBotPlugin.class` | main class داخل JAR |
+| `com/promcbot/plugin/telemetry/TelemetrySpoolWriter.class` | dedicated durable writer داخل JAR |
 
 الـJAR الحالي مفحوص بJava major version 52، أي Java 8 bytecode.
 
@@ -387,7 +388,7 @@ Public Stats وDiscord Stats Card يعطيان السيرفر صفحة مشار�
 
 ### تغييرات Plugin
 
-تم بناء artifact Universal Bukkit على Java 8 bytecode، وتحسين مسار heartbeat/snapshot والـtelemetry، وإضافة event IDs ثابتة لجعل retry idempotent، والتحقق من التوقيع والnonce، وإتاحة config generation بأسطر YAML فعلية بدل `\\n` حرفية. أضيف durable local spool bounded مع recovery وacknowledgement، وأصبح final flush عند shutdown asynchronous وغير حاجب. تبقى شهادة التشغيل لكل إصدار Minecraft اختبارًا خارجيًا مطلوبًا.
+تم بناء artifact Universal Bukkit على Java 8 bytecode، وتحسين مسار heartbeat/snapshot والـtelemetry، وإضافة event IDs ثابتة لجعل retry idempotent، والتحقق من التوقيع والnonce، وإتاحة config generation بأسطر YAML فعلية بدل `\\n` حرفية. أضيف durable local spool bounded بصيغة base64/tab مع `TelemetrySpoolWriter` وstaging queue محدودة؛ append/fsync وrecovery وshutdown drain خارج Bukkit main thread. تبقى شهادة التشغيل لكل إصدار Minecraft اختبارًا خارجيًا مطلوبًا.
 
 ### ما لم يُعدّل
 
@@ -419,7 +420,7 @@ main branch
 تم تشغيل الاختبارات المحلية بعد Ship Mission وmerge تغييرات public profile:
 
 ```text
-npm test: 114/114 PASS
+npm test: 119/119 PASS
 npm run check: PASS
 git diff --check: PASS
 JavaScript syntax checks: PASS
@@ -437,7 +438,7 @@ f81c6bf2b Add durable local telemetry spool
 73034426f Bound Discord workspace fetch concurrency
 ```
 
-آخر artifact مبني محليًا في هذه الدورة هو `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، وSHA-256 الحالي له هو `f85fb0664f27ba761ce3ee6967e1cca8c9a3012cf581e6a61891481ed00e20b4`.
+آخر artifact مبني محليًا في هذه الدورة هو `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، وSHA-256 الحالي له هو `eef9ced479e5927eb5f3531bb4f12f5432b49fa9fd9a7b916a092ec760009276`.
 
 في آخر closeout push تطابق local وremote وأصبح `ahead/behind = 0/0`؛ استخدم `git rev-parse HEAD` لاستخراج SHA الحالي على الفرع.
 

@@ -10,10 +10,10 @@
 | Descriptor | **VERIFIED** | `plugin.yml` has no modern-only `api-version` requirement |
 | HTTP I/O | **IMPLEMENTED BUT UNVERIFIED** | Async `HttpURLConnection`, connect/read timeouts, bounded retry |
 | Queue | **VERIFIED** | Bounded in-memory queue with dropped-event counter and unit tests |
-| Durable local spool | **VERIFIED LOCALLY** | Dependency-free bounded NDJSON spool; startup recovery and acknowledgement tests |
+| Durable local spool | **VERIFIED LOCALLY** | Dependency-free bounded base64/tab spool; startup recovery, async writer, and acknowledgement tests |
 | HMAC/timestamp/nonce | **VERIFIED LOCALLY** | Java security tests and backend protocol tests |
 | Stable event identity | **VERIFIED LOCALLY** | `eventId` is preserved across retries; backend uses idempotent upsert |
-| Graceful shutdown attempt | **IMPLEMENTED BUT UNVERIFIED** | Final flush is asynchronous and non-blocking; durable spool protects pending events; live server shutdown not exercised |
+| Graceful shutdown attempt | **IMPLEMENTED BUT UNVERIFIED** | Final flush and spool drain are asynchronous; disk append/fsync runs on the dedicated writer thread, while live server shutdown is not exercised |
 
 ## Target compatibility
 
