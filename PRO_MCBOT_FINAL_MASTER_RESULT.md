@@ -45,7 +45,7 @@
 
 ## 6. Partial Systems Found
 
-**الحالة: PARTIAL.** automation يملك dedupe وcooldown وlocal overlap guard وMongo lease، لكن لا يوجد اختبار race بين مثيلين حيّين. Plugin final flush bounded best-effort والqueue في الذاكرة. PayPal adapter مكتمل برمجيًا لكن acceptance الخارجي غير منفذ.
+**الحالة: PARTIAL.** automation يملك dedupe وcooldown وlocal overlap guard وMongo lease، لكن لا يوجد اختبار race بين مثيلين حيّين. Plugin يملك durable local spool وfinal flush asynchronous غير حاجب، مع بقاء runtime shutdown الحقيقي غير مثبت. PayPal adapter مكتمل برمجيًا لكن acceptance الخارجي غير منفذ.
 
 ## 7. Missing Systems
 
@@ -105,7 +105,7 @@
 
 ## 21. Minecraft Plugin Changes
 
-**الحالة: IMPLEMENTED BUT UNVERIFIED.** `TelemetryEvent` يحمل UUID ثابتًا، و`BackendClient` يرسل event ID ويستخدم HMAC/timestamp/nonce وtimeouts. `onDisable()` ينفذ final flush بحد تسع ثوانٍ ويسجل الفقد المحتمل؛ gameplay لا يعتمد على backend. لا توجد شهادة runtime لكل version.
+**الحالة: IMPLEMENTED BUT UNVERIFIED.** `TelemetryEvent` يحمل UUID ثابتًا، و`BackendClient` يرسل event ID ويستخدم HMAC/timestamp/nonce وtimeouts. أضيف durable local spool bounded مع recovery وacknowledgement، وأصبح `onDisable()` يطلق final flush asynchronous غير حاجب؛ gameplay لا يعتمد على backend. لا توجد شهادة runtime لكل version.
 
 ## 22. Telemetry Changes
 
@@ -165,10 +165,10 @@
 
 ## 36. Tests Passed
 
-**الحالة: VERIFIED.** النتيجة النهائية:
+**الحالة: VERIFIED.** النتيجة الأخيرة في دورة Ship Mission:
 
 ```text
-npm test: 96/96 PASS
+npm test: 114/114 PASS
 npm run check: PASS
 changed JavaScript syntax checks: PASS
 git diff --check: PASS
@@ -203,7 +203,7 @@ JAR bytecode: major version 52 (Java 8)
 
 ## 43. Remaining Limitations
 
-**الحالة: PARTIAL / FUTURE.** نطاق Plugin هو Spigot/Paper/Bukkit-compatible في 1.8.x و1.12.x و1.16.x و1.20.x و1.21.x بــJava 8؛ لا PocketMine. queue ذاكرية، remote actions غير موجودة، retention/cohorts المتقدمة جزئية، وAI ليس مصدر الحقيقة.
+**الحالة: PARTIAL / FUTURE.** نطاق Plugin هو Spigot/Paper/Bukkit-compatible في 1.8.x و1.12.x و1.16.x و1.20.x و1.21.x بــJava 8؛ لا PocketMine. durable spool محلي bounded يحسن recovery، لكن remote actions غير موجودة، retention/cohorts المتقدمة جزئية، وAI ليس مصدر الحقيقة.
 
 ## 44. Exact Files Changed
 
@@ -220,6 +220,11 @@ bot/utils/premiumCode.js
 dash/dashboard/pages/stats.html
 dash/dashboard/shared.js
 dash/index.js
+dash/asyncPool.js
+dash/observability.js
+dash/telemetryIngest.js
+dash/settingsValidation.js
+dash/dashboard/pages/profile.html
 deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar
 plugin/src/main/java/com/promcbot/plugin/ProMcBotPlugin.java
 plugin/src/main/java/com/promcbot/plugin/backend/BackendClient.java
@@ -248,7 +253,13 @@ test/plugin_security_limits.test.js
 test/premium_code.test.js
 test/security_policy.test.js
 test/telemetry_identity.test.js
+test/telemetry_ingest.test.js
 test/url_policy.test.js
+test/async_pool.test.js
+test/command_cooldown.test.js
+test/minecraft_address_policy.test.js
+test/observability.test.js
+test/tenant_route_guard.test.js
 ```
 
 ## 47. Git Branch
@@ -260,10 +271,11 @@ test/url_policy.test.js
 **الحالة: VERIFIED.** commits Master 1.6:
 
 ```text
-2dd545ee7 Harden Master 1.6 runtime boundaries
-cea140221 Make legacy command compatibility explicit
-8d43934f9 Document Master 1.6 execution result
-489246fd4 Refresh verified plugin artifact
+f81c6bf2b Add durable local telemetry spool
+56ae6ea72 Ship reliability and input hardening
+8bd106481 Add ship telemetry and tenant contracts
+6803e5e68 Harden public profile image rendering
+73034426f Bound Discord workspace fetch concurrency
 ```
 
 وتوجد commits توثيق لاحقة للتقرير وoverview على الفرع نفسه.
@@ -301,7 +313,7 @@ Activation → Intelligence → Action Center → public aggregates
 
 **A — القيمة:** النظام يحل مشكلة تشغيلية حقيقية عندما يصل Plugin telemetry فعلية، لأنه يجمع Discord management وMinecraft evidence والتحليل في workspace واحد.
 
-**B — قابلية البناء:** نعم؛ `96/96`، `npm run check`، Maven، وJava major `52` ناجحة.
+**B — قابلية البناء:** نعم؛ `114/114`، `npm run check`، Maven، وJava major `52` ناجحة.
 
 **C — blockers:** Discord/Mongo/PayPal credentials، Paper/Spigot runtime، heartbeat داخل guild حقيقي، وCloudflare 525 لـ`stats.promcbot.dev`.
 

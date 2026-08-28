@@ -292,6 +292,8 @@ Spigot / Paper / Bukkit-compatible
 
 > **تنبيه مهم:** PocketMine-MP/Bedrock ليس ضمن هذا artifact. كما أن compile/package الناجح لا يساوي runtime certification لكل إصدار. يلزم تشغيل خوادم Spigot/Paper فعلية لكل إصدار تريد اعتماده تجاريًا.
 
+لضمان عدم فقد telemetry عند تعطل backend أو إعادة تشغيل الخادم، يحفظ Plugin الأحداث في durable local spool bounded بصيغة dependency-free، ويستعيدها عند startup ويحذفها بعد acknowledgement. عند shutdown يطلق final flush asynchronous غير حاجب؛ لذلك لا يعتمد gameplay على توفر backend ولا يتجمد Minecraft main thread.
+
 ### ملفات Plugin
 
 | الملف | الغرض |
@@ -381,11 +383,11 @@ Public Stats وDiscord Stats Card يعطيان السيرفر صفحة مشار�
 
 ### تغييرات Dashboard/backend
 
-تم تحويل صفحات عديدة إلى server-scoped، تحسين My Servers، إضافة bot fetch عند cache miss، banner/icon fallback، settings IP/port، Activation evidence، Intelligence catalog، Action Center evidence، Moderation API، Premium plan readiness، PayPal diagnostics، Public Stats/Profile، وrunbook للدومين.
+تم تحويل صفحات عديدة إلى server-scoped، تحسين My Servers، إضافة bot fetch عند cache miss، bounded concurrency لأربع عمليات Discord membership في الوقت نفسه، banner/icon fallback، settings IP/port، Activation evidence، Intelligence catalog، Action Center evidence، Moderation API، Premium plan readiness، PayPal diagnostics، Public Stats/Profile، operation IDs، وrunbook للدومين.
 
 ### تغييرات Plugin
 
-تم بناء artifact Universal Bukkit على Java 8 bytecode، وتحسين مسار heartbeat/snapshot والـtelemetry، وإضافة event IDs ثابتة لجعل retry idempotent، والتحقق من التوقيع والnonce، وإتاحة config generation بأسطر YAML فعلية بدل `\\n` حرفية. أصبح final flush عند shutdown best-effort ومحدودًا زمنيًا، مع تسجيل الفقد المحتمل لأن queue الذاكرية لا يمكن ضمانها بعد إيقاف الخادم.
+تم بناء artifact Universal Bukkit على Java 8 bytecode، وتحسين مسار heartbeat/snapshot والـtelemetry، وإضافة event IDs ثابتة لجعل retry idempotent، والتحقق من التوقيع والnonce، وإتاحة config generation بأسطر YAML فعلية بدل `\\n` حرفية. أضيف durable local spool bounded مع recovery وacknowledgement، وأصبح final flush عند shutdown asynchronous وغير حاجب. تبقى شهادة التشغيل لكل إصدار Minecraft اختبارًا خارجيًا مطلوبًا.
 
 ### ما لم يُعدّل
 
@@ -414,10 +416,10 @@ main branch
 
 ## 10. الاختبارات والحالة الحالية
 
-تم تشغيل الاختبارات المحلية بعد Master 1.6 وmerge تغييرات public profile:
+تم تشغيل الاختبارات المحلية بعد Ship Mission وmerge تغييرات public profile:
 
 ```text
-npm test: 96/96 PASS
+npm test: 114/114 PASS
 npm run check: PASS
 git diff --check: PASS
 JavaScript syntax checks: PASS
@@ -425,14 +427,17 @@ Maven clean package: PASS
 JAR bytecode: major version 52 (Java 8)
 ```
 
-آخر commits Master 1.6 الموثقة في الفرع الافتراضي عند إعداد هذا الملف هي:
+آخر commits Ship Mission الموثقة في الفرع الافتراضي عند إعداد هذا الملف هي:
 
 ```text
-2dd545ee7 Harden Master 1.6 runtime boundaries
-cea140221 Make legacy command compatibility explicit
-8d43934f9 Document Master 1.6 execution result
-489246fd4 Refresh verified plugin artifact
+f81c6bf2b Add durable local telemetry spool
+56ae6ea72 Ship reliability and input hardening
+8bd106481 Add ship telemetry and tenant contracts
+6803e5e68 Harden public profile image rendering
+73034426f Bound Discord workspace fetch concurrency
 ```
+
+آخر artifact مبني محليًا في هذه الدورة هو `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، وSHA-256 الحالي له هو `b21520e7ecf5a7abe43f9f61e4203adbf00b2cc5e3cd16595b16b78ee20e6614`.
 
 في آخر closeout push تطابق local وremote وأصبح `ahead/behind = 0/0`؛ استخدم `git rev-parse HEAD` لاستخراج SHA الحالي على الفرع.
 
