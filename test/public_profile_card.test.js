@@ -34,7 +34,13 @@ test('public profile card uses the fixed official reference template', () => {
   assert.doesNotMatch(rendererSource, /Powered by ProMcBot/);
   assert.doesNotMatch(rendererSource, /A shareable Discord identity card powered by ProMC Bot/);
   assert.doesNotMatch(rendererSource, /Building with ProMC Bot/);
-  assert.doesNotMatch(rendererSource, /followers|likes|Discord handle|Profile ID/);
+  assert.match(rendererSource, />FOLLOWERS</);
+  assert.match(rendererSource, />LIKES</);
+  assert.match(rendererSource, /profile\.followers/);
+  assert.match(rendererSource, /profile\.likes/);
+  assert.doesNotMatch(rendererSource, /Discord handle|Profile ID/);
+  assert.match(rendererSource, /controller\.abort\(\)/);
+  assert.match(rendererSource, /8 \* 1024 \* 1024/);
 });
 
 test('fixed template asset is present and has the supplied 3:2 dimensions', async () => {
