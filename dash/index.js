@@ -217,6 +217,48 @@ app.use(passport.session());
 // prevents dashboard module load order from creating a second login session.
 const getBotClient = () => global.__botClient || null;
 
+function getOAuthLoginWebhookUrl() {
+  const directUrl = String(process.env.DISCORD_OAUTH_LOGIN_WEBHOOK_URL || process.env.WEBHOOK_URL || '').trim();
+  if (directUrl) return directUrl;
+  const webhookId = String(process.env.WEBHOOK_ID || '').trim();
+  const webhookToken = String(process.env.WEBHOOK_TOKEN || '').trim();
+  return webhookId && webhookToken ? `https://discord.com/api/webhooks/${encodeURIComponent(webhookId)}/${encodeURIComponent(webhookToken)}` : '';
+}
+
+async function notifyDiscordOAuthLogin(profile) {
+  const webhookUrl = getOAuthLoginWebhookUrl();
+  if (!webhookUrl || !/^https:\/\/discord\.com\/api\/webhooks\/\d+\/[A-Za-z0-9._-]+$/.test(webhookUrl)) return;
+  const now = Date.now();
+  const displayName = String(profile?.global_name || profile?.globalName || profile?.username || 'Unknown user').slice(0, 100);
+  const username = String(profile?.username || 'unknown').slice(0, 100);
+  const userId = String(profile?.id || 'unknown').slice(0, 32);
+  const avatarUrl = profile?.avatar && /^\d+$/.test(userId)
+    ? `https://cdn.discordapp.com/avatars/${userId}/${encodeURIComponent(String(profile.avatar))}.png?size=256`
+    : null;
+  const embed = {
+    color: 0x4070f4,
+    title: '🔹 تسجيل دخول جديد',
+    fields: [
+      { name: '👤 الاسم', value: `${displayName} (${username})`.slice(0, 1024), inline: true },
+      { name: '🆔 المعرف', value: userId, inline: true },
+      { name: '⏳ التاريخ', value: new Date(now).toLocaleString('en-US', { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }), inline: true }
+    ],
+    footer: { text: 'ProMcBot Dashboard' },
+    timestamp: new Date(now).toISOString()
+  };
+  if (avatarUrl) embed.thumbnail = { url: avatarUrl };
+  try {
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'ProMcBot-OAuth-Logger/1.0' },
+      body: JSON.stringify({ username: 'ProMcBot Dashboard', embeds: [embed], allowed_mentions: { parse: [] } }, null, 0),
+      signal: AbortSignal.timeout(8000)
+    });
+  } catch (_) {
+    // Login must never fail because monitoring delivery is unavailable.
+  }
+}
+
 // ── Passport / Discord OAuth ────────────────────────────────────────
 const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET || '';
@@ -232,7 +274,9 @@ if (discordOAuthConfigured) {
       scope: ["identify", "guilds", "email"],
     },
     async (accessToken, refreshToken, profile, done) => {
-      return done(null, sanitizeDiscordProfile(profile));
+      const safeProfile = sanitizeDiscordProfile(profile);
+      void notifyDiscordOAuthLogin(profile);
+      return done(null, safeProfile);
     }
   ));
 }

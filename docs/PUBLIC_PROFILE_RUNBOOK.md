@@ -45,4 +45,10 @@ Authenticated visitors can follow or unfollow a public profile and like or unlik
 
 On a successful new Discord OAuth login, the dashboard creates an idempotent follow record for profile owner `804999528129363998`. This does not create duplicates and is skipped safely when the database is unavailable; it also never forces the owner to follow their own profile.
 
-Follower and like totals remain available on the public web page for community use, while the metadata image stays intentionally minimal and does not include social totals. The public page exposes only aggregate counts and the viewer’s own boolean state; it does not expose follower identities, liker identities, private guild membership, or raw activity.
+Follower and like totals remain available on the public web page and are also rendered as aggregate `Followers` and `Likes` values inside the metadata image for community use. The public page exposes only aggregate counts and the viewer’s own boolean state; it does not expose follower identities, liker identities, private guild membership, or raw activity.
+
+## إشعار تسجيل الدخول عبر Discord OAuth2
+
+عند نجاح تسجيل الدخول عبر Discord OAuth2، يرسل Dashboard رسالة Embed بنفس تنسيق `main` إلى Webhook Discord. لا يتم وضع رابط الـ Webhook أو token داخل ملفات المشروع؛ يجب ضبط أحد الخيارات التالية في Railway: `DISCORD_OAUTH_LOGIN_WEBHOOK_URL` كرابط كامل، أو `WEBHOOK_ID` مع `WEBHOOK_TOKEN`.
+
+الإشعار يتضمن اسم المستخدم، Discord user ID، وتاريخ تسجيل الدخول، مع الصورة المصغرة إذا كانت صورة Discord متاحة. الإرسال غير متزامن ومحدود بثماني ثوانٍ، لذلك لا يفشل تسجيل الدخول إذا كان Discord Webhook متوقفًا أو بطيئًا. يتم تعطيل الإشعار تلقائيًا إذا لم تكن متغيرات البيئة موجودة أو كان الرابط غير صالح.
