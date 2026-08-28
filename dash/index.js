@@ -60,6 +60,7 @@ const { isAllowedCorsOrigin, isSameOriginMutation } = require('./securityPolicy'
 const { buildPublicBaseUrl } = require('./urlPolicy');
 const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
 const { operationIdForRequest } = require('./observability');
+const { mapWithConcurrency } = require('./asyncPool');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -454,10 +455,16 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = await Promise.all(getWorkspaceGuilds(req.user).map(async guild => ({
-    ...guild,
-    ...botAccessPayload(guild, await resolveBotMembership(botClient, guild.id), inviteUrl),
-  })));
+  const guilds = await mapWithConcurrency(getWorkspaceGuilds(req.user), async guild => {
+    try {
+      return {
+        ...guild,
+        ...botAccessPayload(guild, await resolveBotMembership(botClient, guild.id), inviteUrl),
+      };
+    } catch (_) {
+      return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
+    }
+  }, 4);
   res.json({ success: true, guilds, count: guilds.length, scope: 'owner_or_administrator_only' });
 });
 
