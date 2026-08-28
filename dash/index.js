@@ -799,7 +799,7 @@ app.get('/u/:identifier', async (req, res) => {
   const displayName = profile?.globalName || username || 'ProMC Bot user';
   const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
   const cardUrl = `${baseUrl}/api/public/profile-card-v2/${encodeURIComponent(username)}`;
-  const description = `${displayName} (@${username}) · Public Discord profile on ProMcBot.`;
+  const description = `@${username} · ${social.likes} like${social.likes === 1 ? '' : 's'}.`;
   const meta = `
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
     <meta name="theme-color" content="#1553b8">
@@ -811,8 +811,8 @@ app.get('/u/:identifier', async (req, res) => {
     <meta property="og:image" content="${escapeMeta(cardUrl)}">
     <meta property="og:image:secure_url" content="${escapeMeta(cardUrl)}">
     <meta property="og:image:type" content="image/png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:image:width" content="1536">
+    <meta property="og:image:height" content="1024">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${escapeMeta(displayName)} · @${escapeMeta(username)}">
     <meta name="twitter:description" content="${escapeMeta(description)}">
