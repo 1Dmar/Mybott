@@ -55,10 +55,11 @@ const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
 const { buildPublicStats } = require('./publicStats');
 const { validatePublicUsername, normalizePublicUsername } = require('./publicProfile');
 const { renderPublicProfileCard } = require('./publicProfileCard');
-const { buildTelemetryRequestId } = require('./telemetryIdentity');
+const { buildTelemetryDocuments, buildTelemetryBulkOperations, summarizeTelemetryWrite, MAX_EVENTS } = require('./telemetryIngest');
 const { isAllowedCorsOrigin, isSameOriginMutation } = require('./securityPolicy');
 const { buildPublicBaseUrl } = require('./urlPolicy');
 const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
+const { operationIdForRequest } = require('./observability');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -72,9 +73,16 @@ const ProfileLike      = require('../bot/Models/ProfileLike');
 const app = express();
 const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
 
+app.use((req, res, next) => {
+  req.operationId = operationIdForRequest(req.get('x-request-id'));
+  res.set('X-Request-Id', req.operationId);
+  next();
+});
+
 app.use(cors({
   origin: (origin, callback) => callback(null, isAllowedCorsOrigin(origin)),
   credentials: true,
+  exposedHeaders: ['X-Request-Id'],
   methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 app.use(express.json({
@@ -158,26 +166,15 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
       if (['invalid_signature', 'replayed_request', 'plugin_not_provisioned'].includes(auth.error)) await recordSecurityEvent({ guildId: req.get('x-promcbot-server') || 'unknown', instanceId: req.get('x-promcbot-instance') || null, event: auth.error, severity: auth.error === 'invalid_signature' ? 'high' : 'medium', evidence: { source: 'plugin_protocol', timestamp: req.get('x-promcbot-timestamp') || null }, action: 'review_or_revoke' }).catch(() => null);
       return res.status(auth.status).json({ success: false, error: auth.error });
     }
-    const incoming = Array.isArray(req.body?.events) ? req.body.events.slice(0, 250) : [];
+    const incoming = Array.isArray(req.body?.events) ? req.body.events.slice(0, MAX_EVENTS) : [];
     if (!incoming.length) return res.status(400).json({ success: false, error: 'events_required' });
-    const now = Date.now();
-    const documents = incoming.map((event, index) => {
-      const occurredAt = new Date(event.occurredAt || now);
-      if (Number.isNaN(occurredAt.getTime())) throw new Error('invalid_occurredAt');
-      const data = (event.data && typeof event.data === 'object' && !Array.isArray(event.data)) ? event.data : {};
-      const safeData = Object.fromEntries(Object.entries(data).slice(0, 32).map(([key, value]) => [String(key).slice(0, 64), typeof value === 'string' ? value.slice(0, 512) : (typeof value === 'number' || typeof value === 'boolean' ? value : String(value).slice(0, 512))]));
-      const eventId = String(event.eventId || `${req.get('x-promcbot-nonce') || 'legacy-request'}:${index}`).slice(0, 128);
-      return { serverId: auth.serverId, instanceId: auth.instanceId, type: String(event.type || 'unknown').slice(0, 64), occurredAt, receivedAt: new Date(now), requestId: buildTelemetryRequestId(auth.serverId, auth.instanceId, eventId), data: safeData, expiresAt: new Date(now + 90 * 24 * 60 * 60 * 1000) };
+    const documents = buildTelemetryDocuments(incoming, {
+      serverId: auth.serverId,
+      instanceId: auth.instanceId,
+      nonce: req.get('x-promcbot-nonce'),
     });
-    const writeResult = await TelemetryEvent.bulkWrite(documents.map(document => ({
-      updateOne: {
-        filter: { requestId: document.requestId },
-        update: { $setOnInsert: document },
-        upsert: true,
-      },
-    })), { ordered: false });
-    const acceptedCount = Number(writeResult?.upsertedCount || 0);
-    const duplicateCount = Math.max(0, documents.length - acceptedCount);
+    const writeResult = await TelemetryEvent.bulkWrite(buildTelemetryBulkOperations(documents), { ordered: false });
+    const { accepted: acceptedCount, duplicates: duplicateCount } = summarizeTelemetryWrite(writeResult, documents.length);
     const latestCount = latestOnlinePlayers(documents);
     const headerValue = name => String(req.get(name) || '').trim().slice(0, 120) || null;
     await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === null ? {} : { lastOnlinePlayers: latestCount }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
