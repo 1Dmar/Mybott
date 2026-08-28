@@ -437,7 +437,7 @@ f81c6bf2b Add durable local telemetry spool
 73034426f Bound Discord workspace fetch concurrency
 ```
 
-آخر artifact مبني محليًا في هذه الدورة هو `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، وSHA-256 الحالي له هو `b21520e7ecf5a7abe43f9f61e4203adbf00b2cc5e3cd16595b16b78ee20e6614`.
+آخر artifact مبني محليًا في هذه الدورة هو `deliverables/ProMcBot-0.1.0-Universal-Bukkit.jar`، وSHA-256 الحالي له هو `c0079eac62a317ceb27f3effaa09ad260c8aae94536a9d30f70f961fbaeece98`.
 
 في آخر closeout push تطابق local وremote وأصبح `ahead/behind = 0/0`؛ استخدم `git rev-parse HEAD` لاستخراج SHA الحالي على الفرع.
 
