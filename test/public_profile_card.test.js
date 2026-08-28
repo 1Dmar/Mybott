@@ -2,6 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const path = require('path');
 const sharp = require('sharp');
 const { renderPublicProfileCard } = require('../dash/publicProfileCard');
 
@@ -9,7 +10,7 @@ const rendererSource = fs.readFileSync(require.resolve('../dash/publicProfileCar
 const profilePageSource = fs.readFileSync(require.resolve('../dash/dashboard/pages/profile.html'), 'utf8');
 const serverSource = fs.readFileSync(require.resolve('../dash/index.js'), 'utf8');
 
-test('public profile card renders a 1200×630 PNG with only the modern profile fields', async () => {
+ test('public profile card renders the supplied 3:2 template with dynamic profile fields', async () => {
   const buffer = await renderPublicProfileCard({
     id: '804999528129363998',
     username: 'alim',
@@ -21,18 +22,26 @@ test('public profile card renders a 1200×630 PNG with only the modern profile f
   });
   const metadata = await sharp(buffer).metadata();
   assert.equal(metadata.format, 'png');
-  assert.equal(metadata.width, 1200);
-  assert.equal(metadata.height, 630);
+  assert.equal(metadata.width, 1536);
+  assert.equal(metadata.height, 1024);
   assert.ok(buffer.length > 5000);
 });
 
-test('public profile card uses the official circular logo and excludes legacy marketing copy', () => {
-  assert.match(rendererSource, /path\.join\(__dirname, 'dashboard', 'logo\.png'\)/);
-  assert.match(rendererSource, /Powered by ProMcBot/);
+test('public profile card uses the fixed official reference template', () => {
+  assert.match(rendererSource, /public-profile-template-clean\.png/);
+  assert.match(rendererSource, /CARD_WIDTH = 1536/);
+  assert.match(rendererSource, /CARD_HEIGHT = 1024/);
+  assert.doesNotMatch(rendererSource, /Powered by ProMcBot/);
   assert.doesNotMatch(rendererSource, /A shareable Discord identity card powered by ProMC Bot/);
   assert.doesNotMatch(rendererSource, /Building with ProMC Bot/);
   assert.doesNotMatch(rendererSource, /followers|likes|Discord handle|Profile ID/);
-  assert.match(rendererSource, /clip-path="url\(#logoClip\)"/);
+});
+
+test('fixed template asset is present and has the supplied 3:2 dimensions', async () => {
+  const assetPath = path.join(__dirname, '..', 'dash', 'dashboard', 'assets', 'public-profile-template-clean.png');
+  assert.equal(fs.existsSync(assetPath), true);
+  const metadata = await sharp(assetPath).metadata();
+  assert.equal(metadata.width / metadata.height, 1.5);
 });
 
 test('public profile page keeps the official footer logo and current copy', () => {
@@ -42,12 +51,12 @@ test('public profile page keeps the official footer logo and current copy', () =
   assert.doesNotMatch(profilePageSource, /class="p-mark"/);
 });
 
-test('canonical /u route keeps the modern Open Graph HTML contract', () => {
+test('canonical /u route uses the fixed-template Open Graph contract', () => {
   assert.match(serverSource, /app\.get\('\/u\/:identifier'/);
-  assert.match(serverSource, /meta property="og:image:width" content="1200"/);
-  assert.match(serverSource, /meta property="og:image:height" content="630"/);
+  assert.match(serverSource, /meta property="og:image:width" content="1536"/);
+  assert.match(serverSource, /meta property="og:image:height" content="1024"/);
   assert.match(serverSource, /profile-card-v2\//);
   assert.match(serverSource, /return \{ \.\.\.data, profileUserId: data\.profile\.id \}/);
-  assert.match(serverSource, /Public Discord profile on ProMcBot/);
+  assert.match(serverSource, /const description = `@\$\{username\} · \$\{social\.likes\} like/);
   assert.doesNotMatch(serverSource, /const description = `\$\{displayName\} \(@\$\{username\}\) · \$\{social\.followers\}/);
 });
