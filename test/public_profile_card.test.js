@@ -40,7 +40,7 @@ test('public profile card uses the fixed official reference template', () => {
   assert.match(rendererSource, /profile\.likes/);
   assert.doesNotMatch(rendererSource, /Discord handle|Profile ID/);
   assert.match(rendererSource, /controller\.abort\(\)/);
-  assert.match(rendererSource, /8 \* 1024 \* 1024/);
+  assert.match(rendererSource, /2 \* 1024 \* 1024/);
 });
 
 test('fixed template asset is present and has the supplied 3:2 dimensions', async () => {
