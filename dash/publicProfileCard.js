@@ -40,8 +40,15 @@ function displayFontSize(value) {
   return 58;
 }
 
-function buildOverlay({ displayName, username, memberSince, avatar }) {
+function formatCount(value) {
+  const count = Number.isFinite(Number(value)) ? Math.max(0, Math.floor(Number(value))) : 0;
+  return count.toLocaleString('en-US');
+}
+
+function buildOverlay({ displayName, username, memberSince, avatar, followers, likes }) {
   const nameSize = displayFontSize(displayName);
+  const followerCount = escapeXml(formatCount(followers));
+  const likeCount = escapeXml(formatCount(likes));
   const estimatedNameWidth = Math.min(720, Math.max(180, displayName.length * nameSize * 0.55));
   const dotX = Math.min(1390, 648 + estimatedNameWidth + 20);
   const avatarMarkup = avatar
@@ -60,6 +67,11 @@ function buildOverlay({ displayName, username, memberSince, avatar }) {
     <circle cx="671" cy="564" r="8" fill="#27e99e"/>
     <text x="700" y="573" font-family="Arial,sans-serif" font-size="24" font-weight="500" fill="#f7f9ff">Public Profile</text>
     <text x="731" y="729" font-family="Arial,sans-serif" font-size="27" font-weight="500" fill="#f8f9ff">${memberSince}</text>
+    <text x="1000" y="688" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#8799bb">FOLLOWERS</text>
+    <text x="1000" y="729" font-family="Arial,sans-serif" font-size="27" font-weight="500" fill="#f8f9ff">${followerCount}</text>
+    <line x1="1160" y1="678" x2="1160" y2="744" stroke="#8ca0c7" stroke-opacity=".18" stroke-width="2"/>
+    <text x="1200" y="688" font-family="Arial,sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#8799bb">LIKES</text>
+    <text x="1200" y="729" font-family="Arial,sans-serif" font-size="27" font-weight="500" fill="#f8f9ff">${likeCount}</text>
   </svg>`;
 }
 
@@ -69,7 +81,7 @@ async function renderPublicProfileCard(profile = {}) {
   const memberSince = escapeXml(formatMemberSince(profile.memberSince));
   const avatar = await imageDataUri(profile.avatar);
   const template = fs.readFileSync(TEMPLATE_PATH);
-  const overlay = Buffer.from(buildOverlay({ displayName, username, memberSince, avatar }));
+  const overlay = Buffer.from(buildOverlay({ displayName, username, memberSince, avatar, followers: profile.followers, likes: profile.likes }));
   return sharp(template)
     .resize(CARD_WIDTH, CARD_HEIGHT, { fit: 'fill' })
     .composite([{ input: overlay, top: 0, left: 0 }])
