@@ -20,6 +20,9 @@ const Server = require('../Models/User');
 const StatusBar = require('../Models/StatusBar');
 const BlackList = require("../Models/BlackList");
 const { getActiveBlacklist } = require('../utils/blacklistGuard');
+const { consumeCommandCooldown } = require('../utils/commandCooldown');
+const { normalizeMinecraftAddress } = require('../utils/minecraftAddressPolicy');
+const slashCooldowns = new Map();
 // Helper to format emoji for Discord
 const formatEmoji = (emoji) => {
     if (!emoji) return "";
@@ -107,16 +110,20 @@ function cleanIP(ip) {
 
 // Server status checking with multiple fallbacks
 async function checkServerStatus(ip, port, type) {
-    if (!ip) return { success: false, error: new Error('No IP provided') };
+    const safeIp = normalizeMinecraftAddress(ip);
+    const safePort = Number(port);
+    if (!safeIp || !Number.isInteger(safePort) || safePort < 1 || safePort > 65535) {
+        return { success: false, error: new Error('Invalid Minecraft address or port') };
+    }
     
-    const cleanIp = cleanIP(ip);
+    const target = encodeURIComponent(`${safeIp}:${safePort}`);
     const endpoints = [];
     
     if (type === 'java') {
-        endpoints.push(`https://api.mcsrvstat.us/3/${cleanIp}:${port}`);
-        endpoints.push(`https://api.mcsrvstat.us/2/${cleanIp}:${port}`);
+        endpoints.push(`https://api.mcsrvstat.us/3/${target}`);
+        endpoints.push(`https://api.mcsrvstat.us/2/${target}`);
     } else if (type === 'bedrock') {
-        endpoints.push(`https://api.mcsrvstat.us/bedrock/3/${cleanIp}:${port}`);
+        endpoints.push(`https://api.mcsrvstat.us/bedrock/3/${target}`);
     }
 
     let lastError;
@@ -522,6 +529,15 @@ const interactionCreateEvent = {
                     }
                     if (command.botPermissions && interaction.appPermissions && !new PermissionsBitField(interaction.appPermissions).has(command.botPermissions)) {
                         return await interaction.reply({ content: 'لا يملك ProMcBot الصلاحيات المطلوبة في هذا السيرفر.', ephemeral: true });
+                    }
+                    const cooldown = consumeCommandCooldown(slashCooldowns, {
+                        userId: interaction.user?.id,
+                        guildId: interaction.guild?.id,
+                        commandName: interaction.commandName,
+                    }, command);
+                    if (!cooldown.allowed) {
+                        const seconds = Math.max(1, Math.ceil(cooldown.retryAfterMs / 1000));
+                        return await interaction.reply({ content: `تم تنفيذ هذا الأمر للتو. حاول بعد ${seconds} ثانية.`, ephemeral: true });
                     }
                     if (command.deferReply) {
                         await interaction.deferReply({ ephemeral: command.ephemeral || false });
