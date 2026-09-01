@@ -1,260 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Temp Mail</title>
-    <style>
-        :root {
-            --primary-color: #1877f2;
-            --danger-color: #dc3545;
-            --background: #f0f2f5;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: var(--background);
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .email-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-        }
-
-        .email-tab {
-            padding: 10px 20px;
-            background: #e4e6eb;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .email-tab.active {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-
-        button.primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        button.danger {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .inbox {
-            margin-top: 20px;
-        }
-
-        .email-item {
-            background: var(--background);
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-        }
-
-        #notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
-        }
-    </style>
-  <link rel="stylesheet" href="/shared.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ProMcBot Privacy Policy for the Discord bot, Dashboard, public profiles, and Minecraft plugin.">
+  <title>ProMcBot | Privacy Policy</title>
+  <link rel="stylesheet" href="/dashboard/pages/legal.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Universal Temp Mail</h1>
-        
-        <div class="toolbar">
-            <button class="primary" onclick="generateNewEmail()">New Email</button>
-            <button onclick="refreshAllInboxes()">Refresh All</button>
-        </div>
+  <main class="legal-shell">
+    <nav class="legal-nav" aria-label="Legal navigation">
+      <a class="legal-brand" href="/"><img src="/dashboard/logo.png" alt="ProMcBot logo"> <span>ProMcBot</span></a>
+      <div class="legal-links"><a href="/">Home</a><a href="/terms-of-service">Terms of Service</a><a href="/privacy-policy" aria-current="page">Privacy Policy</a></div>
+    </nav>
+    <header class="legal-hero">
+      <p class="legal-kicker">Trust &amp; transparency</p>
+      <h1>Privacy Policy</h1>
+      <p>This policy explains how ProMcBot processes information when you use the ProMcBot Discord bot, Dashboard, public profile pages, or Minecraft plugin.</p>
+      <div class="legal-meta"><span>Effective date: September 1, 2026</span><span>Last updated: September 1, 2026</span></div>
+    </header>
+    <div class="legal-content">
+      <article class="legal-article">
+        <h2 id="scope">1. Scope</h2>
+        <p>ProMcBot is a software service that connects Discord server management, a web Dashboard, public profile features, Minecraft server telemetry, and optional automation and billing features. This policy applies to information processed through those services and does not govern Discord, Mojang/Microsoft, PayPal, or any other third-party service itself.</p>
+        <div class="legal-note"><strong>Important:</strong> ProMcBot is an independent service and is not affiliated with, endorsed by, or sponsored by Discord, Mojang AB, Microsoft, or PayPal.</div>
 
-        <div class="email-tabs" id="emailTabs"></div>
+        <h2 id="data">2. Information we process</h2>
+        <p>We process only the information needed to authenticate accounts, provide requested features, secure the service, and operate the Dashboard.</p>
+        <table class="legal-table"><thead><tr><th>Category</th><th>Examples</th><th>Why it is used</th></tr></thead><tbody>
+          <tr><td>Discord account data</td><td>Discord user ID, username, global display name, avatar, email when the Discord OAuth permission provides it, and the servers and permissions returned by Discord.</td><td>Account login, showing the correct servers, authorization checks, and user-facing identity.</td></tr>
+          <tr><td>Profile data</td><td>Optional public username, avatar, banner or custom profile settings, follows, and likes.</td><td>To create and display the public profile requested by the account holder.</td></tr>
+          <tr><td>Server configuration</td><td>Discord server ID, selected settings, module configuration, channel IDs, automation rules, and bot/plugin status.</td><td>To operate Dashboard features for a server the authenticated user is authorized to manage.</td></tr>
+          <tr><td>Minecraft telemetry</td><td>Plugin instance identifiers, server health signals, player counts, event types, timestamps, and optional network/server labels.</td><td>Analytics, intelligence, status views, reports, and automations. Public statistics use aggregates only where offered.</td></tr>
+          <tr><td>Security and operational data</td><td>Session identifiers, approximate request metadata such as IP address, request IDs, security events, audit events, and rate-limit information.</td><td>Authentication, abuse prevention, debugging, auditing, and service reliability.</td></tr>
+          <tr><td>Billing data</td><td>Subscription, payment, invoice, provider identifiers, plan, amount, currency, and status.</td><td>To provide optional paid features and reconcile payments. Payment card details are handled by the payment provider, not stored by ProMcBot.</td></tr>
+        </tbody></table>
 
-        <div class="inbox" id="inboxContainer">
-            <!-- Inbox content will be loaded here -->
-        </div>
+        <h2 id="discord">3. Discord OAuth and permissions</h2>
+        <p>When you choose Discord login, Discord authenticates you and returns the permissions you authorize. ProMcBot requests identity, server-list, and email scopes only where configured for the Dashboard. ProMcBot does not receive your Discord password.</p>
+        <p>Server access is checked against the Discord server information available to the authenticated account. ProMcBot uses that information to show manageable workspaces and does not treat an ordinary website parameter as proof of server ownership.</p>
+
+        <h2 id="plugin">4. Minecraft plugin and telemetry</h2>
+        <p>The optional Minecraft plugin sends signed requests to ProMcBot when configured by a server owner. The service uses plugin credentials, timestamps, nonces, and signatures to authenticate those requests. Plugin signing secrets are stored encrypted where retained and are not intended to be displayed again after provisioning.</p>
+        <p>Telemetry is used to produce server-scoped operational views. ProMcBot does not intentionally publish player names, Discord member lists, raw event streams, or private server data through public statistics pages.</p>
+
+        <h2 id="use">5. How information is used</h2>
+        <ul><li>To authenticate users and maintain Dashboard sessions.</li><li>To verify access to Discord server workspaces and provide requested bot, plugin, analytics, automation, and profile features.</li><li>To protect the service against fraud, abuse, replayed plugin requests, unauthorized access, and excessive traffic.</li><li>To process optional subscriptions and communicate service or security information.</li><li>To diagnose errors, maintain reliability, and improve features using aggregated or operational information.</li></ul>
+        <p>We do not sell personal information. We do not use private server telemetry to create public player profiles or publish raw player activity.</p>
+
+        <h2 id="sharing">6. Service providers and disclosures</h2>
+        <p>Information may be processed by providers required to operate the service, including Discord for OAuth and Discord APIs, hosting and database providers, content delivery or infrastructure providers, and PayPal when a payment is initiated. Providers receive only information needed for their role or information you direct them to receive.</p>
+        <p>We may disclose information when required by law, to protect the rights and security of users or the service, to investigate abuse, or in connection with a lawful change in service ownership.</p>
+
+        <h2 id="retention">7. Retention and security</h2>
+        <p>We retain information for as long as needed to provide the relevant feature, maintain security and audit records, meet legal or accounting obligations, resolve disputes, or enforce agreements. Retention periods can differ by category and provider. Expiring telemetry, notifications, sessions, and operational records may be removed according to their configured retention rules.</p>
+        <p>We use access controls, authentication checks, encrypted storage for selected plugin secrets, signed plugin requests, rate limits, and least-privilege responses. No internet service can guarantee absolute security; please protect your Discord account and never share plugin credentials.</p>
+
+        <h2 id="rights">8. Your choices and rights</h2>
+        <p>You may stop using the service, revoke ProMcBot’s Discord authorization through Discord, remove or change optional public profile information from the Dashboard, and ask us to review or delete information where applicable. Some records may need to be retained for security, legal, accounting, or fraud-prevention reasons.</p>
+
+        <h2 id="children">9. Children</h2>
+        <p>ProMcBot is not directed to children under the minimum age required to use Discord and the applicable law. Do not use the service if you are not permitted to use Discord or the relevant service in your jurisdiction.</p>
+
+        <h2 id="changes">10. Changes to this policy</h2>
+        <p>We may update this policy when the service, providers, or legal requirements change. The updated version will be published on this page with a new “Last updated” date. Continued use after an update means you have had an opportunity to review it.</p>
+
+        <h2 id="contact">11. Contact</h2>
+        <p>For privacy questions, access or deletion requests, or security concerns, contact the ProMcBot team through the official support community:</p>
+        <a class="legal-cta" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Contact ProMcBot Support</a>
+      </article>
+      <aside class="legal-toc"><strong>On this page</strong><a href="#scope">Scope</a><a href="#data">Information</a><a href="#discord">Discord OAuth</a><a href="#plugin">Minecraft plugin</a><a href="#use">Use</a><a href="#sharing">Providers</a><a href="#retention">Retention</a><a href="#rights">Your choices</a><a href="#contact">Contact</a></aside>
     </div>
-
-    <div id="notification"></div>
-
-    <script>
-        // Configuration
-        const DOMAINS = ['1secmail.com', '1secmail.net', '1secmail.org'];
-        const API_BASE = 'https://www.1secmail.com/api/v1/';
-        const POLL_INTERVAL = 15000;
-
-        // State management
-        let currentEmail = null;
-
-        // Initialize from localStorage
-        function init() {
-            const emails = getSavedEmails();
-            if (emails.length > 0) {
-                currentEmail = emails[0].email;
-            }
-            renderTabs();
-            pollInboxes();
-            setInterval(pollInboxes, POLL_INTERVAL);
-        }
-
-        // Generate new email
-        async function generateNewEmail() {
-            const username = Math.random().toString(36).substring(2, 12);
-            const domain = DOMAINS[Math.floor(Math.random() * DOMAINS.length)];
-            const email = `${username}@${domain}`;
-            
-            saveEmail(email);
-            currentEmail = email;
-            renderTabs();
-            showNotification('New email created!');
-            await checkInbox(email);
-        }
-
-        // Save email to localStorage
-        function saveEmail(email) {
-            const emails = getSavedEmails();
-            if (!emails.find(e => e.email === email)) {
-                emails.push({ email, createdAt: new Date().toISOString() });
-                localStorage.setItem('tempEmails', JSON.stringify(emails));
-            }
-        }
-
-        // Get all saved emails
-        function getSavedEmails() {
-            return JSON.parse(localStorage.getItem('tempEmails')) || [];
-        }
-
-        // Render email tabs
-        function renderTabs() {
-            const emails = getSavedEmails();
-            const tabs = emails.map(email => `
-                <div class="email-tab ${email.email === currentEmail ? 'active' : ''}" 
-                     onclick="switchEmail('${email.email}')">
-                    ${email.email}
-                </div>
-            `).join('');
-            
-            document.getElementById('emailTabs').innerHTML = tabs;
-            if (currentEmail) renderInbox(currentEmail);
-        }
-
-        // Switch active email
-        function switchEmail(email) {
-            currentEmail = email;
-            renderTabs();
-        }
-
-        // Render inbox for specific email
-        async function renderInbox(email) {
-            const messages = await getMessages(email);
-            const html = messages.map(msg => `
-                <div class="email-item">
-                    <h3>${msg.subject}</h3>
-                    <p>From: ${msg.from}</p>
-                    <p>${new Date(msg.date).toLocaleString()}</p>
-                    <button onclick="viewMessage('${email}', ${msg.id})">View</button>
-                </div>
-            `).join('');
-            
-            document.getElementById('inboxContainer').innerHTML = html || '<p>No messages found</p>';
-        }
-
-        // Get messages from API
-        async function getMessages(email) {
-            const [login, domain] = email.split('@');
-            try {
-                const response = await fetch(`${API_BASE}?action=getMessages&login=${login}&domain=${domain}`);
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching messages:', error);
-                return [];
-            }
-        }
-
-        // View individual message
-        async function viewMessage(email, messageId) {
-            const [login, domain] = email.split('@');
-            try {
-                const response = await fetch(`${API_BASE}?action=readMessage&login=${login}&domain=${domain}&id=${messageId}`);
-                const message = await response.json();
-                alert(`Message Content:\n\n${message.textBody}`);
-            } catch (error) {
-                console.error('Error fetching message:', error);
-            }
-        }
-
-        // Poll all inboxes
-        async function pollInboxes() {
-            const emails = getSavedEmails();
-            for (const email of emails) {
-                await checkInbox(email.email);
-            }
-        }
-
-        // Check for new messages
-        async function checkInbox(email) {
-            const messages = await getMessages(email);
-            if (messages.length > 0) {
-                showNotification(`New messages in ${email}`);
-            }
-        }
-
-        // Refresh all inboxes
-        async function refreshAllInboxes() {
-            await pollInboxes();
-            if (currentEmail) renderInbox(currentEmail);
-            showNotification('All inboxes refreshed');
-        }
-
-        // Notification system
-        function showNotification(message, duration = 3000) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, duration);
-        }
-
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
-<script src="/shared.js"></script>
+    <footer class="legal-footer"><span>© 2026 ProMcBot. All rights reserved.</span><span><a href="/terms-of-service">Terms</a> · <a href="/privacy-policy">Privacy</a></span></footer>
+  </main>
 </body>
 </html>

@@ -334,6 +334,15 @@ app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
 // ── Routes ───────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
+const legalPages = {
+  '/privacy-policy': 'PrivacyPolicy.html',
+  '/terms-of-service': 'TermsOfService.html',
+};
+Object.entries(legalPages).forEach(([route, file]) => {
+  app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
+});
+app.get('/privacy', (req, res) => res.redirect(308, '/privacy-policy'));
+app.get('/terms', (req, res) => res.redirect(308, '/terms-of-service'));
 app.get('/loading-auth', (req, res) => res.sendFile(path.join(dashDir, 'Loading', 'loading.html')));
 
 app.get('/auth/discord', (req, res, next) => {
