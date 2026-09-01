@@ -148,7 +148,7 @@
           renderSocial();
           const profileUrl = profile.publicPath || location.href;
           const safeUrl = esc(new URL(profileUrl, location.origin).href);
-          const safeImageUrl = value => { try { const url = new URL(String(value || ''), location.origin); return url.protocol === 'https:' ? url.href : ''; } catch (_) { return ''; } };
+          const safeImageUrl = value => { try { const url = new URL(String(value || ''), location.origin); const allowedHosts = new Set(['cdn.discordapp.com', 'media.discordapp.net']); return url.protocol === 'https:' && allowedHosts.has(url.hostname.toLowerCase()) ? url.href.replace(/[()"\\]/g, '') : ''; } catch (_) { return ''; } };
           const safeAvatar = safeImageUrl(profile.avatar);
           card.innerHTML = '<div class="public-profile-banner" data-profile-banner></div>' +
             '<div class="public-profile-content"><div class="public-profile-identity"><img class="public-profile-avatar" src="' + esc(safeAvatar) + '" alt="' + esc(profile.globalName || profile.username) + '"><div class="public-profile-identity-copy"><div class="public-profile-kicker">Public Discord profile</div><div class="public-profile-name">' + esc(profile.globalName || profile.username) + '</div><div class="public-profile-handle">@' + esc(profile.username) + '</div><div class="public-profile-badges"><span class="public-profile-badge"><span class="public-profile-dot"></span>Public profile</span>' + (profile.bot ? '<span class="public-profile-badge bot">Bot account</span>' : '') + '</div></div></div>' +

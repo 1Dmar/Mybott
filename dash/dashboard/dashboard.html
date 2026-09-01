@@ -134,15 +134,17 @@
       const $ = id => document.getElementById(id);
       const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
       const planLabel = plan => ({ free:'FREE', pro:'PRO', ultimate:'ULTIMATE' }[String(plan || '').toLowerCase()] || 'FREE');
+      const safeInternalUrl = value => { try { const url = new URL(String(value || ''), window.location.origin); return url.origin === window.location.origin && (url.protocol === 'http:' || url.protocol === 'https:') ? `${url.pathname}${url.search}${url.hash}` : ''; } catch (_) { return ''; } };
+      const safeAccent = value => /^#[0-9a-f]{3,8}$/i.test(String(value || '')) ? String(value) : '';
 
       async function loadProfile() {
         try {
           const response = await fetch('/api/user/profile');
           const data = await response.json();
           if (data.success) {
-            if (data.user.accent_color) $('userBanner').style.background = data.user.accent_color;
+            const accent = safeAccent(data.user.accent_color); if (accent) $('userBanner').style.background = accent;
             $('publicUsername').value = data.user.public_username || '';
-            $('publicProfileLink').href = data.user.public_url || `/u/${encodeURIComponent(data.user.id)}`;
+            $('publicProfileLink').href = safeInternalUrl(data.user.public_url) || `/u/${encodeURIComponent(data.user.id)}`;
           }
         } catch (error) { console.warn('Profile details unavailable:', error.message); }
       }
@@ -193,7 +195,7 @@
           const response = await fetch('/api/user/profile', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ public_username: username }) });
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || data.error || 'Could not save username.');
-          $('publicProfileLink').href = data.public_url;
+          const publicUrl = safeInternalUrl(data.public_url); if (!publicUrl) throw new Error('The returned profile link was invalid.'); $('publicProfileLink').href = publicUrl;
           message.textContent = `Saved. Your public card is ${data.public_url}`;
         } catch (error) { message.textContent = error.message; }
         finally { button.disabled = false; }

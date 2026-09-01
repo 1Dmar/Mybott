@@ -180,6 +180,9 @@
   <script>
     document.getElementById('year').innerText = new Date().getFullYear();
     
+    const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
+    const safeAvatar = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && new Set(['cdn.discordapp.com', 'media.discordapp.net']).has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
+
     // Check if logged in to update navbar
     fetch('/callback/check/userData')
       .then(res => res.json())
@@ -188,8 +191,8 @@
           const nav = document.getElementById('navActions');
           nav.innerHTML = `
             <div style="display:flex; align-items:center; gap:12px">
-              <span style="font-size:14px; font-weight:600">${data.user.global_name}</span>
-              <a href="/dashboard"><img src="${data.user.avatar}" style="width:36px; height:36px; border-radius:50%; border:2px solid #FF512F"></a>
+              <span style="font-size:14px; font-weight:600">${escapeHTML(data.user.global_name || data.user.username || 'User')}</span>
+              <a href="/dashboard"><img src="${escapeHTML(safeAvatar(data.user.avatar))}" style="width:36px; height:36px; border-radius:50%; border:2px solid #FF512F" alt="Account avatar"></a>
             </div>
           `;
         }

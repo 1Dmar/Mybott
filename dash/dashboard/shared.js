@@ -12,6 +12,7 @@
   };
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+  const safeAvatarUrl = value => { try { const url = new URL(String(value || ''), window.location.origin); const allowedHosts = new Set(['cdn.discordapp.com', 'media.discordapp.net']); return url.protocol === 'https:' && allowedHosts.has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
   const serverPath = (guildId, page = 'overview') => `/myservers/${encodeURIComponent(guildId)}/${page}`;
 
   async function init() {
@@ -44,7 +45,7 @@
   function updateUserUI() {
     const user = state.user || {};
     const displayName = user.global_name || user.username || 'User';
-    const avatar = user.avatar || '/dashboard/logo.png';
+    const avatar = safeAvatarUrl(user.avatar);
     document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = displayName; });
     document.querySelectorAll('[data-user-avatar]').forEach(el => {
       el.src = avatar;

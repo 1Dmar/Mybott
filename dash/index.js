@@ -202,6 +202,7 @@ const sessionOptions = {
   saveUninitialized: false,
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax'
   }
@@ -272,6 +273,7 @@ if (discordOAuthConfigured) {
       clientSecret: DISCORD_CLIENT_SECRET,
       callbackURL: CALLBACK_URL,
       scope: ["identify", "guilds", "email"],
+      state: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       const safeProfile = sanitizeDiscordProfile(profile);
@@ -353,8 +355,20 @@ app.get('/auth/discord/callback', (req, res, next) => {
   if (!discordOAuthConfigured) return res.status(503).send('Discord login is not configured.');
   return passport.authenticate('discord', { failureRedirect: '/' })(req, res, next);
 }, async (req, res) => {
-  await ensureDefaultProfileFollow(req.user?.id);
-  res.redirect('/dashboard');
+  try {
+    const authenticatedUser = req.user;
+    await new Promise((resolve, reject) => {
+      req.session.regenerate(error => {
+        if (error) return reject(error);
+        req.logIn(authenticatedUser, loginError => loginError ? reject(loginError) : resolve());
+      });
+    });
+    await ensureDefaultProfileFollow(req.user?.id);
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('[oauth callback] session initialization failed:', error.message);
+    res.redirect('/');
+  }
 });
 
 function completeLogout(req, res) {
@@ -362,7 +376,6 @@ function completeLogout(req, res) {
 }
 
 app.post('/api/logout', completeLogout);
-app.get('/api/logout', completeLogout);
 
 // ── User API ──────────────────────────────────────────────────────
 app.get('/api/user/profile', isAuthenticated, async (req, res) => {
