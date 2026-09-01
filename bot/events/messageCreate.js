@@ -274,7 +274,6 @@ const handleAutoMod = async (client, message) => {
 };
 
 const handleMcMessage = async (client, message) => {
-    if (!legacyPrefixEnabled()) return;
     if (/^mc\b/i.test(message.content)) {
         const serverId = message.guild.id;
         let icon;
@@ -286,8 +285,8 @@ const handleMcMessage = async (client, message) => {
         }
         let emoji;
         // Check membership for custom servers
-        const entitlement = await getForGuild(serverId).catch(() => ({ plan: 'free' }));
-        if (serverInfo.serverType === "custom" && entitlement.plan === 'free') {
+        const membershipInfo = await User.findOne({ Id: serverId });
+        if (serverInfo.serverType === "custom" && !membershipInfo?.ismembership) {
             if (message) {
                 const membershipMessage = await message.channel.send(`${EMOJIS.WARNING} Premium not active for this server. Please contact the server owner.`);
                 setTimeout(() => {
