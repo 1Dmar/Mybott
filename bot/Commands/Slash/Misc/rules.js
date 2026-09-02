@@ -60,27 +60,28 @@ module.exports = {
   category: 'Misc',
   type1: 'slash',
   type: ApplicationCommandType.ChatInput,
+  deferReply: true,
 
   run: async (client, interaction) => {
     const channel = interaction.channel;
     if (!channel?.isTextBased?.() || typeof channel.send !== 'function') {
-      return interaction.reply({ content: 'This command can only be used in a text channel.', ephemeral: true });
+      return interaction.editReply({ content: 'This command can only be used in a text channel.' });
     }
 
     const botMember = interaction.guild?.members?.me;
     const permissions = botMember && channel.permissionsFor(botMember);
     if (permissions && !permissions.has([PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-      return interaction.reply({ content: 'I need Send Messages and Embed Links permissions in this channel.', ephemeral: true });
+      return interaction.editReply({ content: 'I need Send Messages and Embed Links permissions in this channel.' });
     }
 
     try {
       const [communityRules, legalRules] = buildRulesEmbeds(new Date());
       await channel.send({ embeds: [communityRules], allowedMentions: { parse: [] } });
       await channel.send({ embeds: [legalRules], allowedMentions: { parse: [] } });
-      return interaction.reply({ content: 'The two current rules messages were posted. The displayed date is the execution date of this command.', ephemeral: true });
+      return interaction.editReply({ content: 'The two current rules messages were posted. The displayed date is the execution date of this command.' });
     } catch (error) {
       console.error('[rules command] failed to post rules:', error.message);
-      return interaction.reply({ content: 'I could not post the rules in this channel. Check my channel permissions and try again.', ephemeral: true });
+      return interaction.editReply({ content: 'I could not post the rules in this channel. Check my channel permissions and try again.' });
     }
   },
 
