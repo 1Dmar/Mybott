@@ -31,3 +31,9 @@ test('rules messages wrap every displayed URL in angle brackets', () => {
   assert.match(rulesSource, /\[Privacy Policy\]\(<\$\{PRIVACY_URL\}>\)/);
   assert.match(rulesSource, /\[ProMcBot Terms of Service\]\(<\$\{TERMS_URL\}>\)/);
 });
+
+test('rules messages direct users to the /discord command', () => {
+  assert.match(rulesSource, /Use the \*\*\/discord\*\* command/);
+  assert.match(rulesSource, /use the \/discord command to join/);
+  assert.match(rulesSource, /Security reports:.*\*\*\/discord\*\* command/);
+});
