@@ -86,6 +86,7 @@ const COMMAND_CATALOG = [
       ['avatar', 'عرض الصورة الرمزية', 'Commands/Slash/Misc/avatar.js'],
       ['invite', 'رابط دعوة البوت', 'Commands/Slash/Misc/invite.js'],
       ['support', 'رابط الدعم', 'Commands/Slash/Misc/support.js'],
+      ['rules', 'نشر قوانين دعم ProMcBot وتاريخ آخر تحديث', 'Commands/Slash/Misc/rules.js'],
       ['playercard', 'إنشاء بطاقة لاعب', 'Commands/Slash/Misc/playercard.js'],
       ['card', 'إنشاء بطاقة حالة السيرفر', 'Commands/Slash/Misc/card.js'],
       ['stats', 'عرض إحصائيات اللاعبين المتاحة', 'Commands/Slash/Misc/stats.js'],
