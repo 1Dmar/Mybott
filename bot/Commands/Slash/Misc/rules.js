@@ -1,6 +1,5 @@
 const {
   ApplicationCommandType,
-  EmbedBuilder,
   PermissionFlagsBits,
 } = require('discord.js');
 
@@ -17,37 +16,57 @@ function formatUpdatedDate(date = new Date()) {
   }).format(date);
 }
 
-function buildRulesEmbeds(date = new Date()) {
+function buildRulesMessages(date = new Date()) {
   const lastUpdated = formatUpdatedDate(date);
-  const footer = { text: `ProMcBot Support Rules • Last updated: ${lastUpdated} UTC` };
+  const footer = `━━━━━━━━━━━━━━━━━━━━\n🗓️ **Last updated:** ${lastUpdated} UTC`;
 
-  const communityRules = new EmbedBuilder()
-    .setColor(0x5865f2)
-    .setTitle('Please take a moment to review our guidelines 📖')
-    .setDescription([
-      '**1. Bot Invitation**\nDo not invite or use ProMcBot in servers, communities, or activities that violate Discord’s Terms of Service, Community Guidelines, or applicable law.',
-      '**2. Authorized Use**\nUse the bot, Dashboard, Discord OAuth connection, Minecraft Plugin, automation, telemetry, and server data only with proper authorization. Do not access, modify, monitor, or control another user’s account, server, resource, or data without permission.',
-      '**3. No Abuse or Exploitation**\nDo not exploit bugs, vulnerabilities, permissions, rate limits, Premium features, billing systems, follow/like features, telemetry, or automation to obtain unauthorized access, benefits, data, or service capacity. Report security issues privately through the official support channels.',
-      '**4. No Spam or Harmful Activity**\nDo not use ProMcBot for spam, harassment, threats, hate speech, raids, scams, credential theft, malware, phishing, abusive scraping, malicious automation, or activity that disrupts Discord, Minecraft servers, ProMcBot, or other users.',
-      '**5. Privacy and Sensitive Information**\nNever share passwords, OAuth tokens, plugin credentials, webhook URLs, API keys, private logs, personal information, or other sensitive data in support channels. Protect all credentials issued to you or your server.',
-      '**6. Support Channel**\nUse only the official support channels for help, bug reports, and security reports. Do not spam, impersonate staff, abuse the support system, or publicly disclose private security reports before they have been reviewed.',
-      '**7. Respect Others**\nTreat staff and community members with courtesy and respect. Harassment, threats, discrimination, impersonation, and targeted abuse are not allowed.',
-      `🔗 We follow Discord’s [Terms of Service](https://discord.com/terms) and [Community Guidelines](https://discord.com/guidelines).\n📄 Read ProMcBot’s [Terms of Service](${TERMS_URL}) and [Privacy Policy](${PRIVACY_URL}).`,
-      `⚠️ For help, please head to the official [support channels](${SUPPORT_URL}).`,
-    ].join('\n\n'))
-    .setFooter(footer);
+  const communityRules = [
+    '## 📖 Please take a moment to review our guidelines',
+    '',
+    '**1. Bot Invitation**',
+    'Do not invite or use ProMcBot in servers, communities, or activities that violate Discord’s Terms of Service, Community Guidelines, or applicable law.',
+    '',
+    '**2. Authorized Use**',
+    'Use the bot, Dashboard, Discord OAuth, Minecraft Plugin, automation, telemetry, and server data only with proper authorization. Never access or change another user’s account, server, resource, or data without permission.',
+    '',
+    '**3. No Abuse or Exploitation**',
+    'Do not exploit bugs, permissions, rate limits, Premium, billing, follow/like, telemetry, or automation for unauthorized access or benefits. Report security issues privately through support.',
+    '',
+    '**4. No Spam or Harmful Activity**',
+    'Do not use ProMcBot for spam, harassment, threats, hate speech, raids, scams, phishing, malware, abusive scraping, or activity that disrupts Discord, Minecraft, ProMcBot, or other users.',
+    '',
+    '**5. Privacy and Sensitive Information**',
+    'Never share passwords, OAuth tokens, plugin credentials, webhook URLs, API keys, private logs, or personal information in support channels. Protect your server credentials.',
+    '',
+    '**6. Support Channel**',
+    `Use only the official [support channels](${SUPPORT_URL}) for help, bug reports, and security reports. Do not spam, impersonate staff, or disclose private security reports publicly.`,
+    '',
+    '**7. Respect Others**',
+    'Treat staff and community members with courtesy and respect. Harassment, threats, discrimination, impersonation, and targeted abuse are not allowed.',
+    '',
+    '🔗 **Important links**',
+    `• [Discord ToS](https://discord.com/terms)\n• [Discord Guidelines](https://discord.com/guidelines)\n• [ProMcBot Terms](${TERMS_URL})\n• [Privacy Policy](${PRIVACY_URL})`,
+    '',
+    '⚠️ **For help, please head to the official support channels.**',
+    footer,
+  ].join('\n');
 
-  const legalRules = new EmbedBuilder()
-    .setColor(0xed4245)
-    .setTitle('⚠️ Legal Warning: Intellectual Property Rights')
-    .setDescription([
-      'ProMcBot’s source code, branding, commands, support materials, Dashboard experience, and proprietary designs may be protected by applicable intellectual property laws and licenses.',
-      'Do not copy, reverse engineer, extract, redistribute, resell, impersonate, or present ProMcBot’s code, commands, support system, branding, or designs as your own, except where expressly permitted by an applicable license or by law.',
-      'This warning does not limit rights that cannot legally be waived. If you believe your work or rights are affected, contact the ProMcBot team through the official support channels before taking action.',
-      `📄 See the [ProMcBot Terms of Service](${TERMS_URL}) for the service terms and acceptable-use requirements.`,
-      `Violations may lead to removal of content, restriction or termination of access, and other remedies available under applicable law.`,
-    ].join('\n\n'))
-    .setFooter(footer);
+  const legalRules = [
+    '## ⚠️ Legal Warning: Intellectual Property Rights',
+    '',
+    'ProMcBot’s source code, branding, commands, support materials, Dashboard experience, and proprietary designs may be protected by applicable intellectual property laws and licenses.',
+    '',
+    'Do not copy, reverse engineer, extract, redistribute, resell, impersonate, or present ProMcBot’s code, commands, support system, branding, or designs as your own, except where expressly permitted by an applicable license or by law.',
+    '',
+    'This warning does not limit rights that cannot legally be waived. If you believe your work or rights are affected, contact the ProMcBot team through the official support channels before taking action.',
+    '',
+    `📄 **Read more:** [ProMcBot Terms of Service](${TERMS_URL})`,
+    '',
+    'Violations may lead to removal of content, restriction or termination of access, and other remedies available under applicable law.',
+    '',
+    `🛡️ **Security reports:** Please use the official [support channels](${SUPPORT_URL}) and do not publish private vulnerability details before they have been reviewed.`,
+    footer,
+  ].join('\n');
 
   return [communityRules, legalRules];
 }
@@ -56,7 +75,7 @@ module.exports = {
   name: 'rules',
   description: 'Post the current ProMcBot support rules in this channel.',
   userPermissions: PermissionFlagsBits.ManageGuild,
-  botPermissions: PermissionFlagsBits.SendMessages | PermissionFlagsBits.EmbedLinks,
+  botPermissions: PermissionFlagsBits.SendMessages,
   category: 'Misc',
   type1: 'slash',
   type: ApplicationCommandType.ChatInput,
@@ -70,14 +89,14 @@ module.exports = {
 
     const botMember = interaction.guild?.members?.me;
     const permissions = botMember && channel.permissionsFor(botMember);
-    if (permissions && !permissions.has([PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
-      return interaction.editReply({ content: 'I need Send Messages and Embed Links permissions in this channel.' });
+    if (permissions && !permissions.has(PermissionFlagsBits.SendMessages)) {
+      return interaction.editReply({ content: 'I need the Send Messages permission in this channel.' });
     }
 
     try {
-      const [communityRules, legalRules] = buildRulesEmbeds(new Date());
-      await channel.send({ embeds: [communityRules], allowedMentions: { parse: [] } });
-      await channel.send({ embeds: [legalRules], allowedMentions: { parse: [] } });
+      const [communityRules, legalRules] = buildRulesMessages(new Date());
+      await channel.send({ content: communityRules, allowedMentions: { parse: [] } });
+      await channel.send({ content: legalRules, allowedMentions: { parse: [] } });
       return interaction.editReply({ content: 'The two current rules messages were posted. The displayed date is the execution date of this command.' });
     } catch (error) {
       console.error('[rules command] failed to post rules:', error.message);
@@ -85,5 +104,5 @@ module.exports = {
     }
   },
 
-  buildRulesEmbeds,
+  buildRulesMessages,
 };
