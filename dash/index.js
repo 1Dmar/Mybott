@@ -887,6 +887,8 @@ app.get('/u/:identifier', async (req, res) => {
 app.get('/profile/:identifier', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.identifier)}`));
 app.get('/user/:username', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.username)}`));
 
+app.get('/discord', (req, res) => res.redirect(302, 'https://discord.gg/6FjFYStz5a'));
+
 // Dashboard Protected Pages
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
 app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
