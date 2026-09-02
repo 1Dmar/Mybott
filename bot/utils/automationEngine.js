@@ -5,7 +5,9 @@ const mongoose = require('mongoose');
 const AutomationRule = require('../Models/AutomationRule');
 const AutomationExecution = require('../Models/AutomationExecution');
 const TelemetryEvent = require('../Models/TelemetryEvent');
-const { createNotification } = require('./notificationService');
+const PluginInstance = require('../Models/PluginInstance');
+const Notification = require('../Models/Notification');
+const { createNotification, resolveOpenByDedupeKey } = require('./notificationService');
 const { summarizeTelemetry, WINDOW_MS } = require('./intelligenceEngine');
 const { getForGuild } = require('./entitlementService');
 const { hasFeature } = require('./entitlements');
@@ -76,6 +78,7 @@ function weekKey(now) {
 }
 
 function dedupeKey(rule, now) {
+  if (rule.preset) return `${rule._id}:smart:${rule.preset}:${Math.floor(now / (5 * 60 * 1000))}`;
   if (rule.trigger === 'weekly_summary') return `${rule._id}:weekly:${weekKey(now)}`;
   return `${rule._id}:activity:${Math.floor(now / WINDOW_MS)}`;
 }
@@ -124,6 +127,54 @@ async function runRule(rule, discordClient, now = Date.now()) {
   }
 }
 
+async function runSmartPreset(rule, discordClient, now, dedupe) {
+  const preset = String(rule.preset || '').trim();
+  const plugin = await PluginInstance.findOne({ serverId: rule.serverId, revokedAt: null }).sort({ lastSeenAt: -1 }).lean();
+  const lastSeenAt = plugin?.lastSeenAt ? new Date(plugin.lastSeenAt).getTime() : null;
+  const ageMs = lastSeenAt === null ? null : Math.max(0, now - lastSeenAt);
+  const fresh = ageMs !== null && ageMs <= 10 * 60 * 1000;
+  const stale = ageMs === null || ageMs > 10 * 60 * 1000;
+  let evidence = { preset, pluginProvisioned: Boolean(plugin), lastSeenAt: plugin?.lastSeenAt || null, telemetryAgeSeconds: ageMs === null ? null : Math.round(ageMs / 1000), measuredAt: new Date(now).toISOString() };
+  let conditionMet = false;
+  let message = String(rule.messageTemplate || '').slice(0, 1500);
+  let notificationDedupe = `smart:${rule.serverId}:${preset}:open`;
+
+  if (preset === 'server_offline') {
+    conditionMet = Boolean(plugin && stale);
+    message = `${rule.messageTemplate || 'ProMcBot detected that the Minecraft server heartbeat is stale.'} Last measured heartbeat: ${plugin?.lastSeenAt ? new Date(plugin.lastSeenAt).toISOString() : 'not measured'}.`;
+  } else if (preset === 'telemetry_delayed') {
+    conditionMet = Boolean(plugin && (ageMs === null || ageMs > 15 * 60 * 1000));
+    message = `${rule.messageTemplate || 'ProMcBot has not received recent Minecraft telemetry.'} No fresh heartbeat has been measured within the expected window.`;
+  } else if (preset === 'server_recovered') {
+    const offlineKey = `smart:${rule.serverId}:server_offline:open`;
+    const openOffline = await Notification.findOne({ guildId: rule.serverId, dedupeKey: offlineKey, status: { $ne: 'resolved' } }).lean();
+    conditionMet = Boolean(plugin && fresh && openOffline);
+    message = `${rule.messageTemplate || 'ProMcBot detected a fresh Minecraft server heartbeat. The server appears to have recovered.'} Last measured heartbeat: ${fresh ? new Date(lastSeenAt).toISOString() : 'not measured'}.`;
+    notificationDedupe = `smart:${rule.serverId}:server_recovered:${Math.floor(now / (60 * 60 * 1000))}`;
+  } else if (preset === 'first_player') {
+    const event = await TelemetryEvent.findOne({ serverId: rule.serverId, type: 'player_join', occurredAt: { $gte: new Date(now - 5 * 60 * 1000), $lt: new Date(now) } }).sort({ occurredAt: -1 }).lean();
+    conditionMet = Boolean(event);
+    evidence = { ...evidence, eventId: event?._id ? String(event._id) : null, occurredAt: event?.occurredAt || null };
+    notificationDedupe = event?._id ? `smart:${rule.serverId}:${preset}:${event._id}` : `smart:${rule.serverId}:${preset}:${Math.floor(now / (5 * 60 * 1000))}`;
+    message = rule.messageTemplate || 'ProMcBot recorded the first measured player join in the current activity window.';
+  }
+
+  if (!conditionMet) return { status: 'skipped', reason: 'condition_not_met', evidence, dedupeKey: dedupe };
+  const channel = discordClient?.channels?.cache?.get(rule.channelId);
+  const safeMessage = message.slice(0, 1500);
+  const delivered = await deliverWithRetry(channel, { content: safeMessage, allowedMentions: { parse: [] } });
+  const status = delivered ? 'executed' : 'failed';
+  await writeExecution({ rule, now, status, dedupe, evidence, message: safeMessage });
+  if (delivered) {
+    await AutomationRule.updateOne({ _id: rule._id }, { $set: { lastTriggeredAt: new Date(now) } });
+    if (preset === 'server_recovered') await resolveOpenByDedupeKey(rule.serverId, `smart:${rule.serverId}:server_offline:open`);
+    await createNotification({ guildId: rule.serverId, type: `smart_action_${preset}`, priority: preset === 'server_offline' ? 'high' : 'medium', title: rule.name, message: safeMessage, source: `smart_action:${preset}`, action: '/actions', dedupeKey: notificationDedupe, metadata: { preset, evidence, resolutionStatus: preset === 'server_recovered' ? 'resolved' : 'open' } });
+  } else {
+    await createNotification({ guildId: rule.serverId, type: 'smart_action_failure', priority: 'high', title: `${rule.name} failed`, message: 'The configured Discord channel was unavailable after bounded retries.', source: `smart_action:${preset}`, action: '/actions', dedupeKey: `${notificationDedupe}:failure`, metadata: { preset, evidence, resolutionStatus: 'open' } });
+  }
+  return { status, evidence, message: safeMessage, dedupeKey: dedupe };
+}
+
 async function runRuleInternal(rule, discordClient, now = Date.now()) {
   const entitlement = await getForGuild(rule.serverId);
   const requiredFeature = rule.trigger === 'weekly_summary' ? 'automation.advanced' : 'automation.basic';
@@ -139,6 +190,8 @@ async function runRuleInternal(rule, discordClient, now = Date.now()) {
   if (rule.lastTriggeredAt && now - new Date(rule.lastTriggeredAt).getTime() < rule.cooldownMinutes * 60 * 1000) {
     return { status: 'skipped', reason: 'cooldown', dedupeKey: dedupe };
   }
+
+  if (rule.preset) return runSmartPreset(rule, discordClient, now, dedupe);
 
   const events = await TelemetryEvent.find({ serverId: rule.serverId, occurredAt: { $gte: new Date(now - WINDOW_MS * 2), $lt: new Date(now) } }).lean();
   const summary = summarizeTelemetry(events, now);

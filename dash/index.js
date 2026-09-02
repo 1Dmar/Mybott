@@ -30,7 +30,7 @@ const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
 const { summarizeNetwork } = require('../bot/utils/networkIntelligenceEngine');
 const { interpretEvidence, available: aiAvailable } = require('../bot/utils/aiInterpretationEngine');
 const { runEnabledRules } = require('../bot/utils/automationEngine');
-const { PLANS, getPlan, getEntitlement, hasFeature, PLAN_ORDER } = require('../bot/utils/entitlements');
+const { PLANS, getPlan, getEntitlement, hasFeature, requiredPlanFor, PLAN_ORDER } = require('../bot/utils/entitlements');
 const Subscription = require('../bot/Models/Subscription');
 const Payment = require('../bot/Models/Payment');
 const Invoice = require('../bot/Models/Invoice');
@@ -61,6 +61,7 @@ const { buildPublicBaseUrl } = require('./urlPolicy');
 const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
 const { operationIdForRequest } = require('./observability');
 const { mapWithConcurrency } = require('./asyncPool');
+const { getSmartActionPreset, getSmartActionState, validateSmartActionChannel } = require('../bot/utils/smartActions');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -1111,6 +1112,44 @@ app.get('/api/observability', isAuthenticated, async (req, res) => {
     if (!isOwner) return res.status(403).json({ success: false, error: 'owner_required' });
     res.json({ success: true, service: 'promcbot', uptimeSeconds: Math.floor(process.uptime()), mongoReadyState: mongoose.connection.readyState, telemetry24h: await TelemetryEvent.countDocuments({ receivedAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), pluginInstances: await PluginInstance.countDocuments({ revokedAt: null }), automationRules: await AutomationRule.countDocuments({ enabled: true }), auditLogs24h: await AuditLog.countDocuments({ timestamp: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), securityEvents24h: await SecurityEvent.countDocuments({ time: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }), timestamp: new Date().toISOString() });
   } catch (error) { res.status(500).json({ success: false, error: 'observability_failed' }); }
+});
+
+app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const state = await getSmartActionState(req.params.guildId);
+    res.json({ success: true, actions: state.catalog, entitlement: { plan: state.entitlement.plan, features: state.entitlement.features } });
+  } catch (error) { res.status(500).json({ success: false, error: 'smart_actions_unavailable' }); }
+});
+
+app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, requireGuildManager, async (req, res) => {
+  try {
+    const preset = getSmartActionPreset(req.params.preset);
+    if (!preset) return res.status(404).json({ success: false, error: 'smart_action_not_found' });
+    const state = await getSmartActionState(req.params.guildId);
+    if (!hasFeature(state.entitlement, preset.feature)) return res.status(402).json({ success: false, error: 'feature_requires_entitlement', feature: preset.feature, requiredPlan: requiredPlanFor(preset.feature) });
+    const enabled = req.body?.enabled !== false;
+    const existing = state.rules.find(rule => rule.preset === preset.key);
+    if (!enabled) {
+      if (!existing) return res.status(404).json({ success: false, error: 'smart_action_not_enabled' });
+      const rule = await AutomationRule.findOneAndUpdate({ _id: existing._id, serverId: req.params.guildId, preset: preset.key }, { $set: { enabled: false } }, { new: true }).lean();
+      await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'smart_action_disabled', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key });
+      return res.json({ success: true, action: { ...preset, enabled: false, status: 'disabled', ruleId: String(rule._id) } });
+    }
+    const channelId = validateSmartActionChannel(req.body?.channelId || existing?.channelId);
+    if (!channelId) return res.status(400).json({ success: false, error: 'valid_discord_channel_id_required' });
+    let usage = null;
+    if (!existing) {
+      usage = await consumeUsage(req.params.guildId, 'automation');
+      if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', feature: 'automation', used: usage.used, limit: usage.limit, plan: state.entitlement.plan });
+    }
+    const rule = await AutomationRule.findOneAndUpdate(
+      { serverId: req.params.guildId, preset: preset.key },
+      { $set: { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 }, $setOnInsert: { serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 } },
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
+    ).lean();
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } });
+    res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, usage });
+  } catch (error) { res.status(400).json({ success: false, error: 'smart_action_update_failed' }); }
 });
 
 app.post('/api/guilds/:guildId/automation', isAuthenticated, requireGuildManager, async (req, res) => {

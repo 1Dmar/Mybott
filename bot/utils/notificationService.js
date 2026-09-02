@@ -42,4 +42,13 @@ async function resolveNotification(guildId, notificationId) {
   ).lean();
 }
 
-module.exports = { createNotification, listNotifications, markRead, resolveNotification };
+async function resolveOpenByDedupeKey(guildId, dedupeKey) {
+  if (!guildId || !dedupeKey) return null;
+  return Notification.findOneAndUpdate(
+    { guildId, dedupeKey: sanitize(dedupeKey, 180), status: { $ne: 'resolved' } },
+    { $set: { status: 'resolved', resolvedAt: new Date(), readAt: new Date() } },
+    { new: true }
+  ).lean();
+}
+
+module.exports = { createNotification, listNotifications, markRead, resolveNotification, resolveOpenByDedupeKey };
