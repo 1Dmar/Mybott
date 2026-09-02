@@ -5,7 +5,7 @@ const {
 
 const PRIVACY_URL = 'https://promcbot.dev/privacy-policy';
 const TERMS_URL = 'https://promcbot.dev/terms-of-service';
-const SUPPORT_URL = 'https://discord.gg/6FjFYStz5a';
+const SUPPORT_URL = 'https://promcbot.dev/discord';
 
 function formatUpdatedDate(date = new Date()) {
   return new Intl.DateTimeFormat('en-GB', {
@@ -39,7 +39,7 @@ function buildRulesMessages(date = new Date()) {
     'Never share passwords, OAuth tokens, plugin credentials, webhook URLs, API keys, private logs, or personal information in support channels. Protect your server credentials.',
     '',
     '**6. Support Channel**',
-    `Use the **/discord** command or the official [support channels](<${SUPPORT_URL}>) for help, bug reports, and security reports. Do not spam, impersonate staff, or disclose private security reports publicly.`,
+    `Use the official [support channels](<${SUPPORT_URL}>) for help, bug reports, and security reports. Do not spam, impersonate staff, or disclose private security reports publicly.`,
     '',
     '**7. Respect Others**',
     'Treat staff and community members with courtesy and respect. Harassment, threats, discrimination, impersonation, and targeted abuse are not allowed.',
@@ -47,7 +47,7 @@ function buildRulesMessages(date = new Date()) {
     '🔗 **Important links**',
     `• [Discord ToS](<https://discord.com/terms>)\n• [Discord Guidelines](<https://discord.com/guidelines>)\n• [ProMcBot Terms](<${TERMS_URL}>)\n• [Privacy Policy](<${PRIVACY_URL}>)`,
     '',
-    '⚠️ **For help, use the /discord command to join our official support channels.**',
+    '⚠️ **For help, please visit the official support channels.**',
     footer,
   ].join('\n');
 
@@ -64,7 +64,7 @@ function buildRulesMessages(date = new Date()) {
     '',
     'Violations may lead to removal of content, restriction or termination of access, and other remedies available under applicable law.',
     '',
-    `🛡️ **Security reports:** Please use the **/discord** command or the official [support channels](<${SUPPORT_URL}>) and do not publish private vulnerability details before they have been reviewed.`,
+    `🛡️ **Security reports:** Please use the official [support channels](<${SUPPORT_URL}>) and do not publish private vulnerability details before they have been reviewed.`,
     footer,
   ].join('\n');
 

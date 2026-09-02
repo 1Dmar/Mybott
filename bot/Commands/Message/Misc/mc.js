@@ -116,7 +116,7 @@ module.exports = {
         new ButtonBuilder()
           .setLabel("Bot Support")
           .setStyle(ButtonStyle.Link)
-          .setURL("https://discord.gg/6FjFYStz5a"),
+          .setURL("https://discord.gg/1Dmar"),
         new ButtonBuilder()
           .setLabel("Official Website")
           .setStyle(ButtonStyle.Link)

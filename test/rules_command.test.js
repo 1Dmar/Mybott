@@ -11,19 +11,9 @@ test('rules command is listed under Utility', () => {
   assert.match(rulesSource, /category:\s*'Utility'/);
 });
 
-test('rules messages wrap every displayed URL in angle brackets', () => {
-  const urls = [
-    'https://discord.com/terms',
-    'https://discord.com/guidelines',
-    'https://promcbot.dev/terms-of-service',
-    'https://promcbot.dev/privacy-policy',
-    'https://discord.gg/6FjFYStz5a',
-  ];
-
-  for (const url of urls) {
-    assert.equal(rulesSource.includes(`](${url})`), false, `found an embed-enabled link for ${url}`);
-  }
-
+test('rules messages use the website support URL and suppress embeds', () => {
+  assert.match(rulesSource, /const SUPPORT_URL = 'https:\/\/promcbot\.dev\/discord'/);
+  assert.equal(rulesSource.includes('discord.gg'), false, 'rules must not contain a Discord invite URL');
   assert.match(rulesSource, /\[support channels\]\(<\$\{SUPPORT_URL\}>\)/);
   assert.match(rulesSource, /\[Discord ToS\]\(<https:\/\/discord\.com\/terms>\)/);
   assert.match(rulesSource, /\[Discord Guidelines\]\(<https:\/\/discord\.com\/guidelines>\)/);
@@ -32,8 +22,7 @@ test('rules messages wrap every displayed URL in angle brackets', () => {
   assert.match(rulesSource, /\[ProMcBot Terms of Service\]\(<\$\{TERMS_URL\}>\)/);
 });
 
-test('rules messages direct users to the /discord command', () => {
-  assert.match(rulesSource, /Use the \*\*\/discord\*\* command/);
-  assert.match(rulesSource, /use the \/discord command to join/);
-  assert.match(rulesSource, /Security reports:.*\*\*\/discord\*\* command/);
+test('rules messages do not mention a separate /discord command', () => {
+  assert.equal(rulesSource.includes('/discord**'), false);
+  assert.equal(rulesSource.includes('/discord command'), false);
 });
