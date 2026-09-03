@@ -1126,6 +1126,17 @@ app.get('/api/observability', isAuthenticated, async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, error: 'observability_failed' }); }
 });
 
+app.get('/api/guilds/:guildId/text-channels', isAuthenticated, requireGuildManager, async (req, res) => {
+  const client = global.__botClient;
+  const guild = client?.guilds?.cache?.get(req.params.guildId);
+  if (!guild) return res.status(503).json({ success: false, error: 'discord_guild_unavailable', message: 'The bot is not currently connected to this server.' });
+  const channels = [...guild.channels.cache.values()]
+    .filter(channel => !channel.isThread?.() && [0, 5].includes(channel.type) && channel.viewable !== false)
+    .sort((left, right) => (Number(left.position || 0) - Number(right.position || 0)) || String(left.name).localeCompare(String(right.name)))
+    .map(channel => ({ id: String(channel.id), name: String(channel.name || channel.id), type: channel.type === 5 ? 'announcement' : 'text', category: channel.parent?.name || null }));
+  res.json({ success: true, channels });
+});
+
 app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const state = await getSmartActionState(req.params.guildId);
@@ -1150,6 +1161,11 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
     }
     const channelId = validateSmartActionChannel(req.body?.channelId || existing?.channelId);
     if (!channelId) return res.status(400).json({ success: false, error: 'valid_discord_channel_id_required' });
+    const discordGuild = global.__botClient?.guilds?.cache?.get(req.params.guildId);
+    const selectedChannel = discordGuild?.channels?.cache?.get(channelId);
+    if (!selectedChannel || selectedChannel.isThread?.() || ![0, 5].includes(selectedChannel.type) || selectedChannel.viewable === false) {
+      return res.status(400).json({ success: false, error: 'text_channel_not_found', message: 'Choose a visible text room from this server.' });
+    }
     let replacedAction = null;
     if (!existing?.enabled) {
       const enabledActions = state.rules

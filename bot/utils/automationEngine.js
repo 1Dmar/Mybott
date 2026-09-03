@@ -204,7 +204,7 @@ async function runRuleInternal(rule, discordClient, now = Date.now()) {
     return { status: 'skipped', reason: 'cooldown', dedupeKey: dedupe };
   }
 
-  if (rule.preset) return runSmartPreset(rule, discordClient, now, dedupe);
+  if (rule.preset && ['server_offline', 'server_recovered', 'telemetry_delayed', 'first_player', 'player_join', 'player_leave', 'player_count_high', 'player_count_low'].includes(rule.preset)) return runSmartPreset(rule, discordClient, now, dedupe);
 
   const events = await TelemetryEvent.find({ serverId: rule.serverId, occurredAt: { $gte: new Date(now - WINDOW_MS * 2), $lt: new Date(now) } }).lean();
   const summary = summarizeTelemetry(events, now);
