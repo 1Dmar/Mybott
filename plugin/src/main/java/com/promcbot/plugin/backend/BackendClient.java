@@ -4,6 +4,7 @@ import com.promcbot.plugin.telemetry.TelemetryEvent;
 import com.promcbot.plugin.telemetry.TelemetryQueue;
 
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -31,6 +32,8 @@ public final class BackendClient {
     private final String protocolVersion;
     private final AtomicInteger consecutiveFailures = new AtomicInteger();
     private volatile boolean online;
+    private volatile int lastStatusCode;
+    private volatile String lastError = "never contacted";
 
     public BackendClient(String baseUrl, String serverId, String instanceId, String accessToken,
                          String signingSecret, String protocolVersion, TelemetryQueue queue) {
@@ -92,6 +95,8 @@ public final class BackendClient {
 
     public boolean isOnline() { return online; }
     public int consecutiveFailures() { return consecutiveFailures.get(); }
+    public int lastStatusCode() { return lastStatusCode; }
+    public String lastError() { return lastError; }
 
     private CompletableFuture<Boolean> sendAsync(final String path, final String method, final String body) {
         return CompletableFuture.supplyAsync(() -> {
@@ -124,14 +129,23 @@ public final class BackendClient {
                 }
                 int status = connection.getResponseCode();
                 InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
-                if (stream != null) stream.close();
+                String response = stream == null ? "" : readResponse(stream);
+                lastStatusCode = status;
                 boolean ok = status >= 200 && status < 300;
                 online = ok;
-                if (ok) consecutiveFailures.set(0); else consecutiveFailures.incrementAndGet();
+                if (ok) {
+                    consecutiveFailures.set(0);
+                    lastError = "";
+                } else {
+                    consecutiveFailures.incrementAndGet();
+                    lastError = "HTTP " + status + (response.isEmpty() ? "" : ": " + response);
+                }
                 return ok;
             } catch (Exception error) {
                 online = false;
                 consecutiveFailures.incrementAndGet();
+                lastStatusCode = 0;
+                lastError = error.getClass().getSimpleName() + ": " + String.valueOf(error.getMessage());
                 return false;
             } finally {
                 if (connection != null) connection.disconnect();
@@ -150,6 +164,19 @@ public final class BackendClient {
     private static String require(String value, String field) {
         if (value == null || value.trim().isEmpty()) throw new IllegalArgumentException(field + " is required");
         return value;
+    }
+
+    private static String readResponse(InputStream stream) throws java.io.IOException {
+        try (InputStream input = stream; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[256];
+            int total = 0;
+            int read;
+            while (total < 2048 && (read = input.read(buffer, 0, Math.min(buffer.length, 2048 - total))) != -1) {
+                output.write(buffer, 0, read);
+                total += read;
+            }
+            return new String(output.toByteArray(), StandardCharsets.UTF_8).replaceAll("\\s+", " ").trim();
+        }
     }
 
     private static String batchJson(List<TelemetryEvent> events) {

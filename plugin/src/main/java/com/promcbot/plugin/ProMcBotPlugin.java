@@ -87,8 +87,13 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
         // the dashboard wait for the first scheduled minute before showing evidence.
         captureSnapshot();
         if (backend != null) {
-            backend.refreshCapabilities().thenAccept(ok -> entitlementAvailable = ok);
-            backend.sendHeartbeat(lastOnlineCount);
+            backend.refreshCapabilities().thenAccept(ok -> {
+                entitlementAvailable = ok;
+                if (!ok) getLogger().warning("Backend capability check failed: " + backend.lastError());
+            });
+            backend.sendHeartbeat(lastOnlineCount).thenAccept(ok -> {
+                if (!ok) getLogger().warning("Backend heartbeat failed: " + backend.lastError());
+            });
         }
         Bukkit.getPluginManager().registerEvents(this, this);
         if (getCommand("promcbot") != null) getCommand("promcbot").setExecutor(this);
@@ -267,6 +272,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
                     + ", durable=" + lastKnownSpoolCount
                     + ", dropped=" + (telemetryQueue == null ? 0 : telemetryQueue.dropped())
                     + ", backend=" + (backend != null && backend.isOnline() ? "online" : "offline")
+                    + (backend == null ? "" : ", backend-error=" + (backend.lastError().isEmpty() ? "none" : backend.lastError()))
                     + ", capabilities=" + (entitlementAvailable ? "available" : "degraded"));
             return true;
         }
