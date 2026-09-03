@@ -108,6 +108,8 @@ public final class BackendClient {
                 connection.setConnectTimeout(5000);
                 connection.setReadTimeout(8000);
                 connection.setUseCaches(false);
+                connection.setRequestProperty("User-Agent", "ProMcBot-Plugin/0.1.0");
+                connection.setRequestProperty("Accept", "application/json");
                 connection.setRequestProperty("Authorization", "Bearer " + accessToken);
                 connection.setRequestProperty("X-ProMcBot-Server", serverId);
                 connection.setRequestProperty("X-ProMcBot-Instance", instanceId);
