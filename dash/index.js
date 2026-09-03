@@ -58,6 +58,7 @@ const { renderPublicProfileCard } = require('./publicProfileCard');
 const { buildTelemetryDocuments, buildTelemetryBulkOperations, summarizeTelemetryWrite, MAX_EVENTS } = require('./telemetryIngest');
 const { isAllowedCorsOrigin, isSameOriginMutation } = require('./securityPolicy');
 const { buildPublicBaseUrl } = require('./urlPolicy');
+const { getTrustpilotStats } = require('./trustpilotStats');
 const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
 const { operationIdForRequest } = require('./observability');
 const { mapWithConcurrency } = require('./asyncPool');
@@ -331,6 +332,11 @@ async function requireGuildManager(req, res, next) {
 const dashDir = path.join(__dirname, 'dashboard');
 app.use('/dashboard', express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
+
+app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }), (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+  res.json(getTrustpilotStats());
+});
 
 // ── Routes ───────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));

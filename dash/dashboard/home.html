@@ -7,6 +7,7 @@
   <title>ProMcBot — Next-Gen Minecraft Integration</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/dashboard/trustpilot-review-widget.css">
   <style>
     body {
       background: var(--bg);
@@ -22,8 +23,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 2.5rem;
-      height: 72px;
+      gap: 16px;
+      min-height: 72px;
+      padding: 12px clamp(16px, 4vw, 40px);
       background: rgba(var(--surface-rgb, 255, 255, 255), 0.85);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -32,6 +34,7 @@
     
     .logo {
       display: flex;
+      min-width: 0;
       align-items: center;
       gap: 12px;
       font-size: 22px;
@@ -40,7 +43,14 @@
       text-decoration: none;
     }
     .logo img { width: 40px; height: 40px; border-radius: 10px; }
-    .logo span { background: linear-gradient(135deg, #FF512F 0%, #F09819 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
     .hero {
       flex: 1;
@@ -48,14 +58,16 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      width: 100%;
+      box-sizing: border-box;
       text-align: center;
-      padding: 100px 20px;
+      padding: clamp(72px, 12vw, 128px) clamp(16px, 5vw, 40px);
       position: relative;
     }
     .hero-glow {
       position: absolute;
-      width: 600px;
-      height: 600px;
+      width: min(600px, 100vw);
+      height: min(600px, 100vw);
       background: radial-gradient(circle, rgba(255, 81, 47, 0.1) 0%, transparent 70%);
       top: 50%;
       left: 50%;
@@ -63,7 +75,8 @@
       pointer-events: none;
     }
     h1 {
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      max-width: 100%;
+      font-size: clamp(2.25rem, 7vw, 4.5rem);
       font-weight: 900;
       line-height: 1.1;
       color: var(--text);
@@ -71,13 +84,14 @@
     }
     h1 span { color: #FF512F; }
     p {
-      font-size: 18px;
+      width: min(100%, 650px);
+      font-size: clamp(1rem, 2.2vw, 1.125rem);
       color: var(--text-secondary);
       max-width: 650px;
       line-height: 1.6;
       margin-bottom: 40px;
     }
-    .btn-group { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .btn-group { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; width: min(100%, 620px); }
     .btn-primary {
       padding: 14px 32px;
       background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
@@ -106,16 +120,17 @@
 
     .features {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      max-width: 1200px;
-      width: 100%;
-      padding: 60px 20px;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: clamp(16px, 2.5vw, 24px);
+      width: min(100% - 32px, 1200px);
+      box-sizing: border-box;
+      padding: clamp(32px, 6vw, 60px) 0;
       margin: 0 auto;
     }
     .feature-card {
+      min-width: 0;
       background: var(--surface);
-      padding: 32px;
+      padding: clamp(22px, 3vw, 32px);
       border-radius: 20px;
       border: 1px solid var(--border);
       transition: 0.3s;
@@ -125,11 +140,71 @@
     .feature-card h3 { margin-bottom: 12px; font-weight: 700; }
     
     footer {
-      padding: 40px 20px;
+      padding: 32px clamp(16px, 5vw, 40px);
       text-align: center;
       border-top: 1px solid var(--border);
       color: var(--text-muted);
       font-size: 14px;
+    }
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    #navActions {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    #navActions > a, #navActions > div {
+      max-width: 100%;
+    }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      max-width: min(100%, 360px);
+    }
+    .nav-user-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .nav-user-avatar {
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      border: 2px solid #FF512F;
+      border-radius: 50%;
+    }
+    @media (max-width: 700px) {
+      .landing-nav { min-height: 64px; padding-block: 10px; }
+      .logo { gap: 8px; font-size: 18px; }
+      .logo img { width: 34px; height: 34px; }
+      #navActions .btn-secondary { padding-inline: 14px !important; }
+      .nav-user { gap: 8px; max-width: 52vw; }
+      .nav-user-name { max-width: calc(52vw - 52px); }
+      .hero { padding-block: clamp(56px, 16vw, 88px); }
+      h1 { line-height: 1.08; margin-bottom: 18px; }
+      .hero p { margin-bottom: 28px; }
+      .btn-group { gap: 12px; }
+      .btn-primary, .btn-secondary { justify-content: center; width: min(100%, 320px); box-sizing: border-box; }
+      .features { width: min(100% - 24px, 560px); padding-block: 28px 44px; }
+      .feature-card { border-radius: 16px; }
+      footer p { margin-inline: auto; max-width: 100%; line-height: 1.7; }
+    }
+    @media (min-width: 701px) and (max-width: 1024px) {
+      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .feature-card:last-child { grid-column: 1 / -1; }
+    }
+    @media (max-width: 380px) {
+      .logo span { max-width: 120px; }
+      #navActions .btn-secondary { font-size: 12px !important; padding-inline: 10px !important; }
+      .nav-user { gap: 6px; max-width: 54vw; }
+      .nav-user-name { display: none; }
+      .hero h1 { font-size: clamp(2rem, 11vw, 2.5rem); }
     }
   </style>
 </head>
@@ -172,6 +247,24 @@
     </div>
   </section>
 
+  <section class="trustpilot-section" aria-labelledby="trustpilot-heading">
+    <article class="trustpilot-card" data-trustpilot-widget data-state="loading">
+      <div>
+        <div class="trustpilot-kicker" data-trustpilot-status>Reviews on Trustpilot</div>
+        <h2 id="trustpilot-heading">A reputation you can verify.</h2>
+        <p class="trustpilot-description">See what ProMcBot users are saying on our public Trustpilot profile. We show review statistics only when they come from a permitted, configured source.</p>
+        <div class="trustpilot-rating" aria-describedby="trustpilot-rating-label">
+          <strong class="trustpilot-score" data-trustpilot-value>—</strong>
+          <span class="trustpilot-stars" data-trustpilot-stars aria-hidden="true"></span>
+          <span class="trustpilot-count" data-trustpilot-count>No review statistics are configured yet</span>
+          <span class="trustpilot-rating-label" id="trustpilot-rating-label" data-trustpilot-rating-label>Trustpilot review statistics are not available yet.</span>
+        </div>
+        <div class="trustpilot-updated" data-trustpilot-updated>Statistics will appear here when a permitted source is connected.</div>
+      </div>
+      <a class="btn-secondary trustpilot-cta" data-trustpilot-link href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">View on Trustpilot <span aria-hidden="true">↗</span></a>
+    </article>
+  </section>
+
   <footer>
     <p><a href="/privacy-policy">Privacy Policy</a> <span aria-hidden="true">·</span> <a href="/terms-of-service">Terms of Service</a></p>
     <p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p>
@@ -179,7 +272,14 @@
 
   <script>
     document.getElementById('year').innerText = new Date().getFullYear();
+    const trustpilotScript = document.createElement('script');
+    trustpilotScript.src = '/dashboard/trustpilot-review-widget.js';
+    trustpilotScript.defer = true;
+    document.head.appendChild(trustpilotScript);
     
+    const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
+    const safeAvatar = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && new Set(['cdn.discordapp.com', 'media.discordapp.net']).has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
+
     // Check if logged in to update navbar
     fetch('/callback/check/userData')
       .then(res => res.json())
@@ -187,9 +287,9 @@
         if (data.authenticated) {
           const nav = document.getElementById('navActions');
           nav.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px">
-              <span style="font-size:14px; font-weight:600">${data.user.global_name}</span>
-              <a href="/dashboard"><img src="${data.user.avatar}" style="width:36px; height:36px; border-radius:50%; border:2px solid #FF512F"></a>
+            <div class="nav-user">
+              <span class="nav-user-name" style="font-size:14px; font-weight:600">${escapeHTML(data.user.global_name || data.user.username || 'User')}</span>
+              <a href="/dashboard"><img class="nav-user-avatar" src="${escapeHTML(safeAvatar(data.user.avatar))}" alt="Account avatar"></a>
             </div>
           `;
         }
