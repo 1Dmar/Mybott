@@ -61,6 +61,7 @@ const { buildPublicBaseUrl } = require('./urlPolicy');
 const { getSessionSecret, sanitizeDiscordProfile } = require('./authPolicy');
 const { operationIdForRequest } = require('./observability');
 const { mapWithConcurrency } = require('./asyncPool');
+const { getTrustpilotStats } = require('./trustpilotStats');
 const { getSmartActionPreset, getSmartActionState, validateSmartActionChannel } = require('../bot/utils/smartActions');
 
 // ── Models ──────────────────────────────────────────────────────
@@ -334,6 +335,11 @@ async function requireGuildManager(req, res, next) {
 const dashDir = path.join(__dirname, 'dashboard');
 app.use('/dashboard', express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
+
+app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }), (req, res) => {
+  res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
+  res.json(getTrustpilotStats());
+});
 
 // ── Routes ───────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));

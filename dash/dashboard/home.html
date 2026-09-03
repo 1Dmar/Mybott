@@ -7,6 +7,7 @@
   <title>ProMcBot — Next-Gen Minecraft Integration</title>
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/dashboard/trustpilot-review-widget.css">
   <style>
     body {
       background: var(--bg);
@@ -172,6 +173,24 @@
     </div>
   </section>
 
+  <section class="trustpilot-section" aria-labelledby="trustpilot-heading">
+    <article class="trustpilot-card" data-trustpilot-widget data-state="loading">
+      <div>
+        <div class="trustpilot-kicker" data-trustpilot-status>Reviews on Trustpilot</div>
+        <h2 id="trustpilot-heading">A reputation you can verify.</h2>
+        <p class="trustpilot-description">See what ProMcBot users are saying on our public Trustpilot profile. We show review statistics only when they come from a permitted, configured source.</p>
+        <div class="trustpilot-rating" aria-describedby="trustpilot-rating-label">
+          <strong class="trustpilot-score" data-trustpilot-value>—</strong>
+          <span class="trustpilot-stars" data-trustpilot-stars aria-hidden="true"></span>
+          <span class="trustpilot-count" data-trustpilot-count>No review statistics are configured yet</span>
+          <span class="trustpilot-rating-label" id="trustpilot-rating-label" data-trustpilot-rating-label>Trustpilot review statistics are not available yet.</span>
+        </div>
+        <div class="trustpilot-updated" data-trustpilot-updated>Statistics will appear here when a permitted source is connected.</div>
+      </div>
+      <a class="btn-secondary trustpilot-cta" data-trustpilot-link href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">View on Trustpilot <span aria-hidden="true">↗</span></a>
+    </article>
+  </section>
+
   <footer>
     <p><a href="/privacy-policy">Privacy Policy</a> <span aria-hidden="true">·</span> <a href="/terms-of-service">Terms of Service</a></p>
     <p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p>
@@ -179,6 +198,10 @@
 
   <script>
     document.getElementById('year').innerText = new Date().getFullYear();
+    const trustpilotScript = document.createElement('script');
+    trustpilotScript.src = '/dashboard/trustpilot-review-widget.js';
+    trustpilotScript.defer = true;
+    document.head.appendChild(trustpilotScript);
     
     const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
     const safeAvatar = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && new Set(['cdn.discordapp.com', 'media.discordapp.net']).has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
