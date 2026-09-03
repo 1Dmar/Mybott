@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const dashboardSource = fs.readFileSync(path.join(__dirname, '../dash/index.js'), 'utf8');
+const actionsPageSource = fs.readFileSync(path.join(__dirname, '../dash/dashboard/pages/actions.html'), 'utf8');
 
 test('Smart Action enablement uses explicit create/update persistence', () => {
   assert.match(dashboardSource, /const ruleData = \{/);
@@ -14,12 +15,20 @@ test('Smart Action enablement uses explicit create/update persistence', () => {
   assert.doesNotMatch(dashboardSource, /\{ upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true \}/);
 });
 
-test('Smart Action audit failure does not turn a saved action into a failed request', () => {
-  assert.match(dashboardSource, /recordAudit\(\{ actorId: req\.user\.id, guildId: req\.params\.guildId, action: existing \? 'smart_action_enabled' : 'smart_action_created'[\s\S]*?\}\)\.catch\(/);
+test('Smart Actions allow three active presets and replace the oldest on the fourth', () => {
+  assert.match(dashboardSource, /const enabledActions = state\.rules/);
+  assert.match(dashboardSource, /if \(enabledActions\.length >= 3\)/);
+  assert.match(dashboardSource, /replacedAction = oldest\.preset/);
+  assert.match(dashboardSource, /enabled: false/);
+  assert.match(dashboardSource, /replacedAction \}/);
 });
 
-test('Smart Action persistence failures refund newly consumed quota', () => {
-  assert.match(dashboardSource, /let usageConsumed = false;/);
-  assert.match(dashboardSource, /usageConsumed = true;/);
-  assert.match(dashboardSource, /if \(usageConsumed\) await releaseUsage\(req\.params\.guildId, 'automation'\)/);
+test('Smart Action replacement is restored if the new action cannot be saved', () => {
+  assert.match(dashboardSource, /let replacedRule = null;/);
+  assert.match(dashboardSource, /if \(replacedRule\) await AutomationRule\.updateOne/);
+});
+
+test('Smart Actions dashboard displays a replacement warning', () => {
+  assert.match(actionsPageSource, /result\.replacedAction/);
+  assert.match(actionsPageSource, /Limit reached:/);
 });

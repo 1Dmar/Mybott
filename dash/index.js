@@ -1128,7 +1128,7 @@ app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildManag
 });
 
 app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, requireGuildManager, async (req, res) => {
-  let usageConsumed = false;
+  let replacedRule = null;
   try {
     const preset = getSmartActionPreset(req.params.preset);
     if (!preset) return res.status(404).json({ success: false, error: 'smart_action_not_found' });
@@ -1144,11 +1144,17 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
     }
     const channelId = validateSmartActionChannel(req.body?.channelId || existing?.channelId);
     if (!channelId) return res.status(400).json({ success: false, error: 'valid_discord_channel_id_required' });
-    let usage = null;
-    if (!existing) {
-      usage = await consumeUsage(req.params.guildId, 'automation');
-      if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', message: `Your ${state.entitlement.name} plan allows ${usage.limit} automation actions per month; ${usage.used} are already in use.`, feature: 'automation', used: usage.used, limit: usage.limit, plan: state.entitlement.plan });
-      usageConsumed = true;
+    let replacedAction = null;
+    if (!existing?.enabled) {
+      const enabledActions = state.rules
+        .filter(rule => rule.enabled && rule.preset)
+        .sort((left, right) => new Date(left.updatedAt || left.createdAt || 0) - new Date(right.updatedAt || right.createdAt || 0));
+      if (enabledActions.length >= 3) {
+        const oldest = enabledActions[0];
+        replacedRule = oldest;
+        await AutomationRule.updateOne({ _id: oldest._id, serverId: req.params.guildId }, { $set: { enabled: false } });
+        replacedAction = oldest.preset;
+      }
     }
     const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 };
     const rule = existing
@@ -1156,9 +1162,9 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
       : await AutomationRule.create({ ...ruleData, serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 });
     if (!rule) return res.status(409).json({ success: false, error: 'smart_action_save_conflict' });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } }).catch(error => console.error('[smart action audit] failed:', error.message));
-    res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, usage });
+    res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, replacedAction });
   } catch (error) {
-    if (usageConsumed) await releaseUsage(req.params.guildId, 'automation').catch(releaseError => console.error('[smart action usage refund] failed:', releaseError.message));
+    if (replacedRule) await AutomationRule.updateOne({ _id: replacedRule._id, serverId: req.params.guildId }, { $set: { enabled: true } }).catch(restoreError => console.error('[smart action restore] failed:', restoreError.message));
     console.error('[smart action update] failed:', error.message);
     res.status(400).json({ success: false, error: 'smart_action_update_failed', message: error.name === 'ValidationError' ? 'The Smart Action data is invalid.' : 'The Smart Action could not be saved. Please try again.' });
   }
