@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { SMART_ACTION_PRESETS, getSmartActionPreset, smartActionCatalog, validateSmartActionChannel } = require('../bot/utils/smartActions');
+const AutomationRule = require('../bot/Models/AutomationRule');
 
  test('Smart Actions exposes deterministic P0 presets without a duplicate engine', () => {
   assert.deepEqual(SMART_ACTION_PRESETS.map(preset => preset.key), ['server_offline', 'server_recovered', 'telemetry_delayed', 'first_player']);
@@ -18,6 +19,25 @@ test('Smart Action catalog reuses entitlement feature access and existing rules'
   assert.equal(offline.ruleId, 'rule-1');
   assert.equal(offline.available, true);
   assert.equal(recovered.status, 'available');
+});
+
+test('all Smart Action presets satisfy AutomationRule validation constraints', () => {
+  for (const preset of SMART_ACTION_PRESETS) {
+    const rule = new AutomationRule({
+      serverId: '123456789012345678',
+      name: preset.name,
+      enabled: true,
+      trigger: preset.trigger,
+      preset: preset.key,
+      thresholdPercent: -5,
+      action: 'discord_message',
+      channelId: '123456789012345678',
+      messageTemplate: preset.defaultMessage,
+      cooldownMinutes: 60,
+      createdBy: 'user',
+    });
+    assert.equal(rule.validateSync(), undefined, `${preset.key} should produce valid rule data`);
+  }
 });
 
 test('Smart Action channel validation rejects unsafe or malformed identifiers', () => {

@@ -1156,7 +1156,9 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
         replacedAction = oldest.preset;
       }
     }
-    const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 };
+    // AutomationRule enforces a minimum cooldown of 60 minutes for every preset.
+    // Using 10 minutes here caused ValidationError for the first three Smart Actions.
+    const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: 60 };
     const rule = existing
       ? await AutomationRule.findOneAndUpdate({ _id: existing._id, serverId: req.params.guildId, preset: preset.key }, { $set: ruleData }, { new: true, runValidators: true }).lean()
       : await AutomationRule.create({ ...ruleData, serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 });
