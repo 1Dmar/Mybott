@@ -39,7 +39,7 @@ const Report = require('../bot/Models/Report');
 const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
-const { getForGuild, ensureFreeSubscription, consumeUsage } = require('../bot/utils/entitlementService');
+const { getForGuild, ensureFreeSubscription, consumeUsage, releaseUsage } = require('../bot/utils/entitlementService');
 const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
@@ -1128,6 +1128,7 @@ app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildManag
 });
 
 app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, requireGuildManager, async (req, res) => {
+  let usageConsumed = false;
   try {
     const preset = getSmartActionPreset(req.params.preset);
     if (!preset) return res.status(404).json({ success: false, error: 'smart_action_not_found' });
@@ -1146,7 +1147,8 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
     let usage = null;
     if (!existing) {
       usage = await consumeUsage(req.params.guildId, 'automation');
-      if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', feature: 'automation', used: usage.used, limit: usage.limit, plan: state.entitlement.plan });
+      if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', message: `Your ${state.entitlement.name} plan allows ${usage.limit} automation actions per month; ${usage.used} are already in use.`, feature: 'automation', used: usage.used, limit: usage.limit, plan: state.entitlement.plan });
+      usageConsumed = true;
     }
     const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 };
     const rule = existing
@@ -1156,6 +1158,7 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } }).catch(error => console.error('[smart action audit] failed:', error.message));
     res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, usage });
   } catch (error) {
+    if (usageConsumed) await releaseUsage(req.params.guildId, 'automation').catch(releaseError => console.error('[smart action usage refund] failed:', releaseError.message));
     console.error('[smart action update] failed:', error.message);
     res.status(400).json({ success: false, error: 'smart_action_update_failed', message: error.name === 'ValidationError' ? 'The Smart Action data is invalid.' : 'The Smart Action could not be saved. Please try again.' });
   }

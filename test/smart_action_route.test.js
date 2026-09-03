@@ -17,3 +17,9 @@ test('Smart Action enablement uses explicit create/update persistence', () => {
 test('Smart Action audit failure does not turn a saved action into a failed request', () => {
   assert.match(dashboardSource, /recordAudit\(\{ actorId: req\.user\.id, guildId: req\.params\.guildId, action: existing \? 'smart_action_enabled' : 'smart_action_created'[\s\S]*?\}\)\.catch\(/);
 });
+
+test('Smart Action persistence failures refund newly consumed quota', () => {
+  assert.match(dashboardSource, /let usageConsumed = false;/);
+  assert.match(dashboardSource, /usageConsumed = true;/);
+  assert.match(dashboardSource, /if \(usageConsumed\) await releaseUsage\(req\.params\.guildId, 'automation'\)/);
+});

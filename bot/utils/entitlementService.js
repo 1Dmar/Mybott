@@ -27,8 +27,18 @@ async function consumeUsage(guildId, feature, amount = 1, now = new Date()) {
   return { allowed: true, used: updated.used, limit, period, entitlement };
 }
 
+async function releaseUsage(guildId, feature, amount = 1, now = new Date()) {
+  const period = periodKey(now);
+  const updated = await UsageCounter.findOneAndUpdate(
+    { guildId, period, feature, used: { $gte: amount } },
+    { $inc: { used: -amount }, $set: { updatedAt: now } },
+    { new: true }
+  ).lean();
+  return updated?.used ?? 0;
+}
+
 async function ensureFreeSubscription(guildId) {
   return Subscription.findOneAndUpdate({ guildId }, { $setOnInsert: { guildId, plan: 'free', status: 'active', provider: 'none', renewalState: 'not_applicable' } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
 }
 
-module.exports = { periodKey, getForGuild, requireFeature, consumeUsage, ensureFreeSubscription, getPlan };
+module.exports = { periodKey, getForGuild, requireFeature, consumeUsage, releaseUsage, ensureFreeSubscription, getPlan };
