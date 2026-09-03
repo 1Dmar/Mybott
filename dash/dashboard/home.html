@@ -1,278 +1,640 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ProMcBot — The ultimate bridge between Discord and Minecraft. Manage, monitor, and grow your community.">
-  <title>ProMcBot — Next-Gen Minecraft Integration</title>
+  <meta name="description" content="ProMcBot connects Minecraft server visibility with the Discord community that manages it.">
+  <title>ProMcBot — Minecraft and Discord, in sync</title>
+  <link rel="preconnect" href="https://unpkg.com">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
   <link rel="stylesheet" href="/dashboard/trustpilot-review-widget.css">
   <style>
-    body {
-      background: var(--bg);
-      min-height: 100vh;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      overflow-x: hidden;
-      font-family: 'Inter', sans-serif;
+    :root {
+      --landing-ink: #07101f;
+      --landing-surface: #ffffff;
+      --landing-surface-soft: #f5f7fb;
+      --landing-line: rgba(15, 23, 42, 0.11);
+      --landing-muted: #64748b;
+      --landing-accent: #ff6a2b;
+      --landing-accent-deep: #e45119;
+      --landing-accent-soft: rgba(255, 106, 43, 0.12);
+      --landing-navy: #0b1426;
+      --landing-navy-soft: #101d34;
+      --landing-shadow: 0 24px 70px rgba(6, 16, 34, 0.12);
     }
+
+    body.dark {
+      --landing-surface: #121a2c;
+      --landing-surface-soft: #182338;
+      --landing-line: rgba(148, 163, 184, 0.17);
+      --landing-muted: #9aa9bf;
+      --landing-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      min-width: 320px;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255, 106, 43, 0.07), transparent 31rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a:focus-visible,
+    button:focus-visible,
+    .feature-card:focus-visible,
+    details:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--landing-accent) 72%, white 28%);
+      outline-offset: 4px;
+    }
+
+    .landing-shell { width: min(100% - 32px, 1180px); margin: 0 auto; }
+
     .landing-nav {
       position: sticky;
       top: 0;
       z-index: 100;
+      border-bottom: 1px solid var(--landing-line);
+      background: color-mix(in srgb, var(--bg) 84%, transparent);
+      backdrop-filter: blur(16px);
+    }
+
+    .landing-nav-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      width: 100%;
-      min-height: 72px;
-      padding: 12px clamp(16px, 4vw, 48px);
-      background: rgba(var(--surface-rgb, 255, 255, 255), 0.85);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
+      gap: 22px;
+      width: min(100% - 32px, 1180px);
+      min-height: 74px;
+      margin: 0 auto;
     }
-    .dark .landing-nav { background: rgba(15, 23, 42, 0.85); }
-    
+
     .logo {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      min-width: 0;
-      flex: 1 1 auto;
-      font-size: 22px;
-      font-weight: 800;
+      flex: 0 0 auto;
+      gap: 11px;
       color: var(--text);
+      font-size: 20px;
+      font-weight: 850;
+      letter-spacing: -.035em;
       text-decoration: none;
     }
-    .logo img { width: 40px; height: 40px; border-radius: 10px; }
-    .logo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: linear-gradient(135deg, #FF512F 0%, #F09819 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    #navActions { display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
-    #navActions > * { max-width: 100%; }
-    #navActions > div { display: flex; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
 
-    .hero {
-      flex: 1;
+    .logo img {
+      display: block;
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      box-shadow: 0 6px 18px rgba(255, 106, 43, 0.2);
+    }
+
+    .logo span { color: var(--text); }
+    .logo em { color: var(--landing-accent); font-style: normal; }
+
+    .nav-links {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: clamp(14px, 2.5vw, 28px);
+      margin-left: auto;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: color 160ms ease;
+    }
+
+    .nav-links a:hover { color: var(--landing-accent); }
+
+    #navActions { display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+    #navActions > div { display: flex; align-items: center; gap: 12px; }
+    #navActions > div > span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .landing-button {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: min(100%, 1200px);
-      margin: 0 auto;
-      text-align: center;
-      padding: clamp(72px, 12vw, 144px) clamp(16px, 4vw, 40px) clamp(56px, 8vw, 96px);
-      position: relative;
+      gap: 8px;
+      min-height: 44px;
+      padding: 11px 18px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1;
+      text-decoration: none;
+      transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
     }
-    .hero-glow {
-      position: absolute;
-      width: min(600px, 90vw);
-      height: min(600px, 90vw);
-      background: radial-gradient(circle, rgba(255, 81, 47, 0.1) 0%, transparent 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+
+    .landing-button:hover { transform: translateY(-2px); }
+    .landing-button-primary {
+      background: var(--landing-accent);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(255, 106, 43, 0.22);
     }
-    h1 {
-      width: 100%;
-      max-width: 900px;
-      font-size: clamp(2.2rem, 6vw, 4.5rem);
-      font-weight: 900;
-      line-height: 1.1;
+    .landing-button-primary:hover { background: var(--landing-accent-deep); box-shadow: 0 16px 30px rgba(255, 106, 43, 0.27); }
+    .landing-button-secondary {
+      border-color: var(--landing-line);
+      background: var(--landing-surface);
       color: var(--text);
-      margin: 0 auto 24px;
+    }
+    .landing-button-secondary:hover { border-color: color-mix(in srgb, var(--landing-accent) 55%, var(--landing-line)); background: var(--landing-surface-soft); }
+    .landing-button-quiet { min-height: 38px; padding: 9px 14px; font-size: 12px; }
+
+    .hero-section { padding: clamp(64px, 9vw, 112px) 0 74px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(360px, .98fr);
+      align-items: center;
+      gap: clamp(42px, 7vw, 92px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 18px;
+      color: var(--landing-accent);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before { width: 24px; height: 1px; background: currentColor; content: ''; }
+
+    .hero-copy h1 {
+      max-width: 700px;
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(2.65rem, 6.3vw, 5.3rem);
+      font-weight: 900;
+      letter-spacing: -.075em;
+      line-height: .98;
       text-wrap: balance;
     }
-    h1 span { color: #FF512F; }
-    .hero > p {
-      width: min(100%, 650px);
-      font-size: clamp(16px, 2vw, 18px);
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin: 0 auto 40px;
-      text-wrap: pretty;
-    }
-    .btn-group { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; width: 100%; }
-    .btn-group > a { min-width: 180px; justify-content: center; }
-    .btn-primary {
-      padding: 14px 32px;
-      background: linear-gradient(135deg, #FF512F 0%, #F09819 100%);
-      color: white;
-      border-radius: 12px;
-      font-weight: 700;
-      text-decoration: none;
-      box-shadow: 0 10px 20px rgba(255, 81, 47, 0.3);
-      transition: 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255, 81, 47, 0.4); }
-    .btn-secondary {
-      padding: 14px 32px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 12px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: 0.3s;
-    }
-    .btn-secondary:hover { background: var(--surface-2); }
 
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
-      gap: clamp(16px, 2.5vw, 24px);
-      width: min(100% - 32px, 1200px);
-      padding: 24px 0 72px;
-      margin: 0 auto;
+    .hero-copy h1 span { color: var(--landing-accent); }
+    .hero-copy > p { max-width: 590px; margin: 25px 0 0; color: var(--text-secondary); font-size: clamp(16px, 2vw, 18px); line-height: 1.7; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .hero-note { display: flex; align-items: center; gap: 8px; margin: 19px 0 0; color: var(--landing-muted); font-size: 12px; }
+    .hero-note i { color: var(--landing-accent); font-size: 16px; }
+
+    .product-preview-wrap { position: relative; min-width: 0; }
+    .product-preview-wrap::before {
+      position: absolute;
+      top: 10%;
+      right: -8%;
+      width: 80%;
+      height: 78%;
+      border-radius: 50%;
+      background: rgba(255, 106, 43, 0.13);
+      filter: blur(50px);
+      content: '';
+      pointer-events: none;
     }
+
+    .product-preview {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--landing-line);
+      border-radius: 22px;
+      background: var(--landing-surface);
+      box-shadow: var(--landing-shadow);
+    }
+
+    .preview-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 17px; border-bottom: 1px solid var(--landing-line); background: var(--landing-surface-soft); }
+    .preview-brand { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--text); font-size: 12px; font-weight: 800; }
+    .preview-brand i { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: var(--landing-accent-soft); color: var(--landing-accent); font-size: 16px; }
+    .preview-topbar small { color: var(--landing-muted); font-size: 10px; font-weight: 750; }
+    .preview-body { display: grid; grid-template-columns: 56px minmax(0, 1fr); min-height: 350px; }
+    .preview-rail { display: flex; align-items: center; flex-direction: column; gap: 17px; padding: 19px 0; border-right: 1px solid var(--landing-line); background: color-mix(in srgb, var(--landing-surface-soft) 78%, transparent); }
+    .preview-rail i { color: var(--landing-muted); font-size: 18px; }
+    .preview-rail i:first-child { color: var(--landing-accent); }
+    .preview-content { min-width: 0; padding: 21px; }
+    .preview-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .preview-heading h2 { margin: 0; color: var(--text); font-size: 20px; letter-spacing: -.04em; }
+    .preview-heading p { margin: 4px 0 0; color: var(--landing-muted); font-size: 11px; }
+    .preview-status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: #22c55e; font-size: 10px; font-weight: 800; }
+    .preview-status::before { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px rgba(34, 197, 94, .12); content: ''; }
+    .preview-card { padding: 15px; border: 1px solid var(--landing-line); border-radius: 14px; background: linear-gradient(135deg, var(--landing-surface-soft), var(--landing-surface)); }
+    .preview-server { display: flex; align-items: center; gap: 11px; padding-bottom: 14px; border-bottom: 1px solid var(--landing-line); }
+    .preview-server-avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px; background: var(--landing-accent-soft); color: var(--landing-accent); font-size: 20px; }
+    .preview-server strong, .preview-server span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-server strong { color: var(--text); font-size: 12px; }
+    .preview-server span { margin-top: 3px; color: var(--landing-muted); font-size: 10px; }
+    .preview-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; padding-top: 14px; }
+    .preview-metric { min-width: 0; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--landing-surface-soft) 72%, transparent); }
+    .preview-metric small, .preview-metric strong { display: block; }
+    .preview-metric small { overflow: hidden; color: var(--landing-muted); font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .preview-metric strong { margin-top: 4px; color: var(--text); font-size: 17px; letter-spacing: -.04em; }
+    .preview-lower { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 11px; margin-top: 11px; }
+    .preview-event { display: flex; align-items: flex-start; gap: 9px; min-width: 0; padding: 12px; border: 1px solid var(--landing-line); border-radius: 12px; }
+    .preview-event i { color: var(--landing-accent); font-size: 17px; }
+    .preview-event strong, .preview-event span { display: block; }
+    .preview-event strong { color: var(--text); font-size: 10px; }
+    .preview-event span { margin-top: 3px; color: var(--landing-muted); font-size: 9px; line-height: 1.45; }
+    .preview-chart { position: relative; min-height: 72px; overflow: hidden; padding: 12px; border: 1px solid var(--landing-line); border-radius: 12px; background: var(--landing-navy); }
+    .preview-chart small { position: relative; z-index: 1; color: #a7b6cb; font-size: 9px; }
+    .preview-chart svg { position: absolute; right: 0; bottom: 0; left: 0; width: 100%; height: 60px; }
+    .preview-caption { margin: 14px 0 0; color: var(--landing-muted); font-size: 10px; line-height: 1.45; }
+
+    .trust-strip { padding: 20px 0 32px; }
+    .trust-strip-inner { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--landing-line); border-bottom: 1px solid var(--landing-line); }
+    .trust-item { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 19px 18px; }
+    .trust-item + .trust-item { border-left: 1px solid var(--landing-line); }
+    .trust-item i { color: var(--landing-accent); font-size: 20px; }
+    .trust-item strong, .trust-item span { display: block; }
+    .trust-item strong { color: var(--text); font-size: 12px; }
+    .trust-item span { margin-top: 3px; color: var(--landing-muted); font-size: 11px; line-height: 1.4; }
+
+    .section { padding: clamp(72px, 9vw, 118px) 0; }
+    .section-heading { max-width: 650px; margin-bottom: 34px; }
+    .section-heading.centered { margin-right: auto; margin-left: auto; text-align: center; }
+    .section-heading h2 { margin: 0; color: var(--text); font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 850; letter-spacing: -.065em; line-height: 1.02; text-wrap: balance; }
+    .section-heading p { margin: 16px 0 0; color: var(--text-secondary); font-size: 15px; line-height: 1.7; }
+    .section-heading .eyebrow { margin-bottom: 14px; }
+    .section-heading.centered .eyebrow { justify-content: center; }
+
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
     .feature-card {
       position: relative;
       isolation: isolate;
+      display: flex;
+      min-height: 285px;
+      flex-direction: column;
+      justify-content: flex-end;
       overflow: hidden;
-      min-width: 0;
-      height: 100%;
+      padding: 25px;
+      border: 1px solid var(--landing-line);
+      border-radius: 18px;
       background: transparent;
-      padding: clamp(22px, 4vw, 32px);
-      border-radius: 20px;
-      border: 1px solid var(--border);
+      cursor: pointer;
       transition: transform 400ms ease, border-color 300ms ease;
     }
-    .feature-card::before,
-    .feature-card::after {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      pointer-events: none;
-      content: '';
-    }
+    .feature-card::before, .feature-card::after { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; content: ''; }
     .feature-card::before {
       z-index: -2;
       background-image: var(--feature-card-image);
       background-position: center;
       background-size: cover;
-      filter: grayscale(1) saturate(0.35);
-      opacity: 0.82;
+      filter: grayscale(1) saturate(.35);
+      opacity: .82;
       transform: scale(1.01);
-      transition: filter 400ms ease, opacity 400ms ease;
+      transition: filter 400ms ease, opacity 400ms ease, transform 400ms ease;
     }
-    .feature-card::after {
-      z-index: -1;
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.2));
-    }
-    .feature-card:hover,
-    .feature-card.is-active {
-      transform: translateY(-5px) scale(1.02);
-      border-color: #FF512F;
-    }
-    .feature-card:hover::before,
-    .feature-card.is-active::before {
-      filter: grayscale(0) saturate(1);
-      opacity: 1;
-    }
+    .feature-card::after { z-index: -1; background: linear-gradient(180deg, rgba(7, 16, 31, .02) 12%, rgba(7, 16, 31, .66) 100%); }
+    .feature-card:hover, .feature-card.is-active { transform: scale(1.02); border-color: var(--landing-accent); }
+    .feature-card:hover::before, .feature-card.is-active::before { filter: grayscale(0) saturate(1); opacity: 1; transform: scale(1.02); }
     .feature-card > * { position: relative; z-index: 1; }
-    .feature-icon { font-size: 32px; color: #FF512F; margin-bottom: 16px; }
-    .feature-card h3 { margin: 0 0 12px; font-weight: 700; }
-    .feature-card p { margin: 0; max-width: none; font-size: 16px; line-height: 1.6; }
-    .trustpilot-widget, .trustpilot-widget iframe, [data-locale].trustpilot-widget iframe { display: block; width: 100% !important; max-width: 100%; min-width: 0 !important; }
-    
-    footer {
-      width: 100%;
-      padding: 40px clamp(16px, 4vw, 32px);
-      text-align: center;
-      border-top: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 14px;
-    }
-    footer p { margin: 0 0 8px; max-width: none; font-size: 14px; }
-    footer p:last-child { margin-bottom: 0; }
+    .feature-icon { margin-bottom: auto; color: #ff8a55; font-size: 30px; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .28)); }
+    .feature-card h3 { margin: 0 0 9px; color: #fff; font-size: 18px; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 2px 16px rgba(0, 0, 0, .35); }
+    .feature-card p { max-width: none; margin: 0; color: rgba(255, 255, 255, .86); font-size: 13px; line-height: 1.6; text-shadow: 0 2px 14px rgba(0, 0, 0, .55); }
 
-    @media (max-width: 640px) {
-      .landing-nav { align-items: center; gap: 10px; padding-inline: 14px; }
-      .logo { gap: 8px; font-size: 19px; }
-      .logo img { width: 36px; height: 36px; }
-      #navActions .btn-secondary { padding-inline: 13px !important; font-size: 13px !important; white-space: nowrap; }
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: steps; }
+    .step { position: relative; min-height: 208px; padding: 24px; border: 1px solid var(--landing-line); border-radius: 16px; background: var(--landing-surface); box-shadow: var(--shadow-sm); counter-increment: steps; }
+    .step::before { display: block; margin-bottom: 32px; color: var(--landing-accent); content: '0' counter(steps); font-size: 12px; font-weight: 850; letter-spacing: .12em; }
+    .step i { position: absolute; top: 22px; right: 21px; color: var(--landing-accent); font-size: 24px; }
+    .step h3 { margin: 0 0 9px; color: var(--text); font-size: 17px; }
+    .step p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.65; }
+
+    .capability-section { background: color-mix(in srgb, var(--landing-surface-soft) 52%, transparent); }
+    .capability-layout { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr); gap: clamp(30px, 7vw, 92px); align-items: start; }
+    .capability-intro { position: sticky; top: 105px; }
+    .capability-intro h2 { max-width: 360px; margin: 0; color: var(--text); font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: -.065em; line-height: 1.02; }
+    .capability-intro p { max-width: 360px; margin: 17px 0 0; color: var(--text-secondary); font-size: 14px; line-height: 1.7; }
+    .capability-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .capability { min-height: 167px; padding: 20px; border: 1px solid var(--landing-line); border-radius: 15px; background: var(--landing-surface); }
+    .capability i { color: var(--landing-accent); font-size: 23px; }
+    .capability h3 { margin: 17px 0 7px; color: var(--text); font-size: 15px; }
+    .capability p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.6; }
+
+    .privacy-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: center; gap: clamp(34px, 7vw, 90px); }
+    .privacy-layout .section-heading { margin-bottom: 0; }
+    .privacy-panel { padding: 25px; border: 1px solid color-mix(in srgb, var(--landing-accent) 30%, var(--landing-line)); border-radius: 17px; background: linear-gradient(145deg, var(--landing-surface), color-mix(in srgb, var(--landing-accent-soft) 46%, var(--landing-surface))); }
+    .privacy-panel-header { display: flex; align-items: center; gap: 11px; padding-bottom: 17px; border-bottom: 1px solid var(--landing-line); }
+    .privacy-panel-header i { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 10px; background: var(--landing-accent-soft); color: var(--landing-accent); font-size: 20px; }
+    .privacy-panel-header strong { color: var(--text); font-size: 13px; }
+    .privacy-points { display: grid; gap: 15px; margin: 19px 0 0; padding: 0; list-style: none; }
+    .privacy-points li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 9px; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+    .privacy-points i { color: var(--landing-accent); font-size: 18px; }
+
+    .plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .plan { position: relative; min-height: 218px; padding: 23px; border: 1px solid var(--landing-line); border-radius: 16px; background: var(--landing-surface); }
+    .plan.featured { border-color: color-mix(in srgb, var(--landing-accent) 55%, var(--landing-line)); box-shadow: 0 14px 35px rgba(255, 106, 43, .1); }
+    .plan-badge { position: absolute; top: 16px; right: 16px; color: var(--landing-accent); font-size: 9px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+    .plan h3 { margin: 0; color: var(--text); font-size: 17px; }
+    .plan-price { margin: 18px 0 6px; color: var(--text); font-size: 28px; font-weight: 900; letter-spacing: -.06em; }
+    .plan-price small { color: var(--landing-muted); font-size: 11px; font-weight: 700; letter-spacing: 0; }
+    .plan p { max-width: 230px; margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+    .plan-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 17px; color: var(--landing-accent); font-size: 12px; font-weight: 800; text-decoration: none; }
+
+    .faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
+    .faq-item { border-bottom: 1px solid var(--landing-line); }
+    .faq-item summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 17px 0; color: var(--text); cursor: pointer; font-size: 14px; font-weight: 750; list-style: none; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after { color: var(--landing-accent); content: '+'; font-size: 20px; font-weight: 400; }
+    .faq-item[open] summary::after { content: '−'; }
+    .faq-item p { margin: -3px 0 17px; color: var(--text-secondary); font-size: 12px; line-height: 1.65; }
+
+    .final-cta { padding: 32px 0 84px; }
+    .final-cta-inner { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: clamp(28px, 5vw, 46px); border: 1px solid color-mix(in srgb, var(--landing-accent) 28%, var(--landing-line)); border-radius: 20px; background: linear-gradient(112deg, color-mix(in srgb, var(--landing-accent-soft) 74%, var(--landing-surface)), var(--landing-surface)); }
+    .final-cta h2 { margin: 0; color: var(--text); font-size: clamp(1.8rem, 4vw, 2.7rem); letter-spacing: -.06em; line-height: 1.05; }
+    .final-cta p { max-width: 510px; margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
+    .final-cta-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; }
+
+    footer { padding: 0 0 32px; color: var(--landing-muted); font-size: 12px; }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 21px; border-top: 1px solid var(--landing-line); }
+    .footer-brand { color: var(--text-secondary); font-weight: 800; }
+    .footer-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; }
+    .footer-links a { color: inherit; text-decoration: none; }
+    .footer-links a:hover { color: var(--landing-accent); }
+    footer p { margin: 5px 0 0; }
+
+    @media (max-width: 940px) {
+      .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(310px, .82fr); gap: 34px; }
+      .hero-copy h1 { font-size: clamp(2.7rem, 6.8vw, 4.3rem); }
+      .preview-body { min-height: 320px; }
+      .capability-layout { grid-template-columns: 1fr; gap: 34px; }
+      .capability-intro { position: static; }
+      .capability-intro h2, .capability-intro p { max-width: 620px; }
+    }
+
+    @media (max-width: 720px) {
+      .landing-shell { width: min(100% - 24px, 560px); }
+      .landing-nav-inner { width: min(100% - 24px, 560px); min-height: 66px; gap: 10px; }
+      .nav-links { display: none; }
+      .logo { font-size: 18px; }
+      .logo img { width: 35px; height: 35px; }
+      #navActions > div > span { display: none; }
       #navActions > div { gap: 7px; }
-      .hero { padding-top: 64px; }
-      .hero > p { margin-bottom: 30px; }
-      .btn-group { gap: 12px; }
-      .btn-group > a { width: 100%; min-width: 0; }
-      .features { width: min(100% - 24px, 520px); padding-top: 12px; }
-      .feature-card { padding: 22px; }
+      .landing-button-quiet { min-height: 36px; padding: 8px 11px; font-size: 11px; }
+      .hero-section { padding: 58px 0 54px; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-copy h1 { max-width: 570px; font-size: clamp(2.8rem, 12vw, 4.4rem); }
+      .hero-copy > p { font-size: 15px; }
+      .hero-actions .landing-button { flex: 1 1 160px; }
+      .product-preview-wrap { max-width: 560px; }
+      .trust-strip-inner { grid-template-columns: 1fr; }
+      .trust-item + .trust-item { border-top: 1px solid var(--landing-line); border-left: 0; }
+      .section { padding: 69px 0; }
+      .features, .steps, .plans { grid-template-columns: 1fr; }
+      .feature-card { min-height: 250px; }
+      .capability-list, .faq-grid { grid-template-columns: 1fr; }
+      .privacy-layout { grid-template-columns: 1fr; gap: 30px; }
+      .final-cta-inner { align-items: flex-start; flex-direction: column; }
+      .final-cta-actions { width: 100%; }
+      .final-cta-actions .landing-button { flex: 1 1 150px; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+      .footer-links { justify-content: flex-start; }
     }
 
     @media (max-width: 390px) {
-      .landing-nav { padding-inline: 10px; }
-      .logo { font-size: 17px; }
-      .logo img { width: 34px; height: 34px; }
-      #navActions .btn-secondary { padding-inline: 10px !important; font-size: 12px !important; }
-      h1 { font-size: clamp(2rem, 11vw, 2.65rem); }
+      .landing-shell, .landing-nav-inner { width: min(100% - 20px, 560px); }
+      .logo { gap: 8px; font-size: 16px; }
+      .logo img { width: 33px; height: 33px; }
+      .landing-button-quiet { padding-inline: 9px; }
+      .hero-copy h1 { font-size: clamp(2.45rem, 13vw, 3.35rem); }
+      .hero-actions { flex-direction: column; }
+      .hero-actions .landing-button { width: 100%; flex: 0 0 auto; }
+      .preview-content { padding: 15px; }
+      .preview-lower { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .landing-button:hover, .feature-card:hover, .feature-card.is-active { transform: none; }
     }
   </style>
 </head>
 <body class="dark">
-  <div class="hero-glow"></div>
   <header class="landing-nav">
-    <a href="/" class="logo">
-      <img src="/dashboard/logo.png" alt="ProMcBot">
-      <span>ProMcBot</span>
-    </a>
-    <div id="navActions">
-      <a href="/loading-auth" class="btn-secondary" style="padding: 8px 20px; font-size: 14px;">Dashboard</a>
+    <div class="landing-nav-inner">
+      <a href="/" class="logo" aria-label="ProMcBot home">
+        <img src="/dashboard/logo.png" alt="ProMcBot">
+        <span>Pro<em>Mc</em>Bot</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#faq">FAQ</a>
+        <a href="/dashboard/pages/docs/docs.html">Documentation</a>
+      </nav>
+      <div id="navActions">
+        <a href="/invitebot" class="landing-button landing-button-primary landing-button-quiet">Invite Bot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a>
+      </div>
     </div>
   </header>
 
-  <main class="hero">
-    <h1>Your Minecraft Server,<br><span>Perfectly Integrated.</span></h1>
-    <p>Manage your community, monitor status, and automate everything from a single, powerful dashboard. The bridge you've been waiting for.</p>
-    <div class="btn-group">
-      <a href="/loading-auth" class="btn-primary"><i class='bx bx-bolt-circle'></i> Get Started Now</a>
-      <a href="/invitebot" class="btn-secondary">Invite Bot</a>
-    </div>
+  <main>
+    <section class="hero-section">
+      <div class="landing-shell hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">Discord × Minecraft, in sync</p>
+          <h1>Run the server.<br><span>Keep the community close.</span></h1>
+          <p>ProMcBot brings Minecraft server visibility, Discord tools, and practical automation into one calm workspace for the people who keep your community moving.</p>
+          <div class="hero-actions">
+            <a href="/invitebot" class="landing-button landing-button-primary"><i class="bx bx-bot" aria-hidden="true"></i> Invite ProMcBot</a>
+            <a href="/loading-auth" class="landing-button landing-button-secondary"><i class="bx bx-grid-alt" aria-hidden="true"></i> Open Dashboard</a>
+          </div>
+          <p class="hero-note"><i class="bx bx-check-circle" aria-hidden="true"></i> Start with the tools your community already needs.</p>
+        </div>
+
+        <div class="product-preview-wrap" aria-label="Illustrative ProMcBot dashboard preview">
+          <div class="product-preview">
+            <div class="preview-topbar">
+              <div class="preview-brand"><i class="bx bx-layer" aria-hidden="true"></i><span>ProMcBot workspace</span></div>
+              <small>server overview</small>
+            </div>
+            <div class="preview-body">
+              <aside class="preview-rail" aria-hidden="true">
+                <i class="bx bx-home-alt"></i><i class="bx bx-pulse"></i><i class="bx bx-shield-quarter"></i><i class="bx bx-bell"></i><i class="bx bx-cog"></i>
+              </aside>
+              <div class="preview-content">
+                <div class="preview-heading">
+                  <div><h2>Server overview</h2><p>A single view for the signals that matter.</p></div>
+                  <span class="preview-status">Connected</span>
+                </div>
+                <div class="preview-card">
+                  <div class="preview-server">
+                    <div class="preview-server-avatar"><i class="bx bx-cube-alt" aria-hidden="true"></i></div>
+                    <div><strong>Your Minecraft server</strong><span>Discord community connected</span></div>
+                  </div>
+                  <div class="preview-metrics">
+                    <div class="preview-metric"><small>Players online</small><strong>24</strong></div>
+                    <div class="preview-metric"><small>Server status</small><strong>Online</strong></div>
+                    <div class="preview-metric"><small>Latency</small><strong>42ms</strong></div>
+                  </div>
+                </div>
+                <div class="preview-lower">
+                  <div class="preview-event"><i class="bx bx-bot" aria-hidden="true"></i><div><strong>Automation ready</strong><span>Use activity signals to keep Discord informed.</span></div></div>
+                  <div class="preview-chart"><small>Activity pulse</small><svg viewBox="0 0 180 72" role="img" aria-label="Illustrative activity line"><defs><linearGradient id="previewLine" x1="0" x2="1"><stop offset="0" stop-color="#ff6a2b" stop-opacity=".35"/><stop offset="1" stop-color="#ffb07f"/></linearGradient></defs><path d="M0 58 C18 56, 24 45, 39 49 S60 60, 74 43 S91 24, 108 38 S126 48, 143 27 S163 23, 180 11" fill="none" stroke="url(#previewLine)" stroke-linecap="round" stroke-width="3"/></svg></div>
+                </div>
+                <p class="preview-caption">Illustrative preview. Live values appear after your server publishes measured telemetry.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="ProMcBot product foundations">
+      <div class="landing-shell trust-strip-inner">
+        <div class="trust-item"><i class="bx bx-link-alt" aria-hidden="true"></i><div><strong>One bridge, two communities</strong><span>Connect Minecraft context with Discord conversations.</span></div></div>
+        <div class="trust-item"><i class="bx bx-line-chart" aria-hidden="true"></i><div><strong>Measured, not guessed</strong><span>Public stats stay grounded in received telemetry.</span></div></div>
+        <div class="trust-item"><i class="bx bx-slider-alt" aria-hidden="true"></i><div><strong>Configure around your server</strong><span>Shape messages, moderation, and automation to fit.</span></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-heading">
+      <div class="landing-shell">
+        <div class="section-heading">
+          <p class="eyebrow">A focused toolkit</p>
+          <h2 id="features-heading">Less tab switching.<br>More useful signal.</h2>
+          <p>Bring the day-to-day work of running a Minecraft community into the place your team already uses to communicate.</p>
+        </div>
+        <div class="features">
+          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/Jjc6zBjP/images-5.jpg');" tabindex="0" role="button" aria-label="Live Monitoring feature">
+            <i class="bx bx-stats feature-icon" aria-hidden="true"></i>
+            <h3>Live Monitoring</h3>
+            <p>Real-time player counts, server status, and latency monitoring directly in Discord and your dashboard.</p>
+          </div>
+          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/FLMYsHPn/file-0000000003f881f4bfa30abd818d72e7.png');" tabindex="0" role="button" aria-label="Auto Management feature">
+            <i class="bx bx-bot feature-icon" aria-hidden="true"></i>
+            <h3>Auto Management</h3>
+            <p>Powerful auto-responder, ticket systems, and moderation tools to keep your community safe 24/7.</p>
+          </div>
+          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/9mZj9BLX/file-000000004ad882439c3ca35e3277c769.png');" tabindex="0" role="button" aria-label="Full Customization feature">
+            <i class="bx bx-palette feature-icon" aria-hidden="true"></i>
+            <h3>Full Customization</h3>
+            <p>Personalize every message, embed, and status image to match your server's unique brand.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-it-works" aria-labelledby="how-heading">
+      <div class="landing-shell">
+        <div class="section-heading centered">
+          <p class="eyebrow">A clear starting point</p>
+          <h2 id="how-heading">From connection to confident moderation.</h2>
+          <p>Set up the bridge once, then keep the useful work close to your community.</p>
+        </div>
+        <div class="steps">
+          <article class="step"><i class="bx bx-plug" aria-hidden="true"></i><h3>Connect the server</h3><p>Invite ProMcBot to Discord and connect the Minecraft server context your community needs to see.</p></article>
+          <article class="step"><i class="bx bx-slider" aria-hidden="true"></i><h3>Configure the bot</h3><p>Choose the channels, messages, moderation tools, and server visuals that fit your workflow.</p></article>
+          <article class="step"><i class="bx bx-radar" aria-hidden="true"></i><h3>Monitor and automate</h3><p>Keep an eye on measured activity and let the bot turn meaningful signals into timely community actions.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section capability-section" aria-labelledby="capabilities-heading">
+      <div class="landing-shell capability-layout">
+        <div class="capability-intro">
+          <p class="eyebrow">Made for the real workflow</p>
+          <h2 id="capabilities-heading">One place to see what needs attention.</h2>
+          <p>ProMcBot keeps the interface practical: the status, community, and controls sit close enough to act on without turning the page into a control-room wall.</p>
+        </div>
+        <div class="capability-list" id="capabilities">
+          <article class="capability"><i class="bx bx-pulse" aria-hidden="true"></i><h3>Server status</h3><p>See connection state, player activity, and the latest measured heartbeat in context.</p></article>
+          <article class="capability"><i class="bx bx-shield-quarter" aria-hidden="true"></i><h3>Moderation and tickets</h3><p>Give your staff a consistent way to manage conversations, support, and community safety.</p></article>
+          <article class="capability"><i class="bx bx-broadcast" aria-hidden="true"></i><h3>Embeds and automation</h3><p>Shape how important changes are shared, then let configured rules handle repeatable responses.</p></article>
+          <article class="capability"><i class="bx bx-share-alt" aria-hidden="true"></i><h3>Public server cards</h3><p>Share aggregate server context when you want to, without presenting unmeasured values as facts.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="privacy-heading">
+      <div class="landing-shell privacy-layout">
+        <div class="section-heading">
+          <p class="eyebrow">Clarity by default</p>
+          <h2 id="privacy-heading">Know what is connected and what is shared.</h2>
+          <p>Good community tooling should make its boundaries easy to understand. ProMcBot’s public surfaces distinguish received data from information that has not been measured.</p>
+          <a href="/privacy-policy" class="landing-button landing-button-secondary" style="margin-top: 24px;">Read Privacy Policy <i class="bx bx-arrow-up-right" aria-hidden="true"></i></a>
+        </div>
+        <div class="privacy-panel">
+          <div class="privacy-panel-header"><i class="bx bx-lock-alt" aria-hidden="true"></i><strong>What the product makes visible</strong></div>
+          <ul class="privacy-points">
+            <li><i class="bx bx-check" aria-hidden="true"></i><span>Discord permissions are part of the connection you choose to authorize and configure.</span></li>
+            <li><i class="bx bx-check" aria-hidden="true"></i><span>Public server cards are limited to aggregate telemetry intended for sharing.</span></li>
+            <li><i class="bx bx-check" aria-hidden="true"></i><span>When a value has not been received, it remains unmeasured rather than being estimated.</span></li>
+            <li><i class="bx bx-check" aria-hidden="true"></i><span>Review the project’s privacy and terms pages for the complete, current boundaries.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="plans-heading">
+      <div class="landing-shell">
+        <div class="section-heading centered">
+          <p class="eyebrow">Plans that scale with the server</p>
+          <h2 id="plans-heading">Start small. Add room when you need it.</h2>
+          <p>Current plan definitions are shown here from the project configuration. Limits and access are enforced inside the dashboard.</p>
+        </div>
+        <div class="plans">
+          <article class="plan"><h3>Free</h3><div class="plan-price">$0 <small>/ month</small></div><p>Help small servers become better.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+          <article class="plan featured"><span class="plan-badge">Popular starting point</span><h3>Pro</h3><div class="plan-price">$4.99 <small>/ month</small></div><p>Help me grow my server.</p><a class="plan-link" href="/loading-auth">See your options <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+          <article class="plan"><h3>Ultimate</h3><div class="plan-price">$9.99 <small>/ month</small></div><p>Help me operate and scale my network.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-heading">
+      <div class="landing-shell">
+        <div class="section-heading centered">
+          <p class="eyebrow">Before you connect</p>
+          <h2 id="faq-heading">Useful answers, without the fine print fog.</h2>
+        </div>
+        <div class="faq-grid">
+          <details class="faq-item"><summary>How do I get started?</summary><p>Use Invite ProMcBot to add the bot to your Discord community, then open the Dashboard to continue configuration.</p></details>
+          <details class="faq-item"><summary>Which permissions are required?</summary><p>The required permissions depend on the Discord tools you enable. Review the authorization screen and configure only what your community workflow needs.</p></details>
+          <details class="faq-item"><summary>Does it work with my Minecraft server?</summary><p>Plugin and server compatibility is documented in the project’s compatibility materials. Check the current documentation before connecting a production server.</p></details>
+          <details class="faq-item"><summary>How many servers can I connect?</summary><p>Access and limits can depend on the plan and current entitlement. Sign in to the Dashboard to see the options available to your account.</p></details>
+          <details class="faq-item"><summary>What happens when telemetry is missing?</summary><p>Public stats keep the value unmeasured rather than inferring it. A server owner can choose whether to share the resulting aggregate card.</p></details>
+          <details class="faq-item"><summary>Where can I find support and terms?</summary><p>Use the Documentation link for setup guidance, and review the Privacy Policy and Terms of Service in the footer for the current product boundaries.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta" aria-labelledby="final-cta-heading">
+      <div class="landing-shell final-cta-inner">
+        <div><h2 id="final-cta-heading">Make the next server update easier to act on.</h2><p>Connect the Discord community to the Minecraft signals that matter, then keep the work moving from one focused dashboard.</p></div>
+        <div class="final-cta-actions"><a href="/invitebot" class="landing-button landing-button-primary">Invite ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a><a href="/loading-auth" class="landing-button landing-button-secondary">Open Dashboard</a></div>
+      </div>
+    </section>
+
+    <section class="trustpilot-section" aria-labelledby="trustpilot-heading">
+      <div class="landing-shell">
+        <article class="trustpilot-card" data-trustpilot-widget data-state="loading">
+          <div>
+            <div class="trustpilot-kicker" data-trustpilot-status>Reviews on Trustpilot</div>
+            <h2 id="trustpilot-heading">A reputation you can verify.</h2>
+            <p class="trustpilot-description">See what ProMcBot users are saying on our public Trustpilot profile. We show review statistics only when they come from a permitted, configured source.</p>
+            <div class="trustpilot-rating" aria-describedby="trustpilot-rating-label">
+              <strong class="trustpilot-score" data-trustpilot-value>—</strong>
+              <span class="trustpilot-stars" data-trustpilot-stars aria-hidden="true"></span>
+              <span class="trustpilot-count" data-trustpilot-count>No review statistics are configured yet</span>
+              <span class="trustpilot-rating-label" id="trustpilot-rating-label" data-trustpilot-rating-label>Trustpilot review statistics are not available yet.</span>
+            </div>
+            <div class="trustpilot-updated" data-trustpilot-updated>Statistics will appear here when a permitted source is connected.</div>
+          </div>
+          <a class="landing-button landing-button-secondary trustpilot-cta" data-trustpilot-link href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">View on Trustpilot <span aria-hidden="true">↗</span></a>
+        </article>
+      </div>
+    </section>
   </main>
 
-  <section class="features">
-    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/Jjc6zBjP/images-5.jpg');" tabindex="0" role="button">
-      <i class='bx bx-stats feature-icon'></i>
-      <h3>Live Monitoring</h3>
-      <p>Real-time player counts, server status, and latency monitoring directly in Discord and your dashboard.</p>
-    </div>
-    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/FLMYsHPn/file-0000000003f881f4bfa30abd818d72e7.png');" tabindex="0" role="button">
-      <i class='bx bx-bot feature-icon'></i>
-      <h3>Auto Management</h3>
-      <p>Powerful auto-responder, ticket systems, and moderation tools to keep your community safe 24/7.</p>
-    </div>
-    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/9mZj9BLX/file-000000004ad882439c3ca35e3277c769.png');" tabindex="0" role="button">
-      <i class='bx bx-palette feature-icon'></i>
-      <h3>Full Customization</h3>
-      <p>Personalize every message, embed, and status image to match your server's unique brand.</p>
-    </div>
-  </section>
-
-  <section class="trustpilot-section" aria-labelledby="trustpilot-heading">
-    <article class="trustpilot-card" data-trustpilot-widget data-state="loading">
-      <div>
-        <div class="trustpilot-kicker" data-trustpilot-status>Reviews on Trustpilot</div>
-        <h2 id="trustpilot-heading">A reputation you can verify.</h2>
-        <p class="trustpilot-description">See what ProMcBot users are saying on our public Trustpilot profile. We show review statistics only when they come from a permitted, configured source.</p>
-        <div class="trustpilot-rating" aria-describedby="trustpilot-rating-label">
-          <strong class="trustpilot-score" data-trustpilot-value>—</strong>
-          <span class="trustpilot-stars" data-trustpilot-stars aria-hidden="true"></span>
-          <span class="trustpilot-count" data-trustpilot-count>No review statistics are configured yet</span>
-          <span class="trustpilot-rating-label" id="trustpilot-rating-label" data-trustpilot-rating-label>Trustpilot review statistics are not available yet.</span>
-        </div>
-        <div class="trustpilot-updated" data-trustpilot-updated>Statistics will appear here when a permitted source is connected.</div>
-      </div>
-      <a class="btn-secondary trustpilot-cta" data-trustpilot-link href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">View on Trustpilot <span aria-hidden="true">↗</span></a>
-    </article>
-  </section>
-
   <footer>
-    <p><a href="/privacy-policy">Privacy Policy</a> <span aria-hidden="true">·</span> <a href="/terms-of-service">Terms of Service</a></p>
-    <p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p>
+    <div class="landing-shell footer-inner">
+      <div><div class="footer-brand">ProMcBot</div><p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p></div>
+      <nav class="footer-links" aria-label="Footer navigation"><a href="/dashboard/pages/docs/docs.html">Documentation</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">Trustpilot</a></nav>
+    </div>
   </footer>
 
   <script>
@@ -281,24 +643,24 @@
     trustpilotScript.src = '/dashboard/trustpilot-review-widget.js';
     trustpilotScript.defer = true;
     document.head.appendChild(trustpilotScript);
-    
+
     const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
     const safeAvatar = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && new Set(['cdn.discordapp.com', 'media.discordapp.net']).has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
 
-    // Check if logged in to update navbar
     fetch('/callback/check/userData')
       .then(res => res.json())
       .then(data => {
         if (data.authenticated) {
           const nav = document.getElementById('navActions');
           nav.innerHTML = `
-            <div style="display:flex; align-items:center; gap:12px">
-              <span style="font-size:14px; font-weight:600">${escapeHTML(data.user.global_name || data.user.username || 'User')}</span>
-              <a href="/dashboard"><img src="${escapeHTML(safeAvatar(data.user.avatar))}" style="width:36px; height:36px; border-radius:50%; border:2px solid #FF512F" alt="Account avatar"></a>
+            <div>
+              <span style="font-size:13px;font-weight:700">${escapeHTML(data.user.global_name || data.user.username || 'User')}</span>
+              <a href="/dashboard" aria-label="Open your Dashboard"><img src="${escapeHTML(safeAvatar(data.user.avatar))}" style="width:35px;height:35px;border-radius:50%;border:2px solid #ff6a2b;object-fit:cover" alt="Account avatar"></a>
             </div>
           `;
         }
-      });
+      })
+      .catch(() => {});
 
     const featureCards = Array.from(document.querySelectorAll('.feature-card'));
     featureCards.forEach(card => {
@@ -314,9 +676,7 @@
       });
     });
 
-    if (localStorage.getItem('pmcbot_theme') === 'light') {
-      document.body.classList.remove('dark');
-    }
+    if (localStorage.getItem('pmcbot_theme') === 'light') document.body.classList.remove('dark');
   </script>
 </body>
 </html>

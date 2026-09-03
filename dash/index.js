@@ -353,6 +353,11 @@ Object.entries(legalPages).forEach(([route, file]) => {
 app.get('/privacy', (req, res) => res.redirect(308, '/privacy-policy'));
 app.get('/terms', (req, res) => res.redirect(308, '/terms-of-service'));
 app.get('/loading-auth', (req, res) => res.sendFile(path.join(dashDir, 'Loading', 'loading.html')));
+app.get('/invitebot', (req, res) => {
+  const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
+  if (!inviteUrl) return res.status(503).send('Discord invite is not configured.');
+  return res.redirect(302, inviteUrl);
+});
 
 app.get('/auth/discord', (req, res, next) => {
   if (!discordOAuthConfigured) return res.status(503).send('Discord login is not configured.');
