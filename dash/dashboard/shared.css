@@ -107,6 +107,13 @@ a { color: inherit; }
 .nav_link.active { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
 .navlink_icon { display: inline-flex; flex: 0 0 22px; align-items: center; justify-content: center; font-size: 19px; }
 .navlink { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-badge { display: inline-flex; flex: 0 0 auto; align-items: center; margin-left: auto; padding: 3px 6px; border-radius: 999px; font-size: 8px; font-weight: 900; letter-spacing: .06em; line-height: 1; }
+.nav-badge-new { background: rgba(34, 197, 94, .15); color: #16a34a; }
+.nav-badge-pro { background: rgba(124, 92, 255, .16); color: #7657e8; }
+.nav-badge-ultimate { background: rgba(245, 158, 11, .18); color: #b45309; }
+.nav_link.active .nav-badge-new { background: rgba(34, 197, 94, .2); }
+.nav_link.active .nav-badge-pro { background: rgba(124, 92, 255, .22); }
+.nav_link.active .nav-badge-ultimate { background: rgba(245, 158, 11, .24); }
 .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
 .sidebar-server-context { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 12px 10px 4px; padding: 10px; border: 1px solid var(--border); border-radius: 14px; background: linear-gradient(135deg, var(--primary-soft), transparent); color: var(--text); text-decoration: none; }
 .sidebar-server-context:hover { border-color: var(--primary); }
@@ -141,7 +148,7 @@ a { color: inherit; }
 .data_text .email { color: var(--text-muted); font-size: 10px; }
 .sidebar.close { width: var(--sidebar-collapsed); }
 .sidebar.close .logo_items { justify-content: center; padding-inline: 10px; }
-.sidebar.close .logo_name, .sidebar.close #lock-icon, .sidebar.close .menu_title, .sidebar.close .navlink, .sidebar.close .data_text { display: none; }
+.sidebar.close .logo_name, .sidebar.close #lock-icon, .sidebar.close .menu_title, .sidebar.close .navlink, .sidebar.close .nav-badge, .sidebar.close .data_text { display: none; }
 .sidebar.close .nav_link { justify-content: center; padding-inline: 10px; }
 .sidebar.close .sidebar_profile { justify-content: center; padding-inline: 0; }
 .sidebar.close .sidebar-footer { padding-inline: 10px; }
