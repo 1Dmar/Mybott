@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Smart Actions — ProMcBot</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"><link rel="stylesheet" href="/shared.css">
+  <style>
+    body { background: #f4f7fb; }
+    body.dark { background: #080f1f; }
+    .actions-page { max-width: 1160px; margin: 0 auto; }
+    .actions-hero { position: relative; overflow: hidden; padding: clamp(22px,4vw,38px); border: 1px solid var(--border); border-radius: 24px; background: radial-gradient(circle at 92% 0, rgba(87,105,242,.28), transparent 35%), linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, var(--surface)), var(--surface)); box-shadow: var(--shadow-md); }
+    .actions-hero::after { position:absolute; right:-74px; bottom:-130px; width:280px; height:280px; border:1px solid color-mix(in srgb,var(--primary) 28%,transparent); border-radius:50%; box-shadow:0 0 0 24px color-mix(in srgb,var(--primary) 7%,transparent),0 0 0 48px color-mix(in srgb,var(--primary) 4%,transparent); content:''; pointer-events:none; }
+    .actions-header { position:relative; z-index:1; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+    .actions-header h1 { margin:0 0 8px; font-size:clamp(30px,4vw,46px); letter-spacing:-.055em; }
+    .actions-header p { max-width:700px; margin:0; color:var(--text-muted); line-height:1.65; }
+    .actions-header .eyebrow { margin-bottom:10px; }
+    .action-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:20px; }
+    .selected-server { display:inline-flex; align-items:center; gap:6px; padding:8px 11px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); color:var(--text-muted); font-size:11px; }
+    .selected-server strong { color:var(--text); }
+    .refresh-button { display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:10px 14px; border:1px solid var(--primary); border-radius:11px; background:var(--primary); color:#fff; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+    .refresh-button:hover { background:var(--primary-strong); }
+    .evidence-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:16px 0; }
+    .evidence-chip { display:flex; flex-direction:column; gap:5px; min-width:0; padding:13px 14px; border:1px solid var(--border); border-radius:15px; background:var(--surface); box-shadow:var(--shadow-sm); color:var(--text-muted); font-size:10px; text-transform:uppercase; letter-spacing:.07em; }
+    .evidence-chip strong { overflow:hidden; color:var(--text); font-size:14px; letter-spacing:0; text-overflow:ellipsis; text-transform:none; white-space:nowrap; }
+    .section-card { margin-top:16px; padding:20px; border:1px solid var(--border); border-radius:20px; background:var(--surface); box-shadow:var(--shadow-sm); }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .section-heading h2 { margin:0 0 4px; font-size:18px; letter-spacing:-.025em; }
+    .section-heading p { margin:0; color:var(--text-muted); font-size:12px; }
+    .section-icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:11px; background:var(--primary-soft); color:var(--primary); font-size:18px; }
+    .action-list,.notification-list { display:grid; gap:12px; }
+    .action-card,.notification-card { padding:16px; border:1px solid var(--border); border-radius:16px; background:var(--surface-2); }
+    .action-card:hover,.notification-card:hover { border-color:color-mix(in srgb,var(--primary) 45%,var(--border)); }
+    .action-top,.notification-top { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+    .action-title,.notification-title { margin:0; font-size:16px; letter-spacing:-.02em; }
+    .notification-meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:7px; color:var(--text-muted); font-size:10px; }
+    .badge { display:inline-flex; align-items:center; width:max-content; padding:5px 8px; border-radius:999px; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+    .badge-high { background:rgba(239,68,68,.14); color:#ef4444; }.badge-medium { background:rgba(245,158,11,.14); color:#d97706; }.badge-low { background:rgba(34,197,94,.14); color:#16a34a; }.badge-open { background:rgba(59,130,246,.14); color:#2563eb; }.badge-resolved { background:rgba(34,197,94,.14); color:#16a34a; }.badge-snoozed { background:rgba(148,163,184,.18); color:#64748b; }
+    .detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:14px; }
+    .detail { min-width:0; padding:11px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+    .detail-label { display:block; margin-bottom:5px; color:var(--text-muted); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }.detail p { margin:0; color:var(--text-secondary); font-size:12px; line-height:1.5; }
+    .card-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; }.card-actions button,.card-actions-button { display:inline-flex; align-items:center; justify-content:center; min-height:34px; padding:7px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; text-decoration:none; cursor:pointer; }.card-actions button.primary,.card-actions-button.primary { border-color:var(--primary); background:var(--primary); color:#fff; }.card-actions button:disabled { cursor:not-allowed; opacity:.55; }
+    .state { padding:24px 8px; color:var(--text-muted); text-align:center; }.state.error { color:var(--danger); }
+    .smart-actions-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .smart-card { padding:16px; border:1px solid var(--border); border-radius:16px; background:var(--surface-2); }
+    .smart-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .smart-card h3 { margin:0 0 6px; font-size:16px; }
+    .smart-card p { margin:0; color:var(--text-muted); font-size:12px; line-height:1.55; }
+    .smart-card .smart-flow { margin-top:11px; color:var(--text-secondary); font-size:11px; line-height:1.5; }
+    .smart-card-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
+    .smart-channel { min-width:190px; flex:1; min-height:34px; padding:7px 9px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; }
+    .smart-card-controls button { min-height:34px; padding:7px 11px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+    .smart-card-controls button.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .smart-card-controls button:disabled { cursor:not-allowed; opacity:.55; }
+    @media(max-width:760px){.actions-header{display:block}.actions-hero{padding:22px 18px}.evidence-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}.action-top,.notification-top{display:block}.action-top>.badge,.notification-top>.badge{margin-top:10px}.section-card{padding:16px}.smart-actions-grid{grid-template-columns:1fr}}
+    @media(max-width:420px){.evidence-strip{grid-template-columns:1fr}.actions-header h1{font-size:32px}}
+  </style>
+</head>
+<body class="dark">
+  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><div class="user_profile_nav" id="userBtn"><img src="" alt="Account" data-user-avatar><span id="navUserName" data-user-name>User</span><i class="bx bx-chevron-down"></i><div class="dropdown-menu" id="userDropdown"><a href="/dashboard">Account home</a><a href="/api/logout">Logout</a></div></div></div></nav>
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
+  <main class="main-content"><section class="actions-page"><div class="actions-hero"><header class="actions-header"><div><div class="eyebrow">Operational intelligence</div><h1>Smart Actions</h1><p>Configure measured automations, then review every Smart Action notification in one place.</p><div class="action-toolbar"><span class="selected-server"><i class="bx bx-server"></i> Managed server <strong id="selectedServer">Loading…</strong></span><button id="refreshActions" class="refresh-button" type="button"><i class="bx bx-refresh"></i> Refresh evidence</button></div></div></header></div><section class="section-card" aria-labelledby="smartActionsHeading"><div class="section-heading"><div><h2 id="smartActionsHeading">⚡ Automation library</h2><p>Enable as many measured automations as your workspace needs. Every card shows its trigger, evidence source, and delivery channel.</p></div><i class="bx bx-bolt-circle section-icon" aria-hidden="true"></i></div><div id="smartActions" class="smart-actions-grid" aria-live="polite"><p class="state">Loading Smart Actions…</p></div></section> html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Smart Actions — ProMcBot</title>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"><link rel="stylesheet" href="/shared.css">
+  <style>
+    body { background: #f4f7fb; }
+    body.dark { background: #080f1f; }
+    .actions-page { max-width: 1160px; margin: 0 auto; }
+    .actions-hero { position: relative; overflow: hidden; padding: clamp(22px,4vw,38px); border: 1px solid var(--border); border-radius: 24px; background: radial-gradient(circle at 92% 0, rgba(87,105,242,.28), transparent 35%), linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, var(--surface)), var(--surface)); box-shadow: var(--shadow-md); }
+    .actions-hero::after { position:absolute; right:-74px; bottom:-130px; width:280px; height:280px; border:1px solid color-mix(in srgb,var(--primary) 28%,transparent); border-radius:50%; box-shadow:0 0 0 24px color-mix(in srgb,var(--primary) 7%,transparent),0 0 0 48px color-mix(in srgb,var(--primary) 4%,transparent); content:''; pointer-events:none; }
+    .actions-header { position:relative; z-index:1; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; }
+    .actions-header h1 { margin:0 0 8px; font-size:clamp(30px,4vw,46px); letter-spacing:-.055em; }
+    .actions-header p { max-width:700px; margin:0; color:var(--text-muted); line-height:1.65; }
+    .actions-header .eyebrow { margin-bottom:10px; }
+    .action-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:20px; }
+    .selected-server { display:inline-flex; align-items:center; gap:6px; padding:8px 11px; border:1px solid var(--border); border-radius:999px; background:var(--surface-2); color:var(--text-muted); font-size:11px; }
+    .selected-server strong { color:var(--text); }
+    .refresh-button { display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:10px 14px; border:1px solid var(--primary); border-radius:11px; background:var(--primary); color:#fff; font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+    .refresh-button:hover { background:var(--primary-strong); }
+    .evidence-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:16px 0; }
+    .evidence-chip { display:flex; flex-direction:column; gap:5px; min-width:0; padding:13px 14px; border:1px solid var(--border); border-radius:15px; background:var(--surface); box-shadow:var(--shadow-sm); color:var(--text-muted); font-size:10px; text-transform:uppercase; letter-spacing:.07em; }
+    .evidence-chip strong { overflow:hidden; color:var(--text); font-size:14px; letter-spacing:0; text-overflow:ellipsis; text-transform:none; white-space:nowrap; }
+    .section-card { margin-top:16px; padding:20px; border:1px solid var(--border); border-radius:20px; background:var(--surface); box-shadow:var(--shadow-sm); }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .section-heading h2 { margin:0 0 4px; font-size:18px; letter-spacing:-.025em; }
+    .section-heading p { margin:0; color:var(--text-muted); font-size:12px; }
+    .section-icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:11px; background:var(--primary-soft); color:var(--primary); font-size:18px; }
+    .action-list,.notification-list { display:grid; gap:12px; }
+    .action-card,.notification-card { padding:16px; border:1px solid var(--border); border-radius:16px; background:var(--surface-2); }
+    .action-card:hover,.notification-card:hover { border-color:color-mix(in srgb,var(--primary) 45%,var(--border)); }
+    .action-top,.notification-top { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+    .action-title,.notification-title { margin:0; font-size:16px; letter-spacing:-.02em; }
+    .notification-meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:7px; color:var(--text-muted); font-size:10px; }
+    .badge { display:inline-flex; align-items:center; width:max-content; padding:5px 8px; border-radius:999px; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }
+    .badge-high { background:rgba(239,68,68,.14); color:#ef4444; }.badge-medium { background:rgba(245,158,11,.14); color:#d97706; }.badge-low { background:rgba(34,197,94,.14); color:#16a34a; }.badge-open { background:rgba(59,130,246,.14); color:#2563eb; }.badge-resolved { background:rgba(34,197,94,.14); color:#16a34a; }.badge-snoozed { background:rgba(148,163,184,.18); color:#64748b; }
+    .detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:14px; }
+    .detail { min-width:0; padding:11px; border:1px solid var(--border); border-radius:12px; background:var(--surface); }
+    .detail-label { display:block; margin-bottom:5px; color:var(--text-muted); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }.detail p { margin:0; color:var(--text-secondary); font-size:12px; line-height:1.5; }
+    .card-actions { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:14px; }.card-actions button,.card-actions-button { display:inline-flex; align-items:center; justify-content:center; min-height:34px; padding:7px 10px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; text-decoration:none; cursor:pointer; }.card-actions button.primary,.card-actions-button.primary { border-color:var(--primary); background:var(--primary); color:#fff; }.card-actions button:disabled { cursor:not-allowed; opacity:.55; }
+    .state { padding:24px 8px; color:var(--text-muted); text-align:center; }.state.error { color:var(--danger); }
+    .smart-actions-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .smart-card { padding:16px; border:1px solid var(--border); border-radius:16px; background:var(--surface-2); }
+    .smart-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .smart-card h3 { margin:0 0 6px; font-size:16px; }
+    .smart-card p { margin:0; color:var(--text-muted); font-size:12px; line-height:1.55; }
+    .smart-card .smart-flow { margin-top:11px; color:var(--text-secondary); font-size:11px; line-height:1.5; }
+    .smart-card-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
+    .smart-channel { min-width:190px; flex:1; min-height:34px; padding:7px 9px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; }
+    .smart-card-controls button { min-height:34px; padding:7px 11px; border:1px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+    .smart-card-controls button.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
+    .smart-card-controls button:disabled { cursor:not-allowed; opacity:.55; }
+    @media(max-width:760px){.actions-header{display:block}.actions-hero{padding:22px 18px}.evidence-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.detail-grid{grid-template-columns:1fr}.action-top,.notification-top{display:block}.action-top>.badge,.notification-top>.badge{margin-top:10px}.section-card{padding:16px}.smart-actions-grid{grid-template-columns:1fr}}
+    @media(max-width:420px){.evidence-strip{grid-template-columns:1fr}.actions-header h1{font-size:32px}}
+  </style>
+</head>
+<body class="dark">
+  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><div class="user_profile_nav" id="userBtn"><img src="" alt="Account" data-user-avatar><span id="navUserName" data-user-name>User</span><i class="bx bx-chevron-down"></i><div class="dropdown-menu" id="userDropdown"><a href="/dashboard">Account home</a><a href="/api/logout">Logout</a></div></div></div></nav>
+  <nav class="sidebar close" id="sidebar"><div class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span><i class="bx bx-x" id="sidebar-close" aria-label="Close navigation"></i></div><div class="menu_container"><div class="menu_content"></div><div class="sidebar-footer"><div class="sidebar_profile flex"><span class="nav_image"><img src="" alt="Account" data-user-avatar></span><div class="data_text"><span class="name" data-user-name>User</span><span class="email" data-user-id>ID</span></div></div></div></div></nav>
+  <main class="main-content"><section class="actions-page"><div class="actions-hero"><header class="actions-header"><div><div class="eyebrow">Operational intelligence</div><h1>Smart Actions</h1><p>Configure measured automations, then review every Smart Action notification in one place.</p><div class="action-toolbar"><span class="selected-server"><i class="bx bx-server"></i> Managed server <strong id="selectedServer">Loading…</strong></span><button id="refreshActions" class="refresh-button" type="button"><i class="bx bx-refresh"></i> Refresh evidence</button></div></div></header></div><section class="section-card" aria-labelledby="smartActionsHeading"><div class="section-heading"><div><h2 id="smartActionsHeading">⚡ Automation library</h2><p>Enable as many measured automations as your workspace needs. Every card shows its trigger, evidence source, and delivery channel.</p></div><i class="bx bx-bolt-circle section-icon" aria-hidden="true"></i></div><div id="smartActions" class="smart-actions-grid" aria-live="polite"><p class="state">Loading Smart Actions…</p></div></section><section class="section-card" aria-labelledby="issuesHeading"><div class="section-heading"><div><h2 id="issuesHeading">Recommended review</h2><p>Evidence-backed observations from the selected server.</p></div><i class="bx bx-bulb section-icon" aria-hidden="true"></i></div><div id="issues" class="action-list" aria-live="polite"><p class="state">Loading measured evidence…</p></div></section></section></main>
+  <script src="/shared.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+      const api = async (url, options) => { const response = await fetch(url, { credentials: 'same-origin', ...options }); const data = await response.json(); if (!response.ok || data.success === false) throw new Error(data.message || data.error || 'Request failed'); return data; };
+      let selectedGuild = null;
+      function renderSmartActions(items) { const el = $('smartActions'); if (!items?.length) { el.innerHTML = '<p class="state">No Smart Actions are available.</p>'; return; } el.innerHTML = items.map(item => `<article class="action-card"><div class="action-top"><div><h3 class="action-title">${item.icon || '⚡'} ${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description)}</p></div><span class="badge badge-${item.enabled ? 'open' : 'low'}">${item.enabled ? 'Enabled' : 'Available'}</span></div><p class="detail"><span class="detail-label">Recommendation</span>${escapeHtml(item.recommendation)}</p><label class="detail-label" for="channel-${escapeHtml(item.key)}">Discord channel ID</label><input id="channel-${escapeHtml(item.key)}" data-channel-for="${escapeHtml(item.key)}" value="${escapeHtml(item.channelId || '')}" placeholder="123456789012345678" inputmode="numeric"><div class="card-actions"><button type="button" class="primary" data-toggle="${escapeHtml(item.key)}" data-enabled="${item.enabled}">${item.enabled ? 'Disable' : 'Enable'}</button></div></article>`).join(''); el.querySelectorAll('[data-toggle]').forEach(button => button.addEventListener('click', async () => { const key = button.dataset.toggle; const enabled = button.dataset.enabled !== 'true'; const input = el.querySelector(`[data-channel-for="${CSS.escape(key)}"]`); if (enabled && !/^\d{15,25}$/.test(input.value.trim())) return window.showToast('Enter a valid Discord channel ID first.', 'error'); try { const result = await api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/smart-actions/${encodeURIComponent(key)}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ enabled, channelId: input.value.trim() }) }); if (result.replacedAction) window.showToast(`${result.replacedAction.replaceAll('_',' ')} was disabled to make room.`, 'warning'); else window.showToast(enabled ? 'Smart Action enabled.' : 'Smart Action disabled.'); await load(); } catch (error) { window.showToast(error.message, 'error'); } })); }
+      function renderNotifications(items) { const el = $('notifications'); if (!items?.length) { el.innerHTML = '<p class="state">No Smart Action notifications have been recorded.</p>'; return; } el.innerHTML = items.map(item => `<article class="notification-card ${item.readAt ? 'is-read' : ''}"><div class="notification-top"><div><h3 class="notification-title">${escapeHtml(item.title || 'Smart Action notification')}</h3><div class="notification-meta"><span>${escapeHtml(item.source || 'smart action')}</span><span>${escapeHtml(new Date(item.createdAt).toLocaleString())}</span></div></div><span class="badge badge-${escapeHtml(item.status || 'open')}">${escapeHtml(item.status || 'open')}</span></div><p>${escapeHtml(item.message)}</p><div class="card-actions">${item.readAt ? '<button type="button" disabled>Read</button>' : `<button type="button" data-read="${escapeHtml(item._id)}">Mark read</button>`}${item.status === 'resolved' ? '<button type="button" disabled>Resolved</button>' : `<button type="button" data-resolve="${escapeHtml(item._id)}">Resolve</button>`}</div></article>`).join(''); el.querySelectorAll('[data-read]').forEach(b => b.onclick = () => mutateNotification(b.dataset.read, 'read')); el.querySelectorAll('[data-resolve]').forEach(b => b.onclick = () => mutateNotification(b.dataset.resolve, 'resolve')); }
+      async function mutateNotification(id, op) { try { await api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/notifications/${encodeURIComponent(id)}/${op}`, { method:'PATCH' }); await load(); } catch (error) { window.showToast(error.message, 'error'); } }
+      async function load() { try { const [actions, notifications] = await Promise.all([api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/smart-actions`), api(`/api/guilds/${encodeURIComponent(selectedGuild.id)}/notifications?limit=50`)]); renderSmartActions(actions.actions); renderNotifications(notifications.notifications); } catch (error) { $('smartActions').innerHTML = `<p class="state error">${escapeHtml(error.message)}</p>`; $('notifications').innerHTML = '<p class="state">Notifications are unavailable.</p>'; } }
+      async function init() { const data = await api('/api/guilds'); const route = (location.pathname.match(/\/myservers\/([^/]+)\/smart-actions/) || [])[1]; const guilds = Array.isArray(data.guilds) ? data.guilds : []; selectedGuild = route ? guilds.find(g => String(g.id) === decodeURIComponent(route)) : guilds[0]; if (!selectedGuild) { $('smartActions').innerHTML = '<p class="state">No managed server selected.</p>'; return; } $('selectedServer').textContent = selectedGuild.name || selectedGuild.id; await load(); }
+      $('refreshActions').addEventListener('click', () => selectedGuild && load());
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>

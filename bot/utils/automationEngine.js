@@ -157,6 +157,19 @@ async function runSmartPreset(rule, discordClient, now, dedupe) {
     evidence = { ...evidence, eventId: event?._id ? String(event._id) : null, occurredAt: event?.occurredAt || null };
     notificationDedupe = event?._id ? `smart:${rule.serverId}:${preset}:${event._id}` : `smart:${rule.serverId}:${preset}:${Math.floor(now / (5 * 60 * 1000))}`;
     message = rule.messageTemplate || 'ProMcBot recorded the first measured player join in the current activity window.';
+  } else if (['player_join', 'player_leave'].includes(preset)) {
+    const event = await TelemetryEvent.findOne({ serverId: rule.serverId, type: preset, occurredAt: { $gte: new Date(now - 5 * 60 * 1000), $lt: new Date(now) } }).sort({ occurredAt: -1 }).lean();
+    conditionMet = Boolean(event);
+    evidence = { ...evidence, eventId: event?._id ? String(event._id) : null, occurredAt: event?.occurredAt || null, username: event?.data?.username || null };
+    notificationDedupe = event?._id ? `smart:${rule.serverId}:${preset}:${event._id}` : `smart:${rule.serverId}:${preset}:${Math.floor(now / (5 * 60 * 1000))}`;
+    message = `${rule.messageTemplate || (preset === 'player_join' ? 'A player joined the Minecraft server.' : 'A player left the Minecraft server.')} ${event?.data?.username ? `Player: ${event.data.username}.` : ''}`.trim();
+  } else if (['player_count_high', 'player_count_low'].includes(preset)) {
+    const event = await TelemetryEvent.findOne({ serverId: rule.serverId, type: 'player_count', occurredAt: { $gte: new Date(now - 10 * 60 * 1000), $lt: new Date(now) } }).sort({ occurredAt: -1 }).lean();
+    const count = Number(event?.data?.onlinePlayers);
+    conditionMet = Number.isFinite(count) && (preset === 'player_count_high' ? count >= 10 : count <= 1);
+    evidence = { ...evidence, eventId: event?._id ? String(event._id) : null, onlinePlayers: Number.isFinite(count) ? count : null, occurredAt: event?.occurredAt || null };
+    notificationDedupe = event?._id ? `smart:${rule.serverId}:${preset}:${event._id}` : `smart:${rule.serverId}:${preset}:${Math.floor(now / (10 * 60 * 1000))}`;
+    message = `${rule.messageTemplate || (preset === 'player_count_high' ? 'The measured online player count is high.' : 'The measured online player count is low.')} Current measured players: ${Number.isFinite(count) ? count : 'not measured'}.`;
   }
 
   if (!conditionMet) return { status: 'skipped', reason: 'condition_not_met', evidence, dedupeKey: dedupe };
@@ -168,16 +181,16 @@ async function runSmartPreset(rule, discordClient, now, dedupe) {
   if (delivered) {
     await AutomationRule.updateOne({ _id: rule._id }, { $set: { lastTriggeredAt: new Date(now) } });
     if (preset === 'server_recovered') await resolveOpenByDedupeKey(rule.serverId, `smart:${rule.serverId}:server_offline:open`);
-    await createNotification({ guildId: rule.serverId, type: `smart_action_${preset}`, priority: preset === 'server_offline' ? 'high' : 'medium', title: rule.name, message: safeMessage, source: `smart_action:${preset}`, action: '/actions', dedupeKey: notificationDedupe, metadata: { preset, evidence, resolutionStatus: preset === 'server_recovered' ? 'resolved' : 'open' } });
+    await createNotification({ guildId: rule.serverId, type: `smart_action_${preset}`, priority: preset === 'server_offline' ? 'high' : 'medium', title: rule.name, message: safeMessage, source: `smart_action:${preset}`, action: '/smart-actions', dedupeKey: notificationDedupe, metadata: { preset, evidence, resolutionStatus: preset === 'server_recovered' ? 'resolved' : 'open' } });
   } else {
-    await createNotification({ guildId: rule.serverId, type: 'smart_action_failure', priority: 'high', title: `${rule.name} failed`, message: 'The configured Discord channel was unavailable after bounded retries.', source: `smart_action:${preset}`, action: '/actions', dedupeKey: `${notificationDedupe}:failure`, metadata: { preset, evidence, resolutionStatus: 'open' } });
+    await createNotification({ guildId: rule.serverId, type: 'smart_action_failure', priority: 'high', title: `${rule.name} failed`, message: 'The configured Discord channel was unavailable after bounded retries.', source: `smart_action:${preset}`, action: '/smart-actions', dedupeKey: `${notificationDedupe}:failure`, metadata: { preset, evidence, resolutionStatus: 'open' } });
   }
   return { status, evidence, message: safeMessage, dedupeKey: dedupe };
 }
 
 async function runRuleInternal(rule, discordClient, now = Date.now()) {
   const entitlement = await getForGuild(rule.serverId);
-  const requiredFeature = rule.trigger === 'weekly_summary' ? 'automation.advanced' : 'automation.basic';
+  const requiredFeature = rule.trigger === 'weekly_summary' || rule.preset === 'weekly_summary' ? 'automation.advanced' : 'automation.basic';
   const dedupe = dedupeKey(rule, now);
 
   const prior = await AutomationExecution.findOne({ ruleId: rule._id, dedupeKey: dedupe, status: { $in: ['executed', 'failed'] } }).lean();
@@ -212,9 +225,9 @@ async function runRuleInternal(rule, discordClient, now = Date.now()) {
   await writeExecution({ rule, now, status, dedupe, evidence, message });
   if (delivered) {
     await AutomationRule.updateOne({ _id: rule._id }, { $set: { lastTriggeredAt: new Date(now) } });
-    await createNotification({ guildId: rule.serverId, type: 'automation_execution', priority: 'medium', title: 'Automation executed', message, source: `automation:${rule._id}`, action: '/actions', dedupeKey: dedupe, metadata: { ruleId: String(rule._id), evidence, resolutionStatus: 'open' } });
+    await createNotification({ guildId: rule.serverId, type: 'automation_execution', priority: 'medium', title: 'Automation executed', message, source: `automation:${rule._id}`, action: '/smart-actions', dedupeKey: dedupe, metadata: { ruleId: String(rule._id), evidence, resolutionStatus: 'open' } });
   } else {
-    await createNotification({ guildId: rule.serverId, type: 'automation_failure', priority: 'high', title: 'Automation could not be delivered', message: 'The configured Discord channel was unavailable after bounded retries.', source: `automation:${rule._id}`, action: '/actions', dedupeKey: dedupe, metadata: { ruleId: String(rule._id), evidence, resolutionStatus: 'open' } });
+    await createNotification({ guildId: rule.serverId, type: 'automation_failure', priority: 'high', title: 'Automation could not be delivered', message: 'The configured Discord channel was unavailable after bounded retries.', source: `automation:${rule._id}`, action: '/smart-actions', dedupeKey: dedupe, metadata: { ruleId: String(rule._id), evidence, resolutionStatus: 'open' } });
   }
   return { status, evidence, message, dedupeKey: dedupe };
 }

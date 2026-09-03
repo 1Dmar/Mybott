@@ -906,10 +906,11 @@ app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers
 app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/onboarding', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
+app.get('/smart-actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'smart-actions.html')));
 app.get('/premium', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 
 // Dynamic Server Pages
-const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions'];
+const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions', 'smart-actions'];
 serverPages.forEach(page => {
   const serveServerPage = (req, res) => {
     const filePath = path.join(dashDir, 'pages', `${page}.html`);
@@ -1163,10 +1164,10 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
     }
     // AutomationRule enforces a minimum cooldown of 60 minutes for every preset.
     // Using 10 minutes here caused ValidationError for the first three Smart Actions.
-    const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: 60 };
+    const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.trigger === 'weekly_summary' ? 10080 : 60, thresholdPercent: -5, thresholdPlayers: preset.trigger === 'player_count_high' ? 10 : 1 };
     const rule = existing
       ? await AutomationRule.findOneAndUpdate({ _id: existing._id, serverId: req.params.guildId, preset: preset.key }, { $set: ruleData }, { new: true, runValidators: true }).lean()
-      : await AutomationRule.create({ ...ruleData, serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 });
+      : await AutomationRule.create({ ...ruleData, serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5, thresholdPlayers: ruleData.thresholdPlayers });
     if (!rule) return res.status(409).json({ success: false, error: 'smart_action_save_conflict' });
     await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } }).catch(error => console.error('[smart action audit] failed:', error.message));
     res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, replacedAction });
