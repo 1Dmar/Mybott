@@ -116,7 +116,7 @@
         </ul>
         <ul class="menu_items">
           <div class="menu_title"><span>Features</span></div>
-          <li class="item"><a href="${serverPath(gId, 'intelligence')}" class="nav_link ${currentPath.endsWith('/intelligence') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-pulse"></i></span><span class="navlink">Intelligence</span>${navTag('PRO', 'pro')}</a></li>
+          <li class="item"><a href="${serverPath(gId, 'intelligence')}" class="nav_link ${currentPath.endsWith('/intelligence') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-pulse"></i></span><span class="navlink">Intelligence</span></a></li>
           <li class="item"><a href="${serverPath(gId, 'actions')}" class="nav_link ${currentPath.endsWith('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action Center</span>${navTag('NEW')}</a></li>
           <li class="item"><a href="${serverPath(gId, 'smart-actions')}" class="nav_link ${currentPath.endsWith('/smart-actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bolt-circle"></i></span><span class="navlink">Smart Actions</span>${navTag('NEW')}</a></li>
           <li class="item"><a href="${serverPath(gId, 'modules')}" class="nav_link ${currentPath.endsWith('/modules') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-extension"></i></span><span class="navlink">Modules</span></a></li>
