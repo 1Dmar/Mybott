@@ -1013,7 +1013,11 @@ app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildMana
 
 app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
-    const [intel, notifications] = await Promise.all([TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry), listNotifications(req.params.guildId, 50)]);
+    const [intel, plugin, executions] = await Promise.all([
+      TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry),
+      PluginInstance.findOne({ serverId: req.params.guildId, revokedAt: null }).sort({ lastSeenAt: -1 }).lean(),
+      AutomationExecution.find({ serverId: req.params.guildId }).sort({ executedAt: -1 }).limit(5).lean(),
+    ]);
     const recommendations = [...intel.recommendations];
     if (!recommendations.length && intel.confidence === 'insufficient') recommendations.push({
       what: 'Collect more measured evidence',
@@ -1034,13 +1038,14 @@ app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManag
       createdAt: intel.generatedAt,
       status: 'open',
       executable: false,
-      action: { type: 'navigate', href: `/myservers/${encodeURIComponent(req.params.guildId)}/intelligence`, label: 'Open setup & intelligence' },
+      action: { type: 'navigate', href: `/myservers/${encodeURIComponent(req.params.guildId)}/smart-actions`, label: 'Configure a Smart Action' },
     }));
     res.json({
       success: true,
       issues: actions,
-      notifications,
       evidence: { confidence: intel.confidence, sample: intel.sample, generatedAt: intel.generatedAt },
+      server: { connected: Boolean(plugin), lastSeenAt: plugin?.lastSeenAt || null, status: plugin?.status || 'unknown' },
+      recentExecutions: executions.map(item => ({ status: item.status, trigger: item.trigger, executedAt: item.executedAt, preset: item.preset || null })),
       message: actions.length ? null : 'No evidence-backed action is required right now.',
     });
   } catch (error) { res.status(500).json({ success: false, error: 'action_center_failed' }); }
