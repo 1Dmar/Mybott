@@ -130,15 +130,50 @@
       margin: 0 auto;
     }
     .feature-card {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
       min-width: 0;
       height: 100%;
-      background: var(--surface);
+      background: transparent;
       padding: clamp(22px, 4vw, 32px);
       border-radius: 20px;
       border: 1px solid var(--border);
-      transition: 0.3s;
+      transition: transform 400ms ease, border-color 300ms ease;
     }
-    .feature-card:hover { transform: translateY(-5px); border-color: #FF512F; }
+    .feature-card::before,
+    .feature-card::after {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      content: '';
+    }
+    .feature-card::before {
+      z-index: -2;
+      background-image: var(--feature-card-image);
+      background-position: center;
+      background-size: cover;
+      filter: grayscale(1) saturate(0.35);
+      opacity: 0.82;
+      transform: scale(1.01);
+      transition: filter 400ms ease, opacity 400ms ease;
+    }
+    .feature-card::after {
+      z-index: -1;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.2));
+    }
+    .feature-card:hover,
+    .feature-card.is-active {
+      transform: translateY(-5px) scale(1.02);
+      border-color: #FF512F;
+    }
+    .feature-card:hover::before,
+    .feature-card.is-active::before {
+      filter: grayscale(0) saturate(1);
+      opacity: 1;
+    }
+    .feature-card > * { position: relative; z-index: 1; }
     .feature-icon { font-size: 32px; color: #FF512F; margin-bottom: 16px; }
     .feature-card h3 { margin: 0 0 12px; font-weight: 700; }
     .feature-card p { margin: 0; max-width: none; font-size: 16px; line-height: 1.6; }
@@ -200,17 +235,17 @@
   </main>
 
   <section class="features">
-    <div class="feature-card">
+    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/Jjc6zBjP/images-5.jpg');" tabindex="0" role="button">
       <i class='bx bx-stats feature-icon'></i>
       <h3>Live Monitoring</h3>
       <p>Real-time player counts, server status, and latency monitoring directly in Discord and your dashboard.</p>
     </div>
-    <div class="feature-card">
+    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/FLMYsHPn/file-0000000003f881f4bfa30abd818d72e7.png');" tabindex="0" role="button">
       <i class='bx bx-bot feature-icon'></i>
       <h3>Auto Management</h3>
       <p>Powerful auto-responder, ticket systems, and moderation tools to keep your community safe 24/7.</p>
     </div>
-    <div class="feature-card">
+    <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/9mZj9BLX/file-000000004ad882439c3ca35e3277c769.png');" tabindex="0" role="button">
       <i class='bx bx-palette feature-icon'></i>
       <h3>Full Customization</h3>
       <p>Personalize every message, embed, and status image to match your server's unique brand.</p>
@@ -264,6 +299,20 @@
           `;
         }
       });
+
+    const featureCards = Array.from(document.querySelectorAll('.feature-card'));
+    featureCards.forEach(card => {
+      card.addEventListener('click', () => {
+        featureCards.forEach(otherCard => otherCard.classList.remove('is-active'));
+        card.classList.add('is-active');
+      });
+      card.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          card.click();
+        }
+      });
+    });
 
     if (localStorage.getItem('pmcbot_theme') === 'light') {
       document.body.classList.remove('dark');
