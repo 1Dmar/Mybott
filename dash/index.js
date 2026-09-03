@@ -1148,14 +1148,17 @@ app.patch('/api/guilds/:guildId/smart-actions/:preset', isAuthenticated, require
       usage = await consumeUsage(req.params.guildId, 'automation');
       if (!usage.allowed) return res.status(429).json({ success: false, error: 'usage_limit_reached', feature: 'automation', used: usage.used, limit: usage.limit, plan: state.entitlement.plan });
     }
-    const rule = await AutomationRule.findOneAndUpdate(
-      { serverId: req.params.guildId, preset: preset.key },
-      { $set: { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 }, $setOnInsert: { serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 } },
-      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
-    ).lean();
-    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } });
+    const ruleData = { name: preset.name, enabled: true, trigger: preset.trigger, action: 'discord_message', channelId, messageTemplate: preset.defaultMessage, cooldownMinutes: preset.key === 'first_player' ? 60 : 10 };
+    const rule = existing
+      ? await AutomationRule.findOneAndUpdate({ _id: existing._id, serverId: req.params.guildId, preset: preset.key }, { $set: ruleData }, { new: true, runValidators: true }).lean()
+      : await AutomationRule.create({ ...ruleData, serverId: req.params.guildId, preset: preset.key, createdBy: req.user.id, thresholdPercent: -5 });
+    if (!rule) return res.status(409).json({ success: false, error: 'smart_action_save_conflict' });
+    await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: existing ? 'smart_action_enabled' : 'smart_action_created', feature: preset.feature, result: 'success', source: 'dashboard', target: preset.key, metadata: { channelId } }).catch(error => console.error('[smart action audit] failed:', error.message));
     res.json({ success: true, action: { ...preset, enabled: true, status: 'enabled', ruleId: String(rule._id), channelId }, usage });
-  } catch (error) { res.status(400).json({ success: false, error: 'smart_action_update_failed' }); }
+  } catch (error) {
+    console.error('[smart action update] failed:', error.message);
+    res.status(400).json({ success: false, error: 'smart_action_update_failed', message: error.name === 'ValidationError' ? 'The Smart Action data is invalid.' : 'The Smart Action could not be saved. Please try again.' });
+  }
 });
 
 app.post('/api/guilds/:guildId/automation', isAuthenticated, requireGuildManager, async (req, res) => {
