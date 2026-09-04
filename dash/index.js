@@ -333,6 +333,35 @@ const dashDir = path.join(__dirname, 'dashboard');
 app.use('/dashboard', express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send([
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /api/',
+    'Disallow: /dashboard',
+    'Disallow: /myservers',
+    'Disallow: /servers',
+    'Disallow: /actions',
+    'Disallow: /premium',
+    'Disallow: /onboarding',
+    'Disallow: /auth/',
+    'Disallow: /callback/',
+    '',
+    'Sitemap: https://promcbot.dev/sitemap.xml',
+    '',
+  ].join('\n'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://promcbot.dev/</loc></url>
+  <url><loc>https://promcbot.dev/privacy-policy</loc></url>
+  <url><loc>https://promcbot.dev/terms-of-service</loc></url>
+  <url><loc>https://promcbot.dev/stats</loc></url>
+</urlset>`);
+});
+
 app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }), (req, res) => {
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
   res.json(getTrustpilotStats());
