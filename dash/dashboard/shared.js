@@ -53,6 +53,7 @@
     });
     document.querySelectorAll('[data-user-id]').forEach(el => { el.textContent = user.id || '—'; });
     document.querySelectorAll('[data-user-username]').forEach(el => { el.textContent = user.username || displayName; });
+    document.querySelectorAll('[data-admin-only]').forEach(el => { el.hidden = user.isAdmin !== true; });
   }
 
   function initTheme() {

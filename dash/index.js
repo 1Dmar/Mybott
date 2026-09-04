@@ -25,6 +25,8 @@ const PluginCredential = require('../bot/Models/PluginCredential');
 const { authenticatePluginRequest, encryptSecret, hashToken } = require('../bot/utils/pluginSecurity');
 const AutomationRule = require('../bot/Models/AutomationRule');
 const AutomationExecution = require('../bot/Models/AutomationExecution');
+const ChangelogEntry = require('../bot/Models/ChangelogEntry');
+const { DEFAULT_CHANGELOG_ENTRIES } = require('../bot/utils/changelogData');
 const { summarizeTelemetry, WINDOW_MS } = require('../bot/utils/intelligenceEngine');
 const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
 const { summarizeNetwork } = require('../bot/utils/networkIntelligenceEngine');
@@ -298,6 +300,30 @@ function isAuthenticated(req, res, next) {
 }
 
 const DEFAULT_PROFILE_OWNER_ID = '804999528129363998';
+// Admin access is decided only from the authenticated Discord session on the server.
+// The environment override allows ownership rotation without a code change; the supplied owner ID remains the safe default.
+const ADMIN_DISCORD_IDS = new Set(String(process.env.ADMIN_DISCORD_IDS || DEFAULT_PROFILE_OWNER_ID).split(',').map(value => value.trim()).filter(Boolean));
+function isAdminUser(req) { return Boolean(req.user?.id && ADMIN_DISCORD_IDS.has(String(req.user.id))); }
+function requireAdmin(req, res, next) {
+  if (isAdminUser(req)) return next();
+  if (req.path.startsWith('/api/')) return res.status(404).json({ success: false, error: 'not_found' });
+  return res.status(404).send('Not found');
+}
+function normalizeChangelogPayload(body, createdBy) {
+  const categories = Array.isArray(body?.categories) ? body.categories : String(body?.categories || '').split(',');
+  const sections = Array.isArray(body?.sections) ? body.sections : [];
+  return {
+    version: String(body?.version || '').trim().slice(0, 32), date: String(body?.date || '').trim().slice(0, 80),
+    title: String(body?.title || '').trim().slice(0, 140), description: String(body?.description || '').trim().slice(0, 500),
+    categories: [...new Set(categories.map(value => String(value).trim().toUpperCase()).filter(value => ['NEW', 'IMPROVED', 'FIXED', 'SECURITY'].includes(value)))].slice(0, 4),
+    sections: sections.map(section => ({ title: String(section?.title || '').trim().slice(0, 80), items: (Array.isArray(section?.items) ? section.items : []).map(item => String(item).trim().slice(0, 240)).filter(Boolean).slice(0, 12) })).filter(section => section.title && section.items.length).slice(0, 6),
+    createdBy,
+  };
+}
+async function seedChangelogIfEmpty() {
+  if (mongoose.connection.readyState !== 1 || await ChangelogEntry.exists()) return;
+  await ChangelogEntry.insertMany(DEFAULT_CHANGELOG_ENTRIES.map(entry => ({ ...entry, createdBy: 'system' })));
+}
 
 async function ensureDefaultProfileFollow(followerId) {
   if (!followerId || followerId === DEFAULT_PROFILE_OWNER_ID || mongoose.connection.readyState !== 1) return;
@@ -350,6 +376,32 @@ const legalPages = {
 };
 Object.entries(legalPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
+});
+app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
+app.get('/api/changelog', async (req, res) => {
+  try {
+    await seedChangelogIfEmpty();
+    const entries = mongoose.connection.readyState === 1 ? await ChangelogEntry.find().sort({ createdAt: -1 }).lean() : [];
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    res.json({ success: true, entries: entries.length ? entries : DEFAULT_CHANGELOG_ENTRIES });
+  } catch (_) { res.status(503).json({ success: false, error: 'changelog_unavailable' }); }
+});
+app.get('/api/admin/changelog', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+  await seedChangelogIfEmpty();
+  res.json({ success: true, entries: await ChangelogEntry.find().sort({ createdAt: -1 }).lean() });
+});
+app.post('/api/admin/changelog', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+  try { const entry = await ChangelogEntry.create(normalizeChangelogPayload(req.body, req.user.id)); res.status(201).json({ success: true, entry }); }
+  catch (error) { res.status(400).json({ success: false, error: 'invalid_changelog_entry', message: 'Check the version, title, categories, and at least one feature section.' }); }
+});
+app.patch('/api/admin/changelog/:id', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+  try { const payload = normalizeChangelogPayload(req.body, req.user.id); const entry = await ChangelogEntry.findByIdAndUpdate(req.params.id, { $set: payload }, { new: true, runValidators: true }).lean(); if (!entry) return res.status(404).json({ success: false, error: 'changelog_entry_not_found' }); res.json({ success: true, entry }); }
+  catch (_) { res.status(400).json({ success: false, error: 'invalid_changelog_entry' }); }
+});
+app.delete('/api/admin/changelog/:id', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+  const result = await ChangelogEntry.deleteOne({ _id: req.params.id });
+  if (!result.deletedCount) return res.status(404).json({ success: false, error: 'changelog_entry_not_found' });
+  res.json({ success: true });
 });
 app.get('/privacy', (req, res) => res.redirect(308, '/privacy-policy'));
 app.get('/terms', (req, res) => res.redirect(308, '/terms-of-service'));
@@ -712,6 +764,7 @@ app.get('/callback/check/userData', (req, res) => {
     authenticated: true,
     user: {
       id: req.user.id,
+      isAdmin: isAdminUser(req),
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,

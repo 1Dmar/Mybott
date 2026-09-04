@@ -37,7 +37,8 @@
     .support-action:active { transform:scale(.98); }
     @media (max-width:768px) { .public-profile-settings { grid-template-columns:1fr; } .profile-settings-actions button,.profile-settings-actions a { width:100%; } .support-panel { grid-template-columns:1fr; } .support-action { width:100%; } }
     @media (max-width:768px) { .dashboard-intro { display:block; } .dashboard-actions { margin-top:12px; } }
-  </style>
+  .admin-panel-card{display:flex;align-items:center;gap:12px;margin-top:16px;padding:15px 17px;border:1px solid color-mix(in srgb,var(--primary) 35%,var(--border));border-radius:14px;background:var(--primary-soft);color:var(--text);text-decoration:none}.admin-panel-card>i:first-child{color:var(--primary);font-size:22px}.admin-panel-card span{display:flex;flex:1;flex-direction:column}.admin-panel-card strong{font-size:13px}.admin-panel-card small{margin-top:2px;color:var(--text-muted);font-size:11px}.admin-panel-card>i:last-child{color:var(--primary)}
+</style>
 </head>
 <body>
   <nav class="sidebar close" id="sidebar" aria-label="Primary navigation">
@@ -113,6 +114,7 @@
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-server"></i></div><div class="stat-info"><h3>Managed servers</h3><p id="serverCount" aria-live="polite">Loading…</p></div></article>
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-shield-quarter"></i></div><div class="stat-info"><h3>Current plan</h3><p id="planValue" aria-live="polite">FREE</p></div></article>
     </section>
+    <a href="/admin/changelog" data-admin-only hidden class="admin-panel-card"><i class="bx bx-shield-quarter"></i><span><strong>Admin Panel</strong><small>Manage official changelog releases</small></span><i class="bx bx-right-arrow-alt"></i></a>
 
     <h2 class="section-title"><i class="bx bx-line-chart"></i> Server Intelligence</h2>
     <section class="api-section">
