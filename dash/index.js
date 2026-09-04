@@ -302,7 +302,7 @@ function isAuthenticated(req, res, next) {
 const DEFAULT_PROFILE_OWNER_ID = '804999528129363998';
 // Admin access is decided only from the authenticated Discord session on the server.
 // The environment override allows ownership rotation without a code change; the supplied owner ID remains the safe default.
-const ADMIN_DISCORD_IDS = new Set(String(process.env.ADMIN_DISCORD_IDS || DEFAULT_PROFILE_OWNER_ID).split(',').map(value => value.trim()).filter(Boolean));
+const ADMIN_DISCORD_IDS = new Set([DEFAULT_PROFILE_OWNER_ID, ...String(process.env.ADMIN_DISCORD_IDS || '').split(',').map(value => value.trim()).filter(Boolean)]);
 function isAdminUser(req) { return Boolean(req.user?.id && ADMIN_DISCORD_IDS.has(String(req.user.id))); }
 function requireAdmin(req, res, next) {
   if (isAdminUser(req)) return next();
