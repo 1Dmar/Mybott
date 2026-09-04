@@ -346,6 +346,7 @@ app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
 const legalPages = {
   '/privacy-policy': 'PrivacyPolicy.html',
   '/terms-of-service': 'TermsOfService.html',
+  '/changelog': 'changelog.html',
 };
 Object.entries(legalPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
