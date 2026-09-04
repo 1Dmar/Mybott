@@ -17,10 +17,11 @@ test('Change Look uses the dashboard navbar controls', () => {
   }
 });
 
-test('Public homepage keeps Dashboard and Invite Bot reachable behind a mobile hamburger', () => {
+test('Public homepage keeps navigation links reachable behind a mobile hamburger', () => {
   assert.match(home, /id="landingMenuToggle"/);
-  assert.match(home, /id="landingMenu"/);
-  assert.match(home, /@media \(max-width: 640px\)/);
+  assert.match(home, /class="nav-links"/);
+  assert.match(home, /\.nav-links\.is-open/);
+  assert.match(home, /@media \(max-width: 720px\)/);
   assert.match(home, /href="\/invitebot"/);
   assert.match(home, /aria-expanded/);
 });
