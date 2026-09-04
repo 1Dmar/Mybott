@@ -26,6 +26,7 @@ const { authenticatePluginRequest, encryptSecret, hashToken } = require('../bot/
 const AutomationRule = require('../bot/Models/AutomationRule');
 const AutomationExecution = require('../bot/Models/AutomationExecution');
 const ChangelogEntry = require('../bot/Models/ChangelogEntry');
+const AdminMember = require('../bot/Models/AdminMember');
 const { DEFAULT_CHANGELOG_ENTRIES } = require('../bot/utils/changelogData');
 const { summarizeTelemetry, WINDOW_MS } = require('../bot/utils/intelligenceEngine');
 const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
@@ -303,11 +304,27 @@ const DEFAULT_PROFILE_OWNER_ID = '804999528129363998';
 // Admin access is decided only from the authenticated Discord session on the server.
 // The environment override allows ownership rotation without a code change; the supplied owner ID remains the safe default.
 const ADMIN_DISCORD_IDS = new Set([DEFAULT_PROFILE_OWNER_ID, ...String(process.env.ADMIN_DISCORD_IDS || '').split(',').map(value => value.trim()).filter(Boolean)]);
-function isAdminUser(req) { return Boolean(req.user?.id && ADMIN_DISCORD_IDS.has(String(req.user.id))); }
-function requireAdmin(req, res, next) {
-  if (isAdminUser(req)) return next();
+const ADMIN_ROLE_RANK = { editor: 1, admin: 2, owner: 3 };
+async function getAdminRole(req) {
+  const id = String(req.user?.id || '');
+  if (!id) return null;
+  if (id === DEFAULT_PROFILE_OWNER_ID) return 'owner';
+  if (ADMIN_DISCORD_IDS.has(id)) return 'admin';
+  if (mongoose.connection.readyState !== 1) return null;
+  const member = await AdminMember.findOne({ discordId: id }).lean();
+  return member?.role || null;
+}
+async function isAdminUser(req) { return Boolean(await getAdminRole(req)); }
+async function requireAdmin(req, res, next) {
+  if (await isAdminUser(req)) return next();
   if (req.path.startsWith('/api/')) return res.status(404).json({ success: false, error: 'not_found' });
   return res.status(404).send('Not found');
+}
+async function requireAdminRole(req, res, next) {
+  const role = await getAdminRole(req);
+  if (!role) return res.status(404).json({ success: false, error: 'not_found' });
+  req.adminRole = role;
+  next();
 }
 function normalizeChangelogPayload(body, createdBy) {
   const categories = Array.isArray(body?.categories) ? body.categories : String(body?.categories || '').split(',');
@@ -386,21 +403,43 @@ app.get('/api/changelog', async (req, res) => {
     res.json({ success: true, entries: entries.length ? entries : DEFAULT_CHANGELOG_ENTRIES });
   } catch (_) { res.status(503).json({ success: false, error: 'changelog_unavailable' }); }
 });
-app.get('/api/admin/changelog', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+app.get('/api/admin/changelog', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   await seedChangelogIfEmpty();
   res.json({ success: true, entries: await ChangelogEntry.find().sort({ createdAt: -1 }).lean() });
 });
-app.post('/api/admin/changelog', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+app.post('/api/admin/changelog', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   try { const entry = await ChangelogEntry.create(normalizeChangelogPayload(req.body, req.user.id)); res.status(201).json({ success: true, entry }); }
   catch (error) { res.status(400).json({ success: false, error: 'invalid_changelog_entry', message: 'Check the version, title, categories, and at least one feature section.' }); }
 });
-app.patch('/api/admin/changelog/:id', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+app.patch('/api/admin/changelog/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   try { const payload = normalizeChangelogPayload(req.body, req.user.id); const entry = await ChangelogEntry.findByIdAndUpdate(req.params.id, { $set: payload }, { new: true, runValidators: true }).lean(); if (!entry) return res.status(404).json({ success: false, error: 'changelog_entry_not_found' }); res.json({ success: true, entry }); }
   catch (_) { res.status(400).json({ success: false, error: 'invalid_changelog_entry' }); }
 });
-app.delete('/api/admin/changelog/:id', isAuthenticated, requireAdmin, requireDatabaseReady, async (req, res) => {
+app.delete('/api/admin/changelog/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   const result = await ChangelogEntry.deleteOne({ _id: req.params.id });
   if (!result.deletedCount) return res.status(404).json({ success: false, error: 'changelog_entry_not_found' });
+  res.json({ success: true });
+});
+app.get('/api/admin/members', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const members = await AdminMember.find().sort({ createdAt: -1 }).lean();
+  res.json({ success: true, actorRole: req.adminRole, members: [{ discordId: DEFAULT_PROFILE_OWNER_ID, role: 'owner', protected: true }, ...members.map(member => ({ discordId: member.discordId, role: member.role, createdAt: member.createdAt, protected: false }))] });
+});
+app.post('/api/admin/members', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const discordId = String(req.body?.discordId || '').trim();
+  const role = String(req.body?.role || '').toLowerCase();
+  if (!/^\d{5,25}$/.test(discordId) || !['admin', 'editor'].includes(role)) return res.status(400).json({ success: false, error: 'invalid_admin_member' });
+  if (discordId === DEFAULT_PROFILE_OWNER_ID) return res.status(409).json({ success: false, error: 'owner_already_exists' });
+  if (ADMIN_ROLE_RANK[req.adminRole] <= ADMIN_ROLE_RANK[role]) return res.status(403).json({ success: false, error: 'role_management_forbidden', message: 'You may only grant a role lower than your own.' });
+  try { const member = await AdminMember.create({ discordId, role, createdBy: req.user.id }); res.status(201).json({ success: true, member: { discordId: member.discordId, role: member.role } }); }
+  catch (error) { res.status(error?.code === 11000 ? 409 : 400).json({ success: false, error: error?.code === 11000 ? 'admin_member_exists' : 'invalid_admin_member' }); }
+});
+app.delete('/api/admin/members/:discordId', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const discordId = String(req.params.discordId || '');
+  if (discordId === DEFAULT_PROFILE_OWNER_ID) return res.status(403).json({ success: false, error: 'owner_protected' });
+  const target = await AdminMember.findOne({ discordId }).lean();
+  if (!target) return res.status(404).json({ success: false, error: 'admin_member_not_found' });
+  if (ADMIN_ROLE_RANK[req.adminRole] <= ADMIN_ROLE_RANK[target.role]) return res.status(403).json({ success: false, error: 'role_management_forbidden', message: 'A role can only be removed by someone higher in the hierarchy.' });
+  await AdminMember.deleteOne({ discordId });
   res.json({ success: true });
 });
 app.get('/privacy', (req, res) => res.redirect(308, '/privacy-policy'));
@@ -758,13 +797,14 @@ app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuil
   }
 });
 
-app.get('/callback/check/userData', (req, res) => {
+app.get('/callback/check/userData', async (req, res) => {
   if (!req.isAuthenticated()) return res.json({ authenticated: false });
   res.json({
     authenticated: true,
     user: {
       id: req.user.id,
-      isAdmin: isAdminUser(req),
+      isAdmin: await isAdminUser(req),
+      adminRole: await getAdminRole(req),
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
