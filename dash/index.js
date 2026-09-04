@@ -476,9 +476,23 @@ app.get('/auth/discord/callback', (req, res, next) => {
 });
 
 function completeLogout(req, res) {
-  req.logout(() => res.redirect('/'));
+  const finish = error => {
+    if (error) {
+      console.error('[logout] passport logout failed:', error.message);
+      return res.status(500).json({ success: false, error: 'logout_failed' });
+    }
+    const clear = () => {
+      res.clearCookie('connect.sid', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+      if (req.accepts('json') || req.get('x-requested-with') === 'XMLHttpRequest') return res.json({ success: true });
+      return res.redirect('/');
+    };
+    if (req.session) return req.session.destroy(destroyError => destroyError ? finish(destroyError) : clear());
+    return clear();
+  };
+  return req.logout(finish);
 }
 
+app.get('/api/logout', completeLogout);
 app.post('/api/logout', completeLogout);
 
 // ── User API ──────────────────────────────────────────────────────
