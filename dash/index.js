@@ -70,6 +70,7 @@ const BotConfig       = require('../bot/Models/BotConfig');
 const UserProfile      = require('../bot/Models/UserProfile');
 const ProfileFollow    = require('../bot/Models/ProfileFollow');
 const ProfileLike      = require('../bot/Models/ProfileLike');
+const ServerVote        = require('../bot/Models/ServerVote');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -731,20 +732,55 @@ app.get('/callback/check/userData', (req, res) => {
 
 // Public stats/profile experience. These endpoints intentionally expose aggregates only.
 const publicStatsLimiter = rateLimit({ windowMs: 60 * 1000, max: 90, standardHeaders: true, legacyHeaders: false });
+const serverVoteLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'server_vote_rate_limited' } });
 app.get('/api/public/stats/:guildId', publicStatsLimiter, requireDatabaseReady, async (req, res) => {
   const guildId = String(req.params.guildId || '');
   if (!/^\d{5,25}$/.test(guildId)) return res.status(400).json({ success: false, error: 'invalid_guild_id' });
   try {
     const botClient = getBotClient();
     const guild = botClient?.guilds?.cache?.get(guildId) || null;
-    const [plugin, events] = await Promise.all([
+    const viewerId = req.isAuthenticated?.() && req.user?.id ? String(req.user.id) : null;
+    const [plugin, events, voteCount, viewerVote] = await Promise.all([
       PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
       TelemetryEvent.find({ serverId: guildId, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['heartbeat', 'player_count', 'player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(5000).lean(),
+      ServerVote.countDocuments({ guildId }),
+      viewerId ? ServerVote.exists({ guildId, voterId: viewerId }) : null,
     ]);
     const stats = buildPublicStats(events, plugin);
-    res.json({ success: true, server: { id: guildId, name: guild?.name || plugin?.serverName || 'Minecraft server', icon: guild?.icon || null }, stats, source: 'aggregate_telemetry' });
+    res.json({ success: true, server: { id: guildId, name: guild?.name || plugin?.serverName || 'Minecraft server', icon: guild?.icon || null }, stats, votes: { count: voteCount, voted: Boolean(viewerVote), authenticated: Boolean(viewerId) }, source: 'aggregate_telemetry' });
   } catch (error) {
     res.status(503).json({ success: false, error: 'public_stats_unavailable' });
+  }
+});
+
+async function getServerVoteState(guildId, viewerId = null) {
+  const [count, voted] = await Promise.all([
+    ServerVote.countDocuments({ guildId }),
+    viewerId ? ServerVote.exists({ guildId, voterId: viewerId }) : null,
+  ]);
+  return { count, voted: Boolean(voted), authenticated: Boolean(viewerId) };
+}
+
+app.put('/api/public/stats/:guildId/vote', isAuthenticated, serverVoteLimiter, requireDatabaseReady, async (req, res) => {
+  const guildId = String(req.params.guildId || '');
+  if (!/^\d{5,25}$/.test(guildId)) return res.status(400).json({ success: false, error: 'invalid_guild_id' });
+  try {
+    await ServerVote.updateOne({ guildId, voterId: String(req.user.id) }, { $setOnInsert: { guildId, voterId: String(req.user.id), createdAt: new Date() } }, { upsert: true });
+    res.json({ success: true, votes: await getServerVoteState(guildId, String(req.user.id)) });
+  } catch (error) {
+    if (error?.code === 11000) return res.json({ success: true, votes: await getServerVoteState(guildId, String(req.user.id)) });
+    res.status(500).json({ success: false, error: 'server_vote_failed' });
+  }
+});
+
+app.delete('/api/public/stats/:guildId/vote', isAuthenticated, serverVoteLimiter, requireDatabaseReady, async (req, res) => {
+  const guildId = String(req.params.guildId || '');
+  if (!/^\d{5,25}$/.test(guildId)) return res.status(400).json({ success: false, error: 'invalid_guild_id' });
+  try {
+    await ServerVote.deleteOne({ guildId, voterId: String(req.user.id) });
+    res.json({ success: true, votes: await getServerVoteState(guildId, String(req.user.id)) });
+  } catch (_) {
+    res.status(500).json({ success: false, error: 'server_vote_failed' });
   }
 });
 
@@ -866,8 +902,59 @@ app.delete('/api/public/profile/:identifier/like', isAuthenticated, profileMutat
   } catch (error) { res.status(error.status || 404).json({ success: false, error: error.code || 'unlike_failed', message: error.message }); }
 });
 
-app.get('/stats', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
-app.get('/stats/:guildId', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'stats.html')));
+const statsPageTemplate = fs.readFileSync(path.join(dashDir, 'pages', 'stats.html'), 'utf8');
+function renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon }) {
+  const safeGuildId = /^\d{5,25}$/.test(String(guildId || '')) ? String(guildId) : null;
+  const canonicalPath = safeGuildId ? `/stats/${encodeURIComponent(safeGuildId)}` : '/stats';
+  const canonicalUrl = `https://promcbot.dev${canonicalPath}`;
+  const safeName = String(serverName || 'Public Minecraft server').trim().slice(0, 120) || 'Public Minecraft server';
+  const safeVoteCount = Number.isFinite(Number(voteCount)) && Number(voteCount) >= 0 ? Math.floor(Number(voteCount)) : 0;
+  const title = `${safeName} · Public stats · ProMcBot`;
+  const description = `${safeName} public server statistics on ProMcBot. ${safeVoteCount} community votes and aggregate Minecraft telemetry.`;
+  const iconUrl = serverIcon && /^\d{5,25}$/.test(String(guildId || '')) ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guildId)}/${encodeURIComponent(serverIcon)}.png?size=256` : null;
+  const meta = [
+    `<meta name="description" content="${escapeMeta(description)}">`,
+    '<meta name="robots" content="index, follow">',
+    `<link rel="canonical" href="${canonicalUrl}">`,
+    '<meta property="og:type" content="website">',
+    '<meta property="og:site_name" content="ProMcBot">',
+    `<meta property="og:title" content="${escapeMeta(title)}">`,
+    `<meta property="og:description" content="${escapeMeta(description)}">`,
+    `<meta property="og:url" content="${canonicalUrl}">`,
+    ...(iconUrl ? [`<meta property="og:image" content="${iconUrl}">`, `<meta name="twitter:image" content="${iconUrl}">`] : []),
+    '<meta name="twitter:card" content="summary">',
+    `<meta name="twitter:title" content="${escapeMeta(title)}">`,
+    `<meta name="twitter:description" content="${escapeMeta(description)}">`,
+    `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: title, url: canonicalUrl, description, interactionStatistic: { '@type': 'InteractionCounter', interactionType: { '@type': 'LikeAction' }, userInteractionCount: safeVoteCount } }).replace(/</g, '\\u003c')}</script>`,
+  ].join('\n  ');
+  return statsPageTemplate.replace('<!-- STATS_DYNAMIC_META -->', meta).replace('<title>Public server stats · ProMcBot</title>', `<title>${escapeMeta(title)}</title>`);
+}
+
+async function serveStatsPage(req, res) {
+  const guildId = String(req.params.guildId || '');
+  let serverName = 'Public Minecraft server';
+  let voteCount = 0;
+  let serverIcon = null;
+  if (/^\d{5,25}$/.test(guildId) && mongoose.connection.readyState === 1) {
+    try {
+      const [plugin, votes] = await Promise.all([
+        PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
+        ServerVote.countDocuments({ guildId }),
+      ]);
+      const guild = getBotClient()?.guilds?.cache?.get(guildId);
+      serverName = guild?.name || plugin?.serverName || serverName;
+      serverIcon = guild?.icon || null;
+      voteCount = votes;
+    } catch (_) {}
+  }
+  if (!serverIcon) {
+    const guild = getBotClient()?.guilds?.cache?.get(guildId);
+    serverIcon = guild?.icon || null;
+  }
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300').type('html').send(renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon }));
+}
+app.get('/stats', serveStatsPage);
+app.get('/stats/:guildId', serveStatsPage);
 const publicProfilePagePath = path.join(dashDir, 'pages', 'profile.html');
 const publicProfilePageTemplate = fs.readFileSync(publicProfilePagePath, 'utf8');
 const escapeMeta = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[character]));
