@@ -10,7 +10,7 @@ const rendererSource = fs.readFileSync(require.resolve('../dash/publicProfileCar
 const profilePageSource = fs.readFileSync(require.resolve('../dash/dashboard/pages/profile.html'), 'utf8');
 const serverSource = fs.readFileSync(require.resolve('../dash/index.js'), 'utf8');
 
-test('public profile card renders the supplied 3:2 template with dynamic profile fields', async () => {
+test('public profile card renders the premium Minecraft template with dynamic profile fields', async () => {
   const buffer = await renderPublicProfileCard({
     id: '804999528129363998',
     username: 'alim',
@@ -27,8 +27,8 @@ test('public profile card renders the supplied 3:2 template with dynamic profile
   assert.ok(buffer.length > 5000);
 });
 
-test('public profile card uses the fixed official reference template', () => {
-  assert.match(rendererSource, /public-profile-template-clean\.png/);
+test('public profile card uses the premium Minecraft banner and dynamic overlay', () => {
+  assert.match(rendererSource, /profile-card-banner\.jpg/);
   assert.match(rendererSource, /CARD_WIDTH = 1536/);
   assert.match(rendererSource, /CARD_HEIGHT = 1024/);
   assert.doesNotMatch(rendererSource, /Powered by ProMcBot/);
@@ -43,11 +43,11 @@ test('public profile card uses the fixed official reference template', () => {
   assert.match(rendererSource, /2 \* 1024 \* 1024/);
 });
 
-test('fixed template asset is present and has the supplied 3:2 dimensions', async () => {
-  const assetPath = path.join(__dirname, '..', 'dash', 'dashboard', 'assets', 'public-profile-template-clean.png');
+test('profile banner asset is present and has a cinematic wide aspect ratio', async () => {
+  const assetPath = path.join(__dirname, '..', 'dash', 'dashboard', 'assets', 'profile-card-banner.jpg');
   assert.equal(fs.existsSync(assetPath), true);
   const metadata = await sharp(assetPath).metadata();
-  assert.equal(metadata.width / metadata.height, 1.5);
+  assert.ok(metadata.width / metadata.height > 2);
 });
 
 test('public profile page keeps the official footer logo and current copy', () => {

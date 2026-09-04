@@ -14,23 +14,25 @@
     .public-profile-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .public-profile-actions a { display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:9px 13px; border:1px solid var(--border); border-radius:10px; background:var(--surface); color:var(--text); font-size:12px; font-weight:800; text-decoration:none; }
     .public-profile-actions a.primary { border-color:var(--primary); background:var(--primary); color:#fff; }
-    .public-profile-card { position:relative; overflow:hidden; border:1px solid rgba(152,201,255,.22); border-radius:26px; background:linear-gradient(155deg,rgba(17,48,107,.94),rgba(7,17,42,.98)); box-shadow:0 30px 90px rgba(0,5,25,.45),inset 0 1px rgba(255,255,255,.1); }
-    .public-profile-card::after { position:absolute; right:-150px; top:-170px; width:390px; height:390px; border:1px solid rgba(116,213,255,.22); border-radius:50%; box-shadow:0 0 0 26px rgba(116,213,255,.04),0 0 0 54px rgba(116,213,255,.025); content:''; pointer-events:none; }
-    .public-profile-banner { min-height:190px; background:radial-gradient(circle at 15% 18%,rgba(106,227,255,.7),transparent 25%),linear-gradient(135deg,#1553b8,#6237b9); background-size:cover; background-position:center; }
+    .public-profile-card { position:relative; overflow:hidden; border:1px solid rgba(255,125,211,.3); border-radius:28px; background:#080a18; box-shadow:0 30px 90px rgba(0,0,0,.5),0 0 70px rgba(160,55,207,.12),inset 0 1px rgba(255,255,255,.1); }
+    .public-profile-card::after { position:absolute; right:-150px; top:-170px; width:390px; height:390px; border:1px solid rgba(255,102,203,.28); border-radius:50%; box-shadow:0 0 0 26px rgba(255,102,203,.05),0 0 0 54px rgba(132,72,255,.04); content:''; pointer-events:none; }
+    .public-profile-banner { position:relative; min-height:230px; background-image:linear-gradient(180deg,rgba(5,5,18,.08),rgba(5,5,18,.35)),url('/dashboard/assets/profile-card-banner.jpg'); background-size:cover; background-position:center; }
+    .public-profile-banner::after { position:absolute; inset:0; content:''; background:linear-gradient(90deg,rgba(7,7,22,.05),transparent 55%,rgba(255,69,177,.12)); pointer-events:none; }
     .public-profile-content { position:relative; z-index:1; padding:0 clamp(22px,4vw,42px) 34px; }
-    .public-profile-identity { display:flex; align-items:flex-end; gap:20px; margin-top:-54px; }
-    .public-profile-avatar { width:112px; height:112px; flex:0 0 112px; border:5px solid #0d1e46; border-radius:30px; object-fit:cover; background:#0c1c3f; box-shadow:0 14px 30px rgba(0,0,0,.28); }
+    .public-profile-identity { display:grid; grid-template-columns:112px minmax(0,1fr) minmax(260px, .72fr); align-items:end; gap:20px; margin-top:-58px; }
+    .public-profile-avatar { width:112px; height:112px; flex:0 0 112px; border:5px solid #171027; border-radius:50%; object-fit:cover; background:#0c0920; box-shadow:0 0 0 2px #ff4eb5,0 14px 34px rgba(0,0,0,.42); }
     .public-profile-identity-copy { min-width:0; padding-bottom:8px; }
-    .public-profile-kicker { color:#6ce1ff; font-size:10px; font-weight:850; letter-spacing:.17em; text-transform:uppercase; }
-    .public-profile-name { overflow:hidden; margin:6px 0 4px; color:#f6fbff; font-size:clamp(30px,5vw,48px); font-weight:850; letter-spacing:-.055em; line-height:1.05; text-overflow:ellipsis; }
-    .public-profile-handle { overflow:hidden; color:#94a8c7; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
+    .public-profile-kicker { color:#ff83cb; font-size:10px; font-weight:850; letter-spacing:.17em; text-transform:uppercase; }
+    .public-profile-name { overflow:hidden; margin:6px 0 4px; color:#fff8ff; font-size:clamp(30px,5vw,48px); font-weight:850; letter-spacing:-.055em; line-height:1.05; text-overflow:ellipsis; text-shadow:0 4px 26px rgba(255,65,185,.22); }
+    .public-profile-handle { overflow:hidden; color:#d19ac5; font-size:14px; text-overflow:ellipsis; white-space:nowrap; }
     .public-profile-badges { display:flex; flex-wrap:wrap; gap:7px; margin-top:11px; }
     .public-profile-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid rgba(138,222,255,.25); border-radius:999px; background:rgba(101,210,255,.1); color:#b3f1ff; font-size:9px; font-weight:850; letter-spacing:.07em; text-transform:uppercase; }
     .public-profile-badge.bot { border-color:rgba(171,132,255,.32); background:rgba(132,87,255,.14); color:#d2c1ff; }
     .public-profile-dot { width:8px; height:8px; border-radius:50%; background:#65efb1; box-shadow:0 0 13px #65efb1; }
     .public-profile-status { display:flex; align-items:center; gap:9px; margin:24px 0 0; padding:14px 15px; border:1px solid rgba(151,201,255,.16); border-radius:15px; background:rgba(6,21,57,.45); color:#d7e6fb; font-size:13px; }
-    .public-profile-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px; }
-    .public-profile-stat { min-width:0; padding:14px; border:1px solid rgba(151,201,255,.15); border-radius:14px; background:rgba(25,57,117,.33); }
+    .public-profile-spotlight { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); min-width:0; border:1px solid rgba(255,100,202,.38); border-radius:20px; background:linear-gradient(135deg,rgba(39,18,58,.85),rgba(15,13,34,.88)); box-shadow:0 12px 35px rgba(0,0,0,.3),inset 0 1px rgba(255,255,255,.08); }
+    .public-profile-stat { min-width:0; padding:16px 18px; }
+    .public-profile-stat + .public-profile-stat { border-left:1px solid rgba(255,151,226,.18); }
     .public-profile-stat small { display:block; overflow:hidden; color:#94a8c7; font-size:9px; font-weight:750; letter-spacing:.08em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
     .public-profile-stat strong { display:block; overflow:hidden; margin-top:6px; color:#f6fbff; font-size:13px; text-overflow:ellipsis; white-space:nowrap; }
     .public-profile-about { max-width:760px; margin:20px 0 0; color:#aebfda; font-size:13px; line-height:1.7; }
@@ -52,18 +54,19 @@
     .public-profile-social-note { grid-column:1 / -1; margin:0; color:var(--text-muted); font-size:11px; }
     .public-profile-copyright { display:flex; align-items:center; justify-content:center; gap:9px; margin:18px 0 0; color:var(--text-muted); font-size:11px; text-align:center; }
     .public-profile-copyright-logo { width:24px; height:24px; border:1px solid rgba(142,234,255,.45); border-radius:50%; object-fit:cover; box-shadow:0 0 18px rgba(90,214,255,.28); }
-    body:not(.dark) .public-profile-card { border-color:rgba(80,118,190,.22); background:linear-gradient(155deg,rgba(239,246,255,.98),rgba(224,235,255,.98)); box-shadow:0 24px 70px rgba(67,87,126,.18),inset 0 1px rgba(255,255,255,.92); }
+    body:not(.dark) .public-profile-card { border-color:rgba(158,77,167,.25); background:linear-gradient(155deg,rgba(31,21,44,.98),rgba(14,13,28,.99)); box-shadow:0 24px 70px rgba(67,43,96,.25),inset 0 1px rgba(255,255,255,.1); }
     body:not(.dark) .public-profile-card::after { border-color:rgba(88,101,242,.17); box-shadow:0 0 0 26px rgba(88,101,242,.035),0 0 0 54px rgba(88,101,242,.02); }
-    body:not(.dark) .public-profile-banner { background:radial-gradient(circle at 15% 18%,rgba(255,255,255,.82),transparent 25%),linear-gradient(135deg,#6b93e8,#a287dc); }
-    body:not(.dark) .public-profile-avatar { border-color:#f8fbff; background:#dbeafe; box-shadow:0 14px 30px rgba(54,76,130,.2); }
-    body:not(.dark) .public-profile-name { color:#101a32; }
-    body:not(.dark) .public-profile-handle { color:#4b628a; }
+    body:not(.dark) .public-profile-banner { filter:saturate(.92) brightness(.82); }
+    body:not(.dark) .public-profile-avatar { border-color:#171027; background:#0c0920; }
+    body:not(.dark) .public-profile-name { color:#fff8ff; }
+    body:not(.dark) .public-profile-handle { color:#d19ac5; }
     body:not(.dark) .public-profile-kicker { color:#3167c7; }
     body:not(.dark) .public-profile-badge { border-color:rgba(49,103,199,.2); background:rgba(49,103,199,.08); color:#27549d; }
     body:not(.dark) .public-profile-status { border-color:#cfdbef; background:rgba(255,255,255,.7); color:#334155; }
-    body:not(.dark) .public-profile-stat { border-color:#cfdbef; background:rgba(255,255,255,.66); }
-    body:not(.dark) .public-profile-stat small { color:#64748b; }
-    body:not(.dark) .public-profile-stat strong { color:#17233e; }
+    body:not(.dark) .public-profile-spotlight { border-color:rgba(255,100,202,.38); background:linear-gradient(135deg,rgba(39,18,58,.85),rgba(15,13,34,.88)); }
+    body:not(.dark) .public-profile-stat + .public-profile-stat { border-color:rgba(255,151,226,.18); }
+    body:not(.dark) .public-profile-stat small { color:#d19ac5; }
+    body:not(.dark) .public-profile-stat strong { color:#fff8ff; }
     body:not(.dark) .public-profile-about { color:#526783; }
     body:not(.dark) .public-profile-share { border-color:#c4d5f0; background:linear-gradient(135deg,rgba(219,234,254,.8),rgba(237,233,254,.9)); }
     body:not(.dark) .public-profile-share strong { color:#17233e; }
@@ -73,8 +76,8 @@
     .public-profile-error { padding:44px 24px; color:var(--text); text-align:center; }
     .public-profile-error h2 { margin:0 0 8px; }
     .public-profile-error p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.6; }
-    @media (max-width: 900px) { .public-profile-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-    @media (max-width: 640px) { .public-profile-social { grid-template-columns:1fr; gap:12px; } .public-profile-social-actions button { flex:1 1 0; } .public-profile-header { display:block; } .public-profile-actions { margin-top:12px; } .public-profile-actions a { flex:1 1 150px; } .public-profile-banner { min-height:145px; } .public-profile-content { padding:0 16px 24px; } .public-profile-identity { align-items:flex-start; flex-direction:column; gap:12px; margin-top:-42px; } .public-profile-avatar { width:88px; height:88px; flex-basis:88px; border-radius:24px; } .public-profile-identity-copy { padding:0; } .public-profile-name { font-size:34px; } .public-profile-stats { grid-template-columns:1fr; } .public-profile-share { align-items:flex-start; flex-direction:column; } .public-profile-share button { width:100%; } }
+    @media (max-width: 900px) { .public-profile-identity { grid-template-columns:96px minmax(0,1fr); } .public-profile-avatar { width:96px; height:96px; flex-basis:96px; } .public-profile-spotlight { grid-column:1 / -1; } }
+    @media (max-width: 640px) { .public-profile-social { grid-template-columns:1fr; gap:12px; } .public-profile-social-actions button { flex:1 1 0; } .public-profile-header { display:block; } .public-profile-actions { margin-top:12px; } .public-profile-actions a { flex:1 1 150px; } .public-profile-banner { min-height:170px; } .public-profile-content { padding:0 16px 24px; } .public-profile-identity { display:flex; align-items:flex-start; flex-direction:column; gap:12px; margin-top:-42px; } .public-profile-avatar { width:88px; height:88px; flex-basis:88px; } .public-profile-identity-copy { padding:0; } .public-profile-name { font-size:34px; } .public-profile-spotlight { width:100%; } .public-profile-share { align-items:flex-start; flex-direction:column; } .public-profile-share button { width:100%; } }
   </style>
   <!-- ProMcBot SEO and social metadata -->
   <meta data-promcbot-metadata="1" name="description" content="View a public ProMcBot profile card and community information.">
@@ -128,8 +131,14 @@
       document.getElementById('copyrightYear').textContent = new Date().getFullYear();
       const renderSocial = () => {
         socialPanel.hidden = false;
-        document.getElementById('followerCount').textContent = Number(socialState.followers || 0).toLocaleString();
-        document.getElementById('likeCount').textContent = Number(socialState.likes || 0).toLocaleString();
+        const followers = Number(socialState.followers || 0).toLocaleString();
+        const likes = Number(socialState.likes || 0).toLocaleString();
+        document.getElementById('followerCount').textContent = followers;
+        document.getElementById('likeCount').textContent = likes;
+        const cardFollowerCount = document.getElementById('cardFollowerCount');
+        const cardLikeCount = document.getElementById('cardLikeCount');
+        if (cardFollowerCount) cardFollowerCount.textContent = followers;
+        if (cardLikeCount) cardLikeCount.textContent = likes;
         const followButton = document.getElementById('followButton');
         const likeButton = document.getElementById('likeButton');
         followButton.textContent = socialState.following ? 'Unfollow' : 'Follow';
@@ -169,8 +178,8 @@
           const safeImageUrl = value => { try { const url = new URL(String(value || ''), location.origin); const allowedHosts = new Set(['cdn.discordapp.com', 'media.discordapp.net']); return url.protocol === 'https:' && allowedHosts.has(url.hostname.toLowerCase()) ? url.href.replace(/[()"\\]/g, '') : ''; } catch (_) { return ''; } };
           const safeAvatar = safeImageUrl(profile.avatar);
           card.innerHTML = '<div class="public-profile-banner" data-profile-banner></div>' +
-            '<div class="public-profile-content"><div class="public-profile-identity"><img class="public-profile-avatar" src="' + esc(safeAvatar) + '" alt="' + esc(profile.globalName || profile.username) + '"><div class="public-profile-identity-copy"><div class="public-profile-kicker">Public Discord profile</div><div class="public-profile-name">' + esc(profile.globalName || profile.username) + '</div><div class="public-profile-handle">@' + esc(profile.username) + '</div><div class="public-profile-badges"><span class="public-profile-badge"><span class="public-profile-dot"></span>Public profile</span>' + (profile.bot ? '<span class="public-profile-badge bot">Bot account</span>' : '') + '</div></div></div>' +
-            '<div class="public-profile-stats"><div class="public-profile-stat"><small>Public username</small><strong>@' + esc(profile.username) + '</strong></div><div class="public-profile-stat"><small>Discord handle</small><strong>@' + esc(profile.discordUsername || profile.username) + '</strong></div><div class="public-profile-stat"><small>Member since</small><strong>' + esc(memberSince) + '</strong></div><div class="public-profile-stat"><small>Profile ID</small><strong>' + esc(profile.id) + '</strong></div></div>' +
+            '<div class="public-profile-content"><div class="public-profile-identity"><img class="public-profile-avatar" src="' + esc(safeAvatar) + '" alt="' + esc(profile.globalName || profile.username) + '"><div class="public-profile-identity-copy"><div class="public-profile-kicker">Public Discord profile</div><div class="public-profile-name">' + esc(profile.globalName || profile.username) + '</div><div class="public-profile-handle">@' + esc(profile.username) + '</div><div class="public-profile-badges"><span class="public-profile-badge"><span class="public-profile-dot"></span>Public profile</span>' + (profile.bot ? '<span class="public-profile-badge bot">Bot account</span>' : '') + '</div></div>' +
+            '<div class="public-profile-spotlight"><div class="public-profile-stat"><small>Followers</small><strong id="cardFollowerCount">' + Number(socialState.followers || 0).toLocaleString() + '</strong></div><div class="public-profile-stat"><small>Likes</small><strong id="cardLikeCount">' + Number(socialState.likes || 0).toLocaleString() + '</strong></div></div></div>' +
             '<p class="public-profile-about">This page shows public profile information synced from Discord and the community actions available for this profile. It never invents levels, XP, ranks, or private activity.</p>' +
             '<div class="public-profile-share"><div><strong>Share this profile</strong><span>' + safeUrl + '</span></div><button id="copyProfile" type="button">Copy public link</button></div></div>';
           const bannerUrl = safeImageUrl(profile.banner);
