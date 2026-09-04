@@ -329,9 +329,14 @@ async function requireAdminRole(req, res, next) {
 function normalizeChangelogPayload(body, createdBy) {
   const categories = Array.isArray(body?.categories) ? body.categories : String(body?.categories || '').split(',');
   const sections = Array.isArray(body?.sections) ? body.sections : [];
+  const imageType = ['banner', 'thumbnail'].includes(String(body?.imageType || '').toLowerCase()) ? String(body.imageType).toLowerCase() : null;
+  const rawImageUrl = String(body?.imageUrl || '').trim().slice(0, 1000);
+  let imageUrl = null;
+  try { const parsed = new URL(rawImageUrl); if (imageType && ['http:', 'https:'].includes(parsed.protocol)) imageUrl = parsed.toString(); } catch (_) {}
   return {
     version: String(body?.version || '').trim().slice(0, 32), date: String(body?.date || '').trim().slice(0, 80),
     title: String(body?.title || '').trim().slice(0, 140), description: String(body?.description || '').trim().slice(0, 500),
+    imageType, imageUrl,
     categories: [...new Set(categories.map(value => String(value).trim().toUpperCase()).filter(value => ['NEW', 'IMPROVED', 'FIXED', 'SECURITY'].includes(value)))].slice(0, 4),
     sections: sections.map(section => ({ title: String(section?.title || '').trim().slice(0, 80), items: (Array.isArray(section?.items) ? section.items : []).map(item => String(item).trim().slice(0, 240)).filter(Boolean).slice(0, 12) })).filter(section => section.title && section.items.length).slice(0, 6),
     createdBy,

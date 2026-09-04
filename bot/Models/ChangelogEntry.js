@@ -8,6 +8,8 @@ const changelogEntrySchema = new mongoose.Schema({
   date: { type: String, required: true, trim: true, maxlength: 80 },
   title: { type: String, required: true, trim: true, maxlength: 140 },
   description: { type: String, required: true, trim: true, maxlength: 500 },
+  imageType: { type: String, enum: ['banner', 'thumbnail', null], default: null },
+  imageUrl: { type: String, trim: true, maxlength: 1000, default: null },
   categories: { type: [String], required: true, enum: ['NEW', 'IMPROVED', 'FIXED', 'SECURITY'], validate: value => value.length >= 1 && value.length <= 4 },
   sections: { type: [sectionSchema], required: true, validate: value => value.length >= 1 && value.length <= 6 },
   createdBy: { type: String, required: true, index: true },
