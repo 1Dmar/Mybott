@@ -41,20 +41,19 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar">
-        <div class="logo_item">
-            <i class="bx bx-menu" id="sidebarToggle"></i>
-            <span class="logo_name">ProMcBot</span>
-        </div>
-        <div class="navbar_content">
-            <i class='bx bx-sun' id="darkLight"></i>
-            <div class="nav_btn" id="notificationBtn">
-                <i class='bx bx-bell'></i>
-            </div>
-            <div class="user_profile" id="userBtn">
-                <img src="" alt="Profile" class="profile_img" data-user-avatar>
-                <span class="user_name" data-user-name>User</span>
+    <!-- Navbar: keep the Change Look page aligned with the dashboard homepage. -->
+    <nav class="navbar flex" aria-label="Top navigation">
+        <button id="sidebarToggle" class="bx bx-menu" type="button" aria-label="Open navigation"></button>
+        <div class="navbar_content flex">
+            <button id="darkLight" class="bx bx-sun" type="button" aria-label="Toggle theme"></button>
+            <div class="user_profile_nav" id="userBtn" tabindex="0" role="button" aria-expanded="false">
+                <img src="/dashboard/logo.png" alt="Account avatar" data-user-avatar>
+                <span id="navUserName" data-user-name>User</span>
+                <i class="bx bx-chevron-down" aria-hidden="true"></i>
+                <div class="dropdown-menu" id="userDropdown">
+                    <a href="/dashboard"><i class="bx bx-user"></i> Profile</a>
+                    <a href="/api/logout" class="logout-link"><i class="bx bx-log-out"></i> Logout</a>
+                </div>
             </div>
         </div>
     </nav>
