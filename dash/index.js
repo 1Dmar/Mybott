@@ -391,6 +391,7 @@ app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, stand
 
 // ── Routes ───────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
+app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));
 const legalPages = {
   '/privacy-policy': 'PrivacyPolicy.html',
   '/terms-of-service': 'TermsOfService.html',
