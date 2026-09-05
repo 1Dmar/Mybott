@@ -382,6 +382,7 @@ async function requireGuildManager(req, res, next) {
 // ── Static Files ─────────────────────────────────────────────────────
 const dashDir = path.join(__dirname, 'dashboard');
 const SEO_BASE_URL = 'https://promcbot.dev';
+const SEO_NEWLINE = String.fromCharCode(10);
 const escapeXml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[character]));
 
 async function getPublicSitemapUrls() {
@@ -433,14 +434,21 @@ app.get('/robots.txt', (req, res) => {
     'Disallow: /loading-auth',
     `Sitemap: ${SEO_BASE_URL}/sitemap.xml`,
     '',
-  ].join('\n'));
+  ].join(SEO_NEWLINE));
 });
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const urls = await getPublicSitemapUrls();
-    const body = urls.map(({ loc, lastmod, priority }) => `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\n');
-    res.type('application/xml').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`);
+    const body = urls.map(({ loc, lastmod, priority }) => `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join(SEO_NEWLINE);
+    const xml = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      body,
+      '</urlset>',
+      '',
+    ].join(SEO_NEWLINE);
+    res.type('application/xml').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send(xml);
   } catch (error) {
     console.error('[seo] sitemap generation failed:', error.message);
     res.status(503).type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
