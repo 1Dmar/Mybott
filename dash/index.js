@@ -433,14 +433,14 @@ app.get('/robots.txt', (req, res) => {
     'Disallow: /loading-auth',
     `Sitemap: ${SEO_BASE_URL}/sitemap.xml`,
     '',
-  ].join('\\n'));
+  ].join('\n'));
 });
 
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const urls = await getPublicSitemapUrls();
-    const body = urls.map(({ loc, lastmod, priority }) => `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\\n');
-    res.type('application/xml').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send(`<?xml version="1.0" encoding="UTF-8"?>\\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n${body}\\n</urlset>\\n`);
+    const body = urls.map(({ loc, lastmod, priority }) => `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\n');
+    res.type('application/xml').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`);
   } catch (error) {
     console.error('[seo] sitemap generation failed:', error.message);
     res.status(503).type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
