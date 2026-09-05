@@ -77,6 +77,7 @@ const BotConfig       = require('../bot/Models/BotConfig');
 const UserProfile      = require('../bot/Models/UserProfile');
 const ProfileFollow    = require('../bot/Models/ProfileFollow');
 const ProfileLike      = require('../bot/Models/ProfileLike');
+const Review           = require('../bot/Models/Review');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -425,6 +426,58 @@ app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }), (req, res) => {
   res.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900');
   res.json(getTrustpilotStats());
+});
+
+const reviewMutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'review_rate_limited' } });
+function normalizeReviewPayload(body = {}) {
+  const title = String(body.title || '').trim().slice(0, 120);
+  const reviewBody = String(body.body || '').trim().slice(0, 1200);
+  const rating = Number(body.rating);
+  return { title, body: reviewBody, rating: Number.isInteger(rating) ? rating : NaN, consentToPublish: body.consentToPublish === true };
+}
+function publicReview(review) {
+  return { id: String(review._id), displayName: review.displayName, title: review.title, body: review.body, rating: review.rating, source: review.source, sourceUrl: review.sourceUrl || null, verified: Boolean(review.verified), createdAt: review.createdAt, approvedAt: review.approvedAt };
+}
+
+app.get('/api/reviews', publicStatsLimiter, async (req, res) => {
+  if (mongoose.connection.readyState !== 1) return res.json({ success: true, reviews: [], total: 0, averageRating: null, source: 'promcbot', dataStatus: 'unavailable' });
+  const limit = Math.min(12, Math.max(1, Number.parseInt(req.query.limit, 10) || 6));
+  const reviews = await Review.find({ status: 'approved' }).sort({ approvedAt: -1, createdAt: -1 }).limit(limit).lean();
+  const stats = await Review.aggregate([{ $match: { status: 'approved' } }, { $group: { _id: null, total: { $sum: 1 }, averageRating: { $avg: '$rating' } } }]);
+  const summary = stats[0] || { total: 0, averageRating: null };
+  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  res.json({ success: true, reviews: reviews.map(publicReview), total: summary.total, averageRating: summary.averageRating === null ? null : Math.round(summary.averageRating * 10) / 10, source: 'promcbot', dataStatus: 'measured' });
+});
+
+app.post('/api/reviews', isAuthenticated, requireDatabaseReady, reviewMutationLimiter, async (req, res) => {
+  const payload = normalizeReviewPayload(req.body);
+  if (!payload.consentToPublish) return res.status(400).json({ success: false, error: 'review_consent_required' });
+  if (!Number.isInteger(payload.rating) || payload.rating < 1 || payload.rating > 5) return res.status(400).json({ success: false, error: 'review_rating_invalid' });
+  if (payload.body.length < 12) return res.status(400).json({ success: false, error: 'review_body_too_short' });
+  const existing = await Review.findOne({ authorId: req.user.id, status: 'pending' }).lean();
+  if (existing) return res.status(409).json({ success: false, error: 'review_already_pending' });
+  const review = await Review.create({ authorId: req.user.id, displayName: String(req.user.global_name || req.user.username || 'ProMcBot user').trim().slice(0, 80), ...payload });
+  res.status(201).json({ success: true, status: review.status, message: 'Review received and awaiting moderation.' });
+});
+
+app.get('/api/admin/reviews', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const status = ['pending', 'approved', 'rejected'].includes(String(req.query.status)) ? String(req.query.status) : 'pending';
+  const reviews = await Review.find({ status }).sort({ createdAt: -1 }).limit(100).lean();
+  res.json({ success: true, status, reviews: reviews.map(publicReview) });
+});
+
+app.patch('/api/admin/reviews/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const status = String(req.body?.status || '');
+  if (!['pending', 'approved', 'rejected'].includes(status)) return res.status(400).json({ success: false, error: 'review_status_invalid' });
+  const review = await Review.findById(req.params.id);
+  if (!review) return res.status(404).json({ success: false, error: 'review_not_found' });
+  review.status = status;
+  review.moderationNote = String(req.body?.moderationNote || '').trim().slice(0, 500);
+  review.approvedAt = status === 'approved' ? (review.approvedAt || new Date()) : null;
+  review.updatedAt = new Date();
+  await review.save();
+  await recordAudit({ actorId: req.user.id, guildId: 'public', action: `review_${status}`, feature: 'reviews', result: 'success', source: 'dashboard', target: String(review._id), metadata: { authorId: review.authorId, source: review.source } }).catch(error => console.error('[review audit] failed:', error.message));
+  res.json({ success: true, review: publicReview(review) });
 });
 
 // ── Routes ───────────────────────────────────────────────────────────

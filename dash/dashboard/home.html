@@ -348,6 +348,28 @@
     .final-cta p { max-width: 510px; margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
     .final-cta-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; }
 
+    .reviews-section { padding: 22px 0 76px; }
+    .reviews-layout { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr); gap:18px; align-items:start; }
+    .reviews-list, .review-form-card { min-width:0; padding:25px; border:1px solid var(--landing-line); border-radius:18px; background:var(--landing-surface); box-shadow:var(--shadow-sm); }
+    .review-list { display:grid; gap:12px; margin-top:20px; }
+    .review-item { padding:16px; border:1px solid var(--landing-line); border-radius:14px; background:var(--landing-surface-soft); }
+    .review-item-header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .review-author { color:var(--text); font-size:13px; font-weight:800; }
+    .review-date { color:var(--landing-muted); font-size:10px; }
+    .review-stars { color:var(--landing-accent); letter-spacing:2px; font-size:13px; }
+    .review-item h3 { margin:8px 0 5px; color:var(--text); font-size:14px; }
+    .review-item p { margin:0; color:var(--text-secondary); font-size:12px; line-height:1.6; }
+    .review-empty { padding:28px 0 8px; color:var(--landing-muted); font-size:13px; line-height:1.6; }
+    .review-form-card h3 { margin:0; color:var(--text); font-size:20px; letter-spacing:-.03em; }
+    .review-form-card > p { margin:9px 0 20px; color:var(--text-secondary); font-size:12px; line-height:1.6; }
+    .review-form { display:grid; gap:12px; }
+    .review-form label { display:grid; gap:6px; color:var(--text); font-size:11px; font-weight:750; }
+    .review-form input, .review-form textarea, .review-form select { width:100%; box-sizing:border-box; border:1px solid var(--landing-line); border-radius:10px; padding:11px 12px; background:var(--landing-surface-soft); color:var(--text); font:inherit; font-size:12px; }
+    .review-form textarea { min-height:104px; resize:vertical; }
+    .review-consent { display:flex !important; grid-template-columns:auto 1fr; display:grid !important; grid-template-columns:16px minmax(0,1fr); gap:8px; align-items:start; color:var(--landing-muted) !important; font-size:10px !important; font-weight:500 !important; line-height:1.45; }
+    .review-consent input { width:14px; margin-top:2px; }
+    .review-form-message { min-height:17px; margin:0; color:var(--landing-muted); font-size:11px; }
+
     footer { padding: 0 0 32px; color: var(--landing-muted); font-size: 12px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 21px; border-top: 1px solid var(--landing-line); }
     .footer-brand { color: var(--text-secondary); font-weight: 800; }
@@ -390,6 +412,7 @@
       .features, .steps, .plans { grid-template-columns: 1fr; }
       .feature-card { min-height: 250px; }
       .capability-list, .faq-grid { grid-template-columns: 1fr; }
+      .reviews-layout { grid-template-columns:1fr; }
       .privacy-layout { grid-template-columns: 1fr; gap: 30px; }
       .final-cta-inner { align-items: flex-start; flex-direction: column; }
       .final-cta-actions { width: 100%; }
@@ -634,6 +657,33 @@
       </div>
     </section>
 
+    <section class="reviews-section" id="community-feedback" aria-labelledby="reviews-heading">
+      <div class="landing-shell">
+        <div class="section-heading">
+          <p class="eyebrow">Community feedback</p>
+          <h2 id="reviews-heading">Real experiences. Carefully reviewed.</h2>
+          <p>Read feedback shared by ProMcBot users. New submissions are moderated before they appear publicly.</p>
+        </div>
+        <div class="reviews-layout">
+          <div class="reviews-list" aria-live="polite">
+            <div class="review-list" id="reviewList"><p class="review-empty">No public reviews yet. Be the first to share your experience.</p></div>
+          </div>
+          <div class="review-form-card">
+            <h3>Share your experience</h3>
+            <p>Sign in with Discord to submit one review. Your display name comes from your authenticated account.</p>
+            <form class="review-form" id="reviewForm">
+              <label>Rating<select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Great</option><option value="3">3 — Good</option><option value="2">2 — Needs improvement</option><option value="1">1 — Poor</option></select></label>
+              <label>Title<input name="title" maxlength="120" placeholder="What stood out?" autocomplete="off"></label>
+              <label>Your review<textarea name="body" minlength="12" maxlength="1200" required placeholder="Tell the community about your experience with ProMcBot."></textarea></label>
+              <label class="review-consent"><input type="checkbox" name="consentToPublish" required><span>I agree that ProMcBot may review and publish this feedback with my authenticated display name.</span></label>
+              <button class="landing-button landing-button-primary" type="submit">Submit for review <i class="bx bx-send" aria-hidden="true"></i></button>
+              <p class="review-form-message" id="reviewFormMessage" aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="final-cta" aria-labelledby="final-cta-heading">
       <div class="landing-shell final-cta-inner">
         <div><h2 id="final-cta-heading">Connect your server. Keep your community moving.</h2><p>Bring Discord and Minecraft together, then keep the work moving from one focused dashboard.</p></div>
@@ -680,6 +730,38 @@
       const open = landingNavLinks.classList.toggle('is-open');
       landingMenuToggle.setAttribute('aria-expanded', String(open));
     });
+
+    const reviewList = document.getElementById('reviewList');
+    const reviewForm = document.getElementById('reviewForm');
+    const reviewFormMessage = document.getElementById('reviewFormMessage');
+    const reviewStars = rating => '★'.repeat(Math.max(0, Math.min(5, Number(rating) || 0))) + '☆'.repeat(Math.max(0, 5 - (Number(rating) || 0)));
+    const formatReviewDate = value => { try { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)); } catch (_) { return ''; } };
+    async function loadReviews() {
+      try {
+        const response = await fetch('/api/reviews?limit=6', { headers: { Accept: 'application/json' } });
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.reviews)) return;
+        if (!data.reviews.length) return;
+        reviewList.innerHTML = data.reviews.map(review => `<article class="review-item"><div class="review-item-header"><div><div class="review-author">${escapeHTML(review.displayName)}${review.verified ? ' <span aria-label="Verified">✓</span>' : ''}</div><div class="review-stars" aria-label="${escapeHTML(review.rating)} out of 5">${reviewStars(review.rating)}</div></div><time class="review-date" datetime="${escapeHTML(review.createdAt)}">${escapeHTML(formatReviewDate(review.createdAt))}</time></div>${review.title ? `<h3>${escapeHTML(review.title)}</h3>` : ''}<p>${escapeHTML(review.body)}</p></article>`).join('');
+      } catch (_) {}
+    }
+    reviewForm?.addEventListener('submit', async event => {
+      event.preventDefault();
+      reviewFormMessage.textContent = 'Submitting for moderation…';
+      const submitButton = reviewForm.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+      const formData = new FormData(reviewForm);
+      try {
+        const response = await fetch('/api/reviews', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ rating: Number(formData.get('rating')), title: formData.get('title'), body: formData.get('body'), consentToPublish: formData.get('consentToPublish') === 'on' }) });
+        const data = await response.json();
+        if (response.status === 401) throw new Error('Please sign in with Discord before submitting a review.');
+        if (!response.ok) throw new Error(data.message || data.error || 'Could not submit the review.');
+        reviewForm.reset();
+        reviewFormMessage.textContent = 'Thanks. Your review is awaiting moderation.';
+      } catch (error) { reviewFormMessage.textContent = error.message; }
+      finally { submitButton.disabled = false; }
+    });
+    loadReviews();
 
     const featureCards = Array.from(document.querySelectorAll('.feature-card'));
     featureCards.forEach(card => {
