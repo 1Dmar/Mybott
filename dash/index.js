@@ -418,7 +418,7 @@ app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, stand
 
 // ── Routes ───────────────────────────────────────────────────────────
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send([
+  res.type('text/plain').set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0').send([
     'User-agent: *',
     'Allow: /',
     'Disallow: /dashboard/dashboard.html',
