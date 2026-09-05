@@ -456,7 +456,20 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
-app.get('/docs', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', 'docs.html')));
+const docsPages = {
+  '/docs': 'index.html',
+  '/docs/getting-started': 'getting-started.html',
+  '/docs/bot-commands': 'bot-commands.html',
+  '/docs/intelligence': 'intelligence.html',
+  '/docs/dashboard': 'dashboard.html',
+  '/docs/minecraft-plugin': 'minecraft-plugin.html',
+  '/docs/security': 'security.html',
+  '/docs/compatibility': 'compatibility.html',
+  '/docs/faq': 'faq.html',
+};
+Object.entries(docsPages).forEach(([route, file]) => {
+  app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', file)));
+});
 app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));
 const legalPages = {
   '/privacy-policy': 'PrivacyPolicy.html',

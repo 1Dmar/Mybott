@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080c18">
+<meta name="description" content="Application and Minecraft Plugin compatibility notes."><title>Compatibility · ProMcBot Docs</title>
+<link rel="icon" href="/dashboard/logo.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"><link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"><link rel="stylesheet" href="/dashboard/pages/docs/docs.css">
+</head>
+<body><header class="topbar"><a class="brand" href="/" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot logo"><span>ProMcBot <small>Documentation</small></span></a><div class="top-actions"><a class="top-link hide-mobile" href="/changelog"><i class="bx bx-git-branch"></i> Changelog</a><a class="top-link hide-mobile" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer"><i class="bx bxl-discord-alt"></i> Support</a><button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle theme"><i class="bx bx-sun"></i></button><button class="icon-btn menu-btn" id="menuToggle" type="button" aria-label="Open documentation menu" aria-expanded="false"><i class="bx bx-menu"></i></button><a class="top-link primary" href="/invitebot">Invite bot</a></div></header>
+<div class="docs-layout"><aside class="sidebar" id="docsSidebar">
+<p class="side-label">Documentation</p>
+<nav><ul class="side-nav">
+<li><a href="/docs"><i class="bx bx-home-alt-2"></i>Docs overview</a></li>
+<li><a href="/docs/getting-started"><i class="bx bx-rocket"></i>Getting started</a></li>
+<li><a href="/docs/bot-commands"><i class="bx bx-terminal"></i>Bot commands</a></li>
+<li><a href="/docs/intelligence"><i class="bx bx-line-chart"></i>Intelligence</a></li>
+<li><a href="/docs/dashboard"><i class="bx bx-layout"></i>Dashboard</a></li>
+<li><a href="/docs/minecraft-plugin"><i class="bx bx-cube-alt"></i>Minecraft Plugin</a></li>
+</ul></nav>
+<p class="side-label">Trust & help</p>
+<nav><ul class="side-nav">
+<li><a href="/docs/security"><i class="bx bx-shield-quarter"></i>Security & privacy</a></li>
+<li><a href="/docs/compatibility"><i class="bx bx-check-shield"></i>Compatibility</a></li>
+<li><a href="/docs/faq"><i class="bx bx-help-circle"></i>FAQ</a></li>
+<li><a href="/changelog"><i class="bx bx-history"></i>Changelog</a></li>
+</ul></nav>
+<div class="side-note"><strong>Need a hand?</strong><p>Ask the community for setup help or share a specific error.</p><a class="btn" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Open support <i class="bx bx-right-arrow-alt"></i></a></div>
+</aside><main class="main"><section class="hero"><div class="eyebrow">Compatibility</div><h1>Know what is supported, <em>and what is not verified.</em></h1><p class="hero-copy">The project documents compatibility honestly. Build evidence does not automatically mean every server distribution has been runtime-tested.</p></section><section class="section"><div class="section-head"><div><p class="section-kicker">Platform baseline</p><h2>Application and plugin support.</h2></div><p class="intro">Use these baselines when planning a deployment.</p></div><div class="table-wrap"><table><thead><tr><th>Component</th><th>Baseline</th><th>Evidence</th></tr></thead><tbody><tr><td><strong>Node.js</strong></td><td><code>&gt;=22.13.0 &lt;23</code></td><td>Syntax, startup, and tests verified in Node 22.</td></tr><tr><td><strong>MongoDB</strong></td><td>URI through <code>MONGO_URL</code> or <code>MONGO_URI</code></td><td>Schema and tests verified; live database needs credentials.</td></tr><tr><td><strong>Spigot API</strong></td><td><code>1.8.8-R0.1-SNAPSHOT</code></td><td>Plugin Maven package verified; Java 8 bytecode.</td></tr><tr><td><strong>Spigot/Paper/Bukkit-compatible</strong></td><td>1.8.x, 1.12.x, 1.16.x, 1.20.x, 1.21.x</td><td>Build baseline or compatibility strategy; live runtime acceptance remains required per target.</td></tr><tr><td><strong>PocketMine / Bedrock</strong></td><td>Not a Bukkit API target</td><td>Not supported by this artifact.</td></tr><tr><td><strong>Fabric / Forge</strong></td><td>Not a Bukkit API target</td><td>Not supported by this artifact.</td></tr></tbody></table></div></section><section class="section"><div class="section-head"><div><p class="section-kicker">Production note</p><h2>Build verified is not live acceptance.</h2></div><p class="intro">Before production, exercise load, connect, heartbeat, telemetry, retry, reconnect, and shutdown on the target server distribution and Minecraft version.</p></div><div class="notice"><i class="bx bx-test-tube"></i><p>The plugin does not declare a modern api-version in plugin.yml, so modern Paper may show its normal legacy compatibility warning. Record runtime acceptance per target server.</p></div></section><footer class="footer"><span>© <span data-year></span> ProMcBot. All rights reserved.</span><span><a href="/">Home</a> · <a href="/privacy-policy">Privacy</a> · <a href="/terms-of-service">Terms</a> · <a href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Support</a></span></footer></main></div>
+<script src="/dashboard/pages/docs/docs.js"></script></body></html>

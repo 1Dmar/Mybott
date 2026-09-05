@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080c18">
+<meta name="description" content="Answers to common ProMcBot setup and support questions."><title>FAQ · ProMcBot Docs</title>
+<link rel="icon" href="/dashboard/logo.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"><link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"><link rel="stylesheet" href="/dashboard/pages/docs/docs.css">
+</head>
+<body><header class="topbar"><a class="brand" href="/" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot logo"><span>ProMcBot <small>Documentation</small></span></a><div class="top-actions"><a class="top-link hide-mobile" href="/changelog"><i class="bx bx-git-branch"></i> Changelog</a><a class="top-link hide-mobile" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer"><i class="bx bxl-discord-alt"></i> Support</a><button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle theme"><i class="bx bx-sun"></i></button><button class="icon-btn menu-btn" id="menuToggle" type="button" aria-label="Open documentation menu" aria-expanded="false"><i class="bx bx-menu"></i></button><a class="top-link primary" href="/invitebot">Invite bot</a></div></header>
+<div class="docs-layout"><aside class="sidebar" id="docsSidebar">
+<p class="side-label">Documentation</p>
+<nav><ul class="side-nav">
+<li><a href="/docs"><i class="bx bx-home-alt-2"></i>Docs overview</a></li>
+<li><a href="/docs/getting-started"><i class="bx bx-rocket"></i>Getting started</a></li>
+<li><a href="/docs/bot-commands"><i class="bx bx-terminal"></i>Bot commands</a></li>
+<li><a href="/docs/intelligence"><i class="bx bx-line-chart"></i>Intelligence</a></li>
+<li><a href="/docs/dashboard"><i class="bx bx-layout"></i>Dashboard</a></li>
+<li><a href="/docs/minecraft-plugin"><i class="bx bx-cube-alt"></i>Minecraft Plugin</a></li>
+</ul></nav>
+<p class="side-label">Trust & help</p>
+<nav><ul class="side-nav">
+<li><a href="/docs/security"><i class="bx bx-shield-quarter"></i>Security & privacy</a></li>
+<li><a href="/docs/compatibility"><i class="bx bx-check-shield"></i>Compatibility</a></li>
+<li><a href="/docs/faq"><i class="bx bx-help-circle"></i>FAQ</a></li>
+<li><a href="/changelog"><i class="bx bx-history"></i>Changelog</a></li>
+</ul></nav>
+<div class="side-note"><strong>Need a hand?</strong><p>Ask the community for setup help or share a specific error.</p><a class="btn" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Open support <i class="bx bx-right-arrow-alt"></i></a></div>
+</aside><main class="main"><section class="hero"><div class="eyebrow">Help center</div><h1>Questions before you <em>connect.</em></h1><p class="hero-copy">Short answers for server owners, moderators, and the people installing the Minecraft bridge.</p></section><section class="section"><div class="section-head"><div><p class="section-kicker">Frequently asked</p><h2>Keep your next step clear.</h2></div><p class="intro">If the answer is not here, contact support with a safe, non-secret report.</p></div><div class="faq"><details open><summary>Do I only need an IP and port?</summary><p>No. IP and port are optional server information. Rich player data and operational telemetry require the ProMcBot Bukkit-compatible Spigot/Paper plugin.</p></details><details><summary>Which server versions are supported?</summary><p>The project targets Bukkit-compatible Spigot/Paper baselines and is compiled against Spigot 1.8.8 with Java 8 bytecode. Runtime acceptance should be exercised on your exact server distribution and version.</p></details><details><summary>Why does the Dashboard show Not measured?</summary><p>There is not enough measured telemetry for that metric yet. Wait for a snapshot or join/leave event; the product does not invent a live player count from an address.</p></details><details><summary>Why is my server missing from /myservers?</summary><p>The authenticated Discord user must be the Guild owner or have Administrator permission. View-only Guilds are not rendered in the managed-server picker.</p></details><details><summary>How do I install the Plugin?</summary><p>Generate the one-time config from Setup & intelligence, place the JAR in plugins/, restart the server, paste the config into plugins/ProMcBot/config.yml, and run /promcbot status.</p></details><details><summary>Does this release execute Minecraft commands remotely?</summary><p>No. Remote Minecraft command execution is not implemented in this release.</p></details></div></section><footer class="footer"><span>© <span data-year></span> ProMcBot. All rights reserved.</span><span><a href="/">Home</a> · <a href="/privacy-policy">Privacy</a> · <a href="/terms-of-service">Terms</a> · <a href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Support</a></span></footer></main></div>
+<script src="/dashboard/pages/docs/docs.js"></script></body></html>
