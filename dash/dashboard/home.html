@@ -348,15 +348,6 @@
     .final-cta p { max-width: 510px; margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
     .final-cta-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; }
 
-    .community-section { padding: 12px 0 84px; }
-    .community-card { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:28px; align-items:center; overflow:hidden; padding:clamp(28px,5vw,46px); border:1px solid color-mix(in srgb,var(--landing-accent) 30%,var(--landing-line)); border-radius:20px; background:radial-gradient(circle at 92% 18%,rgba(255,106,43,.16),transparent 27%),linear-gradient(118deg,color-mix(in srgb,var(--landing-accent-soft) 76%,var(--landing-surface)),var(--landing-surface)); box-shadow:var(--landing-shadow); }
-    .community-card::after { position:absolute; right:-90px; bottom:-135px; width:240px; height:240px; border:1px solid color-mix(in srgb,var(--landing-accent) 30%,transparent); border-radius:50%; content:''; pointer-events:none; }
-    .community-card > * { position:relative; z-index:1; }
-    .community-kicker { margin:0 0 11px; color:var(--landing-accent); font-size:10px; font-weight:850; letter-spacing:.15em; text-transform:uppercase; }
-    .community-card h2 { max-width:650px; margin:0; color:var(--text); font-size:clamp(1.8rem,4vw,2.7rem); letter-spacing:-.06em; line-height:1.05; }
-    .community-card p { max-width:570px; margin:12px 0 0; color:var(--text-secondary); font-size:13px; line-height:1.65; }
-    .community-actions { display:flex; flex:0 0 auto; flex-wrap:wrap; gap:10px; }
-    .community-actions .landing-button { white-space:nowrap; }
     footer { padding: 0 0 32px; color: var(--landing-muted); font-size: 12px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 21px; border-top: 1px solid var(--landing-line); }
     .footer-brand { color: var(--text-secondary); font-weight: 800; }
@@ -403,8 +394,6 @@
       .final-cta-inner { align-items: flex-start; flex-direction: column; }
       .final-cta-actions { width: 100%; }
       .final-cta-actions .landing-button { flex: 1 1 150px; }
-      .community-card { grid-template-columns:1fr; gap:22px; }
-      .community-actions { justify-content:flex-start; }
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-links { justify-content: flex-start; }
     }
@@ -647,26 +636,11 @@
 
     <section class="final-cta" aria-labelledby="final-cta-heading">
       <div class="landing-shell final-cta-inner">
-        <div><h2 id="final-cta-heading">Make the next server update easier to act on.</h2><p>Connect the Discord community to the Minecraft signals that matter, then keep the work moving from one focused dashboard.</p></div>
+        <div><h2 id="final-cta-heading">Connect your server. Keep your community moving.</h2><p>Bring Discord and Minecraft together, then keep the work moving from one focused dashboard.</p></div>
         <div class="final-cta-actions"><a href="/invitebot" class="landing-button landing-button-primary">Invite ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a><a href="/loading-auth" class="landing-button landing-button-secondary">Open Dashboard</a></div>
       </div>
     </section>
 
-    <section class="community-section" aria-labelledby="community-heading">
-      <div class="landing-shell">
-        <article class="community-card">
-          <div>
-            <p class="community-kicker">Built around real communities</p>
-            <h2 id="community-heading">A smarter foundation for your Minecraft network.</h2>
-            <p>Connect Discord, Minecraft, and your dashboard in one focused experience. Explore ProMcBot, share your feedback, and help shape what comes next.</p>
-          </div>
-          <div class="community-actions">
-            <a class="landing-button landing-button-primary" href="/invitebot">Explore ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a>
-            <a class="landing-button landing-button-secondary" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer"><i class="bx bx-support" aria-hidden="true"></i> Community support</a>
-          </div>
-        </article>
-      </div>
-    </section>
   </main>
 
   <footer>
