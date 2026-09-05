@@ -381,6 +381,32 @@ async function requireGuildManager(req, res, next) {
 
 // ── Static Files ─────────────────────────────────────────────────────
 const dashDir = path.join(__dirname, 'dashboard');
+const SEO_BASE_URL = 'https://promcbot.dev';
+const escapeXml = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' }[character]));
+
+async function getPublicSitemapUrls() {
+  const urls = [
+    { loc: `${SEO_BASE_URL}/`, priority: '1.0' },
+    { loc: `${SEO_BASE_URL}/changelog`, priority: '0.8' },
+    { loc: `${SEO_BASE_URL}/privacy-policy`, priority: '0.5' },
+    { loc: `${SEO_BASE_URL}/terms-of-service`, priority: '0.5' },
+    { loc: `${SEO_BASE_URL}/stats`, priority: '0.7' },
+  ];
+  if (mongoose.connection.readyState !== 1) return urls;
+  const configuredProfiles = await UserProfile.find({ username: { $type: 'string', $ne: '' } }).select('username updatedAt').sort({ updatedAt: -1 }).limit(10000).lean();
+  const profiles = await mapWithConcurrency(configuredProfiles, async profile => {
+    try {
+      const data = await resolvePublicProfile(profile.username);
+      const username = data?.profile?.username;
+      if (!username) return null;
+      return { loc: `${SEO_BASE_URL}/u/${encodeURIComponent(username)}`, lastmod: profile.updatedAt ? new Date(profile.updatedAt).toISOString() : null, priority: '0.6' };
+    } catch (_) {
+      return null;
+    }
+  }, 8);
+  return urls.concat(profiles.filter(Boolean));
+}
+
 app.use('/dashboard', express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
@@ -390,6 +416,37 @@ app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, stand
 });
 
 // ── Routes ───────────────────────────────────────────────────────────
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send([
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /dashboard/dashboard.html',
+    'Disallow: /dashboard/home.html',
+    'Disallow: /dashboard/pages/',
+    'Disallow: /dashboard/Loading/',
+    'Disallow: /myservers',
+    'Disallow: /actions',
+    'Disallow: /smart-actions',
+    'Disallow: /admin',
+    'Disallow: /api',
+    'Disallow: /auth',
+    'Disallow: /loading-auth',
+    `Sitemap: ${SEO_BASE_URL}/sitemap.xml`,
+    '',
+  ].join('\\n'));
+});
+
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const urls = await getPublicSitemapUrls();
+    const body = urls.map(({ loc, lastmod, priority }) => `  <url><loc>${escapeXml(loc)}</loc>${lastmod ? `<lastmod>${escapeXml(lastmod)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\\n');
+    res.type('application/xml').set('Cache-Control', 'public, max-age=300, stale-while-revalidate=900').send(`<?xml version="1.0" encoding="UTF-8"?>\\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\\n${body}\\n</urlset>\\n`);
+  } catch (error) {
+    console.error('[seo] sitemap generation failed:', error.message);
+    res.status(503).type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
+  }
+});
+
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
 app.get('/docs', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', 'docs.html')));
 app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));
@@ -980,25 +1037,32 @@ const escapeMeta = value => String(value ?? '').replace(/[&<>"']/g, character =>
 
 app.get('/u/:identifier', async (req, res) => {
   const identifier = String(req.params.identifier || '').trim();
-  const baseUrl = String(process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
   let profile = null;
   let social = { followers: 0, likes: 0 };
   try {
     const data = await resolvePublicProfile(identifier);
     profile = data.profile;
     social = await getProfileSocialState(profile.id);
-  } catch (_) {}
-  const username = profile?.username || identifier;
-  const displayName = profile?.globalName || username || 'ProMC Bot user';
-  const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
-  const cardUrl = `${baseUrl}/api/public/profile-card-v3/${encodeURIComponent(username)}`;
-  const description = `@${username} · ${social.likes} like${social.likes === 1 ? '' : 's'}.`;
+  } catch (_) {
+    return res.status(404).type('html').send('Public profile not found.');
+  }
+  const username = profile.username;
+  const displayName = profile.globalName || username;
+  const publicUrl = `${SEO_BASE_URL}/u/${encodeURIComponent(username)}`;
+  const cardUrl = `${SEO_BASE_URL}/api/public/profile-card-v3/${encodeURIComponent(username)}`;
+  const description = [
+    `${displayName} (@${username}) on ProMcBot.`,
+    profile.customStatus,
+    `${social.likes} like${social.likes === 1 ? '' : 's'}.`,
+  ].filter(Boolean).join(' ');
+  const title = `${displayName} — ProMcBot Profile`;
   const meta = `
+    <meta name="robots" content="index, follow">
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
     <meta name="theme-color" content="#1553b8">
     <meta property="og:type" content="profile">
-    <meta property="og:site_name" content="ProMC Bot">
-    <meta property="og:title" content="${escapeMeta(displayName)} · @${escapeMeta(username)}">
+    <meta property="og:site_name" content="ProMcBot">
+    <meta property="og:title" content="${escapeMeta(title)}">
     <meta property="og:description" content="${escapeMeta(description)}">
     <meta property="og:url" content="${escapeMeta(publicUrl)}">
     <meta property="og:image" content="${escapeMeta(cardUrl)}">
@@ -1007,10 +1071,13 @@ app.get('/u/:identifier', async (req, res) => {
     <meta property="og:image:width" content="1536">
     <meta property="og:image:height" content="1024">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="${escapeMeta(displayName)} · @${escapeMeta(username)}">
+    <meta name="twitter:title" content="${escapeMeta(title)}">
     <meta name="twitter:description" content="${escapeMeta(description)}">
     <meta name="twitter:image" content="${escapeMeta(cardUrl)}">`;
-  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300').type('html').send(publicProfilePageTemplate.replace('</head>', `${meta}\n</head>`));
+  const html = publicProfilePageTemplate
+    .replace(/<title>[^<]*<\/title>/i, `<title>${escapeMeta(title)}</title>`)
+    .replace('</head>', `${meta}\n</head>`);
+  res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300').type('html').send(html);
 });
 app.get('/profile/:identifier', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.identifier)}`));
 app.get('/user/:username', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.username)}`));
