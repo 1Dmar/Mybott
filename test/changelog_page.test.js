@@ -12,6 +12,13 @@ test('Changelog route and banner asset are wired', () => {
   assert.match(page, /src="\/dashboard\/assets\/changelog-banner\.png"/);
 });
 
+test('Changelog page includes crawlable release content in the initial HTML', () => {
+  assert.match(page, /<article class="release">/);
+  assert.match(page, /<strong>v1\.2\.0<\/strong>/);
+  assert.match(page, /A clearer path from signal to action/);
+  assert.doesNotMatch(page, /<div id="changelogFeed"><\/div>/);
+});
+
 test('Changelog page provides explicit light mode and an accessible toggle', () => {
   assert.match(page, /\[data-theme="light"\]/);
   assert.match(page, /id="themeToggle"[^>]*aria-pressed="false"/);
