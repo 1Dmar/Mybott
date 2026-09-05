@@ -70,7 +70,7 @@ test('canonical /u route uses the fixed-template Open Graph contract', () => {
   assert.match(serverSource, /app\.get\('\/u\/:identifier'/);
   assert.match(serverSource, /meta property="og:image:width" content="1536"/);
   assert.match(serverSource, /meta property="og:image:height" content="1024"/);
-  assert.match(serverSource, /profile-card-v2\//);
+  assert.match(serverSource, /profile-card-v3\//);
   assert.match(serverSource, /return \{ \.\.\.data, profileUserId: data\.profile\.id \}/);
   assert.match(serverSource, /const description = `@\$\{username\} · \$\{social\.likes\} like/);
   assert.doesNotMatch(serverSource, /const description = `\$\{displayName\} \(@\$\{username\}\) · \$\{social\.followers\}/);

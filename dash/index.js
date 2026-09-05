@@ -927,6 +927,7 @@ async function servePublicProfileCard(req, res) {
 }
 app.get('/api/public/profile-card/:identifier', publicStatsLimiter, servePublicProfileCard);
 app.get('/api/public/profile-card-v2/:identifier', publicStatsLimiter, servePublicProfileCard);
+app.get('/api/public/profile-card-v3/:identifier', publicStatsLimiter, servePublicProfileCard);
 
 async function requireSocialDatabase(res) {
   if (mongoose.connection.readyState === 1) return true;
@@ -990,7 +991,7 @@ app.get('/u/:identifier', async (req, res) => {
   const username = profile?.username || identifier;
   const displayName = profile?.globalName || username || 'ProMC Bot user';
   const publicUrl = `${baseUrl}/u/${encodeURIComponent(username)}`;
-  const cardUrl = `${baseUrl}/api/public/profile-card-v2/${encodeURIComponent(username)}`;
+  const cardUrl = `${baseUrl}/api/public/profile-card-v3/${encodeURIComponent(username)}`;
   const description = `@${username} · ${social.likes} like${social.likes === 1 ? '' : 's'}.`;
   const meta = `
     <link rel="canonical" href="${escapeMeta(publicUrl)}">
