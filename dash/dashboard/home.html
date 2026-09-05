@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://unpkg.com">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
-  <link rel="stylesheet" href="/dashboard/trustpilot-review-widget.css">
   <style>
     :root {
       --landing-ink: #07101f;
@@ -349,6 +348,15 @@
     .final-cta p { max-width: 510px; margin: 10px 0 0; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
     .final-cta-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 10px; }
 
+    .community-section { padding: 12px 0 84px; }
+    .community-card { position:relative; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:28px; align-items:center; overflow:hidden; padding:clamp(28px,5vw,46px); border:1px solid color-mix(in srgb,var(--landing-accent) 30%,var(--landing-line)); border-radius:20px; background:radial-gradient(circle at 92% 18%,rgba(255,106,43,.16),transparent 27%),linear-gradient(118deg,color-mix(in srgb,var(--landing-accent-soft) 76%,var(--landing-surface)),var(--landing-surface)); box-shadow:var(--landing-shadow); }
+    .community-card::after { position:absolute; right:-90px; bottom:-135px; width:240px; height:240px; border:1px solid color-mix(in srgb,var(--landing-accent) 30%,transparent); border-radius:50%; content:''; pointer-events:none; }
+    .community-card > * { position:relative; z-index:1; }
+    .community-kicker { margin:0 0 11px; color:var(--landing-accent); font-size:10px; font-weight:850; letter-spacing:.15em; text-transform:uppercase; }
+    .community-card h2 { max-width:650px; margin:0; color:var(--text); font-size:clamp(1.8rem,4vw,2.7rem); letter-spacing:-.06em; line-height:1.05; }
+    .community-card p { max-width:570px; margin:12px 0 0; color:var(--text-secondary); font-size:13px; line-height:1.65; }
+    .community-actions { display:flex; flex:0 0 auto; flex-wrap:wrap; gap:10px; }
+    .community-actions .landing-button { white-space:nowrap; }
     footer { padding: 0 0 32px; color: var(--landing-muted); font-size: 12px; }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 21px; border-top: 1px solid var(--landing-line); }
     .footer-brand { color: var(--text-secondary); font-weight: 800; }
@@ -395,6 +403,8 @@
       .final-cta-inner { align-items: flex-start; flex-direction: column; }
       .final-cta-actions { width: 100%; }
       .final-cta-actions .landing-button { flex: 1 1 150px; }
+      .community-card { grid-template-columns:1fr; gap:22px; }
+      .community-actions { justify-content:flex-start; }
       .footer-inner { align-items: flex-start; flex-direction: column; }
       .footer-links { justify-content: flex-start; }
     }
@@ -642,22 +652,18 @@
       </div>
     </section>
 
-    <section class="trustpilot-section" aria-labelledby="trustpilot-heading">
+    <section class="community-section" aria-labelledby="community-heading">
       <div class="landing-shell">
-        <article class="trustpilot-card" data-trustpilot-widget data-state="loading">
+        <article class="community-card">
           <div>
-            <div class="trustpilot-kicker" data-trustpilot-status>Reviews on Trustpilot</div>
-            <h2 id="trustpilot-heading">A reputation you can verify.</h2>
-            <p class="trustpilot-description">See what ProMcBot users are saying on our public Trustpilot profile. We show review statistics only when they come from a permitted, configured source.</p>
-            <div class="trustpilot-rating" aria-describedby="trustpilot-rating-label">
-              <strong class="trustpilot-score" data-trustpilot-value>—</strong>
-              <span class="trustpilot-stars" data-trustpilot-stars aria-hidden="true"></span>
-              <span class="trustpilot-count" data-trustpilot-count>No review statistics are configured yet</span>
-              <span class="trustpilot-rating-label" id="trustpilot-rating-label" data-trustpilot-rating-label>Trustpilot review statistics are not available yet.</span>
-            </div>
-            <div class="trustpilot-updated" data-trustpilot-updated>Statistics will appear here when a permitted source is connected.</div>
+            <p class="community-kicker">Built around real communities</p>
+            <h2 id="community-heading">A smarter foundation for your Minecraft network.</h2>
+            <p>Connect Discord, Minecraft, and your dashboard in one focused experience. Explore ProMcBot, share your feedback, and help shape what comes next.</p>
           </div>
-          <a class="landing-button landing-button-secondary trustpilot-cta" data-trustpilot-link href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">View on Trustpilot <span aria-hidden="true">↗</span></a>
+          <div class="community-actions">
+            <a class="landing-button landing-button-primary" href="/invitebot">Explore ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a>
+            <a class="landing-button landing-button-secondary" href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer"><i class="bx bx-support" aria-hidden="true"></i> Community support</a>
+          </div>
         </article>
       </div>
     </section>
@@ -666,17 +672,12 @@
   <footer>
     <div class="landing-shell footer-inner">
       <div><div class="footer-brand">ProMcBot</div><p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p></div>
-      <nav class="footer-links" aria-label="Footer navigation"><a href="/dashboard/pages/docs/docs.html">Documentation</a><a href="/changelog">Changelog</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="https://www.trustpilot.com/review/promcbot.dev" target="_blank" rel="noopener noreferrer">Trustpilot</a></nav>
+      <nav class="footer-links" aria-label="Footer navigation"><a href="/dashboard/pages/docs/docs.html">Documentation</a><a href="/changelog">Changelog</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Community Support</a></nav>
     </div>
   </footer>
 
   <script>
     document.getElementById('year').innerText = new Date().getFullYear();
-    const trustpilotScript = document.createElement('script');
-    trustpilotScript.src = '/dashboard/trustpilot-review-widget.js';
-    trustpilotScript.defer = true;
-    document.head.appendChild(trustpilotScript);
-
     const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[char]));
     const safeAvatar = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && new Set(['cdn.discordapp.com', 'media.discordapp.net']).has(url.hostname.toLowerCase()) ? url.href : '/dashboard/logo.png'; } catch (_) { return '/dashboard/logo.png'; } };
 
