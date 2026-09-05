@@ -903,15 +903,20 @@ app.delete('/api/public/profile/:identifier/like', isAuthenticated, profileMutat
 });
 
 const statsPageTemplate = fs.readFileSync(path.join(dashDir, 'pages', 'stats.html'), 'utf8');
-function renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon }) {
+function renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon, publicStats = {} }) {
   const safeGuildId = /^\d{5,25}$/.test(String(guildId || '')) ? String(guildId) : null;
   const canonicalPath = safeGuildId ? `/stats/${encodeURIComponent(safeGuildId)}` : '/stats';
   const canonicalUrl = `https://promcbot.dev${canonicalPath}`;
   const safeName = String(serverName || 'Public Minecraft server').trim().slice(0, 120) || 'Public Minecraft server';
   const safeVoteCount = Number.isFinite(Number(voteCount)) && Number(voteCount) >= 0 ? Math.floor(Number(voteCount)) : 0;
   const title = `${safeName} · Public stats · ProMcBot`;
-  const description = `${safeName} public server statistics on ProMcBot. ${safeVoteCount} community votes and aggregate Minecraft telemetry.`;
+  const onlineLabel = publicStats.plugin?.online ? 'Online now' : 'Awaiting heartbeat';
+  const playerCount = Number.isFinite(Number(publicStats.latestOnlinePlayers)) ? `${Math.max(0, Math.floor(Number(publicStats.latestOnlinePlayers)))} players online` : 'player count unavailable';
+  const joins = Number.isFinite(Number(publicStats.playerJoins)) ? Math.max(0, Math.floor(Number(publicStats.playerJoins))) : 0;
+  const leaves = Number.isFinite(Number(publicStats.playerLeaves)) ? Math.max(0, Math.floor(Number(publicStats.playerLeaves))) : 0;
+  const description = `${safeName} · ${onlineLabel} · ${playerCount} · ${safeVoteCount} community votes · ${joins} joins and ${leaves} leaves in the last 24 hours. View privacy-safe ProMcBot server statistics.`;
   const iconUrl = serverIcon && /^\d{5,25}$/.test(String(guildId || '')) ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guildId)}/${encodeURIComponent(serverIcon)}.png?size=256` : null;
+  const socialImage = iconUrl || 'https://promcbot.dev/dashboard/logo.png';
   const meta = [
     `<meta name="description" content="${escapeMeta(description)}">`,
     '<meta name="robots" content="index, follow">',
@@ -921,11 +926,17 @@ function renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon })
     `<meta property="og:title" content="${escapeMeta(title)}">`,
     `<meta property="og:description" content="${escapeMeta(description)}">`,
     `<meta property="og:url" content="${canonicalUrl}">`,
-    ...(iconUrl ? [`<meta property="og:image" content="${iconUrl}">`, `<meta name="twitter:image" content="${iconUrl}">`] : []),
+    `<meta property="og:image" content="${escapeMeta(socialImage)}">`,
+    `<meta property="og:image:secure_url" content="${escapeMeta(socialImage)}">`,
+    '<meta property="og:image:type" content="image/png">',
+    '<meta property="og:image:width" content="1024">',
+    '<meta property="og:image:height" content="1024">',
     '<meta name="twitter:card" content="summary">',
+    `<meta name="twitter:image" content="${escapeMeta(socialImage)}">`,
+    `<meta name="twitter:image:alt" content="${escapeMeta(`${safeName} ProMcBot server stats`)}">`,
     `<meta name="twitter:title" content="${escapeMeta(title)}">`,
     `<meta name="twitter:description" content="${escapeMeta(description)}">`,
-    `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: title, url: canonicalUrl, description, interactionStatistic: { '@type': 'InteractionCounter', interactionType: { '@type': 'LikeAction' }, userInteractionCount: safeVoteCount } }).replace(/</g, '\\u003c')}</script>`,
+    `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: title, url: canonicalUrl, description, image: socialImage, interactionStatistic: { '@type': 'InteractionCounter', interactionType: { '@type': 'LikeAction' }, userInteractionCount: safeVoteCount } }).replace(/</g, '\\u003c')}</script>`,
   ].join('\n  ');
   return statsPageTemplate.replace('<!-- STATS_DYNAMIC_META -->', meta).replace('<title>Public server stats · ProMcBot</title>', `<title>${escapeMeta(title)}</title>`);
 }
@@ -935,23 +946,26 @@ async function serveStatsPage(req, res) {
   let serverName = 'Public Minecraft server';
   let voteCount = 0;
   let serverIcon = null;
+  let publicStats = {};
   if (/^\d{5,25}$/.test(guildId) && mongoose.connection.readyState === 1) {
     try {
-      const [plugin, votes] = await Promise.all([
+      const [plugin, votes, events] = await Promise.all([
         PluginInstance.findOne({ serverId: guildId }).sort({ lastSeenAt: -1 }).lean(),
         ServerVote.countDocuments({ guildId }),
+        TelemetryEvent.find({ serverId: guildId, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['heartbeat', 'player_count', 'player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(5000).lean(),
       ]);
       const guild = getBotClient()?.guilds?.cache?.get(guildId);
       serverName = guild?.name || plugin?.serverName || serverName;
       serverIcon = guild?.icon || null;
       voteCount = votes;
+      publicStats = buildPublicStats(events, plugin);
     } catch (_) {}
   }
   if (!serverIcon) {
     const guild = getBotClient()?.guilds?.cache?.get(guildId);
     serverIcon = guild?.icon || null;
   }
-  res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300').type('html').send(renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon }));
+  res.set({ 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300', 'X-Robots-Tag': 'index, follow' }).type('html').send(renderStatsPageMetadata({ guildId, serverName, voteCount, serverIcon, publicStats }));
 }
 app.get('/stats', serveStatsPage);
 app.get('/stats/:guildId', serveStatsPage);
