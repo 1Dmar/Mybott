@@ -319,6 +319,7 @@ async function getAdminRole(req) {
 }
 async function isAdminUser(req) { return Boolean(await getAdminRole(req)); }
 async function requireAdmin(req, res, next) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   if (await isAdminUser(req)) return next();
   if (req.path.startsWith('/api/')) return res.status(404).json({ success: false, error: 'not_found' });
   return res.status(404).send('Not found');
@@ -326,6 +327,7 @@ async function requireAdmin(req, res, next) {
 async function requireAdminRole(req, res, next) {
   const role = await getAdminRole(req);
   if (!role) return res.status(404).json({ success: false, error: 'not_found' });
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   req.adminRole = role;
   next();
 }
@@ -411,6 +413,12 @@ async function getPublicSitemapUrls() {
   return urls.concat(profiles.filter(Boolean));
 }
 
+// Direct static URLs must not bypass the protected Admin page routes below.
+app.use(['/dashboard/pages/admin-changelog.html', '/dashboard/pages/admin-partners.html'], async (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  if (await isAdminUser(req)) return next();
+  return res.status(404).send('Not found');
+});
 app.use('/dashboard', express.static(dashDir));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
