@@ -27,6 +27,9 @@ const AutomationRule = require('../bot/Models/AutomationRule');
 const AutomationExecution = require('../bot/Models/AutomationExecution');
 const ChangelogEntry = require('../bot/Models/ChangelogEntry');
 const AdminMember = require('../bot/Models/AdminMember');
+const PartnerApplication = require('../bot/Models/PartnerApplication');
+const Partner = require('../bot/Models/Partner');
+const { normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner } = require('../bot/utils/partnerService');
 const { DEFAULT_CHANGELOG_ENTRIES } = require('../bot/utils/changelogData');
 const { summarizeTelemetry, WINDOW_MS } = require('../bot/utils/intelligenceEngine');
 const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
@@ -480,6 +483,29 @@ Object.entries(legalPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
 });
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
+app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
+app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
+app.get('/api/partners/me', isAuthenticated, (req, res) => res.json({ success: true, user: { id: req.user.id, username: req.user.username, global_name: req.user.global_name } }));
+app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const information = normalizeApplicationInput(req.body, req.user);
+  const validationError = validateApplication(information, req.user.id);
+  if (validationError) return res.status(400).json({ success: false, error: validationError });
+  const existing = await PartnerApplication.findOne({ applicantUserId: req.user.id, status: { $in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } }).lean();
+  if (existing) return res.status(409).json({ success: false, error: 'active_application_exists' });
+  const application = await PartnerApplication.create({ applicantUserId: req.user.id, information });
+  res.status(201).json({ success: true, applicationId: application._id });
+});
+app.get('/admin/partners', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-partners.html')));
+app.get('/api/admin/partners/applications', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => res.json({ success: true, applications: await PartnerApplication.find().sort({ submittedAt: -1 }).lean() }));
+app.get('/api/admin/partners/applications/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findById(req.params.id).lean(); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_found' }); });
+app.post('/api/admin/partners/applications/:id/review', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: 'PENDING' }, { $set: { status: 'UNDER_REVIEW', reviewedBy: req.user.id, reviewedAt: new Date() } }, { new: true }); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_pending' }); });
+app.post('/api/admin/partners/applications/:id/approve', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await approveApplication(req.params.id, req.user.id); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/applications/:id/reject', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: { $in: ['PENDING', 'UNDER_REVIEW'] } }, { $set: { status: 'REJECTED', reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: String(req.body.rejectionReason || '').slice(0, 2000), adminNotes: String(req.body.adminNotes || '').slice(0, 3000) } }, { new: true }); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_rejectable' }); });
+app.get('/api/admin/partners', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => res.json({ success: true, partners: await Partner.find().sort({ createdAt: -1 }).lean() }));
+app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await Partner.findById(req.params.id).lean(); return item ? res.json({ success: true, partner: item }) : res.status(404).json({ success: false, error: 'partner_not_found' }); });
+app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { res.json({ success: true, partner: await renewPartner(req.params.id, req.user.id) }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { res.json({ success: true, partner: await endPartner(req.params.id) }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+
 app.get('/api/changelog', async (req, res) => {
   try {
     await seedChangelogIfEmpty();

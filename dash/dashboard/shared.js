@@ -25,7 +25,7 @@
   }
 
   async function checkAuth() {
-    const publicPaths = ['/', '/loading-auth', '/privacy', '/auth/discord'];
+    const publicPaths = ['/', '/loading-auth', '/privacy', '/auth/discord', '/partners'];
     const isPublicProfile = /^\/(?:u|profile|user)\/[^/]+$/.test(window.location.pathname);
     const isPublicPage = publicPaths.includes(window.location.pathname) || isPublicProfile;
     try {
@@ -139,10 +139,12 @@
           <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
           <li class="item"><a href="/smart-actions" class="nav_link ${active('/smart-actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bolt-circle"></i></span><span class="navlink">Smart Actions</span>${navTag('NEW')}</a></li>
           <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
+          <li class="item" data-admin-only><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
         </ul>
       `;
     }
     menuContent.innerHTML = html;
+    menuContent.querySelectorAll('[data-admin-only]').forEach(el => { el.hidden = state.user?.isAdmin !== true; });
   }
 
   function initSidebar() {
