@@ -33,6 +33,19 @@ const options = {
 
 let initDBPromise = null;
 
+async function repairSubscriptionProviderEventIndex() {
+    try {
+        const Subscription = require('../Models/Subscription');
+        // Explicit null values still collide on a unique index in MongoDB,
+        // even when the index is sparse. Omit them before rebuilding it.
+        await Subscription.collection.updateMany({ lastProviderEventId: null }, { $unset: { lastProviderEventId: 1 } });
+        await Subscription.collection.dropIndex('lastProviderEventId_1').catch(() => null);
+        await Subscription.collection.createIndex({ lastProviderEventId: 1 }, { unique: true, sparse: true, name: 'lastProviderEventId_1' });
+    } catch (error) {
+        console.error('⚠️ Subscription provider-event index repair skipped:', error.message);
+    }
+}
+
 async function initDB() {
     if (initDBPromise) return initDBPromise;
 
@@ -62,6 +75,8 @@ async function initDB() {
                 connections.main = mongoose.connection;
                 console.log('✅ Mongoose already connected or connecting to the same URI.');
             }
+
+        await repairSubscriptionProviderEventIndex();
 
         // Create Secondary Connection (if different)
         if (process.env.MONGO_URL_SECONDARY && process.env.MONGO_URL_SECONDARY !== mainURI) {

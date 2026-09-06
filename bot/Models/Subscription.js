@@ -12,7 +12,9 @@ const subscriptionSchema = new mongoose.Schema({
   renewalState: { type: String, enum: ['auto_renew', 'will_cancel', 'not_applicable'], default: 'not_applicable' },
   cancellationAt: { type: Date, default: null },
   gracePeriodEnd: { type: Date, default: null },
-  lastProviderEventId: { type: String, default: null, unique: true, sparse: true },
+  // Omit unset provider event ids entirely. Explicit null values still collide
+  // on a unique index in MongoDB, even when the index is sparse.
+  lastProviderEventId: { type: String, unique: true, sparse: true },
   metadata: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
