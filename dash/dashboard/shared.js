@@ -136,10 +136,6 @@
           <div class="menu_title"><span>Workspace</span></div>
           <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
           <li class="item"><a href="/myservers" class="nav_link ${active('/myservers') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
-          <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
-          <li class="item"><a href="/smart-actions" class="nav_link ${active('/smart-actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bolt-circle"></i></span><span class="navlink">Smart Actions</span>${navTag('NEW')}</a></li>
-          <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
-          <li class="item" data-admin-only><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
         </ul>
       `;
     }
