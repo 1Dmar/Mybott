@@ -1,4 +1,5 @@
-const { ApplicationCommandType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { ApplicationCommandType, PermissionFlagsBits } = require('discord.js');
+const { serverHealth, error } = require('../../../utils/proMcBotUI');
 const PluginInstance = require('../../../Models/PluginInstance');
 const TelemetryEvent = require('../../../Models/TelemetryEvent');
 
@@ -9,7 +10,7 @@ module.exports = {
     try {
       const [instance, count] = await Promise.all([PluginInstance.findOne({ serverId: interaction.guild.id }).sort({ lastSeenAt: -1 }).lean(), TelemetryEvent.findOne({ serverId: interaction.guild.id, type: 'player_count' }).sort({ occurredAt: -1 }).lean()]);
       const age = instance?.lastSeenAt ? Math.round((Date.now() - new Date(instance.lastSeenAt).getTime()) / 60000) : null;
-      return interaction.editReply({ embeds: [new EmbedBuilder().setColor(instance && age !== null && age <= 5 ? 0x22c55e : 0xf59e0b).setTitle('ProMcBot Server Health').addFields({ name: 'Connection', value: instance ? (age !== null && age <= 5 ? 'Online' : 'Stale / needs review') : 'Not connected', inline: true }, { name: 'Instance', value: instance?.instanceId || '—', inline: true }, { name: 'Online players', value: count?.data?.onlinePlayers === undefined ? 'Not enough data yet.' : String(count.data.onlinePlayers), inline: true }, { name: 'Last heartbeat', value: instance?.lastSeenAt ? new Date(instance.lastSeenAt).toISOString() : 'Not enough data yet.' }).setFooter({ text: 'Health is based on plugin heartbeats and player-count telemetry.' }).setTimestamp()] });
-    } catch (error) { return interaction.editReply({ content: `Server health is temporarily unavailable: ${error.message}` }); }
+      return interaction.editReply({ embeds: [serverHealth({ instance, playerCount: count })] });
+    } catch (caught) { return interaction.editReply({ embeds: [error({ title: 'Server Health Unavailable', reason: 'Measured health data could not be retrieved.', action: 'Check the plugin heartbeat and try again.', code: caught.code })] }); }
   },
 };

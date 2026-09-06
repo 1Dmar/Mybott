@@ -21,6 +21,7 @@ const StatusBar = require('../Models/StatusBar');
 const BlackList = require("../Models/BlackList");
 const { getActiveBlacklist } = require('../utils/blacklistGuard');
 const { consumeCommandCooldown } = require('../utils/commandCooldown');
+const { error: uiError, info: uiInfo, warning: uiWarning } = require('../utils/proMcBotUI');
 const { normalizeMinecraftAddress } = require('../utils/minecraftAddressPolicy');
 const slashCooldowns = new Map();
 // Helper to format emoji for Discord
@@ -503,32 +504,27 @@ const interactionCreateEvent = {
             if (interaction.isChatInputCommand()) {
                 if (!client.scommands || client.scommands.size === 0) {
                     console.error('client.scommands is not defined or empty');
-                    return await interaction.reply({ 
-                        content: `⚠️ Command system not initialized or no commands loaded. Please wait a moment and try again.`, 
-                        ephemeral: true 
-                    });
+                                            return await interaction.reply({ embeds: [uiError({ title: 'Command System Unavailable', reason: 'The command registry is still initializing.', action: 'Wait a moment and try again.' })], ephemeral: true });
+
                 }
                 const command = client.scommands.get(interaction.commandName);
                 
                 if (!command) {
                     console.error(`No command matching ${interaction.commandName} was found.`);
-                    return await interaction.reply({ 
-                        content: `⚠️ Command \`${interaction.commandName}\` is not available or not yet registered.`, 
-                        ephemeral: true 
-                    });
+                    return await interaction.reply({ embeds: [uiError({ title: 'Command Unavailable', reason: `\`${interaction.commandName}\` is not currently registered.`, action: 'Refresh the command list and try again.' })], ephemeral: true });
                 }
 
                 try {
                     const ownerBypass = ['804999528129363998', '1071690719418396752'].includes(String(interaction.user?.id || '')) && interaction.commandName === 'blacklist';
                     if (interaction.guild && !ownerBypass) {
                         const activeBlacklist = await getActiveBlacklist(interaction.guild.id);
-                        if (activeBlacklist) return await interaction.reply({ content: `هذا السيرفر محظور من استخدام ProMcBot.${activeBlacklist.reason ? ` السبب: ${activeBlacklist.reason}` : ''}`, ephemeral: true });
+                        if (activeBlacklist) return await interaction.reply({ embeds: [uiWarning({ title: 'Server Access Restricted', message: `This server cannot use ProMcBot.${activeBlacklist.reason ? ` Reason: ${activeBlacklist.reason}` : ''}` })], ephemeral: true });
                     }
                     if (!hasRequiredPermission(interaction, command.userPermissions)) {
-                        return await interaction.reply({ content: 'لا تملك الصلاحية المطلوبة لهذا الأمر في هذا السيرفر.', ephemeral: true });
+                        return await interaction.reply({ embeds: [uiError({ title: 'Permission Required', reason: 'You do not have the required permission for this command.', action: 'Ask a server administrator to update your server permissions.' })], ephemeral: true });
                     }
                     if (command.botPermissions && interaction.appPermissions && !new PermissionsBitField(interaction.appPermissions).has(command.botPermissions)) {
-                        return await interaction.reply({ content: 'لا يملك ProMcBot الصلاحيات المطلوبة في هذا السيرفر.', ephemeral: true });
+                        return await interaction.reply({ embeds: [uiError({ title: 'Bot Permission Required', reason: 'ProMcBot does not have the permissions required for this command.', action: 'Update the bot role permissions and try again.' })], ephemeral: true });
                     }
                     const cooldown = consumeCommandCooldown(slashCooldowns, {
                         userId: interaction.user?.id,
@@ -537,7 +533,7 @@ const interactionCreateEvent = {
                     }, command);
                     if (!cooldown.allowed) {
                         const seconds = Math.max(1, Math.ceil(cooldown.retryAfterMs / 1000));
-                        return await interaction.reply({ content: `تم تنفيذ هذا الأمر للتو. حاول بعد ${seconds} ثانية.`, ephemeral: true });
+                        return await interaction.reply({ embeds: [uiInfo({ title: 'Cooldown Active', message: `This command was just used. Try again in **${seconds} seconds**.` })], ephemeral: true });
                     }
                     if (command.deferReply) {
                         await interaction.deferReply({ ephemeral: command.ephemeral || false });
@@ -557,17 +553,9 @@ const interactionCreateEvent = {
                 } catch (error) {
                     console.error(`Error executing ${interaction.commandName}:`, error);
                     
-                    const errorEmbed = new EmbedBuilder()
-                        .setColor(0xFF0000)
-                        .setTitle("Command Error")
-                        .setDescription("There was an error while executing this command!")
-                        .setTimestamp();
-                    
-                    if (interaction.replied || interaction.deferred) {
-                        await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
-                    } else {
-                        await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
-                    }
+                    const errorEmbed = uiError({ title: 'Request Failed', reason: 'The command could not complete this action.', action: 'Try again. If the issue continues, contact ProMcBot support.', code: error.code });
+                    if (interaction.replied || interaction.deferred) await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+                    else await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
                 }
                 return;
             }
@@ -662,12 +650,12 @@ const interactionCreateEvent = {
                     
                     const confirmButton = new ButtonBuilder()
                         .setCustomId('confirmWallpaper')
-                        .setLabel("Use This Wallpaper")
+                        .setLabel('Use wallpaper')
                         .setStyle(ButtonStyle.Primary);
                         
                     const chooseAnotherButton = new ButtonBuilder()
                         .setCustomId('chooseAnotherWallpaper')
-                        .setLabel("Choose Another")
+                        .setLabel('Choose another')
                         .setStyle(ButtonStyle.Secondary);
                         
                     const buttonRow = new ActionRowBuilder().addComponents(confirmButton, chooseAnotherButton);
@@ -790,7 +778,7 @@ const interactionCreateEvent = {
                     .addComponents(
                         new StringSelectMenuBuilder()
                             .setCustomId('wallpaperSelect')
-                            .setPlaceholder('Choose a wallpaper...')
+                            .setPlaceholder('Select a wallpaper')
                             .addOptions(wallpaperOptions.slice(0, 25))
                     );
                 
@@ -830,16 +818,16 @@ const interactionCreateEvent = {
                         new ActionRowBuilder().addComponents(
                             new TextInputBuilder()
                                 .setCustomId('apiToken')
-                                .setLabel("API Token (Optional)")
-                                .setPlaceholder("Enter your API token if you have one")
+                                .setLabel('API token (optional)')
+                                .setPlaceholder('Enter your API token if available')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(false)
                         ),
                         new ActionRowBuilder().addComponents(
                             new TextInputBuilder()
                                 .setCustomId('apiPort')
-.setLabel("Lobby API Port (Default: 8080)")
-	                                .setPlaceholder("Enter the second port for your lobby API")
+.setLabel('Lobby API port (default: 8080)')
+	                                .setPlaceholder('Enter the second lobby API port')
                                 .setStyle(TextInputStyle.Short)
                                 .setRequired(false)
                         )
@@ -881,7 +869,7 @@ const interactionCreateEvent = {
                         .addComponents(
                             new StringSelectMenuBuilder()
                                 .setCustomId('wallpaperSelect')
-                                .setPlaceholder('Choose a wallpaper...')
+                                .setPlaceholder('Select a wallpaper')
                                 .addOptions(wallpaperOptions.slice(0, 25))
                         );
                     
