@@ -428,6 +428,7 @@ app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, stand
   res.json(getTrustpilotStats());
 });
 
+const publicStatsLimiter = rateLimit({ windowMs: 60 * 1000, max: 90, standardHeaders: true, legacyHeaders: false });
 const reviewMutationLimiter = rateLimit({ windowMs: 60 * 1000, max: 8, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'review_rate_limited' } });
 function normalizeReviewPayload(body = {}) {
   const title = String(body.title || '').trim().slice(0, 120);
@@ -1075,7 +1076,6 @@ app.get('/callback/check/userData', async (req, res) => {
 });
 
 // Public stats/profile experience. These endpoints intentionally expose aggregates only.
-const publicStatsLimiter = rateLimit({ windowMs: 60 * 1000, max: 90, standardHeaders: true, legacyHeaders: false });
 app.get('/api/public/stats/:guildId', publicStatsLimiter, requireDatabaseReady, async (req, res) => {
   const guildId = String(req.params.guildId || '');
   if (!/^\d{5,25}$/.test(guildId)) return res.status(400).json({ success: false, error: 'invalid_guild_id' });
