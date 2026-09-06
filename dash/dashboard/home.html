@@ -671,9 +671,12 @@
       })
       .catch(() => {});
 
-    const landingMenuToggle = document.getElementById('landingMenuToggle');
     const landingNavLinks = document.querySelector('.nav-links');
-    landingMenuToggle?.addEventListener('click', () => {
+    // Authenticated navigation replaces #navActions after the initial render.
+    // Delegate the click so both the original and replacement hamburger work.
+    document.addEventListener('click', event => {
+      const landingMenuToggle = event.target.closest('#landingMenuToggle');
+      if (!landingMenuToggle || !landingNavLinks) return;
       const open = landingNavLinks.classList.toggle('is-open');
       landingMenuToggle.setAttribute('aria-expanded', String(open));
     });
