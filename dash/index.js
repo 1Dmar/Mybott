@@ -29,7 +29,7 @@ const ChangelogEntry = require('../bot/Models/ChangelogEntry');
 const AdminMember = require('../bot/Models/AdminMember');
 const PartnerApplication = require('../bot/Models/PartnerApplication');
 const Partner = require('../bot/Models/Partner');
-const { normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner } = require('../bot/utils/partnerService');
+const { normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner, getActivePartnerDiscount, PARTNER_DISCOUNT_PERCENTAGE, PARTNER_PRODUCT } = require('../bot/utils/partnerService');
 const { DEFAULT_CHANGELOG_ENTRIES } = require('../bot/utils/changelogData');
 const { summarizeTelemetry, WINDOW_MS } = require('../bot/utils/intelligenceEngine');
 const { analyzePlayers } = require('../bot/utils/playerIntelligenceEngine');
@@ -485,7 +485,13 @@ Object.entries(legalPages).forEach(([route, file]) => {
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
 app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
-app.get('/api/partners/me', isAuthenticated, (req, res) => res.json({ success: true, user: { id: req.user.id, username: req.user.username, global_name: req.user.global_name } }));
+app.get('/api/partners/me', isAuthenticated, async (req, res) => {
+  const [application, partner] = mongoose.connection.readyState === 1 ? await Promise.all([
+    PartnerApplication.findOne({ applicantUserId: req.user.id }).sort({ submittedAt: -1 }).lean(),
+    Partner.findOne({ userId: req.user.id }).lean(),
+  ]) : [null, null];
+  res.json({ success: true, user: { id: req.user.id, username: req.user.username, global_name: req.user.global_name }, application, partner });
+});
 app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, async (req, res) => {
   const information = normalizeApplicationInput(req.body, req.user);
   const validationError = validateApplication(information, req.user.id);
@@ -493,18 +499,87 @@ app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, as
   const existing = await PartnerApplication.findOne({ applicantUserId: req.user.id, status: { $in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } }).lean();
   if (existing) return res.status(409).json({ success: false, error: 'active_application_exists' });
   const application = await PartnerApplication.create({ applicantUserId: req.user.id, information });
+  await recordAudit({ actorId: req.user.id, guildId: req.user.id, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
+  void notifyPartnerDiscord('submitted', { application });
   res.status(201).json({ success: true, applicationId: application._id });
 });
+app.get('/api/partners/discount-quote', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const product = String(req.query.product || '').trim().toLowerCase();
+  const amount = Number(req.query.amount);
+  if (product !== PARTNER_PRODUCT || !Number.isFinite(amount) || amount < 0) return res.status(400).json({ success: false, error: 'invalid_discount_request' });
+  const discount = await getActivePartnerDiscount(req.user.id, product);
+  const percentage = discount ? PARTNER_DISCOUNT_PERCENTAGE : 0;
+  res.json({ success: true, product, percentage, originalAmount: amount, discountAmount: Math.round(amount * percentage) / 100, finalAmount: Math.round(amount * (100 - percentage)) / 100 });
+});
 app.get('/admin/partners', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-partners.html')));
-app.get('/api/admin/partners/applications', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => res.json({ success: true, applications: await PartnerApplication.find().sort({ submittedAt: -1 }).lean() }));
+async function notifyPartnerDiscord(event, data) {
+  const channelId = String(process.env.PARTNER_APPLICATION_CHANNEL_ID || '').trim();
+  const channel = channelId ? global.__botClient?.channels?.cache?.get(channelId) : null;
+  if (!channel?.send) return;
+  const application = data.application;
+  const partner = data.partner;
+  const info = application?.information || {};
+  const fields = event === 'submitted' ? [
+    { name: 'Applicant', value: '<@' + application.applicantUserId + '>', inline: true },
+    { name: 'Discord', value: String(info.discordUsername || 'Unknown'), inline: true },
+    { name: 'Community', value: String(info.communityName || 'Unknown'), inline: true },
+    { name: 'Size', value: String(info.communitySize || 'Unknown'), inline: true },
+    { name: 'Website / Invite', value: String(info.websiteOrInvite || 'Unknown').slice(0, 1024), inline: false },
+    { name: 'Reason', value: String(info.whyPartner || info.description || 'Not provided').slice(0, 1024), inline: false },
+    { name: 'Offer', value: String(info.offer || 'Not provided').slice(0, 1024), inline: false },
+    { name: 'Application ID', value: String(application._id), inline: true },
+    { name: 'Status', value: String(application.status), inline: true },
+  ] : event === 'approved' ? [
+    { name: 'Discord user', value: '<@' + application.applicantUserId + '>', inline: true },
+    { name: 'Partner status', value: 'ACTIVE', inline: true },
+    { name: 'Pro Premium', value: '90 days', inline: true },
+    { name: 'Discount', value: '25% on Pro Premium', inline: true },
+    { name: 'Start', value: new Date(partner.startedAt).toISOString(), inline: true },
+    { name: 'Expiration', value: new Date(partner.expiresAt).toISOString(), inline: true },
+  ] : [{ name: 'Applicant', value: '<@' + application.applicantUserId + '>', inline: true }, { name: 'Result', value: 'Rejected', inline: true }, { name: 'Reason', value: String(application.rejectionReason || 'Not provided').slice(0, 1024), inline: false }];
+  try { await channel.send({ embeds: [{ color: event === 'approved' ? 0x22c55e : event === 'rejected' ? 0xef4444 : 0x5865f2, title: event === 'approved' ? 'Partner approved' : event === 'rejected' ? 'Partner application rejected' : 'New Partner application', fields, timestamp: new Date().toISOString() }] }); }
+  catch (error) { console.error('[partner discord] notification failed:', error.message); }
+}
+app.get('/api/admin/partners/applications', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const filter = ['PENDING', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'].includes(req.query.status) ? { status: req.query.status } : {};
+  res.json({ success: true, applications: await PartnerApplication.find(filter).sort({ submittedAt: -1 }).lean() });
+});
 app.get('/api/admin/partners/applications/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findById(req.params.id).lean(); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_found' }); });
-app.post('/api/admin/partners/applications/:id/review', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: 'PENDING' }, { $set: { status: 'UNDER_REVIEW', reviewedBy: req.user.id, reviewedAt: new Date() } }, { new: true }); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_pending' }); });
-app.post('/api/admin/partners/applications/:id/approve', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await approveApplication(req.params.id, req.user.id); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
-app.post('/api/admin/partners/applications/:id/reject', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: { $in: ['PENDING', 'UNDER_REVIEW'] } }, { $set: { status: 'REJECTED', reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: String(req.body.rejectionReason || '').slice(0, 2000), adminNotes: String(req.body.adminNotes || '').slice(0, 3000) } }, { new: true }); return item ? res.json({ success: true, application: item }) : res.status(404).json({ success: false, error: 'application_not_rejectable' }); });
-app.get('/api/admin/partners', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => res.json({ success: true, partners: await Partner.find().sort({ createdAt: -1 }).lean() }));
-app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { const item = await Partner.findById(req.params.id).lean(); return item ? res.json({ success: true, partner: item }) : res.status(404).json({ success: false, error: 'partner_not_found' }); });
-app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { res.json({ success: true, partner: await renewPartner(req.params.id, req.user.id) }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
-app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { res.json({ success: true, partner: await endPartner(req.params.id) }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/applications/:id/review', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: 'PENDING' }, { $set: { status: 'UNDER_REVIEW', reviewedBy: req.user.id, reviewedAt: new Date(), adminNotes: String(req.body?.adminNotes || '').slice(0, 3000) } }, { new: true });
+  if (!item) return res.status(409).json({ success: false, error: 'application_not_pending' });
+  await recordAudit({ actorId: req.user.id, guildId: item.applicantUserId, action: 'partner_marked_under_review', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(item._id) }).catch(() => null);
+  res.json({ success: true, application: item });
+});
+app.post('/api/admin/partners/applications/:id/approve', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  try {
+    const result = await approveApplication(req.params.id, req.user.id);
+    const application = result.application || await PartnerApplication.findById(req.params.id).lean();
+    await recordAudit({ actorId: req.user.id, guildId: application.applicantUserId, action: result.idempotent ? 'partner_approval_replayed' : 'partner_approved', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(application._id), metadata: { partnerId: String(result.partner._id), discountPercentage: 25, premiumDays: 90 } }).catch(() => null);
+    if (!result.idempotent) void notifyPartnerDiscord('approved', { application, partner: result.partner });
+    res.json({ success: true, idempotent: Boolean(result.idempotent), partner: result.partner });
+  } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); }
+});
+app.post('/api/admin/partners/applications/:id/reject', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const item = await PartnerApplication.findOneAndUpdate({ _id: req.params.id, status: { $in: ['PENDING', 'UNDER_REVIEW'] } }, { $set: { status: 'REJECTED', reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: String(req.body?.rejectionReason || '').slice(0, 2000), adminNotes: String(req.body?.adminNotes || '').slice(0, 3000) } }, { new: true });
+  if (!item) return res.status(409).json({ success: false, error: 'application_not_rejectable' });
+  await recordAudit({ actorId: req.user.id, guildId: item.applicantUserId, action: 'partner_rejected', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(item._id) }).catch(() => null);
+  void notifyPartnerDiscord('rejected', { application: item });
+  res.json({ success: true, application: item });
+});
+app.get('/api/admin/partners', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const partners = await Partner.find().sort({ createdAt: -1 }).lean();
+  const counts = await PartnerApplication.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+  res.json({ success: true, partners, stats: Object.fromEntries(counts.map(x => [x._id, x.count])) });
+});
+app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const partner = await Partner.findById(req.params.id).lean();
+  if (!partner) return res.status(404).json({ success: false, error: 'partner_not_found' });
+  const [application, history] = await Promise.all([PartnerApplication.findById(partner.applicationId).lean(), AuditLog.find({ guildId: partner.userId, feature: 'partner' }).sort({ timestamp: -1 }).limit(100).lean()]);
+  res.json({ success: true, partner, application, history });
+});
+app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_premium_renewed', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
 
 app.get('/api/changelog', async (req, res) => {
   try {

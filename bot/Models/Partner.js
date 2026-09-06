@@ -7,7 +7,9 @@ const partnerSchema = new mongoose.Schema({
   startedAt: { type: Date, required: true, default: Date.now },
   expiresAt: { type: Date, required: true },
   endedAt: { type: Date, default: null },
+  endedReason: { type: String, default: null, maxlength: 2000 },
   approvedBy: { type: String, required: true },
+  approvedAt: { type: Date, default: Date.now },
   discountPercentage: { type: Number, default: 25, min: 0, max: 100 },
   discountActive: { type: Boolean, default: true },
   partnerPro: {
