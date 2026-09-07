@@ -559,7 +559,7 @@ app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, as
   const validationError = validateApplication(information, req.user.id);
   if (validationError) return res.status(400).json({ success: false, error: validationError });
   const existing = await PartnerApplication.findOne({ applicantUserId: req.user.id, status: { $in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } }).lean();
-  if (existing) return res.status(409).json({ success: false, error: 'active_application_exists' });
+  if (existing) return res.status(409).json({ success: false, error: 'active_application_exists', message: 'You already have an active partner application. Please wait while our team reviews it.' });
   const application = await PartnerApplication.create({ applicantUserId: req.user.id, information });
   await recordAudit({ actorId: req.user.id, guildId: req.user.id, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
   void notifyPartnerDiscord('submitted', { application });
