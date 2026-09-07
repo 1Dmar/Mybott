@@ -51,67 +51,41 @@
 
     .landing-shell { width: min(100% - 32px, 1180px); margin: 0 auto; }
 
-    .landing-nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid var(--landing-line);
-      background: color-mix(in srgb, var(--bg) 84%, transparent);
-      backdrop-filter: blur(16px);
-    }
+    .landing-nav { position: sticky; top: 0; z-index: 100; display: flex; justify-content: center; padding: 14px 16px 0; background: transparent; pointer-events: none; }
+    .landing-nav-inner { display: flex; align-items: center; justify-content: center; gap: 14px; width: fit-content; max-width: min(calc(100vw - 32px), 1040px); min-height: 58px; margin: 0 auto; padding: 7px 10px 7px 15px; border: 1px solid color-mix(in srgb, var(--landing-line) 75%, white 25%); border-radius: 18px; background: color-mix(in srgb, var(--landing-surface) 78%, transparent); box-shadow: 0 18px 45px rgba(6, 16, 34, .14), inset 0 1px 0 rgba(255,255,255,.45); backdrop-filter: blur(22px) saturate(1.25); pointer-events: auto; }
 
-    .landing-nav-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 22px;
-      width: min(100% - 32px, 1180px);
-      min-height: 74px;
-      margin: 0 auto;
-    }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      flex: 0 0 auto;
-      gap: 11px;
-      color: var(--text);
-      font-size: 20px;
-      font-weight: 850;
-      letter-spacing: -.035em;
-      text-decoration: none;
-    }
+    .logo { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 9px; color: var(--text); font-size: 16px; font-weight: 850; letter-spacing: -.035em; text-decoration: none; }
 
     .logo img {
       display: block;
-      width: 38px;
-      height: 38px;
-      border-radius: 11px;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       box-shadow: 0 6px 18px rgba(255, 106, 43, 0.2);
     }
 
     .logo span { color: var(--text); }
     .logo em { color: var(--landing-accent); font-style: normal; }
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: clamp(14px, 2.5vw, 28px);
-      margin-left: auto;
-    }
+    .nav-links { display: flex; align-items: center; justify-content: center; gap: 3px; margin: 0 auto; }
 
     .nav-links a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border-radius: 10px;
       color: var(--text-secondary);
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 750;
       text-decoration: none;
-      transition: color 160ms ease;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
     }
 
-    .nav-links a:hover { color: var(--landing-accent); }
+    .nav-links a:hover { background: var(--landing-accent-soft); color: var(--landing-accent); transform: translateY(-1px); }
 
     #navActions { display: flex; align-items: center; justify-content: flex-end; min-width: 0; gap: 8px; }
-    .landing-menu-toggle { display: none; width: 40px; height: 40px; border: 1px solid var(--landing-line); border-radius: 10px; background: var(--landing-surface); color: var(--text); font-size: 22px; cursor: pointer; }
+    .landing-menu-toggle { display: none; width: 36px; height: 36px; border: 1px solid var(--landing-line); border-radius: 10px; background: var(--landing-surface); color: var(--text); font-size: 21px; cursor: pointer; }
     #navActions > div { display: flex; align-items: center; gap: 12px; }
     #navActions > div > span { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -144,7 +118,7 @@
       color: var(--text);
     }
     .landing-button-secondary:hover { border-color: color-mix(in srgb, var(--landing-accent) 55%, var(--landing-line)); background: var(--landing-surface-soft); }
-    .landing-button-quiet { min-height: 38px; padding: 9px 14px; font-size: 12px; }
+    .landing-button-quiet { min-height: 38px; padding: 9px 15px; border-radius: 10px; font-size: 12px; }
 
     .hero-section { padding: clamp(64px, 9vw, 112px) 0 74px; }
     .hero-grid {
@@ -389,14 +363,15 @@
 
     @media (max-width: 720px) {
       .landing-shell { width: min(100% - 24px, 560px); }
-      .landing-nav-inner { width: min(100% - 24px, 560px); min-height: 66px; gap: 10px; }
+      .landing-nav { padding: 10px 10px 0; }
+      .landing-nav-inner { width: calc(100vw - 20px); max-width: none; min-height: 54px; gap: 8px; padding: 6px 8px 6px 11px; border-radius: 16px; }
       .nav-links { display: none; }
       .landing-menu-toggle { display: inline-flex; align-items: center; justify-content: center; }
-      .nav-links.is-open { position: absolute; top: 62px; right: 12px; display: flex; flex-direction: column; align-items: stretch; gap: 2px; min-width: 210px; margin: 0; padding: 8px; border: 1px solid var(--landing-line); border-radius: 12px; background: var(--landing-surface); box-shadow: var(--landing-shadow); }
+      .nav-links.is-open { position: absolute; top: 61px; left: 10px; right: 10px; display: flex; flex-direction: column; align-items: stretch; gap: 2px; min-width: 0; margin: 0; padding: 8px; border: 1px solid var(--landing-line); border-radius: 14px; background: var(--landing-surface); box-shadow: var(--landing-shadow); }
       .nav-links.is-open a { padding: 10px 12px; border-radius: 8px; }
       .nav-links.is-open a:hover { background: var(--landing-surface-soft); }
-      .logo { font-size: 18px; }
-      .logo img { width: 35px; height: 35px; }
+      .logo { font-size: 16px; }
+      .logo img { width: 33px; height: 33px; }
       #navActions > div > span { display: none; }
       #navActions > div { gap: 7px; }
       .landing-button-quiet { min-height: 36px; padding: 8px 11px; font-size: 11px; }
@@ -474,16 +449,13 @@
         <span>Pro<em>Mc</em>Bot</span>
       </a>
       <nav class="nav-links" aria-label="Primary navigation">
-        <a href="#features">Features</a>
+        <a href="/partners">Partners</a>
+        <a href="/changelog">Change Log</a>
         <a href="/plugin">Plugin</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#faq">FAQ</a>
-        <a href="/docs">Documentation</a>
-        <a href="/changelog">Changelog</a>
       </nav>
       <div id="navActions">
         <button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button>
-        <a href="/invitebot" class="landing-button landing-button-primary landing-button-quiet">Invite Bot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a>
+        <a href="/loading-auth" class="landing-button landing-button-primary landing-button-quiet">Login <i class="bx bx-log-in-alt" aria-hidden="true"></i></a>
       </div>
     </div>
   </header>
