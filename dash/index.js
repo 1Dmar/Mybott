@@ -535,6 +535,8 @@ const docsPages = {
 Object.entries(docsPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', file)));
 });
+app.get('/plugin', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'plugin.html')));
+app.get('/minecraft-plugin', (req, res) => res.redirect(302, '/plugin'));
 app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));
 const legalPages = {
   '/privacy-policy': 'PrivacyPolicy.html',
