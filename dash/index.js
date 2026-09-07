@@ -397,6 +397,7 @@ async function getPublicSitemapUrls() {
     { loc: `${SEO_BASE_URL}/changelog`, priority: '0.8' },
     { loc: `${SEO_BASE_URL}/privacy-policy`, priority: '0.5' },
     { loc: `${SEO_BASE_URL}/terms-of-service`, priority: '0.5' },
+    { loc: `${SEO_BASE_URL}/contact`, priority: '0.6' },
     { loc: `${SEO_BASE_URL}/stats`, priority: '0.7' },
   ];
   if (mongoose.connection.readyState !== 1) return urls;
@@ -535,6 +536,7 @@ const docsPages = {
 Object.entries(docsPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', file)));
 });
+app.get('/contact', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'contact.html')));
 app.get('/plugin', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'plugin.html')));
 app.get('/minecraft-plugin', (req, res) => res.redirect(302, '/plugin'));
 app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));

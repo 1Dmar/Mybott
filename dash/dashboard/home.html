@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ProMcBot — Minecraft &amp; Discord Bot</title>
+  <title>ProMcBot — Minecraft Server Management Platform</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/shared.css">
@@ -412,15 +412,38 @@
       html { scroll-behavior: auto; }
       .landing-button:hover, .feature-card:hover, .feature-card.is-active { transform: none; }
     }
+    /* Premium public footer — scoped to the footer only. */
+    .premium-footer { position: relative; overflow: hidden; padding: 0 0 24px; color: var(--landing-muted); font-size: 12px; }
+    .premium-footer::before { position: absolute; right: 7%; bottom: 5%; width: 260px; height: 180px; border-radius: 50%; background: rgba(255, 106, 43, .1); filter: blur(55px); content: ''; pointer-events: none; }
+    .premium-footer-inner { position: relative; overflow: hidden; padding: 42px clamp(22px, 5vw, 54px) 20px; border: 1px solid color-mix(in srgb, var(--landing-accent) 22%, var(--landing-line)); border-radius: 24px 24px 0 0; background: linear-gradient(145deg, color-mix(in srgb, var(--landing-surface) 94%, var(--landing-accent-soft)), var(--landing-surface-soft)); box-shadow: 0 -18px 55px rgba(6, 16, 34, .1); }
+    .premium-footer-grid { display: grid; grid-template-columns: minmax(230px, 1.55fr) repeat(4, minmax(110px, 1fr)); gap: 30px; }
+    .premium-footer-brand { max-width: 285px; }
+    .premium-footer-brand .logo { margin-bottom: 14px; }
+    .premium-footer-brand > p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.65; }
+    .premium-status { display: inline-flex; align-items: center; gap: 7px; margin-top: 18px; padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--landing-accent) 22%, var(--landing-line)); border-radius: 999px; color: var(--landing-muted); background: color-mix(in srgb, var(--landing-accent-soft) 55%, transparent); font-size: 10px; font-weight: 800; }
+    .premium-status::before { width: 6px; height: 6px; border-radius: 50%; background: var(--landing-accent); box-shadow: 0 0 0 4px rgba(255, 106, 43, .12); content: ''; }
+    .premium-footer-col h3 { margin: 4px 0 13px; color: var(--text); font-size: 11px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .premium-footer-col nav { display: grid; gap: 9px; }
+    .premium-footer-col a { width: fit-content; color: var(--text-secondary); text-decoration: none; transition: color 160ms ease, transform 160ms ease; }
+    .premium-footer-col a:hover { color: var(--landing-accent); transform: translateX(2px); }
+    .premium-contact { display: inline-flex !important; align-items: flex-start; gap: 6px; word-break: break-word; }
+    .premium-contact i { margin-top: 2px; color: var(--landing-accent); font-size: 14px; }
+    .premium-footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 36px; padding-top: 17px; border-top: 1px solid var(--landing-line); color: var(--landing-muted); font-size: 11px; }
+    .premium-footer-bottom strong { color: var(--text-secondary); }
+    .premium-footer-legal { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 14px; }
+    .premium-footer-legal a { color: inherit; text-decoration: none; }
+    .premium-footer-legal a:hover { color: var(--landing-accent); }
+    @media (max-width: 900px) { .premium-footer-grid { grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(110px, 1fr)); } .premium-footer-grid .premium-footer-col:last-child { grid-column: 2 / -1; } }
+    @media (max-width: 650px) { .premium-footer-inner { padding: 34px 20px 18px; border-radius: 20px 20px 0 0; } .premium-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 25px 18px; } .premium-footer-brand { grid-column: 1 / -1; max-width: none; } .premium-footer-grid .premium-footer-col:last-child { grid-column: auto; } .premium-footer-bottom { align-items: flex-start; flex-direction: column; gap: 13px; margin-top: 28px; } .premium-footer-legal { justify-content: flex-start; } }
   </style>
   <!-- ProMcBot SEO and social metadata -->
-  <meta data-promcbot-metadata="1" name="description" content="Connect your Minecraft server with Discord using ProMcBot for live server insights, community management, automation, and moderation.">
+  <meta data-promcbot-metadata="1" name="description" content="ProMcBot is a Minecraft server management platform connected with Discord for server monitoring, management tools, automation, integrations, and a powerful dashboard.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://promcbot.dev/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="ProMcBot">
-  <meta property="og:title" content="ProMcBot — Minecraft &amp; Discord Bot">
-  <meta property="og:description" content="Connect your Minecraft server with Discord using ProMcBot for live server insights, community management, automation, and moderation.">
+  <meta property="og:title" content="ProMcBot — Minecraft Server Management Platform">
+  <meta property="og:description" content="Minecraft server management platform connected with Discord.">
   <meta property="og:url" content="https://promcbot.dev/">
   <meta property="og:image" content="https://promcbot.dev/dashboard/share-preview.png">
   <meta property="og:image:secure_url" content="https://promcbot.dev/dashboard/share-preview.png">
@@ -428,16 +451,37 @@
   <meta property="og:image:width" content="1983">
   <meta property="og:image:height" content="793">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="ProMcBot — Minecraft &amp; Discord Bot">
-  <meta name="twitter:description" content="Connect your Minecraft server with Discord using ProMcBot for live server insights, community management, automation, and moderation.">
+  <meta name="twitter:title" content="ProMcBot — Minecraft Server Management Platform">
+  <meta name="twitter:description" content="Minecraft server management platform connected with Discord.">
   <meta name="twitter:image" content="https://promcbot.dev/dashboard/share-preview.png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "ProMcBot",
-    "alternateName": ["Pro MC Bot", "ProMc Bot", "promcbot.dev"],
-    "url": "https://promcbot.dev/"
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://promcbot.dev/#website",
+        "name": "ProMcBot",
+        "alternateName": ["Pro MC Bot", "ProMc Bot", "promcbot.dev"],
+        "url": "https://promcbot.dev/",
+        "description": "Minecraft server management platform connected with Discord.",
+        "publisher": {"@id": "https://promcbot.dev/#organization"}
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://promcbot.dev/#organization",
+        "name": "ProMcBot",
+        "alternateName": "Pro MC Bot",
+        "url": "https://promcbot.dev",
+        "email": "support@promcbot.dev",
+        "description": "ProMcBot is a Minecraft server management platform that connects Minecraft servers with Discord, providing server monitoring, management tools, automation, integrations, and a powerful dashboard.",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support",
+          "email": "support@promcbot.dev"
+        }
+      }
+    ]
   }
   </script>
 </head>
@@ -666,10 +710,20 @@
 
   </main>
 
-  <footer>
-    <div class="landing-shell footer-inner">
-      <div><div class="footer-brand">ProMcBot</div><p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p></div>
-      <nav class="footer-links" aria-label="Footer navigation"><a href="/dashboard/pages/docs/docs.html">Documentation</a><a href="/changelog">Changelog</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a><a href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Community Support</a></nav>
+  <footer class="premium-footer">
+    <div class="landing-shell premium-footer-inner">
+      <div class="premium-footer-grid">
+        <section class="premium-footer-brand" aria-labelledby="footer-brand-title">
+          <a class="logo" href="/" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot logo"><span id="footer-brand-title">Pro<em>Mc</em>Bot</span></a>
+          <p>Powerful Minecraft server management, connected with Discord.</p>
+          <span class="premium-status">Built for Minecraft communities</span>
+        </section>
+        <section class="premium-footer-col" aria-labelledby="footer-product-title"><h3 id="footer-product-title">Product</h3><nav aria-label="Product links"><a href="/loading-auth">Dashboard</a><a href="/#features">Features</a><a href="/premium">Membership</a><a href="/changelog">Changelog</a></nav></section>
+        <section class="premium-footer-col" aria-labelledby="footer-resources-title"><h3 id="footer-resources-title">Resources</h3><nav aria-label="Resource links"><a href="/docs">Documentation</a><a href="/plugin">Plugin</a></nav></section>
+        <section class="premium-footer-col" aria-labelledby="footer-company-title"><h3 id="footer-company-title">Company</h3><nav aria-label="Company links"><a href="/contact">Contact</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a></nav></section>
+        <section class="premium-footer-col" aria-labelledby="footer-support-title"><h3 id="footer-support-title">Support / Connect</h3><nav aria-label="Support links"><a href="https://discord.gg/6FjFYStz5a" target="_blank" rel="noopener noreferrer">Community Support</a><a class="premium-contact" href="mailto:support@promcbot.dev"><i class="bx bx-envelope" aria-hidden="true"></i><span>support@promcbot.dev</span></a></nav></section>
+      </div>
+      <div class="premium-footer-bottom"><div><strong>ProMcBot</strong><span> · Minecraft server management platform connected with Discord.</span><p>&copy; <span id="year"></span> ProMcBot. All rights reserved.</p></div><nav class="premium-footer-legal" aria-label="Legal navigation"><a href="/contact">Contact</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms-of-service">Terms of Service</a></nav></div>
     </div>
   </footer>
 
