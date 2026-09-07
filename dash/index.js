@@ -1062,7 +1062,12 @@ app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuil
 });
 
 app.get('/callback/check/userData', async (req, res) => {
-  if (!req.isAuthenticated()) return res.json({ authenticated: false });
+  const openedAsPage = req.get('sec-fetch-dest') === 'document' || (!req.xhr && String(req.get('accept') || '').includes('text/html'));
+  if (!req.isAuthenticated()) {
+    if (openedAsPage) return res.redirect('/auth/discord');
+    return res.json({ authenticated: false });
+  }
+  if (openedAsPage) return res.redirect('/dashboard');
   res.json({
     authenticated: true,
     user: {
