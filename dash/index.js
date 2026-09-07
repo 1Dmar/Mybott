@@ -560,8 +560,8 @@ app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, as
   if (validationError) return res.status(400).json({ success: false, error: validationError });
   const existing = await PartnerApplication.findOne({ applicantUserId: req.user.id, status: { $in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } }).lean();
   if (existing) return res.status(409).json({ success: false, error: 'active_application_exists', message: 'You already have an active partner application. Please wait while our team reviews it.' });
-  const application = await PartnerApplication.create({ applicantUserId: req.user.id, information });
-  await recordAudit({ actorId: req.user.id, guildId: req.user.id, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
+  const application = await PartnerApplication.create({ applicantUserId: req.user.id, guildId, information });
+  await recordAudit({ actorId: req.user.id, guildId, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
   void notifyPartnerDiscord('submitted', { application });
   res.status(201).json({ success: true, applicationId: application._id });
 });
@@ -640,8 +640,8 @@ app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDat
   const [application, history] = await Promise.all([PartnerApplication.findById(partner.applicationId).lean(), AuditLog.find({ guildId: partner.userId, feature: 'partner' }).sort({ timestamp: -1 }).limit(100).lean()]);
   res.json({ success: true, partner, application, history });
 });
-app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_premium_renewed', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
-app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.guildId, action: 'partner_premium_extended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.guildId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
 
 app.get('/api/changelog', async (req, res) => {
   try {

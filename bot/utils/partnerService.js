@@ -2,7 +2,9 @@ const Partner = require('../Models/Partner');
 const PartnerApplication = require('../Models/PartnerApplication');
 const Subscription = require('../Models/Subscription');
 
-const PARTNER_PRO_DAYS = 90;
+const PARTNER_INITIAL_DAYS = 30;
+const PARTNER_EXTENSION_DAYS = 90;
+const PARTNER_PRO_DAYS = PARTNER_INITIAL_DAYS;
 const PARTNER_DISCOUNT_PERCENTAGE = 25;
 const PARTNER_PRODUCT = 'pro_premium';
 const PARTNER_METADATA_IMAGE_URL = 'https://i.ibb.co/gbjV4ntT/file-00000000c718824386095711776b17d2.png';
@@ -26,17 +28,16 @@ function validateApplication(info, userId) {
   return null;
 }
 
-// A partner is represented by the existing Subscription entitlement authority. The
-// user id is used as the entitlement owner because partner benefits are user-scoped.
-async function grantPartnerEntitlement(userId, now, expiresAt) {
+// Partner Pro is granted to the selected Discord server only.
+async function grantPartnerEntitlement(guildId, now, expiresAt) {
   return Subscription.findOneAndUpdate(
-    { guildId: String(userId) },
+    { guildId: String(guildId) },
     { $set: {
       plan: 'pro', status: 'active', provider: 'manual',
       currentPeriodStart: now, currentPeriodEnd: expiresAt,
       renewalState: 'not_applicable', gracePeriodEnd: null,
       'metadata.paymentVerified': true, 'metadata.source': 'partner', 'metadata.partnerPro': true,
-    }, $setOnInsert: { guildId: String(userId) } },
+    }, $setOnInsert: { guildId: String(guildId) } },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   ).lean();
 }
@@ -60,14 +61,14 @@ async function approveApplication(applicationId, adminId, now = new Date()) {
     if (partner) return { partner, idempotent: true, application: approved };
     throw Object.assign(new Error('application_not_approvable'), { status: 409 });
   }
-  const expiresAt = addDays(now, PARTNER_PRO_DAYS);
-  const entitlement = await grantPartnerEntitlement(application.applicantUserId, now, expiresAt);
+  const expiresAt = addDays(now, PARTNER_INITIAL_DAYS);
+  const entitlement = await grantPartnerEntitlement(application.guildId, now, expiresAt);
   const partner = await Partner.findOneAndUpdate(
-    { userId: application.applicantUserId },
-    { $setOnInsert: { userId: application.applicantUserId, applicationId: application._id, startedAt: now, approvedBy: String(adminId), approvedAt: now, discountPercentage: PARTNER_DISCOUNT_PERCENTAGE },
+    { guildId: application.guildId },
+    { $setOnInsert: { userId: application.applicantUserId, guildId: application.guildId, applicationId: application._id, startedAt: now, approvedBy: String(adminId), approvedAt: now, discountPercentage: PARTNER_DISCOUNT_PERCENTAGE },
       $set: { status: 'ACTIVE', endedAt: null, endedReason: null, discountActive: true, expiresAt, approvedBy: String(adminId), approvedAt: now,
         'metadata.imageUrl': PARTNER_METADATA_IMAGE_URL, 'metadata.imageAlt': 'ProMcBot Partners',
-        'partnerPro.plan': PARTNER_PRODUCT, 'partnerPro.durationDays': PARTNER_PRO_DAYS, 'partnerPro.grantedAt': now, 'partnerPro.expiresAt': expiresAt, 'partnerPro.entitlementId': String(entitlement._id) } },
+        'partnerPro.plan': PARTNER_PRODUCT, 'partnerPro.durationDays': PARTNER_INITIAL_DAYS, 'partnerPro.grantedAt': now, 'partnerPro.expiresAt': expiresAt, 'partnerPro.entitlementId': String(entitlement._id) } },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   ).lean();
   return { partner, application, entitlement, idempotent: false };
@@ -76,11 +77,12 @@ async function approveApplication(applicationId, adminId, now = new Date()) {
 async function renewPartner(partnerId, actorId, now = new Date()) {
   const partner = await Partner.findOne({ _id: partnerId, status: 'ACTIVE' });
   if (!partner) throw Object.assign(new Error('active_partner_not_found'), { status: 404 });
-  const base = partner.partnerPro?.expiresAt && new Date(partner.partnerPro.expiresAt) > now ? partner.partnerPro.expiresAt : now;
-  const expiresAt = addDays(base, PARTNER_PRO_DAYS);
-  await grantPartnerEntitlement(partner.userId, now, expiresAt);
+  const expiresAt = addDays(partner.startedAt || now, PARTNER_EXTENSION_DAYS);
+  if (partner.partnerPro?.expiresAt && new Date(partner.partnerPro.expiresAt) >= expiresAt) throw Object.assign(new Error('partner_already_extended'), { status: 409 });
+  await grantPartnerEntitlement(partner.guildId, now, expiresAt);
   partner.expiresAt = expiresAt;
   partner.partnerPro.expiresAt = expiresAt;
+  partner.partnerPro.durationDays = PARTNER_EXTENSION_DAYS;
   partner.partnerPro.lastRenewedAt = now;
   partner.discountActive = true;
   partner.approvedBy = String(actorId);
@@ -99,4 +101,4 @@ async function endPartner(partnerId, reason = '', now = new Date()) {
   if (!partner) throw Object.assign(new Error('partner_not_found'), { status: 404 });
   return partner;
 }
-module.exports = { PARTNER_PRO_DAYS, PARTNER_DISCOUNT_PERCENTAGE, PARTNER_PRODUCT, PARTNER_METADATA_IMAGE_URL, normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner, getActivePartnerDiscount, grantPartnerEntitlement };
+module.exports = { PARTNER_INITIAL_DAYS, PARTNER_EXTENSION_DAYS, PARTNER_PRO_DAYS, PARTNER_DISCOUNT_PERCENTAGE, PARTNER_PRODUCT, PARTNER_METADATA_IMAGE_URL, normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner, getActivePartnerDiscount, grantPartnerEntitlement };

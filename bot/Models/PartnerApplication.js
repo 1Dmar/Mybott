@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const partnerApplicationSchema = new mongoose.Schema({
   applicantUserId: { type: String, required: true, index: true },
+  guildId: { type: String, required: true, index: true },
   information: {
     discordUserId: { type: String, required: true, trim: true, maxlength: 32 },
     discordUsername: { type: String, required: true, trim: true, maxlength: 120 },
