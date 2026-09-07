@@ -5,6 +5,7 @@ const Subscription = require('../Models/Subscription');
 const PARTNER_PRO_DAYS = 90;
 const PARTNER_DISCOUNT_PERCENTAGE = 25;
 const PARTNER_PRODUCT = 'pro_premium';
+const PARTNER_METADATA_IMAGE_URL = 'https://i.ibb.co/gbjV4ntT/file-00000000c718824386095711776b17d2.png';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function addDays(date, days) { return new Date(new Date(date).getTime() + days * DAY_MS); }
@@ -39,6 +40,7 @@ async function grantPartnerEntitlement(userId, now, expiresAt) {
     { upsert: true, new: true, setDefaultsOnInsert: true },
   ).lean();
 }
+
 async function approveApplication(applicationId, adminId, now = new Date()) {
   const existingApplication = await PartnerApplication.findById(applicationId).lean();
   if (!existingApplication) throw Object.assign(new Error('application_not_found'), { status: 404 });
@@ -64,21 +66,29 @@ async function approveApplication(applicationId, adminId, now = new Date()) {
     { userId: application.applicantUserId },
     { $setOnInsert: { userId: application.applicantUserId, applicationId: application._id, startedAt: now, approvedBy: String(adminId), approvedAt: now, discountPercentage: PARTNER_DISCOUNT_PERCENTAGE },
       $set: { status: 'ACTIVE', endedAt: null, endedReason: null, discountActive: true, expiresAt, approvedBy: String(adminId), approvedAt: now,
+        'metadata.imageUrl': PARTNER_METADATA_IMAGE_URL, 'metadata.imageAlt': 'ProMcBot Partners',
         'partnerPro.plan': PARTNER_PRODUCT, 'partnerPro.durationDays': PARTNER_PRO_DAYS, 'partnerPro.grantedAt': now, 'partnerPro.expiresAt': expiresAt, 'partnerPro.entitlementId': String(entitlement._id) } },
     { upsert: true, new: true, setDefaultsOnInsert: true },
   ).lean();
   return { partner, application, entitlement, idempotent: false };
 }
+
 async function renewPartner(partnerId, actorId, now = new Date()) {
   const partner = await Partner.findOne({ _id: partnerId, status: 'ACTIVE' });
   if (!partner) throw Object.assign(new Error('active_partner_not_found'), { status: 404 });
   const base = partner.partnerPro?.expiresAt && new Date(partner.partnerPro.expiresAt) > now ? partner.partnerPro.expiresAt : now;
   const expiresAt = addDays(base, PARTNER_PRO_DAYS);
   await grantPartnerEntitlement(partner.userId, now, expiresAt);
-  partner.expiresAt = expiresAt; partner.partnerPro.expiresAt = expiresAt; partner.partnerPro.lastRenewedAt = now; partner.discountActive = true; partner.approvedBy = String(actorId);
+  partner.expiresAt = expiresAt;
+  partner.partnerPro.expiresAt = expiresAt;
+  partner.partnerPro.lastRenewedAt = now;
+  partner.discountActive = true;
+  partner.approvedBy = String(actorId);
+  partner.metadata = { ...(partner.metadata?.toObject?.() || partner.metadata || {}), imageUrl: PARTNER_METADATA_IMAGE_URL, imageAlt: 'ProMcBot Partners' };
   await partner.save();
   return partner.toObject();
 }
+
 async function getActivePartnerDiscount(userId, product = PARTNER_PRODUCT, now = new Date()) {
   if (product !== PARTNER_PRODUCT) return null;
   const partner = await Partner.findOne({ userId: String(userId), status: 'ACTIVE', discountActive: true, expiresAt: { $gt: now } }).lean();
@@ -89,4 +99,4 @@ async function endPartner(partnerId, reason = '', now = new Date()) {
   if (!partner) throw Object.assign(new Error('partner_not_found'), { status: 404 });
   return partner;
 }
-module.exports = { PARTNER_PRO_DAYS, PARTNER_DISCOUNT_PERCENTAGE, PARTNER_PRODUCT, normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner, getActivePartnerDiscount, grantPartnerEntitlement };
+module.exports = { PARTNER_PRO_DAYS, PARTNER_DISCOUNT_PERCENTAGE, PARTNER_PRODUCT, PARTNER_METADATA_IMAGE_URL, normalizeApplicationInput, validateApplication, approveApplication, renewPartner, endPartner, getActivePartnerDiscount, grantPartnerEntitlement };

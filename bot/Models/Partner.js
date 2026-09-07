@@ -12,6 +12,10 @@ const partnerSchema = new mongoose.Schema({
   approvedAt: { type: Date, default: Date.now },
   discountPercentage: { type: Number, default: 25, min: 0, max: 100 },
   discountActive: { type: Boolean, default: true },
+  metadata: {
+    imageUrl: { type: String, default: 'https://i.ibb.co/gbjV4ntT/file-00000000c718824386095711776b17d2.png', trim: true, maxlength: 1000 },
+    imageAlt: { type: String, default: 'ProMcBot Partners', maxlength: 160 },
+  },
   partnerPro: {
     plan: { type: String, default: 'pro_premium' },
     durationDays: { type: Number, default: 90 },
