@@ -651,7 +651,7 @@ app.get('/api/changelog', async (req, res) => {
   try {
     await seedChangelogIfEmpty();
     const entries = mongoose.connection.readyState === 1 ? await ChangelogEntry.find().sort({ createdAt: -1 }).lean() : [];
-    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json({ success: true, entries: entries.length ? entries : DEFAULT_CHANGELOG_ENTRIES });
   } catch (_) { res.status(503).json({ success: false, error: 'changelog_unavailable' }); }
 });
