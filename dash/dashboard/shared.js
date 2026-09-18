@@ -46,12 +46,10 @@
     const user = state.user || {};
     const displayName = user.global_name || user.username || 'User';
     const avatar = safeAvatarUrl(user.avatar);
-    document.querySelectorAll('a[href="/auth/discord"]').forEach(loginLink => {
-      loginLink.href = '/dashboard';
-      loginLink.classList.add('landing-account-link');
-      loginLink.innerHTML = `<img src="${escapeHtml(avatar)}" alt=""><span>${escapeHtml(displayName)}</span>`;
-      loginLink.setAttribute('aria-label', `Open account for ${displayName}`);
-    });
+    const publicNavActions = document.getElementById('navActions');
+    if (publicNavActions) {
+      publicNavActions.innerHTML = `<button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><div><span style="font-size:13px;font-weight:700">${escapeHtml(displayName)}</span><a href="/dashboard" aria-label="Open your Dashboard"><img src="${escapeHtml(avatar)}" style="width:35px;height:35px;border-radius:50%;border:2px solid #ff6a2b;object-fit:cover" alt="Account avatar"></a></div>`;
+    }
     document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = displayName; });
     document.querySelectorAll('[data-user-avatar]').forEach(el => {
       el.src = avatar;

@@ -19,10 +19,10 @@ test('Changelog page includes crawlable release content in the initial HTML', ()
   assert.doesNotMatch(page, /<div id="changelogFeed"><\/div>/);
 });
 
-test('Changelog page provides explicit light mode and an accessible toggle', () => {
-  assert.match(page, /\[data-theme="light"\]/);
-  assert.match(page, /id="themeToggle"[^>]*aria-pressed="false"/);
-  assert.match(page, /localStorage\.setItem\('pmcbot-theme', nextTheme\)/);
-  assert.match(page, /prefers-color-scheme: light/);
-  assert.match(page, /\[data-theme="light"\] \.hero-image/);
+test('Changelog page uses the public homepage navbar', () => {
+  assert.match(page, /class="logo"/);
+  assert.match(page, /class="nav-links"/);
+  assert.match(page, /id="navActions"/);
+  assert.match(page, /class="landing-button landing-button-primary landing-button-quiet"/);
+  assert.match(page, /src="\/shared\.js"/);
 });
