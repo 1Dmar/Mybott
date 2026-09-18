@@ -397,7 +397,6 @@ async function getPublicSitemapUrls() {
     { loc: `${SEO_BASE_URL}/changelog`, priority: '0.8' },
     { loc: `${SEO_BASE_URL}/privacy-policy`, priority: '0.5' },
     { loc: `${SEO_BASE_URL}/terms-of-service`, priority: '0.5' },
-    { loc: `${SEO_BASE_URL}/contact`, priority: '0.6' },
     { loc: `${SEO_BASE_URL}/stats`, priority: '0.7' },
   ];
   if (mongoose.connection.readyState !== 1) return urls;
@@ -536,9 +535,6 @@ const docsPages = {
 Object.entries(docsPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'docs', file)));
 });
-app.get('/contact', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'contact.html')));
-app.get('/plugin', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'plugin.html')));
-app.get('/minecraft-plugin', (req, res) => res.redirect(302, '/plugin'));
 app.get('/changelog', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'changelog.html')));
 const legalPages = {
   '/privacy-policy': 'PrivacyPolicy.html',
@@ -564,8 +560,8 @@ app.post('/api/partners/applications', isAuthenticated, requireDatabaseReady, as
   if (validationError) return res.status(400).json({ success: false, error: validationError });
   const existing = await PartnerApplication.findOne({ applicantUserId: req.user.id, status: { $in: ['PENDING', 'UNDER_REVIEW', 'APPROVED'] } }).lean();
   if (existing) return res.status(409).json({ success: false, error: 'active_application_exists', message: 'You already have an active partner application. Please wait while our team reviews it.' });
-  const application = await PartnerApplication.create({ applicantUserId: req.user.id, guildId, information });
-  await recordAudit({ actorId: req.user.id, guildId, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
+  const application = await PartnerApplication.create({ applicantUserId: req.user.id, information });
+  await recordAudit({ actorId: req.user.id, guildId: req.user.id, action: 'partner_application_submitted', feature: 'partner', result: 'success', source: 'dashboard', target: String(application._id) }).catch(() => null);
   void notifyPartnerDiscord('submitted', { application });
   res.status(201).json({ success: true, applicationId: application._id });
 });
@@ -644,14 +640,14 @@ app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDat
   const [application, history] = await Promise.all([PartnerApplication.findById(partner.applicationId).lean(), AuditLog.find({ guildId: partner.userId, feature: 'partner' }).sort({ timestamp: -1 }).limit(100).lean()]);
   res.json({ success: true, partner, application, history });
 });
-app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.guildId, action: 'partner_premium_extended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
-app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.guildId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_premium_renewed', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
 
 app.get('/api/changelog', async (req, res) => {
   try {
     await seedChangelogIfEmpty();
     const entries = mongoose.connection.readyState === 1 ? await ChangelogEntry.find().sort({ createdAt: -1 }).lean() : [];
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     res.json({ success: true, entries: entries.length ? entries : DEFAULT_CHANGELOG_ENTRIES });
   } catch (_) { res.status(503).json({ success: false, error: 'changelog_unavailable' }); }
 });
@@ -1064,12 +1060,7 @@ app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuil
 });
 
 app.get('/callback/check/userData', async (req, res) => {
-  const openedAsPage = req.get('sec-fetch-dest') === 'document' || (!req.xhr && String(req.get('accept') || '').includes('text/html'));
-  if (!req.isAuthenticated()) {
-    if (openedAsPage) return res.redirect('/auth/discord');
-    return res.json({ authenticated: false });
-  }
-  if (openedAsPage) return res.redirect('/dashboard');
+  if (!req.isAuthenticated()) return res.json({ authenticated: false });
   res.json({
     authenticated: true,
     user: {

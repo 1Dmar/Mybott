@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const partnerSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true, index: true },
-  guildId: { type: String, required: true, index: true },
   applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'PartnerApplication', required: true, index: true },
   status: { type: String, enum: ['ACTIVE', 'ENDED', 'SUSPENDED'], default: 'ACTIVE', index: true },
   startedAt: { type: Date, required: true, default: Date.now },
@@ -19,7 +18,7 @@ const partnerSchema = new mongoose.Schema({
   },
   partnerPro: {
     plan: { type: String, default: 'pro_premium' },
-    durationDays: { type: Number, default: 30 },
+    durationDays: { type: Number, default: 90 },
     entitlementId: { type: String, default: null },
     grantedAt: { type: Date, default: Date.now },
     expiresAt: { type: Date, required: true },
