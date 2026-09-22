@@ -1,4 +1,6 @@
 #!/bin/bash
 
-# Install dependencies and start the app
-npm install && node server.js
+set -euo pipefail
+
+# Install dependencies from the lockfile and start the app
+npm ci --omit=dev && node server.js
