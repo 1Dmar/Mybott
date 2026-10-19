@@ -46,6 +46,7 @@ const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
 const { getForGuild, ensureFreeSubscription, consumeUsage, releaseUsage } = require('../bot/utils/entitlementService');
+const { grantManualSubscription } = require('../bot/utils/manualSubscriptionService');
 const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
 const { listNotifications, markRead, resolveNotification } = require('../bot/utils/notificationService');
@@ -642,6 +643,15 @@ app.get('/api/admin/partners/:id', isAuthenticated, requireAdminRole, requireDat
 });
 app.post('/api/admin/partners/:id/renew', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await renewPartner(req.params.id, req.user.id); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_premium_renewed', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { premiumDays: 90 } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
 app.post('/api/admin/partners/:id/end', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => { try { const partner = await endPartner(req.params.id, req.body?.reason); await recordAudit({ actorId: req.user.id, guildId: partner.userId, action: 'partner_ended', feature: 'partner', result: 'success', source: 'admin_dashboard', target: String(partner._id), metadata: { reason: String(req.body?.reason || '').slice(0, 200) } }).catch(() => null); res.json({ success: true, partner }); } catch (error) { res.status(error.status || 400).json({ success: false, error: error.message }); } });
+app.post('/api/admin/subscriptions/grant', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  try {
+    const result = await grantManualSubscription({ guildId: req.body?.guildId, plan: req.body?.plan, durationDays: req.body?.durationDays, cooldownHours: req.body?.cooldownHours }, req.user.id);
+    await recordAudit({ actorId: req.user.id, guildId: result.subscription.guildId, action: 'manual_subscription_granted', feature: `billing.${result.appliedPlan}`, result: 'success', source: 'admin_dashboard', target: result.subscription.guildId, metadata: { requestedPlan: result.requestedPlan, durationDays: Number(req.body?.durationDays), cooldownHours: Number(req.body?.cooldownHours), grantEnd: result.grantEnd.toISOString() } }).catch(() => null);
+    res.status(201).json({ success: true, grant: { guildId: result.subscription.guildId, plan: result.appliedPlan, requestedPlan: result.requestedPlan, currentPeriodEnd: result.subscription.currentPeriodEnd, cooldownUntil: result.cooldownUntil, manualGrantCount: result.subscription.manualGrantCount } });
+  } catch (error) {
+    res.status(error.status || 400).json({ success: false, error: error.code || 'manual_grant_failed', message: error.message, cooldownUntil: error.cooldownUntil || null, retryAfterMs: error.retryAfterMs || null });
+  }
+});
 
 app.get('/api/changelog', async (req, res) => {
   try {

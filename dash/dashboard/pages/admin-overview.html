@@ -40,6 +40,20 @@
             font-size: 16px;
             font-weight: 600;
         }
+        .manual-grant-card { margin-top: 30px; padding: 24px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); }
+        .manual-grant-card h2 { margin: 0 0 6px; }
+        .manual-grant-card p { margin: 0 0 18px; color: var(--text-secondary); }
+        .manual-grant-form { display: grid; grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(130px, 1fr)) auto; gap: 12px; align-items: end; }
+        .manual-grant-field { display: grid; gap: 6px; }
+        .manual-grant-field label { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+        .manual-grant-field input, .manual-grant-field select { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--text); }
+        .manual-grant-submit { min-height: 42px; padding: 9px 15px; border: 0; border-radius: 10px; background: var(--primary); color: #fff; font-weight: 800; cursor: pointer; }
+        .manual-grant-submit:disabled { opacity: .65; cursor: wait; }
+        .manual-grant-message { min-height: 20px; margin: 14px 0 0 !important; font-size: 13px; }
+        .manual-grant-message.success { color: var(--success); }
+        .manual-grant-message.error { color: var(--danger); }
+        @media (max-width: 900px) { .manual-grant-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } .manual-grant-submit { width: 100%; } }
+        @media (max-width: 520px) { .manual-grant-form { grid-template-columns: 1fr; } }
     </style>
   <!-- ProMcBot SEO and social metadata -->
   <meta data-promcbot-metadata="1" name="description" content="Admin Overview for the ProMcBot Discord and Minecraft management dashboard.">
@@ -162,6 +176,19 @@
                 <h3>Send Embed</h3>
             </a>
         </div>
+
+        <section class="manual-grant-card" aria-labelledby="manualGrantTitle">
+            <h2 id="manualGrantTitle">Grant server subscription</h2>
+            <p>Grant Pro or Ultimate directly to one Discord server. The grant is server-scoped and protected by the cooldown you choose.</p>
+            <form id="manualGrantForm" class="manual-grant-form">
+                <div class="manual-grant-field"><label for="manualGrantGuildId">Discord Server ID</label><input id="manualGrantGuildId" name="guildId" inputmode="numeric" pattern="[0-9]{5,25}" minlength="5" maxlength="25" required placeholder="123456789012345678"></div>
+                <div class="manual-grant-field"><label for="manualGrantPlan">Plan</label><select id="manualGrantPlan" name="plan"><option value="pro">Pro Premium</option><option value="ultimate">Ultimate</option></select></div>
+                <div class="manual-grant-field"><label for="manualGrantDays">Grant days</label><input id="manualGrantDays" name="durationDays" type="number" min="1" max="3650" value="30" required></div>
+                <div class="manual-grant-field"><label for="manualGrantCooldown">Cooldown hours</label><input id="manualGrantCooldown" name="cooldownHours" type="number" min="1" max="8760" value="24" required></div>
+                <button class="manual-grant-submit" type="submit">Grant plan</button>
+            </form>
+            <p id="manualGrantMessage" class="manual-grant-message" role="status"></p>
+        </section>
     </main>
 
     <script src="/shared.js"></script>
@@ -198,6 +225,32 @@
                 console.error("Failed to fetch admin stats:", error);
             }
         }
+
+        document.getElementById('manualGrantForm')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const button = form.querySelector('button[type="submit"]');
+            const message = document.getElementById('manualGrantMessage');
+            const body = Object.fromEntries(new FormData(form));
+            body.durationDays = Number(body.durationDays);
+            body.cooldownHours = Number(body.cooldownHours);
+            button.disabled = true;
+            message.className = 'manual-grant-message';
+            message.textContent = 'Applying server entitlement…';
+            try {
+                const response = await fetch('/api/admin/subscriptions/grant', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body), credentials: 'same-origin' });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message || data.error || 'Unable to grant the subscription.');
+                message.className = 'manual-grant-message success';
+                message.textContent = `${data.grant.plan.toUpperCase()} granted to ${data.grant.guildId} until ${new Date(data.grant.currentPeriodEnd).toLocaleString()}. Cooldown ends ${new Date(data.grant.cooldownUntil).toLocaleString()}.`;
+                form.reset();
+                document.getElementById('manualGrantDays').value = '30';
+                document.getElementById('manualGrantCooldown').value = '24';
+            } catch (error) {
+                message.className = 'manual-grant-message error';
+                message.textContent = error.message;
+            } finally { button.disabled = false; }
+        });
     </script>
 </body>
 </html>
