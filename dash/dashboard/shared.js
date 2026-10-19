@@ -133,6 +133,12 @@
           <li class="item"><a href="/myservers" class="nav_link"><span class="navlink_icon"><i class="bx bx-arrow-back"></i></span><span class="navlink">Back to My Servers</span></a></li>
           <li class="item"><a href="${serverPath(gId, 'premium')}" class="nav_link ${currentPath.endsWith('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
         </ul>
+        <ul class="menu_items" data-admin-only>
+          <div class="menu_title"><span>Administration</span></div>
+          <li class="item"><a href="/admin/overview" class="nav_link ${active('/admin/overview') || currentPath === '/admin' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Admin overview</span></a></li>
+          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
+          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
+        </ul>
       `;
     } else {
       html = `
@@ -143,7 +149,12 @@
           <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
           <li class="item"><a href="/smart-actions" class="nav_link ${active('/smart-actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bolt-circle"></i></span><span class="navlink">Smart Actions</span>${navTag('NEW')}</a></li>
           <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
-          <li class="item" data-admin-only><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
+        </ul>
+        <ul class="menu_items" data-admin-only>
+          <div class="menu_title"><span>Administration</span></div>
+          <li class="item"><a href="/admin/overview" class="nav_link ${active('/admin/overview') || currentPath === '/admin' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Admin overview</span></a></li>
+          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
+          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
         </ul>
       `;
     }

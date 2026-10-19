@@ -546,6 +546,7 @@ Object.entries(legalPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
 });
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
+app.get(['/admin', '/admin/overview'], isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-overview.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
 app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
 app.get('/api/partners/me', isAuthenticated, async (req, res) => {
