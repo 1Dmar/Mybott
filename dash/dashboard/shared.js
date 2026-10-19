@@ -101,13 +101,28 @@
     const currentPath = window.location.pathname;
     const guild = selectedGuild();
     const gId = state.currentGuildId;
+    const isAdminPage = currentPath === '/admin' || currentPath.startsWith('/admin/');
     const active = path => currentPath === path || currentPath.startsWith(`${path}/`);
     const serverName = guild?.name || (gId ? `Server ${gId}` : 'Choose a server');
     const serverIcon = guild?.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
     const navTag = (label, tone = 'new') => `<span class=\"nav-badge nav-badge-${tone}\" aria-label=\"${label} feature\">${label}</span>`;
 
     let html = '';
-    if (gId) {
+    if (isAdminPage) {
+      html = `
+        <ul class="menu_items">
+          <div class="menu_title"><span>Administration</span></div>
+          <li class="item"><a href="/admin/overview" class="nav_link ${active('/admin/overview') || currentPath === '/admin' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Admin overview</span></a></li>
+          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
+          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
+        </ul>
+        <ul class="menu_items">
+          <div class="menu_title"><span>Workspace</span></div>
+          <li class="item"><a href="/dashboard" class="nav_link"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
+          <li class="item"><a href="/myservers" class="nav_link"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
+        </ul>
+      `;
+    } else if (gId) {
       html = `
         <a class="sidebar-server-context" href="/myservers" aria-label="Back to managed servers">
           <img src="${escapeHtml(serverIcon)}" alt="">
@@ -133,12 +148,6 @@
           <li class="item"><a href="/myservers" class="nav_link"><span class="navlink_icon"><i class="bx bx-arrow-back"></i></span><span class="navlink">Back to My Servers</span></a></li>
           <li class="item"><a href="${serverPath(gId, 'premium')}" class="nav_link ${currentPath.endsWith('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
         </ul>
-        <ul class="menu_items" data-admin-only>
-          <div class="menu_title"><span>Administration</span></div>
-          <li class="item"><a href="/admin/overview" class="nav_link ${active('/admin/overview') || currentPath === '/admin' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Admin overview</span></a></li>
-          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
-          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
-        </ul>
       `;
     } else {
       html = `
@@ -146,15 +155,6 @@
           <div class="menu_title"><span>Workspace</span></div>
           <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
           <li class="item"><a href="/myservers" class="nav_link ${active('/myservers') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
-          <li class="item"><a href="/actions" class="nav_link ${active('/actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-check-shield"></i></span><span class="navlink">Action center</span></a></li>
-          <li class="item"><a href="/smart-actions" class="nav_link ${active('/smart-actions') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bolt-circle"></i></span><span class="navlink">Smart Actions</span>${navTag('NEW')}</a></li>
-          <li class="item"><a href="/premium" class="nav_link ${active('/premium') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-crown"></i></span><span class="navlink">Premium</span></a></li>
-        </ul>
-        <ul class="menu_items" data-admin-only>
-          <div class="menu_title"><span>Administration</span></div>
-          <li class="item"><a href="/admin/overview" class="nav_link ${active('/admin/overview') || currentPath === '/admin' ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-shield-quarter"></i></span><span class="navlink">Admin overview</span></a></li>
-          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
-          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
         </ul>
       `;
     }

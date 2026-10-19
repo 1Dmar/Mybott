@@ -53,7 +53,7 @@ const { listNotifications, markRead, resolveNotification } = require('../bot/uti
 const { recordSecurityEvent } = require('../bot/utils/securityEventService');
 const { recordAudit } = require('../bot/utils/auditLogService');
 const { latestOnlinePlayers } = require('../bot/utils/telemetryProjection');
-const { getWorkspaceGuilds, resolveWorkspaceGuildReference } = require('./guildAccess');
+const { getManageableGuilds, resolveGuildReference } = require('./guildAccess');
 const { botAccessDecision, botAccessPayload, buildBotInviteUrl, getBotMembership, resolveBotMembership } = require('./botAccess');
 const { getGuildVisual } = require('./serverVisuals');
 const { buildServerInfoUpdate, normalizeMinecraftSettings } = require('./settingsValidation');
@@ -365,7 +365,7 @@ async function ensureDefaultProfileFollow(followerId) {
 
 async function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
-  const guild = resolveWorkspaceGuildReference(req.user, reference);
+  const guild = resolveGuildReference(req.user, reference);
   if (!guild) {
     if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(403).json({ success: false, error: 'guild_access_required' });
     return res.redirect(302, '/myservers?guild_access_required=1');
@@ -897,7 +897,7 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = await mapWithConcurrency(getWorkspaceGuilds(req.user), async guild => {
+  const guilds = await mapWithConcurrency(getManageableGuilds(req.user), async guild => {
     try {
       return {
         ...guild,
@@ -907,7 +907,7 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
       return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
     }
   }, 4);
-  res.json({ success: true, guilds, count: guilds.length, scope: 'owner_or_administrator_only' });
+  res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_servers' });
 });
 
 app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, async (req, res) => {
@@ -1081,7 +1081,7 @@ app.get('/callback/check/userData', async (req, res) => {
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-      guilds: getWorkspaceGuilds(req.user)
+      guilds: getManageableGuilds(req.user)
     }
   });
 });

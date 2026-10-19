@@ -23,3 +23,13 @@ test('admin navigation uses the shared sidebar on all admin pages', () => {
   assert.match(partners, /src="\/shared\.js"/);
   assert.doesNotMatch(partners, /id="adminSidebar"/);
 });
+
+test('normal workspace sidebar stays focused on account home and managed servers', () => {
+  const normalBranch = shared.slice(shared.indexOf('} else {'), shared.indexOf('    menuContent.innerHTML'));
+  assert.match(normalBranch, /href="\/dashboard"/);
+  assert.match(normalBranch, /href="\/myservers"/);
+  assert.doesNotMatch(normalBranch, /href="\/admin\//);
+  assert.doesNotMatch(normalBranch, /href="\/actions"/);
+  assert.doesNotMatch(normalBranch, /href="\/smart-actions"/);
+  assert.doesNotMatch(normalBranch, /href="\/premium"/);
+});
