@@ -1233,11 +1233,7 @@ app.get('/u/:identifier', async (req, res) => {
   const displayName = profile.globalName || username;
   const publicUrl = `${SEO_BASE_URL}/u/${encodeURIComponent(username)}`;
   const cardUrl = `${SEO_BASE_URL}/api/public/profile-card-v3/${encodeURIComponent(username)}`;
-  const description = [
-    `${displayName} (@${username}) on ProMcBot.`,
-    profile.customStatus,
-    `${social.likes} like${social.likes === 1 ? '' : 's'}.`,
-  ].filter(Boolean).join(' ');
+  const description = `@${username} · ${social.likes} like${social.likes === 1 ? '' : 's'} · ${social.followers} follower${social.followers === 1 ? '' : 's'}${profile.customStatus ? ` · ${profile.customStatus}` : ''}`;
   const title = `${displayName} — ProMcBot Profile`;
   const meta = `
     <meta name="robots" content="index, follow">

@@ -100,7 +100,8 @@ const handleAutoResponder = async (message) => {
 };
 
 const handleMainMessage = async (client, message) => {
-    if (!legacyPrefixEnabled() || message.author.bot || !message.guild) return;
+    if (!legacyPrefixEnabled()) return;
+    if (message.author.bot || !message.guild) return;
 
     let prefix = PREFIX;
     if (!message.content.startsWith(prefix)) return;
