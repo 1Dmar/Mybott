@@ -1293,7 +1293,7 @@ app.get('/smart-actions', isAuthenticated, (req, res) => res.sendFile(path.join(
 app.get('/premium', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 
 // Dynamic Server Pages
-const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions', 'smart-actions'];
+const serverPages = ['overview', 'settings', 'moderation', 'roles', 'logs', 'modules', 'welcome', 'premium', 'configuration', 'ticket', 'bugs', 'intelligence', 'actions', 'smart-actions', 'network-roles'];
 serverPages.forEach(page => {
   const serveServerPage = (req, res) => {
     const filePath = path.join(dashDir, 'pages', `${page}.html`);
