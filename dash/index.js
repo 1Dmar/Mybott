@@ -817,7 +817,7 @@ app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, requ
 
 app.get('/api/billing/config', isAuthenticated, (req, res) => {
   const catalog = getPaymentCatalog();
-  res.json({ success: true, plans: getPublicPlans(), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
+  res.json({ success: true, plans: getPublicPlans(), provider: catalog.provider, environment: catalog.environment, configured: catalog.configured, checkoutConfigured: catalog.checkoutConfigured, webhookConfigured: catalog.webhookConfigured, methods: catalog.methods, webhookUrl: '/api/billing/webhook/paypal' });
 });
 
 app.get('/api/billing/diagnostics', isAuthenticated, async (req, res) => {

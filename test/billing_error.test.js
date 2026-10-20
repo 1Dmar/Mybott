@@ -47,6 +47,23 @@ test('PayPal catalog allows Pro when only the Pro plan is configured', () => {
   }
 });
 
+test('PayPal checkout readiness is separate from webhook readiness', () => {
+  const previous = {};
+  for (const key of ['PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_WEBHOOK_ID', 'PAYPAL_PRO_PLAN_ID']) previous[key] = process.env[key];
+  process.env.PAYPAL_CLIENT_ID = 'client';
+  process.env.PAYPAL_CLIENT_SECRET = 'secret';
+  delete process.env.PAYPAL_WEBHOOK_ID;
+  process.env.PAYPAL_PRO_PLAN_ID = 'P-pro';
+  const catalog = getPaymentCatalog();
+  assert.equal(catalog.checkoutConfigured, true);
+  assert.equal(catalog.webhookConfigured, false);
+  assert.equal(catalog.methods.paypal.enabled, true);
+  for (const [key, value] of Object.entries(previous)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
+
 test('PayPal formatter explains local configuration errors', () => {
   assert.match(formatPayPalError(new Error('paypal_credentials_missing')), /Client ID/);
   assert.match(formatPayPalError(new Error('payment_method_not_configured')), /طريقة الدفع/);

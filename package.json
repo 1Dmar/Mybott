@@ -8,6 +8,7 @@
     "dev": "node server.js",
     "test": "node --test test/**/*.test.js",
     "check": "node --check server.js && node --check dash/index.js",
+    "test:load": "node scripts/load-test.js",
     "build:plugin": "mvn -q -f plugin/pom.xml clean test package"
   },
   "engines": {

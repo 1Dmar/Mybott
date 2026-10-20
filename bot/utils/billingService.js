@@ -28,12 +28,21 @@ function planIdFor(plan) {
   return plan === 'pro' ? process.env.PAYPAL_PRO_PLAN_ID : plan === 'ultimate' ? process.env.PAYPAL_ULTIMATE_PLAN_ID : null;
 }
 
+function paypalCredentialsConfigured() {
+  return Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
+}
+
+function paypalWebhookConfigured() {
+  return Boolean(process.env.PAYPAL_WEBHOOK_ID);
+}
+
 function paypalConfigured() {
-  return Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET && process.env.PAYPAL_WEBHOOK_ID);
+  return paypalCredentialsConfigured() && paypalWebhookConfigured();
 }
 
 function getPaymentCatalog() {
-  const configured = paypalConfigured();
+  const checkoutConfigured = paypalCredentialsConfigured();
+  const webhookConfigured = paypalWebhookConfigured();
   const planCatalog = {
     free: { plan: 'free', amount: 0, currency: 'USD', interval: 'month', providerPlanConfigured: false },
     pro: { plan: 'pro', amount: 4.99, currency: 'USD', interval: 'month', providerPlanConfigured: Boolean(planIdFor('pro')) },
@@ -43,12 +52,14 @@ function getPaymentCatalog() {
   return {
     provider: 'paypal',
     environment: paypalApiBase() === PAYPAL_LIVE_API ? 'live' : 'sandbox',
-    configured,
+    configured: checkoutConfigured,
+    checkoutConfigured,
+    webhookConfigured,
     plans: planCatalog,
     methods: {
-      paypal: { id: 'paypal', label: 'PayPal', enabled: configured && hasAnyPlan },
-      card: { id: 'card', label: 'Credit/debit card', enabled: configured && hasAnyPlan && process.env.PAYPAL_CARD_CHECKOUT_ENABLED === 'true', provider: 'paypal-hosted' },
-      google_pay: { id: 'google_pay', label: 'Google Pay', enabled: configured && hasAnyPlan && process.env.PAYPAL_GOOGLE_PAY_ENABLED === 'true', provider: 'paypal-google-pay', requiresProviderEnablement: true },
+      paypal: { id: 'paypal', label: 'PayPal', enabled: checkoutConfigured && hasAnyPlan },
+      card: { id: 'card', label: 'Credit/debit card', enabled: checkoutConfigured && hasAnyPlan && process.env.PAYPAL_CARD_CHECKOUT_ENABLED === 'true', provider: 'paypal-hosted' },
+      google_pay: { id: 'google_pay', label: 'Google Pay', enabled: checkoutConfigured && hasAnyPlan && process.env.PAYPAL_GOOGLE_PAY_ENABLED === 'true', provider: 'paypal-google-pay', requiresProviderEnablement: true },
     },
   };
 }
@@ -102,6 +113,8 @@ function formatPayPalError(error) {
 async function inspectPayPalConfiguration() {
   const result = {
     environment: paypalApiBase() === PAYPAL_LIVE_API ? 'live' : 'sandbox',
+    checkoutConfigured: paypalCredentialsConfigured(),
+    webhookConfigured: paypalWebhookConfigured(),
     credentials: {
       clientIdPresent: Boolean(process.env.PAYPAL_CLIENT_ID),
       clientSecretPresent: Boolean(process.env.PAYPAL_CLIENT_SECRET),
@@ -314,4 +327,4 @@ async function processVerifiedEvent(provider, event) {
   return { duplicate: false, processed: true, guildId: update.guildId, plan: subscription.plan, status: subscription.status };
 }
 
-module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, getPayPalAccessToken, paypalRequest, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, shouldGrantPaymentProof, extractSubscriptionUpdate, processVerifiedEvent };
+module.exports = { WEBHOOK_TOLERANCE_SECONDS, SUPPORTED_METHODS, paypalConfigured, paypalCredentialsConfigured, paypalWebhookConfigured, providerConfigured, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, getPayPalAccessToken, paypalRequest, cancelSubscription, formatPayPalError, getPayPalErrorDetails, verifyPayPalWebhook, shouldGrantPaymentProof, extractSubscriptionUpdate, processVerifiedEvent };
