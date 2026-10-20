@@ -1391,6 +1391,30 @@ app.get('/api/guilds/:guildId/network', isAuthenticated, requireGuildManager, as
   res.json({ success: true, networkId, network: summarizeNetwork(instances, events), source: 'telemetry' });
 });
 
+app.get('/api/guilds/:guildId/network-dashboard', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  try {
+    const guildId = req.params.guildId;
+    const entitlement = await getForGuild(guildId);
+    if (!hasFeature(entitlement, 'network.intelligence')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', requiredPlan: 'ultimate', message: 'The Network dashboard requires Ultimate. Server-level health remains available.' });
+    const now = Date.now();
+    const period = new Date().toISOString().slice(0, 7);
+    const [instances, events, alerts, executions, report, usage] = await Promise.all([
+      PluginInstance.find({ serverId: guildId, revokedAt: null }).sort({ lastSeenAt: -1 }).limit(200).lean(),
+      TelemetryEvent.find({ serverId: guildId, occurredAt: { $gte: new Date(now - 14 * 24 * 60 * 60 * 1000), $lt: new Date() }, type: 'player_count' }).limit(50000).lean(),
+      Notification.find({ guildId }).sort({ createdAt: -1 }).limit(50).lean(),
+      AutomationExecution.find({ serverId: guildId }).sort({ executedAt: -1 }).limit(100).lean(),
+      Report.findOne({ guildId, type: 'weekly_intelligence' }).sort({ generatedAt: -1 }).lean(),
+      require('../bot/Models/UsageCounter').find({ guildId, period }).lean(),
+    ]);
+    const network = summarizeNetwork(instances, events);
+    const limits = entitlement.limits || {};
+    const usageByFeature = Object.fromEntries(usage.map(item => [item.feature, { used: item.used, limit: limits[item.feature] ?? null }]));
+    res.json({ success: true, plan: entitlement.plan, period, network, instances: instances.map(instance => ({ instanceId: instance.instanceId, networkId: instance.networkId, serverName: instance.serverName, status: instance.status, lastSeenAt: instance.lastSeenAt, onlinePlayers: instance.lastOnlinePlayers ?? null })), alerts, automation: { executions }, report, usage: usageByFeature, limits });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'network_dashboard_failed' });
+  }
+});
+
 app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildManager, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   if (!hasFeature(entitlement, 'security.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', feature: 'security.advanced', requiredPlan: 'ultimate', message: 'Advanced security intelligence requires Ultimate.' });
