@@ -1332,6 +1332,39 @@ app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager,
   } catch (error) { res.status(500).json({ success: false, error: 'activation_status_failed' }); }
 });
 
+app.post('/api/guilds/:guildId/connection-test', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  const guildId = req.params.guildId;
+  try {
+    const [plugin, serverInfo, settings] = await Promise.all([
+      PluginInstance.findOne({ serverId: guildId, revokedAt: null }).sort({ lastSeenAt: -1 }).lean(),
+      ServerInfo.findOne({ serverId: guildId }).lean(),
+      GuildSettings.findOne({ guildId }).lean(),
+    ]);
+    const now = Date.now();
+    const recentHeartbeat = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
+    if (recentHeartbeat) return res.json({ success: true, source: 'plugin_heartbeat', status: 'connected', message: 'The ProMcBot plugin sent a recent heartbeat.', instanceId: plugin.instanceId, lastSeenAt: plugin.lastSeenAt, onlinePlayers: plugin.lastOnlinePlayers ?? null });
+
+    const normalized = normalizeMinecraftSettings({ mcIp: settings?.mcIp || serverInfo?.javaIP || '', mcPort: serverInfo?.javaPort || 25565 });
+    if (!normalized.ok || !normalized.settings.mcIp) {
+      return res.status(400).json({ success: false, error: 'minecraft_connection_not_configured', message: 'Save a valid Minecraft server address or install the ProMcBot plugin first.' });
+    }
+    const host = normalized.settings.mcIp.replace(/^\[|\]$/g, '');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(`https://api.mcstatus.io/v2/status/java/${encodeURIComponent(host)}:${normalized.settings.mcPort}`, { signal: controller.signal, headers: { Accept: 'application/json' } });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) return res.status(502).json({ success: false, error: 'minecraft_status_provider_failed', message: 'The Minecraft status provider could not verify this address.' });
+      return res.json({ success: true, source: 'minecraft_status', status: payload.online ? 'connected' : 'offline', online: payload.online === true, host: normalized.settings.mcIp, port: normalized.settings.mcPort, players: Number.isFinite(payload.players?.online) ? payload.players.online : null, version: payload.version?.name_clean || payload.version?.name || null, message: payload.online ? 'The Minecraft server responded.' : 'The address is valid, but the Minecraft server is offline.' });
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (error) {
+    const message = error?.name === 'AbortError' ? 'The connection test timed out.' : 'The connection test could not be completed.';
+    res.status(502).json({ success: false, error: 'minecraft_connection_test_failed', message });
+  }
+});
+
 app.get('/api/guilds/:guildId/players', isAuthenticated, requireGuildManager, async (req, res) => {
   try {
     const entitlement = await getForGuild(req.params.guildId);
