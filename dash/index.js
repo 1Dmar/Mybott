@@ -365,7 +365,9 @@ async function ensureDefaultProfileFollow(followerId) {
 
 async function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
-  const guild = resolveGuildReference(req.user, reference);
+  // Dashboard access is based on the user's Discord guild permissions only.
+  // Do not apply the platform-owner override here, otherwise it would expose every guild.
+  const guild = resolveGuildReference(req.user, reference, []);
   if (!guild) {
     if (req.path.startsWith('/api/') || req.xhr || req.headers.accept?.includes('application/json')) return res.status(403).json({ success: false, error: 'guild_access_required' });
     return res.redirect(302, '/myservers?guild_access_required=1');
@@ -897,7 +899,7 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = await mapWithConcurrency(getManageableGuilds(req.user), async guild => {
+  const guilds = await mapWithConcurrency(getManageableGuilds(req.user, []), async guild => {
     try {
       return {
         ...guild,
@@ -1081,7 +1083,7 @@ app.get('/callback/check/userData', async (req, res) => {
       username: req.user.username,
       global_name: req.user.global_name || req.user.username,
       avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-      guilds: getManageableGuilds(req.user)
+      guilds: getManageableGuilds(req.user, [])
     }
   });
 });

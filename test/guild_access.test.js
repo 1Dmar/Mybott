@@ -47,6 +47,17 @@ test('platform owner override authorizes access without falsely labeling every g
   ]);
 });
 
+test('dashboard server scope excludes platform-only access and keeps real Discord permissions', () => {
+  const user = { id: 'platform-owner', guilds: [
+    { id: 'owner', owner: true, permissions: '0' },
+    { id: 'admin', owner: false, permissions: '8' },
+    { id: 'manager', owner: false, permissions: '32' },
+    { id: 'member', owner: false, permissions: '0' },
+  ] };
+  assert.deepEqual(getManageableGuilds(user, []).map(guild => guild.id), ['owner', 'admin', 'manager']);
+  assert.deepEqual(getManageableGuilds(user, ['platform-owner']).map(guild => guild.id), ['owner', 'admin', 'manager', 'member']);
+});
+
 test('permission detail preserves Discord role and exposes platform override separately', () => {
   assert.deepEqual(managePermissionDetail({ owner: false, permissions: '8' }, 'u', ['u']), {
     canManage: true,
