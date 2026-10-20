@@ -758,7 +758,9 @@ app.get('/api/user/profile', isAuthenticated, async (req, res) => {
         avatar: req.user.avatar ? `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png` : 'https://cdn.discordapp.com/embed/avatars/0.png',
         banner: settings?.bannerType === 'image' ? settings.banner : null,
         accent_color: req.user.accent_color || '#3285ff',
-        custom_status: settings?.customStatus || ''
+        custom_status: settings?.privacy?.showStatus === false ? '' : (settings?.customStatus || ''),
+        community_links: settings?.privacy?.showCommunityLinks === false ? {} : (settings?.communityLinks || {}),
+        privacy: settings?.privacy || { showStatus: true, showCommunityLinks: true, showAchievements: true }
       }
     });
   } catch (error) {
@@ -770,12 +772,28 @@ app.patch('/api/user/profile', isAuthenticated, async (req, res) => {
   const validation = validatePublicUsername(req.body?.public_username);
   if (!validation.ok) return res.status(validation.error === 'reserved_public_username' ? 409 : 400).json({ success: false, error: validation.error, message: validation.message });
   const username = validation.username;
+  const normalizePublicLink = value => {
+    const raw = String(value || '').trim().slice(0, 500);
+    if (!raw) return '';
+    try { const url = new URL(raw); return url.protocol === 'https:' ? url.toString() : null; } catch (_) { return null; }
+  };
+  const website = normalizePublicLink(req.body?.community_links?.website);
+  const discord = normalizePublicLink(req.body?.community_links?.discord);
+  if (website === null || discord === null) return res.status(400).json({ success: false, error: 'invalid_community_link', message: 'Community links must be valid HTTPS URLs.' });
+  const privacy = {
+    showStatus: req.body?.privacy?.showStatus !== false,
+    showCommunityLinks: req.body?.privacy?.showCommunityLinks !== false,
+    showAchievements: req.body?.privacy?.showAchievements !== false,
+  };
   if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, error: 'database_unavailable', message: 'Profile settings are temporarily unavailable.' });
   try {
     const collision = await UserProfile.findOne({ username, userId: { $ne: req.user.id } }).select('_id').lean();
     if (collision) return res.status(409).json({ success: false, error: 'public_username_taken', message: 'That public username is already in use.' });
-    const settings = await UserProfile.findOneAndUpdate({ userId: req.user.id }, { $set: { username, updatedAt: new Date() } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
-    res.json({ success: true, public_username: settings.username, public_url: `/u/${encodeURIComponent(settings.username)}` });
+    const profileSet = { username, updatedAt: new Date() };
+    if (req.body?.community_links !== undefined) profileSet.communityLinks = { website, discord };
+    if (req.body?.privacy !== undefined) profileSet.privacy = privacy;
+    const settings = await UserProfile.findOneAndUpdate({ userId: req.user.id }, { $set: profileSet }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+    res.json({ success: true, public_username: settings.username, public_url: `/u/${encodeURIComponent(settings.username)}`, community_links: settings.communityLinks || {}, privacy: settings.privacy || privacy });
   } catch (error) {
     if (error?.code === 11000) return res.status(409).json({ success: false, error: 'public_username_taken', message: 'That public username is already in use.' });
     res.status(500).json({ success: false, error: 'profile_update_failed' });
@@ -1123,8 +1141,10 @@ async function resolvePublicProfile(identifier) {
   if (databaseReady && !profileSettings) profileSettings = await UserProfile.findOne({ userId: user.id }).lean();
   const publicUsername = profileSettings?.username || user.username;
   const customBanner = profileSettings?.bannerType === 'image' && profileSettings.banner ? profileSettings.banner : null;
+  const profilePrivacy = profileSettings?.privacy || {};
+  const communityLinks = profilePrivacy.showCommunityLinks === false ? {} : (profileSettings?.communityLinks || {});
   const memberSince = user.createdAt instanceof Date ? user.createdAt.toISOString() : (user.createdTimestamp ? new Date(user.createdTimestamp).toISOString() : null);
-  return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profileSettings?.customStatus || '', memberSince, bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false } };
+  return { success: true, profile: { id: user.id, username: publicUsername, discordUsername: user.username, globalName: user.globalName || user.username, avatar: user.displayAvatarURL({ extension: 'png', size: 256 }), banner: customBanner, accentColor: user.hexAccentColor || null, customStatus: profilePrivacy.showStatus === false ? '' : (profileSettings?.customStatus || ''), communityLinks, achievements: [], memberSince, bot: Boolean(user.bot), publicPath: `/u/${encodeURIComponent(publicUsername)}` }, privacy: { source: 'Discord public profile + saved public username', privateGuildData: false, rawActivity: false, statusVisible: profilePrivacy.showStatus !== false, communityLinksVisible: profilePrivacy.showCommunityLinks !== false, achievementsVisible: profilePrivacy.showAchievements !== false } };
 }
 
 async function getProfileSocialState(profileUserId, viewerId = null) {
@@ -1266,7 +1286,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dash
 app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
 app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
-app.get('/onboarding', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
+app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'onboarding.html')));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
 app.get('/smart-actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'smart-actions.html')));
 app.get('/premium', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));

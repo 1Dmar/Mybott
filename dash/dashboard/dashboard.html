@@ -106,8 +106,8 @@
     </section>
 
     <section class="public-profile-settings" aria-labelledby="public-profile-title">
-      <div><h2 id="public-profile-title">Public profile link</h2><p>Choose the username people will see on your shareable ProMcBot user card. Use 3–32 lowercase letters, numbers, dots, underscores, or hyphens.</p><label class="profile-username-field" for="publicUsername">Username<input id="publicUsername" name="public_username" maxlength="32" pattern="[a-z0-9_.-]{3,32}" placeholder="alim" autocomplete="off"><span id="profileSettingsMessage" class="profile-settings-message" aria-live="polite"></span></label></div>
-      <div class="profile-settings-actions"><button type="button" id="savePublicUsername"><i class="bx bx-save"></i> Save username</button><a id="publicProfileLink" href="/u" target="_blank" rel="noopener"><i class="bx bx-link-external"></i> Open public card</a></div>
+      <div><h2 id="public-profile-title">Public profile link</h2><p>Choose the username people will see on your shareable ProMcBot user card. Use 3–32 lowercase letters, numbers, dots, underscores, or hyphens.</p><label class="profile-username-field" for="publicUsername">Username<input id="publicUsername" name="public_username" maxlength="32" pattern="[a-z0-9_.-]{3,32}" placeholder="alim" autocomplete="off"></label><div class="profile-link-fields"><label for="communityWebsite">Website<input id="communityWebsite" type="url" maxlength="500" placeholder="https://example.com"></label><label for="communityDiscord">Community Discord<input id="communityDiscord" type="url" maxlength="500" placeholder="https://discord.gg/…"></label></div><fieldset class="profile-privacy"><legend>Public visibility</legend><label><input id="showStatus" type="checkbox" checked> Show custom status</label><label><input id="showCommunityLinks" type="checkbox" checked> Show community links</label><label><input id="showAchievements" type="checkbox" checked> Show achievements when available</label></fieldset><span id="profileSettingsMessage" class="profile-settings-message" aria-live="polite"></span></div>
+      <div class="profile-settings-actions"><button type="button" id="savePublicUsername"><i class="bx bx-save"></i> Save profile</button><a id="publicProfileLink" href="/u" target="_blank" rel="noopener"><i class="bx bx-link-external"></i> Open public card</a></div>
     </section>
 
     <section class="support-panel" aria-labelledby="support-title">
@@ -164,6 +164,11 @@
           if (data.success) {
             const accent = safeAccent(data.user.accent_color); if (accent) $('userBanner').style.background = accent;
             $('publicUsername').value = data.user.public_username || '';
+            $('communityWebsite').value = data.user.community_links?.website || '';
+            $('communityDiscord').value = data.user.community_links?.discord || '';
+            $('showStatus').checked = data.user.privacy?.showStatus !== false;
+            $('showCommunityLinks').checked = data.user.privacy?.showCommunityLinks !== false;
+            $('showAchievements').checked = data.user.privacy?.showAchievements !== false;
             $('publicProfileLink').href = safeInternalUrl(data.user.public_url) || `/u/${encodeURIComponent(data.user.id)}`;
           }
         } catch (error) { console.warn('Profile details unavailable:', error.message); }
@@ -212,7 +217,7 @@
         if (!/^[a-z0-9_.-]{3,32}$/.test(username)) { message.textContent = 'Use 3–32 lowercase letters, numbers, dots, underscores, or hyphens.'; return; }
         button.disabled = true; message.textContent = 'Saving…';
         try {
-          const response = await fetch('/api/user/profile', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ public_username: username }) });
+          const response = await fetch('/api/user/profile', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ public_username: username, community_links: { website: $('communityWebsite').value.trim(), discord: $('communityDiscord').value.trim() }, privacy: { showStatus: $('showStatus').checked, showCommunityLinks: $('showCommunityLinks').checked, showAchievements: $('showAchievements').checked } }) });
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || data.error || 'Could not save username.');
           const publicUrl = safeInternalUrl(data.public_url); if (!publicUrl) throw new Error('The returned profile link was invalid.'); $('publicProfileLink').href = publicUrl;

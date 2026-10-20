@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Onboarding · ProMcBot</title>
+  <link rel="stylesheet" href="/shared.css">
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <style>
+    .onboarding-page{max-width:1040px}.hero{padding:24px;border:1px solid var(--border);border-radius:20px;background:linear-gradient(135deg,var(--surface),var(--surface-2));box-shadow:var(--shadow-sm)}.hero h1{margin:0 0 8px}.hero p{max-width:720px;margin:0;color:var(--text-muted);line-height:1.6}.picker{margin-top:18px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}.picker label{display:block;color:var(--text-muted);font-size:12px;font-weight:750}.picker select{width:100%;margin-top:7px}.steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}.step{display:flex;gap:12px;padding:16px;border:1px solid var(--border);border-radius:15px;background:var(--surface)}.step-number{display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary);font-weight:850}.step h2{margin:0;font-size:14px}.step p{margin:5px 0 0;color:var(--text-muted);font-size:12px;line-height:1.5}.step a{display:inline-flex;margin-top:10px;color:var(--primary);font-size:11px;font-weight:800;text-decoration:none}.state{margin-top:16px;color:var(--text-muted);font-size:13px}.error{color:var(--danger)}@media(max-width:650px){.steps{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="dark">
+  <nav class="navbar"><div class="logo_item"><i class="bx bx-menu" id="sidebarToggle" aria-label="Open navigation"></i><img src="/dashboard/logo.png" alt="ProMcBot"><span class="brand-name">ProMcBot</span></div><div class="navbar_content"><div id="darkLight" role="button" tabindex="0" aria-label="Toggle theme"><i class="bx bx-sun"></i></div><div class="user_profile_nav" id="userBtn"><img src="" alt="Account" data-user-avatar><span data-user-name>User</span><i class="bx bx-chevron-down"></i></div></div></nav>
+  <nav class="sidebar close" id="sidebar"><nav class="logo_items flex"><span class="nav_image"><img src="/dashboard/logo.png" alt="ProMcBot"></span><span class="logo_name">ProMcBot</span></nav><div class="menu_container"><div class="menu_content"></div></div></nav>
+  <main class="main-content"><section class="onboarding-page"><section class="hero"><div class="eyebrow">First 10 minutes</div><h1>Connect your first server with evidence.</h1><p>Follow the same verified path used by ProMcBot. Each step links to the real server workspace and remains incomplete until the backend receives the corresponding evidence.</p></section><section class="picker"><label for="serverSelect">Choose a managed Discord server<select id="serverSelect"><option value="">Loading managed servers…</option></select></label><p id="pickerState" class="state">Only servers where your account has owner, Administrator, or Manage Server access are shown.</p></section><section id="steps" class="steps" aria-live="polite"><p class="state">Choose a server to load its measured setup state.</p></section><p id="pageState" class="state" role="status"></p></section></main>
+  <script src="/shared.js"></script>
+  <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      const esc = value => { const node = document.createElement('span'); node.textContent = String(value ?? ''); return node.innerHTML; };
+      const api = async (url) => { const response = await fetch(url, { credentials: 'same-origin' }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.message || data.error || 'Request failed'); return data; };
+      const stepDefinitions = [
+        ['1', 'Invite and connect Discord', 'The bot must be installed and visible in the selected server.', 'overview'],
+        ['2', 'Connect Minecraft', 'Save a valid address or provision the official plugin.', 'intelligence'],
+        ['3', 'Verify the plugin', 'Install the JAR, paste the one-time config, restart Paper/Spigot, and check status.', 'plugin'],
+        ['4', 'Receive a heartbeat', 'The backend marks this ready only after a recent signed heartbeat.', 'intelligence'],
+        ['5', 'Receive telemetry', 'Measured events must arrive before player analytics can be shown.', 'intelligence'],
+        ['6', 'Observe player activity', 'Join or leave events are required for player activity signals.', 'intelligence'],
+        ['7', 'Build comparison history', 'The system needs the documented comparison window; no trend is invented early.', 'intelligence'],
+        ['8', 'Enable modules', 'Turn on only the Discord modules your community actually needs.', 'modules']
+      ];
+      function render(data) {
+        const completed = new Map((data.steps || []).map(item => [item.key, item]));
+        $('steps').innerHTML = stepDefinitions.map(([number, title, fallback, page]) => {
+          const match = [...completed.values()].find(item => item.label.toLowerCase().includes(title.split(' ')[0].toLowerCase()) || item.key.includes(['discord','minecraft','heartbeat','telemetry','player_activity','comparison','intelligence'][Number(number)-1] || 'never'));
+          const ready = Boolean(match?.complete);
+          return `<article class="step"><span class="step-number">${number}</span><div><h2>${esc(title)} ${ready ? '✓' : ''}</h2><p>${esc(match?.evidence || fallback)}</p><a href="/myservers/${encodeURIComponent(data.server.id)}/${page}">${ready ? 'Review step' : 'Open step'} <i class="bx bx-right-arrow-alt"></i></a></div></article>`;
+        }).join('');
+      }
+      async function loadServer(id) { if (!id) { $('steps').innerHTML = '<p class="state">Choose a server to load its measured setup state.</p>'; return; } try { const data = await api(`/api/guilds/${encodeURIComponent(id)}/activation`); render(data); } catch (error) { $('steps').innerHTML = `<p class="state error">${esc(error.message)}</p>`; } }
+      async function init() { try { const data = await api('/api/guilds'); const guilds = Array.isArray(data.guilds) ? data.guilds : []; $('serverSelect').innerHTML = guilds.length ? guilds.map(guild => `<option value="${esc(guild.id)}">${esc(guild.name || guild.id)}</option>`).join('') : '<option value="">No managed servers found</option>'; if (guilds.length) { await loadServer(guilds[0].id); $('serverSelect').value = guilds[0].id; } else $('pickerState').textContent = 'No manageable server is available. Invite the bot or request the required Discord permission.'; } catch (error) { $('serverSelect').innerHTML = '<option value="">Unable to load servers</option>'; $('pageState').textContent = error.message; $('pageState').className = 'state error'; } }
+      $('serverSelect').addEventListener('change', event => loadServer(event.target.value));
+      init();
+    })();
+  </script>
+</body>
+</html>

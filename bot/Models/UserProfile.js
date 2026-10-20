@@ -8,6 +8,15 @@ module.exports = model(
     banner: { type: String, default: "" }, // URL or Color
     bannerType: { type: String, default: "color" }, // "color" or "image"
     customStatus: { type: String, default: "" },
+    communityLinks: {
+      website: { type: String, default: "", maxlength: 500 },
+      discord: { type: String, default: "", maxlength: 500 }
+    },
+    privacy: {
+      showStatus: { type: Boolean, default: true },
+      showCommunityLinks: { type: Boolean, default: true },
+      showAchievements: { type: Boolean, default: true }
+    },
     updatedAt: { type: Date, default: Date.now }
   })
 );
