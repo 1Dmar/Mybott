@@ -78,6 +78,7 @@ const UserProfile      = require('../bot/Models/UserProfile');
 const ProfileFollow    = require('../bot/Models/ProfileFollow');
 const ProfileLike      = require('../bot/Models/ProfileLike');
 const Review           = require('../bot/Models/Review');
+const NetworkRole      = require('../bot/Models/NetworkRole');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -1433,6 +1434,31 @@ app.get('/api/guilds/:guildId/network-dashboard', isAuthenticated, requireGuildM
   } catch (error) {
     res.status(500).json({ success: false, error: 'network_dashboard_failed' });
   }
+});
+
+app.get('/api/guilds/:guildId/network-roles', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  const roles = await NetworkRole.find({ guildId: req.params.guildId }).sort({ role: 1, userId: 1 }).lean();
+  res.json({ success: true, roles });
+});
+
+app.put('/api/guilds/:guildId/network-roles/:userId', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  if (req.managedGuild?.owner !== true) return res.status(403).json({ success: false, error: 'discord_owner_required', message: 'Only the Discord server owner can manage Network roles.' });
+  const userId = String(req.params.userId || '').trim();
+  const role = String(req.body?.role || '').trim();
+  const serverIds = Array.isArray(req.body?.serverIds) ? [...new Set(req.body.serverIds.map(value => String(value).trim()).filter(value => /^\d{5,25}$/.test(value)))].slice(0, 200) : [];
+  if (!/^\d{5,25}$/.test(userId) || !['owner', 'network_admin', 'server_manager', 'moderator', 'viewer'].includes(role)) return res.status(400).json({ success: false, error: 'invalid_network_role' });
+  const saved = await NetworkRole.findOneAndUpdate({ guildId: req.params.guildId, userId }, { $set: { role, serverIds, createdBy: req.user.id } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+  await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'network_role_updated', feature: 'network_permissions', result: 'success', source: 'dashboard', target: userId, metadata: { role, serverCount: serverIds.length } }).catch(() => null);
+  res.json({ success: true, role: saved });
+});
+
+app.delete('/api/guilds/:guildId/network-roles/:userId', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+  if (req.managedGuild?.owner !== true) return res.status(403).json({ success: false, error: 'discord_owner_required' });
+  const userId = String(req.params.userId || '').trim();
+  if (!/^\d{5,25}$/.test(userId)) return res.status(400).json({ success: false, error: 'invalid_network_role' });
+  await NetworkRole.deleteOne({ guildId: req.params.guildId, userId });
+  await recordAudit({ actorId: req.user.id, guildId: req.params.guildId, action: 'network_role_deleted', feature: 'network_permissions', result: 'success', source: 'dashboard', target: userId }).catch(() => null);
+  res.json({ success: true });
 });
 
 app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildManager, async (req, res) => {
