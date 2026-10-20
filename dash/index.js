@@ -899,14 +899,22 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = await mapWithConcurrency(getManageableGuilds(req.user, []), async guild => {
+  const manageableGuilds = getManageableGuilds(req.user, []);
+  let subscriptions = [];
+  if (mongoose.connection.readyState === 1 && manageableGuilds.length) {
+    try { subscriptions = await Subscription.find({ guildId: { $in: manageableGuilds.map(guild => guild.id) } }).lean(); } catch (_) { subscriptions = []; }
+  }
+  const subscriptionsByGuild = new Map(subscriptions.map(subscription => [String(subscription.guildId), subscription]));
+  const guilds = await mapWithConcurrency(manageableGuilds, async guild => {
     try {
+      const entitlement = getEntitlement(subscriptionsByGuild.get(String(guild.id)));
       return {
         ...guild,
+        premium: { plan: entitlement.plan, status: entitlement.status, active: entitlement.plan !== 'free', currentPeriodEnd: entitlement.currentPeriodEnd },
         ...botAccessPayload(guild, await resolveBotMembership(botClient, guild.id), inviteUrl),
       };
     } catch (_) {
-      return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
+      return { ...guild, premium: { plan: 'free', status: 'unknown', active: false, currentPeriodEnd: null }, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
     }
   }, 4);
   res.json({ success: true, guilds, count: guilds.length, scope: 'manageable_servers' });
