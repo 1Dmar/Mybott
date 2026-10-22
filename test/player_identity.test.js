@@ -36,7 +36,7 @@ test('player link requires an in-game command and signed telemetry event', () =>
 
 test('Player Center exposes claim and privacy controls', () => {
   assert.match(dashboard, /app\.get\('\/player', isAuthenticated/);
-  assert.match(playerPage, /Generate link code/);
+  assert.match(playerPage, /Generate one-time code/);
   assert.match(playerPage, /showStats/);
   assert.match(playerPage, /\/api\/player\/links\/claim/);
 });

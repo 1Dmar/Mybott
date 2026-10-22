@@ -47,6 +47,10 @@ const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
 const PlayerIdentity = require('../bot/Models/PlayerIdentity');
 const PlayerLinkClaim = require('../bot/Models/PlayerLinkClaim');
+const PlayerAccount = require('../bot/Models/PlayerAccount');
+const MinecraftIdentity = require('../bot/Models/MinecraftIdentity');
+const PlayerServerLink = require('../bot/Models/PlayerServerLink');
+const PlayerCardSettings = require('../bot/Models/PlayerCardSettings');
 const { getForGuild, ensureFreeSubscription, consumeUsage, releaseUsage } = require('../bot/utils/entitlementService');
 const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
@@ -257,6 +261,23 @@ async function processPlayerLinkEvents(documents) {
       await PlayerLinkClaim.updateOne({ _id: claim._id }, { $set: { status: 'rejected' } });
       continue;
     }
+    const account = await PlayerAccount.findOneAndUpdate(
+      { discordUserId: String(claim.discordUserId) },
+      { $setOnInsert: { discordUserId: String(claim.discordUserId) } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    const minecraftIdentity = await MinecraftIdentity.findOneAndUpdate(
+      { accountId: account._id, uuid },
+      { $set: { username, lastSeenAt: document.occurredAt || new Date(), active: true }, $setOnInsert: { accountId: account._id, uuid, username, accountType: 'unknown', verificationLevel: 'plugin_proof', verifiedAt: document.occurredAt || new Date() } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    await PlayerServerLink.findOneAndUpdate(
+      { accountId: account._id, identityId: minecraftIdentity._id, serverId: document.serverId },
+      { $set: { instanceId: document.instanceId, lastSeenAt: document.occurredAt || new Date() }, $setOnInsert: { accountId: account._id, identityId: minecraftIdentity._id, serverId: document.serverId, instanceId: document.instanceId, firstSeenAt: document.occurredAt || new Date(), linkSource: 'plugin_claim' } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    await PlayerAccount.updateOne({ _id: account._id, primaryIdentityId: null }, { $set: { primaryIdentityId: minecraftIdentity._id } });
+    await PlayerCardSettings.updateOne({ accountId: account._id }, { $setOnInsert: { accountId: account._id } }, { upsert: true });
     await PlayerIdentity.findOneAndUpdate(
       { serverId: document.serverId, uuid },
       { $set: { discordUserId: claim.discordUserId, username, lastSeenAt: document.occurredAt || new Date() }, $setOnInsert: { linkedAt: document.occurredAt || new Date() } },
@@ -1326,6 +1347,59 @@ async function getPlayerLinkServer(serverId) {
   if (!client?.guilds?.fetch) return null;
   try { return await client.guilds.fetch(String(serverId)); } catch (_) { return null; }
 }
+
+async function measuredPlayerStats(serverId, uuid) {
+  const events = await TelemetryEvent.find({ serverId, 'data.uuid': uuid, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(5000).lean();
+  return {
+    joins: events.filter(event => event.type === 'player_join').length,
+    leaves: events.filter(event => event.type === 'player_leave').length,
+    sessionSeconds: events.reduce((sum, event) => sum + (event.type === 'player_leave' && Number.isFinite(Number(event.data?.sessionSeconds)) ? Math.max(0, Number(event.data.sessionSeconds)) : 0), 0),
+    observedEvents: events.length,
+  };
+}
+
+app.get('/api/player/account', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const account = await PlayerAccount.findOne({ discordUserId: String(req.user.id) }).lean();
+  if (!account) return res.json({ success: true, account: null, identities: [], card: null });
+  const [identities, links, card] = await Promise.all([
+    MinecraftIdentity.find({ accountId: account._id, active: true }).sort({ lastSeenAt: -1 }).lean(),
+    PlayerServerLink.find({ accountId: account._id }).sort({ lastSeenAt: -1 }).lean(),
+    PlayerCardSettings.findOne({ accountId: account._id }).lean(),
+  ]);
+  const identityById = new Map(identities.map(identity => [String(identity._id), identity]));
+  const scopedLinks = await Promise.all(links.map(async link => {
+    const identity = identityById.get(String(link.identityId));
+    if (!identity) return null;
+    return { id: link._id, serverId: link.serverId, instanceId: link.instanceId, firstSeenAt: link.firstSeenAt, lastSeenAt: link.lastSeenAt, privacy: link.privacy, identity: { id: identity._id, uuid: identity.uuid, username: identity.username, accountType: identity.accountType, verificationLevel: identity.verificationLevel }, stats: await measuredPlayerStats(link.serverId, identity.uuid) };
+  }));
+  const validLinks = scopedLinks.filter(Boolean);
+  const globalStats = validLinks.reduce((total, link) => ({ joins: total.joins + link.stats.joins, leaves: total.leaves + link.stats.leaves, sessionSeconds: total.sessionSeconds + link.stats.sessionSeconds, observedEvents: total.observedEvents + link.stats.observedEvents, servers: total.servers + 1 }), { joins: 0, leaves: 0, sessionSeconds: 0, observedEvents: 0, servers: 0 });
+  res.json({ success: true, account: { id: account._id, discordUserId: account.discordUserId, primaryIdentityId: account.primaryIdentityId, publicEnabled: account.publicEnabled, globalPrivacy: account.globalPrivacy, createdAt: account.createdAt }, identities, links: validLinks, globalStats, card });
+});
+
+app.patch('/api/player/account/privacy', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const input = req.body?.privacy && typeof req.body.privacy === 'object' ? req.body.privacy : {};
+  const update = {};
+  for (const key of ['showUsername', 'showStats', 'showServers', 'showAchievements']) if (typeof input[key] === 'boolean') update[`globalPrivacy.${key}`] = input[key];
+  if (!Object.keys(update).length) return res.status(400).json({ success: false, error: 'privacy_update_required' });
+  const account = await PlayerAccount.findOneAndUpdate({ discordUserId: String(req.user.id) }, { $set: update }, { new: true }).lean();
+  if (!account) return res.status(404).json({ success: false, error: 'player_account_not_found' });
+  res.json({ success: true, globalPrivacy: account.globalPrivacy });
+});
+
+app.patch('/api/player/card', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const account = await PlayerAccount.findOne({ discordUserId: String(req.user.id) }).lean();
+  if (!account) return res.status(404).json({ success: false, error: 'player_account_not_found' });
+  const body = req.body && typeof req.body === 'object' ? req.body : {};
+  const update = {};
+  if (['darkmode', 'glass', 'minimal', 'minecraft'].includes(String(body.template))) update.template = String(body.template);
+  if (/^#[0-9a-fA-F]{6}$/.test(String(body.accentColor || ''))) update.accentColor = String(body.accentColor);
+  if (typeof body.bio === 'string') update.bio = body.bio.trim().slice(0, 240);
+  if (typeof body.publicEnabled === 'boolean') update.publicEnabled = body.publicEnabled;
+  if (body.fields && typeof body.fields === 'object') for (const key of ['showDiscord', 'showMinecraft', 'showGlobalStats', 'showServerStats', 'showAchievements']) if (typeof body.fields[key] === 'boolean') update[`fields.${key}`] = body.fields[key];
+  const card = await PlayerCardSettings.findOneAndUpdate({ accountId: account._id }, { $set: update, $setOnInsert: { accountId: account._id } }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+  res.json({ success: true, card });
+});
 
 app.get('/api/player/links', isAuthenticated, requireDatabaseReady, async (req, res) => {
   const identities = await PlayerIdentity.find({ discordUserId: String(req.user.id) }).sort({ lastSeenAt: -1 }).limit(20).lean();
