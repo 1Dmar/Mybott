@@ -1358,8 +1358,34 @@ async function measuredPlayerStats(serverId, uuid) {
   };
 }
 
+async function ensureGlobalPlayerAccount(discordUserId) {
+  const userId = String(discordUserId);
+  let account = await PlayerAccount.findOne({ discordUserId: userId });
+  if (account) return account;
+  const legacy = await PlayerIdentity.find({ discordUserId: userId }).sort({ lastSeenAt: -1 }).limit(20).lean();
+  if (!legacy.length) return null;
+  account = await PlayerAccount.findOneAndUpdate({ discordUserId: userId }, { $setOnInsert: { discordUserId: userId } }, { upsert: true, new: true, setDefaultsOnInsert: true });
+  for (const item of legacy) {
+    const identity = await MinecraftIdentity.findOneAndUpdate(
+      { accountId: account._id, uuid: item.uuid },
+      { $set: { username: item.username, lastSeenAt: item.lastSeenAt || new Date(), active: true }, $setOnInsert: { accountId: account._id, uuid: item.uuid, username: item.username, accountType: 'unknown', verificationLevel: 'server_scoped', verifiedAt: item.linkedAt || new Date() } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    await PlayerServerLink.findOneAndUpdate(
+      { accountId: account._id, identityId: identity._id, serverId: item.serverId },
+      { $set: { lastSeenAt: item.lastSeenAt || new Date(), privacy: item.privacy || {} }, $setOnInsert: { accountId: account._id, identityId: identity._id, serverId: item.serverId, instanceId: 'legacy', firstSeenAt: item.linkedAt || new Date(), linkSource: 'legacy_migration' } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    if (!account.primaryIdentityId) account.primaryIdentityId = identity._id;
+  }
+  await account.save();
+  await PlayerCardSettings.updateOne({ accountId: account._id }, { $setOnInsert: { accountId: account._id } }, { upsert: true });
+  return account;
+}
+
 app.get('/api/player/account', isAuthenticated, requireDatabaseReady, async (req, res) => {
-  const account = await PlayerAccount.findOne({ discordUserId: String(req.user.id) }).lean();
+  const accountRecord = await ensureGlobalPlayerAccount(req.user.id);
+  const account = accountRecord ? accountRecord.toObject ? accountRecord.toObject() : accountRecord : null;
   if (!account) return res.json({ success: true, account: null, identities: [], card: null });
   const [identities, links, card] = await Promise.all([
     MinecraftIdentity.find({ accountId: account._id, active: true }).sort({ lastSeenAt: -1 }).lean(),

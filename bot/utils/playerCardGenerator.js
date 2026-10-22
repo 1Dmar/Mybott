@@ -472,7 +472,7 @@ function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
 /**
  * توليد بطاقة اللاعب بتصميم فخم
  */
-async function generatePlayerCard(ign, template = 'glass', serverConfig = null) {
+async function generatePlayerCard(ign, template = 'glass', serverConfig = null, profileContext = null) {
     if (!rendererAvailable) {
         throw new Error('player_card_renderer_unavailable');
     }
@@ -483,6 +483,13 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     const ctx = canvas.getContext('2d');
 
     const playerData = await getPlayerData(ign, serverConfig);
+    if (profileContext && typeof profileContext === 'object') {
+        if (profileContext.accountType === 'online') playerData.isCracked = false;
+        if (profileContext.accountType === 'offline') playerData.isCracked = true;
+        if (profileContext.firstSeenAt) playerData.firstPlayed = new Date(profileContext.firstSeenAt).getTime();
+        if (profileContext.lastSeenAt) playerData.lastPlayed = new Date(profileContext.lastSeenAt).getTime();
+        playerData.profileContext = profileContext;
+    }
     
     // 1. الخلفية (Background)
     try {
@@ -695,15 +702,21 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
             return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
         };
 
-        const stats = [
-            { label: "First Played", value: formatDate(playerData.firstPlayed), icon: "star", color: "#FFD700" },
-            { label: "Last Played", value: formatDate(playerData.lastPlayed), icon: "star", color: "#00F260" }
-        ];
+        const measured = playerData.profileContext?.stats;
+        const stats = measured
+            ? [
+                { label: "Joins", value: String(Number(measured.joins || 0)), icon: "star", color: "#FFD700" },
+                { label: "Play time", value: `${Math.floor(Number(measured.sessionSeconds || 0) / 3600)}h`, icon: "time", color: "#00F260" },
+              ]
+            : [
+                { label: "First Played", value: formatDate(playerData.firstPlayed), icon: "star", color: "#FFD700" },
+                { label: "Last Played", value: formatDate(playerData.lastPlayed), icon: "star", color: "#00F260" },
+              ];
 
         if (playerData.isOnline) {
             stats.push({ label: "Ping", value: `${playerData.endpointData?.ping || 0} ms`, icon: "globe", color: "#A18CD1" });
         } else {
-            stats.push({ label: "Server", value: serverConfig?.serverName || "Lobby", icon: "globe", color: "#A18CD1" });
+            stats.push({ label: "Scope", value: playerData.profileContext?.scopeLabel || serverConfig?.serverName || "Global", icon: "globe", color: "#A18CD1" });
         }
 
         stats.forEach((stat, i) => drawStatBox(stat.label, stat.value, stat.icon, stat.color, i));
@@ -717,7 +730,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null) 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`${serverConfig?.javaIP || 'play.server.com'} • PROMCBOT SYSTEM`, width / 2, height - 65);
+    ctx.fillText(`${playerData.profileContext?.scopeLabel || serverConfig?.serverName || 'Global Player Account'} • PROMCBOT SYSTEM`, width / 2, height - 65);
 
     return canvas.toBuffer();
 }

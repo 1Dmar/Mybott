@@ -44,6 +44,8 @@ test('Player Center explains global account versus server-scoped activity', () =
   assert.match(page, /cracked\/offline accounts/);
   assert.match(page, /\/api\/player\/account/);
   assert.match(page, /\/api\/player\/card/);
+  assert.match(page, /id="publicEnabled"/);
+  assert.match(page, /publicEnabled:\$\('publicEnabled'\)\.checked/);
 });
 
 test('player link processing creates the global account and server link', () => {
@@ -51,4 +53,11 @@ test('player link processing creates the global account and server link', () => 
   assert.match(source, /MinecraftIdentity\.findOneAndUpdate/);
   assert.match(source, /PlayerServerLink\.findOneAndUpdate/);
   assert.match(source, /accountType: 'unknown'/);
+});
+
+test('legacy identities are migrated into global account, identity, and server link layers', () => {
+  assert.match(source, /ensureGlobalPlayerAccount/);
+  assert.match(source, /linkSource: 'legacy_migration'/);
+  assert.match(source, /instanceId: 'legacy'/);
+  assert.match(source, /PlayerIdentity\.find\(\{ discordUserId: userId \}\)/);
 });
