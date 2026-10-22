@@ -45,6 +45,8 @@ const Report = require('../bot/Models/Report');
 const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
+const PlayerIdentity = require('../bot/Models/PlayerIdentity');
+const PlayerLinkClaim = require('../bot/Models/PlayerLinkClaim');
 const { getForGuild, ensureFreeSubscription, consumeUsage, releaseUsage } = require('../bot/utils/entitlementService');
 const { verifyPayPalWebhook, providerConfigured, processVerifiedEvent, getPaymentCatalog, getPublicPlans, inspectPayPalConfiguration, createCheckout, cancelSubscription, formatPayPalError, getPayPalErrorDetails } = require('../bot/utils/billingService');
 const { generateWeeklyReport } = require('../bot/utils/weeklyReportEngine');
@@ -186,6 +188,7 @@ app.post('/api/v1/telemetry/events', rateLimit({ windowMs: 60 * 1000, max: 120 }
     });
     const writeResult = await TelemetryEvent.bulkWrite(buildTelemetryBulkOperations(documents), { ordered: false });
     const { accepted: acceptedCount, duplicates: duplicateCount } = summarizeTelemetryWrite(writeResult, documents.length);
+    await processPlayerLinkEvents(documents);
     const latestCount = latestOnlinePlayers(documents);
     const headerValue = name => String(req.get(name) || '').trim().slice(0, 120) || null;
     await PluginInstance.findOneAndUpdate({ serverId: auth.serverId, instanceId: auth.instanceId }, { $set: { protocolVersion: auth.protocolVersion, lastSeenAt: new Date(), status: 'online', ...(latestCount === null ? {} : { lastOnlinePlayers: latestCount }), ...(headerValue('x-promcbot-network') ? { networkId: headerValue('x-promcbot-network') } : {}), ...(headerValue('x-promcbot-minecraft-server') ? { minecraftServerId: headerValue('x-promcbot-minecraft-server') } : {}), ...(headerValue('x-promcbot-server-name') ? { serverName: headerValue('x-promcbot-server-name') } : {}) }, $setOnInsert: { firstSeenAt: new Date() } }, { upsert: true });
@@ -227,6 +230,41 @@ app.use(passport.session());
 // `global.__botClient` is assigned during bot startup; resolving it lazily
 // prevents dashboard module load order from creating a second login session.
 const getBotClient = () => global.__botClient || null;
+
+function normalizeMinecraftUuid(value) {
+  const normalized = String(value || '').trim().toLowerCase().replace(/-/g, '');
+  return /^[0-9a-f]{32}$/.test(normalized)
+    ? `${normalized.slice(0, 8)}-${normalized.slice(8, 12)}-${normalized.slice(12, 16)}-${normalized.slice(16, 20)}-${normalized.slice(20)}`
+    : null;
+}
+
+function normalizePlayerUsername(value) {
+  const username = String(value || '').trim();
+  return /^[A-Za-z0-9_]{1,32}$/.test(username) ? username : null;
+}
+
+async function processPlayerLinkEvents(documents) {
+  for (const document of documents || []) {
+    if (document.type !== 'player_link') continue;
+    const uuid = normalizeMinecraftUuid(document.data?.uuid);
+    const username = normalizePlayerUsername(document.data?.username);
+    const code = String(document.data?.linkCode || '').trim().toUpperCase();
+    if (!uuid || !username || !/^[A-Z0-9]{6,12}$/.test(code)) continue;
+    const claim = await PlayerLinkClaim.findOne({ serverId: document.serverId, codeHash: hashToken(code), status: 'pending', expiresAt: { $gt: new Date() } });
+    if (!claim) continue;
+    const existing = await PlayerIdentity.findOne({ serverId: document.serverId, uuid });
+    if (existing && String(existing.discordUserId) !== String(claim.discordUserId)) {
+      await PlayerLinkClaim.updateOne({ _id: claim._id }, { $set: { status: 'rejected' } });
+      continue;
+    }
+    await PlayerIdentity.findOneAndUpdate(
+      { serverId: document.serverId, uuid },
+      { $set: { discordUserId: claim.discordUserId, username, lastSeenAt: document.occurredAt || new Date() }, $setOnInsert: { linkedAt: document.occurredAt || new Date() } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+    await PlayerLinkClaim.updateOne({ _id: claim._id, status: 'pending' }, { $set: { status: 'consumed', consumedAt: new Date() } });
+  }
+}
 
 function getOAuthLoginWebhookUrl() {
   const directUrl = String(process.env.DISCORD_OAUTH_LOGIN_WEBHOOK_URL || process.env.WEBHOOK_URL || '').trim();
@@ -1282,12 +1320,61 @@ app.get('/u/:identifier', async (req, res) => {
 app.get('/profile/:identifier', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.identifier)}`));
 app.get('/user/:username', (req, res) => res.redirect(302, `/u/${encodeURIComponent(req.params.username)}`));
 
+async function getPlayerLinkServer(serverId) {
+  if (!/^\d{5,25}$/.test(String(serverId || ''))) return null;
+  const client = getBotClient();
+  if (!client?.guilds?.fetch) return null;
+  try { return await client.guilds.fetch(String(serverId)); } catch (_) { return null; }
+}
+
+app.get('/api/player/links', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  const identities = await PlayerIdentity.find({ discordUserId: String(req.user.id) }).sort({ lastSeenAt: -1 }).limit(20).lean();
+  const players = await Promise.all(identities.map(async identity => {
+    const events = await TelemetryEvent.find({ serverId: identity.serverId, 'data.uuid': identity.uuid, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(2000).lean();
+    const joins = events.filter(event => event.type === 'player_join').length;
+    const leaves = events.filter(event => event.type === 'player_leave').length;
+    const sessionSeconds = events.reduce((sum, event) => sum + (event.type === 'player_leave' && Number.isFinite(Number(event.data?.sessionSeconds)) ? Math.max(0, Number(event.data.sessionSeconds)) : 0), 0);
+    return { id: identity._id, serverId: identity.serverId, uuid: identity.uuid, username: identity.username, linkedAt: identity.linkedAt, lastSeenAt: identity.lastSeenAt, privacy: identity.privacy, stats: { joins, leaves, sessionSeconds, observedEvents: events.length } };
+  }));
+  res.json({ success: true, players });
+});
+
+app.post('/api/player/links/claim', isAuthenticated, requireDatabaseReady, rateLimit({ windowMs: 10 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false }), async (req, res) => {
+  const serverId = String(req.body?.serverId || '').trim();
+  const guild = await getPlayerLinkServer(serverId);
+  if (!guild) return res.status(404).json({ success: false, error: 'server_not_connected', message: 'This Discord server is not connected to ProMcBot.' });
+  const code = crypto.randomBytes(6).toString('hex').toUpperCase();
+  const now = new Date();
+  await PlayerLinkClaim.updateMany({ discordUserId: String(req.user.id), serverId, status: 'pending' }, { $set: { status: 'expired' } });
+  await PlayerLinkClaim.create({ discordUserId: String(req.user.id), serverId, codeHash: hashToken(code), expiresAt: new Date(now.getTime() + 10 * 60 * 1000) });
+  res.status(201).json({ success: true, serverId, serverName: guild.name || serverId, code, expiresAt: new Date(now.getTime() + 10 * 60 * 1000).toISOString(), command: `/promcbot link ${code}` });
+});
+
+app.patch('/api/player/links/:id/privacy', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, error: 'invalid_player_identity' });
+  const privacy = req.body?.privacy && typeof req.body.privacy === 'object' ? req.body.privacy : {};
+  const update = {};
+  for (const key of ['showUsername', 'showStats', 'showServer']) if (typeof privacy[key] === 'boolean') update[`privacy.${key}`] = privacy[key];
+  if (!Object.keys(update).length) return res.status(400).json({ success: false, error: 'privacy_update_required' });
+  const identity = await PlayerIdentity.findOneAndUpdate({ _id: req.params.id, discordUserId: String(req.user.id) }, { $set: update }, { new: true }).lean();
+  if (!identity) return res.status(404).json({ success: false, error: 'player_identity_not_found' });
+  res.json({ success: true, privacy: identity.privacy });
+});
+
+app.delete('/api/player/links/:id', isAuthenticated, requireDatabaseReady, async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) return res.status(400).json({ success: false, error: 'invalid_player_identity' });
+  const result = await PlayerIdentity.deleteOne({ _id: req.params.id, discordUserId: String(req.user.id) });
+  if (!result.deletedCount) return res.status(404).json({ success: false, error: 'player_identity_not_found' });
+  res.json({ success: true });
+});
+
 // Dashboard Protected Pages
 app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
 app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
 app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'onboarding.html')));
+app.get('/player', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'player.html')));
 app.get('/actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'actions.html')));
 app.get('/smart-actions', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'smart-actions.html')));
 app.get('/premium', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));

@@ -266,6 +266,21 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!command.getName().equalsIgnoreCase("promcbot")) return false;
+        if (args.length == 2 && args[0].equalsIgnoreCase("link")) {
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("ProMcBot: only a Minecraft player can link an account.");
+                return true;
+            }
+            String code = args[1] == null ? "" : args[1].trim().toUpperCase();
+            if (!code.matches("[A-Z0-9]{6,12}")) {
+                sender.sendMessage("ProMcBot: use the temporary link code shown in your Dashboard.");
+                return true;
+            }
+            Player player = (Player) sender;
+            enqueue("player_link", data("uuid", player.getUniqueId().toString(), "username", player.getName(), "linkCode", code));
+            sender.sendMessage("ProMcBot: link request sent. Return to the Dashboard in a few seconds.");
+            return true;
+        }
         if (args.length == 0 || args[0].equalsIgnoreCase("status")) {
             sender.sendMessage("ProMcBot: queue=" + (telemetryQueue == null ? 0 : telemetryQueue.size())
                     + ", staged=" + (telemetrySpoolWriter == null ? 0 : telemetrySpoolWriter.stagedCount())
@@ -276,7 +291,7 @@ public final class ProMcBotPlugin extends JavaPlugin implements Listener, Comman
                     + ", capabilities=" + (entitlementAvailable ? "available" : "degraded"));
             return true;
         }
-        sender.sendMessage("Usage: /promcbot status");
+        sender.sendMessage("Usage: /promcbot status | /promcbot link <code>");
         return true;
     }
 }

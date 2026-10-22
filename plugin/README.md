@@ -61,6 +61,10 @@ The plugin queues events in memory and flushes at most the configured batch size
 
 The plugin requests capability metadata from the backend on enable. The backend determines the effective plan and returns signed-request-protected results. A failed capability refresh degrades safely and never stops the Minecraft server.
 
+### Linking a player identity
+
+Players can link their Discord account to their Minecraft identity without sharing a token. From the Dashboard Player Center, generate a temporary code for a connected Discord server, then run `/promcbot link <code>` in Minecraft. The signed `player_link` telemetry event is consumed once, expires with the claim, and stores only the verified UUID, username, server scope, and privacy settings.
+
 ## Configuration
 
 `backend.base-url` must use HTTPS outside localhost. `server-id` identifies the Discord guild/server, `instance-id` identifies the Minecraft instance, `network-id` groups instances for Ultimate network intelligence, `minecraft-server-id` identifies the logical Minecraft server, and `server-name` is display metadata. `access-token` authenticates the instance, `signing-secret` signs request bodies, and `protocol-version` negotiates protocol behavior. `telemetry.batch-size`, `max-queue-size`, and `snapshot-seconds` control batching and the local bounded queue.

@@ -7,7 +7,7 @@ description: Asynchronous telemetry bridge for ProMcBot.
 commands:
   promcbot:
     description: Check ProMcBot plugin connectivity and queue status.
-    usage: /promcbot status
+    usage: /promcbot status | /promcbot link <code>
     permission: promcbot.status
 permissions:
   promcbot.status:
