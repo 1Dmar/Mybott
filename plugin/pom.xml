@@ -6,7 +6,7 @@
 
   <groupId>dev.promcbot</groupId>
   <artifactId>promcbot-plugin</artifactId>
-  <version>0.1.0</version>
+  <version>1.6.0</version>
   <packaging>jar</packaging>
   <name>ProMcBot Minecraft Plugin</name>
   <description>Asynchronous, batched Minecraft telemetry for ProMcBot.</description>

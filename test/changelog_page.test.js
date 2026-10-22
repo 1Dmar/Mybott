@@ -14,8 +14,8 @@ test('Changelog route and banner asset are wired', () => {
 
 test('Changelog page includes crawlable release content in the initial HTML', () => {
   assert.match(page, /<article class="release">/);
-  assert.match(page, /<strong>v1\.2\.0<\/strong>/);
-  assert.match(page, /A clearer path from signal to action/);
+  assert.match(page, /<strong>v1\.6\.0<\/strong>/);
+  assert.match(page, /Your Minecraft identity, ready to share/);
   assert.doesNotMatch(page, /<div id="changelogFeed"><\/div>/);
 });
 

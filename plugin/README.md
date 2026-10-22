@@ -31,16 +31,16 @@ Or directly:
 ```bash
 cd plugin
 mvn clean test package
-sha256sum target/promcbot-plugin-0.1.0.jar
+sha256sum target/promcbot-plugin-1.6.0.jar
 ```
 
 The final artifact is created at:
 
 ```text
-plugin/target/promcbot-plugin-0.1.0.jar
+plugin/target/promcbot-plugin-1.6.0.jar
 ```
 
-`original-promcbot-plugin-0.1.0.jar` is Maven Shade's intermediate copy; use `promcbot-plugin-0.1.0.jar` for installation.
+`original-promcbot-plugin-1.6.0.jar` is Maven Shade's intermediate copy; use `promcbot-plugin-1.6.0.jar` for installation.
 
 ## Provisioning
 
@@ -50,7 +50,7 @@ plugin/target/promcbot-plugin-0.1.0.jar
 4. Generate one-time credentials for a unique instance ID.
 5. Copy the returned values into the plugin's `config.yml` under `backend`.
 6. Optionally set `network-id`, `minecraft-server-id`, and `server-name` when the instance belongs to a network.
-7. Install `plugin/target/promcbot-plugin-0.1.0.jar` into the server's `plugins` directory and restart the server.
+7. Install `plugin/target/promcbot-plugin-1.6.0.jar` into the server's `plugins` directory and restart the server.
 8. Verify `/promcbot status`, the signed capabilities refresh, and dashboard activation progress.
 
 Never commit a configured `config.yml`, access token, or signing secret. The plugin artifact contains no master secret. Provisioned backend secrets are hashed or encrypted at rest.

@@ -1,5 +1,15 @@
 const DEFAULT_CHANGELOG_ENTRIES = [
   {
+    version: 'v1.6.0', date: 'October 23, 2026', title: 'Your Minecraft identity, ready to share',
+    description: 'Player accounts now connect Discord and Minecraft into one privacy-first identity that is useful in the dashboard and inside Discord.',
+    categories: ['NEW', 'IMPROVED', 'SECURITY'],
+    sections: [
+      { title: 'What’s new', items: ['Global Player Account with verified Minecraft identities and server-scoped measurements.', 'Shareable /playercard command with global or current-server views and optional cards for other users.', 'Measured player cards show real joins and play time instead of invented statistics.', 'Player Center now lets users customize templates, bio, privacy, and public card visibility.'] },
+      { title: 'Reliability and security', items: ['Legacy player links migrate automatically into the new account model without forcing users to relink.', 'Public cards never expose another user’s server-scoped activity.', 'One-time link claims remain expiring, signed, and tenant-scoped.', 'Plugin, dashboard, payment-readiness, load-test, onboarding, network-role, and connection-test flows received reliability improvements.'] },
+      { title: 'For server owners', items: ['Network roles and scoped operational views make large server networks easier to manage.', 'Minecraft connection setup now provides clearer readiness and test feedback.', 'The Plugin continues to queue telemetry offline and send bounded signed batches safely.'] },
+    ],
+  },
+  {
     version: 'v1.2.0', date: 'September 4, 2026', title: 'A clearer path from signal to action',
     description: 'The operational experience now separates measured recommendations from automations that can execute them.',
     categories: ['NEW', 'IMPROVED'],

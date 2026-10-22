@@ -409,8 +409,10 @@ function normalizeChangelogPayload(body, createdBy) {
   };
 }
 async function seedChangelogIfEmpty() {
-  if (mongoose.connection.readyState !== 1 || await ChangelogEntry.exists()) return;
-  await ChangelogEntry.insertMany(DEFAULT_CHANGELOG_ENTRIES.map(entry => ({ ...entry, createdBy: 'system' })));
+  if (mongoose.connection.readyState !== 1) return;
+  for (const entry of DEFAULT_CHANGELOG_ENTRIES) {
+    await ChangelogEntry.updateOne({ version: entry.version }, { $setOnInsert: { ...entry, createdBy: 'system' } }, { upsert: true });
+  }
 }
 
 async function ensureDefaultProfileFollow(followerId) {
