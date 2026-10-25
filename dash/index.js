@@ -424,6 +424,57 @@ async function ensureDefaultProfileFollow(followerId) {
   }
 }
 
+async function resolveCollaboratorAccess(req) {
+  const reference = String(req.params.guildId || '').trim();
+  const userId = String(req.user?.id || '').trim();
+  if (!reference || !userId || mongoose.connection.readyState !== 1) return null;
+  const assignment = await NetworkRole.findOne({ guildId: reference, userId, role: { $in: ['editor', 'viewer'] } }).lean();
+  if (!assignment) return null;
+  const membership = await resolveBotMembership(getBotClient(), reference);
+  if (!membership?.installed) return null;
+  const botGuild = membership.guild || getBotClient()?.guilds?.cache?.get(reference);
+  return {
+    id: reference,
+    name: botGuild?.name || reference,
+    owner: false,
+    permissions: '0',
+    collaboratorRole: assignment.role,
+    permissionSource: 'collaborator',
+    isCollaborator: true,
+  };
+}
+async function requireGuildAccess(req, res, next) {
+  const workspaceGuild = resolveWorkspaceGuildReference(req.user, req.params.guildId);
+  if (workspaceGuild) return requireGuildManager(req, res, next);
+  try {
+    const collaboratorGuild = await resolveCollaboratorAccess(req);
+    if (!collaboratorGuild) return res.status(403).json({ success: false, error: 'guild_access_required', message: 'You need an owner-granted Viewer or Editor assignment for this server.' });
+    req.managedGuild = collaboratorGuild;
+    req.collaboratorRole = collaboratorGuild.collaboratorRole;
+    req.botMembership = await resolveBotMembership(getBotClient(), collaboratorGuild.id);
+    req.botInviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
+    req.params.guildId = collaboratorGuild.id;
+    next();
+  } catch (_) {
+    return res.status(403).json({ success: false, error: 'guild_access_required' });
+  }
+}
+async function requireGuildEditor(req, res, next) {
+  const workspaceGuild = resolveWorkspaceGuildReference(req.user, req.params.guildId);
+  if (workspaceGuild) return requireGuildManager(req, res, next);
+  try {
+    const collaboratorGuild = await resolveCollaboratorAccess(req);
+    if (!collaboratorGuild || collaboratorGuild.collaboratorRole !== 'editor') return res.status(403).json({ success: false, error: 'editor_access_required', message: 'Editor access is required for this action.' });
+    req.managedGuild = collaboratorGuild;
+    req.collaboratorRole = 'editor';
+    req.botMembership = await resolveBotMembership(getBotClient(), collaboratorGuild.id);
+    req.botInviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
+    req.params.guildId = collaboratorGuild.id;
+    next();
+  } catch (_) {
+    return res.status(403).json({ success: false, error: 'editor_access_required' });
+  }
+}
 async function requireGuildManager(req, res, next) {
   const reference = req.params.guildId;
   const guild = resolveWorkspaceGuildReference(req.user, reference);
@@ -966,20 +1017,28 @@ app.post('/api/guilds/:guildId/billing/cancel', isAuthenticated, requireGuildMan
 app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
-  const guilds = await mapWithConcurrency(getWorkspaceGuilds(req.user), async guild => {
+  const ownedGuilds = getWorkspaceGuilds(req.user);
+  const assignedGuilds = mongoose.connection.readyState === 1 ? await NetworkRole.find({ userId: String(req.user.id), role: { $in: ['editor', 'viewer'] } }).lean() : [];
+  const collaboratorGuilds = assignedGuilds.map(role => ({ id: String(role.guildId), name: String(role.guildId), owner: false, permissions: '0', managePermission: role.role === 'editor' ? 'collaborator_editor' : 'collaborator_viewer', permissionSource: 'collaborator', collaboratorRole: role.role, isCollaborator: true }));
+  const sourceGuilds = [...ownedGuilds, ...collaboratorGuilds.filter(guild => !ownedGuilds.some(owned => String(owned.id) === String(guild.id)))];
+  const guilds = await mapWithConcurrency(sourceGuilds, async guild => {
     try {
+      const membership = await resolveBotMembership(botClient, guild.id);
+      const namedGuild = guild.isCollaborator && membership.guild?.name
+        ? { ...guild, name: membership.guild.name, icon: membership.guild.icon || guild.icon }
+        : guild;
       return {
-        ...guild,
-        ...botAccessPayload(guild, await resolveBotMembership(botClient, guild.id), inviteUrl),
+        ...namedGuild,
+        ...botAccessPayload(namedGuild, membership, inviteUrl),
       };
     } catch (_) {
       return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
     }
   }, 4);
-  res.json({ success: true, guilds, count: guilds.length, scope: 'owner_or_administrator_only' });
+  res.json({ success: true, guilds, count: guilds.length, scope: 'owner_administrator_or_assigned_collaborator' });
 });
 
-app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     let botGuild = req.botMembership?.guild || getBotClient()?.guilds?.cache?.get(req.params.guildId) || null;
     if (botGuild?.fetch) {
@@ -993,7 +1052,7 @@ app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildManager, asy
   }
 });
 
-app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const [storedSettings, serverInfo] = await Promise.all([
       GuildSettings.findOne({ guildId: req.params.guildId }).lean(),
@@ -1006,7 +1065,7 @@ app.get('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, a
   }
 });
 
-app.post('/api/guilds/:guildId/settings', isAuthenticated, requireGuildManager, async (req, res) => {
+app.post('/api/guilds/:guildId/settings', isAuthenticated, requireGuildEditor, async (req, res) => {
   try {
     const normalized = normalizeMinecraftSettings(req.body);
     if (!normalized.ok) return res.status(400).json({ success: false, error: normalized.error });
@@ -1066,7 +1125,7 @@ app.patch('/api/guilds/:guildId/moderation', isAuthenticated, requireGuildManage
   } catch (error) { res.status(500).json({ success: false, error: 'moderation_update_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildAccess, requireDatabaseReady, async (req, res) => {
   try {
     const guildId = req.params.guildId;
     const now = Date.now();
@@ -1086,7 +1145,7 @@ app.get('/api/guilds/:guildId/overview', isAuthenticated, requireGuildManager, r
   }
 });
 
-app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildAccess, requireDatabaseReady, async (req, res) => {
   try {
     const [config, pluginInstances, settings] = await Promise.all([
       BotConfig.findOne({ guildId: req.params.guildId }).lean(),
@@ -1122,7 +1181,7 @@ app.get('/api/guilds/:guildId/modules', isAuthenticated, requireGuildManager, re
   }
 });
 
-app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.patch('/api/guilds/:guildId/modules/:moduleId', isAuthenticated, requireGuildEditor, requireDatabaseReady, async (req, res) => {
   const moduleId = String(req.params.moduleId || '');
   if (!moduleKeys.includes(moduleId) || typeof req.body?.enabled !== 'boolean') return res.status(400).json({ success: false, error: 'invalid_module_update' });
   const requiredFeature = moduleMeta[moduleId]?.requiredFeature;
@@ -1489,7 +1548,8 @@ serverPages.forEach(page => {
     if (fs.existsSync(filePath)) return res.sendFile(filePath);
     return res.status(404).sendFile(path.join(dashDir, '404', '404.html'));
   };
-  app.get(`/myservers/:guildId/${page}`, isAuthenticated, requireGuildManager, serveServerPage);
+  const pageGuard = page === 'network-roles' || page === 'premium' ? requireGuildManager : requireGuildAccess;
+  app.get(`/myservers/:guildId/${page}`, isAuthenticated, pageGuard, serveServerPage);
   app.get(`/servers/:guildId/${page}`, isAuthenticated, requireGuildManager, (req, res) => res.redirect(302, `/myservers/${encodeURIComponent(req.params.guildId)}/${page}`));
 });
 
@@ -1498,7 +1558,7 @@ app.get('/shared.css', (req, res) => res.sendFile(path.join(dashDir, 'shared.css
 app.get('/shared.js', (req, res) => res.sendFile(path.join(dashDir, 'shared.js')));
 
 // ── Platform activation and intelligence ───────────────────────────────
-app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const guildId = req.params.guildId;
     const botClient = getBotClient();
@@ -1575,7 +1635,7 @@ app.post('/api/guilds/:guildId/connection-test', isAuthenticated, requireGuildMa
   }
 });
 
-app.get('/api/guilds/:guildId/players', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/players', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const entitlement = await getForGuild(req.params.guildId);
     const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - entitlement.historyDays * 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(25000).lean();
@@ -1583,7 +1643,7 @@ app.get('/api/guilds/:guildId/players', isAuthenticated, requireGuildManager, as
   } catch (error) { res.status(500).json({ success: false, error: 'player_intelligence_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/retention', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/retention', isAuthenticated, requireGuildAccess, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   if (!hasFeature(entitlement, 'retention.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'retention.advanced', requiredPlan: 'pro', message: 'Advanced retention analysis requires Pro. Basic player activity remains available.' });
   const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - entitlement.historyDays * 24 * 60 * 60 * 1000), $lt: new Date() }, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(50000).lean();
@@ -1601,7 +1661,7 @@ app.get('/api/guilds/:guildId/network', isAuthenticated, requireGuildManager, as
   res.json({ success: true, networkId, network: summarizeNetwork(instances, events), source: 'telemetry' });
 });
 
-app.get('/api/guilds/:guildId/network-dashboard', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.get('/api/guilds/:guildId/network-dashboard', isAuthenticated, requireGuildAccess, requireDatabaseReady, async (req, res) => {
   try {
     const guildId = req.params.guildId;
     const entitlement = await getForGuild(guildId);
@@ -1657,7 +1717,7 @@ app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildMan
   res.json({ success: true, events });
 });
 
-app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const entitlement = await getForGuild(req.params.guildId);
     const report = await generateWeeklyReport(req.params.guildId, entitlement.plan);
@@ -1726,7 +1786,7 @@ app.patch('/api/guilds/:guildId/notifications/:notificationId/resolve', isAuthen
   res.json({ success: true, notification });
 });
 
-app.get('/api/guilds/:guildId/intelligence/explanation', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/intelligence/explanation', isAuthenticated, requireGuildAccess, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   if (!hasFeature(entitlement, 'server.intelligence.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', requiredPlan: 'pro', message: 'Evidence interpretation requires Pro.' });
   try {
@@ -1736,7 +1796,7 @@ app.get('/api/guilds/:guildId/intelligence/explanation', isAuthenticated, requir
   } catch (error) { res.status(500).json({ success: false, error: 'intelligence_explanation_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/intelligence', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/intelligence', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const events = await TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean();
     res.json({ success: true, intelligence: summarizeTelemetry(events) });

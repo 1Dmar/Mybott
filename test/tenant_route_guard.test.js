@@ -9,7 +9,7 @@ test('every guild-scoped API route is authorization guarded', () => {
   const routePattern = /app\.(?:get|post|put|patch|delete)\('\/api\/guilds\/:guildId[^']*',[^\n]+/g;
   const routes = indexSource.match(routePattern) || [];
   assert.ok(routes.length >= 20);
-  for (const route of routes) assert.match(route, /requireGuildManager/);
+  for (const route of routes) assert.match(route, /requireGuild(?:Manager|Access|Editor)/);
 });
 
 test('sensitive child resource updates include the parent tenant in their database filter', () => {
