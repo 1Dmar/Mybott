@@ -778,9 +778,11 @@ app.get('/api/admin/test-lab/sessions', isAuthenticated, requireAdminRole, requi
 });
 app.post('/api/admin/test-lab/sessions', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   try {
-    const config = normalizeConfig(req.body);
     const serverId = String(req.body?.serverId || '').trim();
     if (!/^\d{5,25}$/.test(serverId)) throw new Error('valid_discord_server_id_required');
+    const savedServer = await ServerInfo.findOne({ serverId }).lean();
+    if (!savedServer?.javaIP) throw new Error('minecraft_java_address_not_configured_for_server');
+    const config = normalizeConfig({ ...req.body, host: savedServer.javaIP, port: savedServer.javaPort || 25565 });
     const session = await TestLabSession.create({ ...config, serverId, instanceId: 'testlab-' + crypto.randomUUID(), status: 'starting', createdBy: req.user.id, startedAt: new Date(), endsAt: new Date(Date.now() + config.durationMinutes * 60 * 1000), bots: Array.from({ length: config.requestedBots }, (_, index) => ({ username: 'PMC_Test_' + String(index + 1).padStart(2, '0'), status: 'pending' })) });
     try { await startSession(session); } catch (error) { await TestLabSession.updateOne({ _id: session._id }, { $set: { status: 'failed', lastError: String(error.message || 'test_lab_start_failed').slice(0, 1000) } }); throw error; }
     res.status(201).json({ success: true, session: testLabPublicSession(await TestLabSession.findById(session._id)) });
