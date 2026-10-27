@@ -533,7 +533,7 @@ app.use(['/dashboard/pages/admin-changelog.html', '/dashboard/pages/admin-partne
   if (await isAdminUser(req)) return next();
   return res.status(404).send('Not found');
 });
-app.use('/dashboard', express.static(dashDir));
+app.use('/dashboard', express.static(dashDir, { setHeaders: res => res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0') }));
 app.use('/public', express.static(path.join(__dirname, '..', 'bot', 'public')));
 
 app.get('/api/trustpilot/stats', rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false }), (req, res) => {
@@ -1530,8 +1530,8 @@ app.delete('/api/player/links/:id', isAuthenticated, requireDatabaseReady, async
 });
 
 // Dashboard Protected Pages
-app.get('/dashboard', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'dashboard.html')));
-app.get('/myservers', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'servers.html')));
+app.get('/dashboard', isAuthenticated, (req, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'); res.sendFile(path.join(dashDir, 'dashboard.html')); });
+app.get('/myservers', isAuthenticated, (req, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'); res.sendFile(path.join(dashDir, 'pages', 'servers.html')); });
 app.get('/servers', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/intelligence', isAuthenticated, (req, res) => res.redirect(302, '/myservers'));
 app.get('/onboarding', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'onboarding.html')));
@@ -1554,8 +1554,8 @@ serverPages.forEach(page => {
 });
 
 // Shared Assets
-app.get('/shared.css', (req, res) => res.sendFile(path.join(dashDir, 'shared.css')));
-app.get('/shared.js', (req, res) => res.sendFile(path.join(dashDir, 'shared.js')));
+app.get('/shared.css', (req, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'); res.sendFile(path.join(dashDir, 'shared.css')); });
+app.get('/shared.js', (req, res) => { res.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0'); res.sendFile(path.join(dashDir, 'shared.js')); });
 
 // ── Platform activation and intelligence ───────────────────────────────
 app.get('/api/guilds/:guildId/activation', isAuthenticated, requireGuildAccess, async (req, res) => {

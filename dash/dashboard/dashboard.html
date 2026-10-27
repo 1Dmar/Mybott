@@ -19,6 +19,17 @@
     .public-profile-settings p { margin:0; color:var(--text-muted); font-size:12px; line-height:1.5; }
     .profile-username-field { display:block; margin-top:15px; color:var(--text-secondary); font-size:12px; font-weight:750; }
     .profile-username-field input { display:block; max-width:520px; margin-top:6px; }
+    .profile-link-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px; }
+    .profile-link-fields label { display:block; color:var(--text-secondary); font-size:12px; font-weight:750; }
+    .profile-link-fields input { display:block; margin-top:6px; }
+    .profile-privacy { display:grid; gap:9px; margin:16px 0 0; padding:14px; border:1px solid var(--border); border-radius:14px; background:var(--surface-2); }
+    .profile-privacy legend { padding:0 6px; color:var(--text); font-size:12px; font-weight:800; }
+    .profile-privacy label { display:flex; align-items:center; gap:10px; min-height:28px; color:var(--text-secondary); font-size:12px; font-weight:650; cursor:pointer; }
+    .profile-privacy input[type="checkbox"] { appearance:none; width:20px; height:20px; flex:0 0 20px; margin:0; padding:0; border:1.5px solid var(--border); border-radius:6px; background:var(--surface); cursor:pointer; transition:background-color 160ms ease,border-color 160ms ease,transform 160ms ease; }
+    .profile-privacy input[type="checkbox"]:checked { border-color:var(--primary); background:var(--primary); }
+    .profile-privacy input[type="checkbox"]::after { display:block; width:5px; height:10px; margin:2px 0 0 6px; border:solid #fff; border-width:0 2px 2px 0; content:""; opacity:0; transform:rotate(45deg) scale(.7); transition:opacity 140ms ease,transform 140ms ease; }
+    .profile-privacy input[type="checkbox"]:checked::after { opacity:1; transform:rotate(45deg) scale(1); }
+    .profile-privacy input[type="checkbox"]:focus-visible { outline:3px solid var(--primary-soft); outline-offset:2px; }
     .profile-settings-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .profile-settings-actions button,.profile-settings-actions a { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:9px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface-2); color:var(--text); font:inherit; font-size:12px; font-weight:800; text-decoration:none; cursor:pointer; }
     .profile-settings-actions button { border-color:var(--primary); background:var(--primary); color:#fff; }
@@ -35,9 +46,8 @@
     .support-action { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:10px 15px; border-radius:11px; background:var(--primary); color:#fff; text-decoration:none; font-size:12px; font-weight:800; white-space:nowrap; transition:transform 160ms var(--ease-out), background-color 160ms ease; }
     .support-action:hover { background:var(--primary-strong); transform:translateY(-1px); }
     .support-action:active { transform:scale(.98); }
-    @media (max-width:768px) { .public-profile-settings { grid-template-columns:1fr; } .profile-settings-actions button,.profile-settings-actions a { width:100%; } .support-panel { grid-template-columns:1fr; } .support-action { width:100%; } }
+    @media (max-width:768px) { .public-profile-settings { grid-template-columns:1fr; } .profile-link-fields { grid-template-columns:1fr; } .profile-settings-actions button,.profile-settings-actions a { width:100%; } .support-panel { grid-template-columns:1fr; } .support-action { width:100%; } }
     @media (max-width:768px) { .dashboard-intro { display:block; } .dashboard-actions { margin-top:12px; } }
-  .admin-panel-card{display:flex;align-items:center;gap:12px;margin-top:16px;padding:15px 17px;border:1px solid color-mix(in srgb,var(--primary) 35%,var(--border));border-radius:14px;background:var(--primary-soft);color:var(--text);text-decoration:none}.admin-panel-card>i:first-child{color:var(--primary);font-size:22px}.admin-panel-card span{display:flex;flex:1;flex-direction:column}.admin-panel-card strong{font-size:13px}.admin-panel-card small{margin-top:2px;color:var(--text-muted);font-size:11px}.admin-panel-card>i:last-child{color:var(--primary)}
 </style>
   <!-- ProMcBot SEO and social metadata -->
   <meta data-promcbot-metadata="1" name="description" content="Manage your Discord and Minecraft community with ProMcBot.">
@@ -132,7 +142,6 @@
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-server"></i></div><div class="stat-info"><h3>Managed servers</h3><p id="serverCount" aria-live="polite">Loading…</p></div></article>
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-shield-quarter"></i></div><div class="stat-info"><h3>Current plan</h3><p id="planValue" aria-live="polite">FREE</p></div></article>
     </section>
-    <a href="/admin/changelog" data-admin-only hidden class="admin-panel-card"><i class="bx bx-shield-quarter"></i><span><strong>Admin Panel</strong><small>Manage official changelog releases</small></span><i class="bx bx-right-arrow-alt"></i></a>
 
     <h2 class="section-title"><i class="bx bx-line-chart"></i> Server Intelligence</h2>
     <section class="api-section">
@@ -222,7 +231,8 @@
           if (!response.ok) throw new Error(data.message || data.error || 'Could not save username.');
           const publicUrl = safeInternalUrl(data.public_url); if (!publicUrl) throw new Error('The returned profile link was invalid.'); $('publicProfileLink').href = publicUrl;
           message.textContent = `Saved. Your public card is ${data.public_url}`;
-        } catch (error) { message.textContent = error.message; }
+          window.showToast('Profile settings saved successfully.');
+        } catch (error) { message.textContent = error.message; window.showToast(error.message, 'error'); }
         finally { button.disabled = false; }
       });
       $('year').textContent = new Date().getFullYear();
