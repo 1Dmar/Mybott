@@ -210,9 +210,21 @@ button.primary:active { transform: scale(.97); }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #d1fae5; padding: 14px; border-radius: 10px; font-size: 12px; }
 .footer { margin: 24px 0 0 var(--sidebar-width); padding: 20px 32px; color: var(--text-muted); font-size: 12px; text-align: center; }
 .sidebar.close ~ .footer { margin-left: var(--sidebar-collapsed); }
-.toast { position: fixed; right: 16px; bottom: 16px; z-index: 2000; max-width: min(360px, calc(100vw - 32px)); padding: 12px 16px; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 10px; background: var(--surface); box-shadow: var(--shadow-lg); }
+.toast { position: fixed; right: 16px; bottom: 16px; z-index: 2000; display: flex; align-items: center; gap: 10px; width: min(390px, calc(100vw - 32px)); min-height: 52px; padding: 12px 15px; overflow: hidden; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg); animation: toast-in 360ms cubic-bezier(.2,.8,.2,1) both; }
+.toast::before { display: inline-flex; align-items: center; justify-content: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); content: '✓'; font-size: 15px; font-weight: 900; }
+.toast::after { position: absolute; right: 0; bottom: 0; left: 0; height: 3px; background: var(--primary); content: ''; transform-origin: left; animation: toast-progress 3000ms linear both; }
 .toast-success { border-left-color: var(--success); }
+.toast-success::before { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+.toast-success::after { background: var(--success); }
 .toast-error { border-left-color: var(--danger); }
+.toast-error::before { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); content: '!'; }
+.toast-error::after { background: var(--danger); }
+.toast-warning { border-left-color: var(--warning); }
+.toast-warning::before { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); content: '!'; }
+.toast-warning::after { background: var(--warning); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes toast-progress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .toast, .toast::after { animation: none; } }
 
 @keyframes menu-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 

@@ -135,7 +135,14 @@
         </ul>
       `;
     } else {
-      html = `
+      const minimalWorkspace = currentPath === '/dashboard' || currentPath === '/dashboard/' || currentPath === '/myservers' || currentPath === '/myservers/';
+      html = minimalWorkspace ? `
+        <ul class="menu_items">
+          <div class="menu_title"><span>Workspace</span></div>
+          <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
+          <li class="item"><a href="/myservers" class="nav_link ${active('/myservers') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-server"></i></span><span class="navlink">My servers</span></a></li>
+        </ul>
+      ` : `
         <ul class="menu_items">
           <div class="menu_title"><span>Workspace</span></div>
           <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>

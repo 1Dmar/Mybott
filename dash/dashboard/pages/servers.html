@@ -85,7 +85,7 @@
       const count = document.getElementById('serverCount');
       let servers = []; let visuals = {};
       const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
-      const label = permission => ({ owner: 'Owner', administrator: 'Administrator', manage_guild: 'Manage Server', platform_owner: 'Platform access', collaborator_editor: 'Collaborator · Editor', collaborator_viewer: 'Collaborator · Viewer' }[permission] || 'Manage Server');
+      const label = permission => ({ owner: 'Owner', administrator: 'Administrator', manage_guild: 'Manage Server', platform_owner: 'Platform access', collaborator_editor: 'Managed server', collaborator_viewer: 'Managed server' }[permission] || 'Manage Server');
       const safeDiscordCdn = value => { try { const url = new URL(String(value || '')); return url.protocol === 'https:' && url.hostname === 'cdn.discordapp.com' ? url.href.replace(/[()"']/g, '') : ''; } catch (_) { return ''; } };
       const safeInvite = value => { try { const url = new URL(String(value || '')); const allowedHosts = new Set(['discord.com', 'www.discord.com', 'discordapp.com', 'www.discordapp.com', 'discord.gg']); return url.protocol === 'https:' && allowedHosts.has(url.hostname.toLowerCase()) ? url.href : ''; } catch (_) { return ''; } };
       const iconFor = guild => safeDiscordCdn(visuals[guild.id]?.iconUrl) || (guild.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png');

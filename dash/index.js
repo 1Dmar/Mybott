@@ -927,7 +927,7 @@ app.get('/api/user/membership', isAuthenticated, async (req, res) => {
   } catch (e) { res.json({ success: true, membership: { plan: 'free', status: 'active', source: 'subscription_authority' } }); }
 });
 
-app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildAccess, async (req, res) => {
   if (mongoose.connection.readyState !== 1) return res.status(503).json({ success: false, error: 'database_unavailable', message: 'MongoDB is not connected; entitlement data is temporarily unavailable.' });
   try {
     await ensureFreeSubscription(req.params.guildId);
@@ -938,7 +938,7 @@ app.get('/api/guilds/:guildId/entitlements', isAuthenticated, requireGuildManage
   }
 });
 
-app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.get('/api/guilds/:guildId/usage', isAuthenticated, requireGuildAccess, requireDatabaseReady, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   const period = new Date().toISOString().slice(0, 7);
   const usage = await require('../bot/Models/UsageCounter').find({ guildId: req.params.guildId, period }).lean();
@@ -1099,7 +1099,7 @@ const moduleMeta = {
   serverStatus: { label: 'Server status', description: 'Show Minecraft health and status signals.', href: 'intelligence' },
 };
 
-app.get('/api/guilds/:guildId/moderation', isAuthenticated, requireGuildManager, requireDatabaseReady, async (req, res) => {
+app.get('/api/guilds/:guildId/moderation', isAuthenticated, requireGuildAccess, requireDatabaseReady, async (req, res) => {
   try {
     const entitlement = await getForGuild(req.params.guildId);
     if (!hasFeature(entitlement, 'moderation.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_pro', feature: 'moderation.advanced', requiredPlan: 'pro', message: 'Moderation requires the Pro plan.' });
@@ -1650,7 +1650,7 @@ app.get('/api/guilds/:guildId/retention', isAuthenticated, requireGuildAccess, a
   res.json({ success: true, retention: analyzePlayers(events).retention, journey: analyzePlayers(events).journey, sample: analyzePlayers(events).sample });
 });
 
-app.get('/api/guilds/:guildId/network', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/network', isAuthenticated, requireGuildAccess, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   if (!hasFeature(entitlement, 'network.intelligence')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', feature: 'network.intelligence', requiredPlan: 'ultimate', message: 'Network intelligence requires Ultimate. Server-level intelligence remains available.' });
   const networkId = String(req.query.networkId || '').trim().slice(0, 64) || null;
@@ -1710,7 +1710,7 @@ app.delete('/api/guilds/:guildId/network-roles/:userId', isAuthenticated, requir
   res.json({ success: true });
 });
 
-app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/security-events', isAuthenticated, requireGuildAccess, async (req, res) => {
   const entitlement = await getForGuild(req.params.guildId);
   if (!hasFeature(entitlement, 'security.advanced')) return res.status(402).json({ success: false, error: 'feature_requires_ultimate', feature: 'security.advanced', requiredPlan: 'ultimate', message: 'Advanced security intelligence requires Ultimate.' });
   const events = await SecurityEvent.find({ guildId: req.params.guildId }).sort({ time: -1 }).limit(100).lean();
@@ -1725,7 +1725,7 @@ app.get('/api/guilds/:guildId/reports/weekly', isAuthenticated, requireGuildAcce
   } catch (error) { res.status(500).json({ success: false, error: 'weekly_report_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const [intel, plugin, executions] = await Promise.all([
       TelemetryEvent.find({ serverId: req.params.guildId, occurredAt: { $gte: new Date(Date.now() - WINDOW_MS * 2), $lt: new Date() } }).sort({ occurredAt: -1 }).limit(10000).lean().then(summarizeTelemetry),
@@ -1765,12 +1765,12 @@ app.get('/api/guilds/:guildId/action-center', isAuthenticated, requireGuildManag
   } catch (error) { res.status(500).json({ success: false, error: 'action_center_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/audit', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/audit', isAuthenticated, requireGuildAccess, async (req, res) => {
   const logs = await AuditLog.find({ guildId: req.params.guildId }).sort({ timestamp: -1 }).limit(100).lean();
   res.json({ success: true, logs });
 });
 
-app.get('/api/guilds/:guildId/notifications', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/notifications', isAuthenticated, requireGuildAccess, async (req, res) => {
   res.json({ success: true, notifications: await listNotifications(req.params.guildId, Number(req.query.limit) || 50) });
 });
 
@@ -1832,7 +1832,7 @@ app.delete('/api/guilds/:guildId/plugin/:instanceId', isAuthenticated, requireGu
   res.json({ success: true, revoked: result.modifiedCount > 0 });
 });
 
-app.get('/api/guilds/:guildId/plugin/instances', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/plugin/instances', isAuthenticated, requireGuildAccess, async (req, res) => {
   const instances = await PluginInstance.find({ serverId: req.params.guildId }).sort({ lastSeenAt: -1 }).lean();
   res.json({ success: true, instances });
 });
@@ -1845,7 +1845,7 @@ app.get('/api/observability', isAuthenticated, async (req, res) => {
   } catch (error) { res.status(500).json({ success: false, error: 'observability_failed' }); }
 });
 
-app.get('/api/guilds/:guildId/text-channels', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/text-channels', isAuthenticated, requireGuildAccess, async (req, res) => {
   const client = global.__botClient;
   const guild = client?.guilds?.cache?.get(req.params.guildId);
   if (!guild) return res.status(503).json({ success: false, error: 'discord_guild_unavailable', message: 'The bot is not currently connected to this server.' });
@@ -1856,7 +1856,7 @@ app.get('/api/guilds/:guildId/text-channels', isAuthenticated, requireGuildManag
   res.json({ success: true, channels });
 });
 
-app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/smart-actions', isAuthenticated, requireGuildAccess, async (req, res) => {
   try {
     const state = await getSmartActionState(req.params.guildId);
     res.json({ success: true, actions: state.catalog, entitlement: { plan: state.entitlement.plan, features: state.entitlement.features } });
@@ -1928,7 +1928,7 @@ app.post('/api/guilds/:guildId/automation', isAuthenticated, requireGuildManager
   } catch (error) { res.status(400).json({ success: false, error: 'automation_rule_invalid' }); }
 });
 
-app.get('/api/guilds/:guildId/automation', isAuthenticated, requireGuildManager, async (req, res) => {
+app.get('/api/guilds/:guildId/automation', isAuthenticated, requireGuildAccess, async (req, res) => {
   const [rules, executions] = await Promise.all([AutomationRule.find({ serverId: req.params.guildId }).sort({ createdAt: -1 }).lean(), AutomationExecution.find({ serverId: req.params.guildId }).sort({ executedAt: -1 }).limit(50).lean()]);
   res.json({ success: true, rules, executions });
 });
