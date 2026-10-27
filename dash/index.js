@@ -45,6 +45,8 @@ const Report = require('../bot/Models/Report');
 const Notification = require('../bot/Models/Notification');
 const SecurityEvent = require('../bot/Models/SecurityEvent');
 const AuditLog = require('../bot/Models/AuditLog');
+const TestLabSession = require('../bot/Models/TestLabSession');
+const { normalizeConfig, startSession, stopSession, touchTestPlugin } = require('../bot/utils/testLabService');
 const PlayerIdentity = require('../bot/Models/PlayerIdentity');
 const PlayerLinkClaim = require('../bot/Models/PlayerLinkClaim');
 const PlayerAccount = require('../bot/Models/PlayerAccount');
@@ -658,6 +660,7 @@ Object.entries(legalPages).forEach(([route, file]) => {
   app.get(route, (req, res) => res.sendFile(path.join(dashDir, 'pages', file)));
 });
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
+app.get('/admin/test-lab', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-test-lab.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
 app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
 app.get('/api/partners/me', isAuthenticated, async (req, res) => {
@@ -763,6 +766,45 @@ app.get('/api/changelog', async (req, res) => {
     res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     res.json({ success: true, entries: entries.length ? entries : DEFAULT_CHANGELOG_ENTRIES });
   } catch (_) { res.status(503).json({ success: false, error: 'changelog_unavailable' }); }
+});
+function testLabPublicSession(session) {
+  const value = session.toObject ? session.toObject() : session;
+  return { ...value, bots: (value.bots || []).map(bot => ({ username: bot.username, status: bot.status, joinedAt: bot.joinedAt, leftAt: bot.leftAt, lastError: bot.lastError })) };
+}
+const TEST_SIGNAL_TYPES = new Set(['heartbeat', 'player_count', 'player_join', 'player_leave']);
+app.get('/api/admin/test-lab/sessions', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const sessions = await TestLabSession.find().sort({ createdAt: -1 }).limit(50).lean();
+  res.json({ success: true, sessions });
+});
+app.post('/api/admin/test-lab/sessions', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  try {
+    const config = normalizeConfig(req.body);
+    const serverId = String(req.body?.serverId || '').trim();
+    if (!/^\d{5,25}$/.test(serverId)) throw new Error('valid_discord_server_id_required');
+    const session = await TestLabSession.create({ ...config, serverId, instanceId: 'testlab-' + crypto.randomUUID(), status: 'starting', createdBy: req.user.id, startedAt: new Date(), endsAt: new Date(Date.now() + config.durationMinutes * 60 * 1000), bots: Array.from({ length: config.requestedBots }, (_, index) => ({ username: 'PMC_Test_' + String(index + 1).padStart(2, '0'), status: 'pending' })) });
+    try { await startSession(session); } catch (error) { await TestLabSession.updateOne({ _id: session._id }, { $set: { status: 'failed', lastError: String(error.message || 'test_lab_start_failed').slice(0, 1000) } }); throw error; }
+    res.status(201).json({ success: true, session: testLabPublicSession(await TestLabSession.findById(session._id)) });
+  } catch (error) { res.status(400).json({ success: false, error: error.message || 'test_lab_start_failed', message: 'Could not start the Test Lab session.' }); }
+});
+app.post('/api/admin/test-lab/sessions/:id/stop', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const session = await TestLabSession.findById(req.params.id);
+  if (!session) return res.status(404).json({ success: false, error: 'test_lab_session_not_found' });
+  await stopSession(session._id);
+  res.json({ success: true, session: testLabPublicSession(await TestLabSession.findById(session._id)) });
+});
+app.post('/api/admin/test-lab/sessions/:id/signal', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const session = await TestLabSession.findById(req.params.id);
+  if (!session) return res.status(404).json({ success: false, error: 'test_lab_session_not_found' });
+  const type = String(req.body?.type || '').trim();
+  if (!TEST_SIGNAL_TYPES.has(type)) return res.status(400).json({ success: false, error: 'test_lab_signal_invalid' });
+  const now = new Date();
+  const username = String(req.body?.username || 'PMC_Test_01').replace(/[^A-Za-z0-9_]/g, '').slice(0, 16) || 'PMC_Test_01';
+  const onlinePlayers = Math.max(0, Math.min(1000, Math.round(Number(req.body?.onlinePlayers ?? session.botsConnected ?? session.requestedBots)) || 0));
+  const data = type === 'player_join' || type === 'player_leave' ? { username, uuid: crypto.createHash('sha256').update('testlab:' + session._id + ':' + username).digest('hex').slice(0, 32), source: 'admin_test_lab' } : type === 'player_count' ? { onlinePlayers, source: 'admin_test_lab' } : { status: 'online', onlinePlayers, source: 'admin_test_lab' };
+  await TelemetryEvent.create({ serverId: session.serverId, instanceId: session.instanceId, type, occurredAt: now, requestId: crypto.randomUUID(), data, expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) });
+  await touchTestPlugin(session, onlinePlayers, 'online');
+  const automation = await runEnabledRules(global.__botClient).catch(error => [{ status: 'failed', reason: error.message }]);
+  res.json({ success: true, type, emittedAt: now.toISOString(), automation: automation.filter(item => String(item.ruleId || '').length) });
 });
 app.get('/api/admin/changelog', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   await seedChangelogIfEmpty();
