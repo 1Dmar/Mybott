@@ -9,9 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .split-layout { display: grid; grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr); gap: 24px; margin-top: 24px; align-items: start; }
-        .form-column, .preview-column { min-width: 0; background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(247,249,255,.94)); border: 1px solid rgba(93,104,194,.14); border-radius: 20px; padding: 26px; box-shadow: 0 18px 50px rgba(37,48,112,.08); }
-        .preview-column { background: linear-gradient(145deg, #f9fbff, #eef2ff); }
-        .section-kicker { display: flex; align-items: center; gap: 9px; margin: 0 0 8px; color: #6874e8; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+        .form-column, .preview-column { min-width: 0; background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(250,247,246,.96)); border: 1px solid rgba(255,106,43,.16); border-radius: 20px; padding: 26px; box-shadow: 0 18px 50px rgba(26,19,26,.09); }
+        .preview-column { background: linear-gradient(145deg, #fffaf8, #fff1ed); }
+        .section-kicker { display: flex; align-items: center; gap: 9px; margin: 0 0 8px; color: #e45119; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
         .section-kicker i { font-size: 17px; }
         .section-heading { margin: 0 0 22px; color: #17203a; font-size: 24px; letter-spacing: -.035em; }
         .preview-container { position: relative; min-height: 540px; height: min(680px, 72vh); padding: 18px; border: 1px solid rgba(91,106,203,.16); border-radius: 16px; background: radial-gradient(circle at 15% 0%, rgba(111,125,255,.18), transparent 34%), #e8edff; overflow: hidden; }
@@ -36,7 +36,7 @@
         .form-control {
             width: 100%;
             padding: 12px 14px;
-            border: 1px solid #dfe4f1;
+            border: 1px solid #e8dfdc;
             border-radius: 11px;
             background: rgba(255,255,255,.86);
             color: #202945;
@@ -45,9 +45,9 @@
         }
         .form-control:focus {
             outline: none;
-            border-color: #6572ef;
+            border-color: #ff6a2b;
             background: #fff;
-            box-shadow: 0 0 0 4px rgba(101,114,239,.12);
+            box-shadow: 0 0 0 4px rgba(255,106,43,.13);
         }
         textarea.form-control {
             min-height: 220px;
@@ -55,7 +55,7 @@
             resize: vertical;
         }
         .form-hint { display: block; margin-top: 7px; color: #78819b; font-size: 12px; line-height: 1.5; }
-        #sendBtn { min-height: 48px; border-radius: 12px; font-weight: 800; box-shadow: 0 12px 22px rgba(88,101,242,.2); }
+        #sendBtn { min-height: 48px; border-radius: 12px; font-weight: 800; box-shadow: 0 12px 22px rgba(255,106,43,.22); }
 
         @media (max-width: 992px) {
             .split-layout { grid-template-columns: 1fr; }
@@ -244,24 +244,26 @@
             <head>
                 <style>
                     * { box-sizing: border-box; }
-                    body { font-family: Inter, 'Segoe UI', Tahoma, sans-serif; background: #eef2ff; color: #25304d; margin: 0; padding: 28px 14px; }
-                    .email-wrapper { max-width: 620px; margin: 0 auto; background: #fff; border: 1px solid #e3e7f5; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 55px rgba(44,55,132,.18); }
-                    .email-header { position: relative; background: linear-gradient(135deg, #4e5de2 0%, #716fff 52%, #9c8bff 100%); padding: 34px 28px 30px; text-align: center; color: #fff; }
+                    body { font-family: Inter, 'Segoe UI', Tahoma, sans-serif; background: #090b0f; color: #f5f7fb; margin: 0; padding: 28px 14px; }
+                    .email-wrapper { max-width: 620px; margin: 0 auto; background: #111419; border: 1px solid rgba(255,106,43,.25); border-radius: 22px; overflow: hidden; box-shadow: 0 20px 55px rgba(0,0,0,.42); }
+                    .email-header { position: relative; background: linear-gradient(135deg, #171a20 0%, #0d0f13 58%, #241319 100%); padding: 34px 28px 30px; text-align: center; color: #fff; border-bottom: 1px solid rgba(255,106,43,.28); }
                     .email-header:after { content: ''; position: absolute; inset: auto 12% -22px; height: 44px; background: rgba(255,255,255,.12); filter: blur(16px); border-radius: 50%; }
-                    .brand-mark { display: inline-flex; width: 42px; height: 42px; align-items: center; justify-content: center; margin-bottom: 14px; border: 1px solid rgba(255,255,255,.3); border-radius: 13px; background: rgba(255,255,255,.16); font-size: 20px; }
+                    .brand-lockup { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 16px; color: #fff; font-size: 17px; font-weight: 850; letter-spacing: -.04em; }
+                    .brand-lockup img { width: 38px; height: 38px; border-radius: 11px; box-shadow: 0 7px 18px rgba(255,72,43,.3); }
+                    .brand-lockup em { color: #ff6a2b; font-style: normal; }
                     .email-header h1 { position: relative; z-index: 1; margin: 0; font-size: clamp(22px, 5vw, 30px); line-height: 1.2; font-weight: 800; letter-spacing: -.03em; }
-                    .email-body { padding: clamp(28px, 6vw, 46px); color: #303950; font-size: 16px; line-height: 1.75; overflow-wrap: anywhere; }
-                    .email-body h2, .email-body h3 { color: #18213d; line-height: 1.25; }
+                    .email-body { padding: clamp(28px, 6vw, 46px); color: #d5dae5; font-size: 16px; line-height: 1.75; overflow-wrap: anywhere; }
+                    .email-body h2, .email-body h3 { color: #fff; line-height: 1.25; }
                     .email-body p { margin: 0 0 16px; }
-                    .empty-state { color: #8b94ab; font-style: italic; }
-                    .email-footer { background: #f8f9fe; padding: 22px 28px; text-align: center; color: #8992aa; font-size: 12px; line-height: 1.6; border-top: 1px solid #edf0f8; }
-                    .btn-action { display: inline-block; background: #5865f2; color: white; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; margin-top: 16px; }
+                    .empty-state { color: #858b99; font-style: italic; }
+                    .email-footer { background: #0c0e12; padding: 22px 28px; text-align: center; color: #858b99; font-size: 12px; line-height: 1.6; border-top: 1px solid rgba(255,106,43,.14); }
+                    .btn-action { display: inline-block; background: linear-gradient(135deg, #ff6a2b, #f3164f); color: white; text-decoration: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; margin-top: 16px; box-shadow: 0 8px 18px rgba(243,22,79,.2); }
                 </style>
             </head>
             <body>
                 <div class="email-wrapper">
                     <div class="email-header">
-                        <span class="brand-mark">✦</span>
+                        <div class="brand-lockup"><img src="https://promcbot.dev/dashboard/logo.png" alt=""><span>Pro<em>Mc</em>Bot</span></div>
                         <h1>${safeSubject}</h1>
                     </div>
                     <div class="email-body">
