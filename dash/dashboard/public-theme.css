@@ -24,6 +24,45 @@ body.public-theme {
     radial-gradient(circle at 92% 18%, rgba(88, 101, 242, .08), transparent 30rem),
     var(--pm-bg);
 }
+
+/* Public pages are intentionally light-first. Reset the legacy dark-mode
+   variables on the landing shell so text and surfaces never lose contrast. */
+body.public-theme:not(.docs-theme) {
+  --bg: var(--pm-bg);
+  --surface: var(--pm-surface-solid);
+  --surface-2: #f1f4f8;
+  --border: var(--pm-line);
+  --text: var(--pm-ink);
+  --text-secondary: #526079;
+  --text-muted: var(--pm-muted);
+  --landing-ink: var(--pm-ink);
+  --landing-surface: var(--pm-surface-solid);
+  --landing-surface-soft: #f1f4f8;
+  --landing-line: var(--pm-line);
+  --landing-muted: var(--pm-muted);
+  --landing-accent: var(--pm-accent);
+  --landing-accent-deep: var(--pm-accent-deep);
+  --landing-accent-soft: rgba(255, 106, 43, .11);
+  --landing-navy: #172033;
+  --landing-navy-soft: #202c43;
+  --landing-shadow: var(--pm-shadow);
+}
+body.public-theme:not(.docs-theme) .hero-copy > p,
+body.public-theme:not(.docs-theme) .section-heading p,
+body.public-theme:not(.docs-theme) .hero-note,
+body.public-theme:not(.docs-theme) .trust-item span,
+body.public-theme:not(.docs-theme) .preview-heading p,
+body.public-theme:not(.docs-theme) .preview-caption,
+body.public-theme:not(.docs-theme) .feature-card p,
+body.public-theme:not(.docs-theme) .step p,
+body.public-theme:not(.docs-theme) .landing-footer { color: var(--text-secondary); }
+body.public-theme:not(.docs-theme) .hero-copy h1,
+body.public-theme:not(.docs-theme) .section-heading h2,
+body.public-theme:not(.docs-theme) .preview-heading h2,
+body.public-theme:not(.docs-theme) .trust-item strong,
+body.public-theme:not(.docs-theme) .step h3 { color: var(--text); }
+body.public-theme:not(.docs-theme) .hero-section { padding-top: clamp(76px, 11vw, 136px); }
+body.public-theme:not(.docs-theme) .section { padding-top: clamp(78px, 10vw, 132px); }
 body.public-theme a,
 body.public-theme button { -webkit-tap-highlight-color: transparent; }
 body.public-theme :focus-visible { outline: 3px solid rgba(255, 106, 43, .56); outline-offset: 3px; }
