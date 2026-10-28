@@ -1,0 +1,66 @@
+/* Shared admin surface for pages that have their own content components. */
+body.admin-custom-shell {
+  background: var(--bg);
+}
+body.admin-custom-shell .main-content {
+  width: auto;
+  max-width: 1600px;
+  min-height: calc(100vh - var(--nav-height));
+  margin-left: var(--sidebar-width);
+  padding: calc(var(--nav-height) + 28px) clamp(16px, 3vw, 40px) 40px;
+}
+body.admin-custom-shell .main-content > .wrap,
+body.admin-custom-shell .main-content > .lab-shell,
+body.admin-custom-shell .main-content > .admin-wrap {
+  width: min(1220px, 100%);
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0;
+}
+body.admin-custom-shell .main-content.wrap,
+body.admin-custom-shell .main-content.lab-shell,
+body.admin-custom-shell .main-content.admin-wrap {
+  width: min(1220px, 100%);
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 0;
+}
+body.admin-custom-shell .main-content > .wrap > .nav,
+body.admin-custom-shell .main-content > .lab-shell > .lab-nav,
+body.admin-custom-shell .admin-nav,
+body.admin-custom-shell .admin-sidebar {
+  display: none;
+}
+body.admin-custom-shell .main-content > .wrap > header,
+body.admin-custom-shell .main-content > .lab-shell > .hero,
+body.admin-custom-shell .main-content > .admin-wrap > .admin-top {
+  margin-top: 0;
+}
+body.admin-custom-shell .admin-wrap .admin-home { display: none; }
+body.admin-custom-shell .layout { grid-template-columns: minmax(240px, .72fr) minmax(0, 1.28fr); }
+body.admin-custom-shell .card,
+body.admin-custom-shell .hero,
+body.admin-custom-shell .admin-panel,
+body.admin-custom-shell .form-column,
+body.admin-custom-shell .preview-column { box-shadow: var(--shadow-sm); }
+body.admin-custom-shell .button,
+body.admin-custom-shell .admin-btn { transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+body.admin-custom-shell .button:hover,
+body.admin-custom-shell .admin-btn:hover { transform: translateY(-1px); }
+@media (max-width: 768px) {
+  body.admin-custom-shell .main-content,
+  body.admin-custom-shell .sidebar.close ~ .main-content {
+    margin-left: 0;
+    padding: calc(var(--nav-height) + 20px) 14px 28px;
+  }
+  body.admin-custom-shell .main-content > .wrap,
+  body.admin-custom-shell .main-content > .lab-shell,
+  body.admin-custom-shell .main-content > .admin-wrap { width: 100%; }
+}
+@media (max-width: 560px) {
+  body.admin-custom-shell .main-content { padding-inline: 12px; }
+  body.admin-custom-shell .layout { grid-template-columns: 1fr; }
+  body.admin-custom-shell .admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.admin-custom-shell .admin-panel-head,
+  body.admin-custom-shell .admin-row { padding-inline: 14px; }
+}

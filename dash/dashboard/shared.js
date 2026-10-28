@@ -135,8 +135,23 @@
         </ul>
       `;
     } else {
+      const adminWorkspace = currentPath.startsWith('/admin/');
       const minimalWorkspace = currentPath === '/dashboard' || currentPath === '/dashboard/' || currentPath === '/myservers' || currentPath === '/myservers/';
-      html = minimalWorkspace ? `
+      html = adminWorkspace ? `
+        <ul class="menu_items">
+          <div class="menu_title"><span>Administration</span></div>
+          <li class="item"><a href="/admin/partners" class="nav_link ${active('/admin/partners') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-group"></i></span><span class="navlink">Partners</span></a></li>
+          <li class="item"><a href="/admin/changelog" class="nav_link ${active('/admin/changelog') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-history"></i></span><span class="navlink">Change Log</span></a></li>
+          <li class="item"><a href="/admin/inbox" class="nav_link ${active('/admin/inbox') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-conversation"></i></span><span class="navlink">Support Inbox</span></a></li>
+          <li class="item"><a href="/admin/email" class="nav_link ${active('/admin/email') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-envelope"></i></span><span class="navlink">Send Email</span></a></li>
+          <li class="item"><a href="/admin/test-lab" class="nav_link ${active('/admin/test-lab') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bot"></i></span><span class="navlink">Test Lab</span></a></li>
+        </ul>
+        <ul class="menu_items">
+          <div class="menu_title"><span>Workspace</span></div>
+          <li class="item"><a href="/dashboard" class="nav_link"><span class="navlink_icon"><i class="bx bx-grid-alt"></i></span><span class="navlink">Dashboard</span></a></li>
+          <li class="item"><a href="/" class="nav_link"><span class="navlink_icon"><i class="bx bx-globe"></i></span><span class="navlink">Public website</span></a></li>
+        </ul>
+      ` : minimalWorkspace ? `
         <ul class="menu_items">
           <div class="menu_title"><span>Workspace</span></div>
           <li class="item"><a href="/dashboard" class="nav_link ${active('/dashboard') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-home-alt-2"></i></span><span class="navlink">Account home</span></a></li>
