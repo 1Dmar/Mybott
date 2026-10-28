@@ -6,6 +6,7 @@ const TestLabSession = require('../Models/TestLabSession');
 const PluginInstance = require('../Models/PluginInstance');
 
 const activeRunners = new Map();
+const BOT_CONNECT_STAGGER_MS = 2000;
 
 function cleanText(value, max = 240) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max);
@@ -41,6 +42,14 @@ function botUsername(index) {
 
 function getMineflayer() {
   try { return require('mineflayer'); } catch (_) { throw new Error('mineflayer_not_installed'); }
+}
+
+function describeBotError(error, username) {
+  const technical = cleanText(error?.message || error, 500);
+  if (/invalid session|failed to verify username|session server/i.test(technical)) {
+    return `Test Lab requires an offline-mode Minecraft server. ${username} was rejected by online authentication (invalid session).`;
+  }
+  return technical || 'minecraft_bot_connection_failed';
 }
 
 async function touchTestPlugin(session, onlinePlayers = 0, status = 'online') {
@@ -84,14 +93,30 @@ function createBotRunner(session) {
     for (const bot of bots.values()) { try { if (bot.player) bot.chat(message); } catch (_) {} }
   };
 
-  for (let index = 1; index <= session.requestedBots; index += 1) {
+  const connectBot = (index) => {
+    if (stopped) return;
     const username = botUsername(index);
-    const bot = mineflayer.createBot({ host: session.host, port: session.port, username, auth: 'offline', version: false, hideErrors: true });
-    bots.set(username, bot);
-    bot.once('spawn', async () => { await updateBot(session._id, username, { status: 'online', joinedAt: new Date(), lastError: null }); await emitCount(); });
-    bot.on('end', async () => { await updateBot(session._id, username, { status: 'offline', leftAt: new Date() }); await emitCount(); });
-    bot.on('error', async error => { await updateBot(session._id, username, { status: 'error', lastError: cleanText(error.message, 500) }); await TestLabSession.updateOne({ _id: session._id }, { $set: { lastError: `${username}: ${cleanText(error.message, 500)}` } }); });
-  }
+    void updateBot(session._id, username, { status: 'connecting', lastError: null });
+    try {
+      const bot = mineflayer.createBot({ host: session.host, port: session.port, username, auth: 'offline', version: false, hideErrors: true });
+      bots.set(username, bot);
+      bot.once('spawn', async () => { await updateBot(session._id, username, { status: 'online', joinedAt: new Date(), lastError: null }); await emitCount(); });
+      bot.on('end', async () => { await updateBot(session._id, username, { status: 'offline', leftAt: new Date() }); await emitCount(); });
+      bot.on('error', async error => {
+        const message = describeBotError(error, username);
+        await updateBot(session._id, username, { status: 'error', lastError: message });
+        await TestLabSession.updateOne({ _id: session._id }, { $set: { lastError: message } });
+      });
+    } catch (error) {
+      const message = describeBotError(error, username);
+      void updateBot(session._id, username, { status: 'error', lastError: message });
+      void TestLabSession.updateOne({ _id: session._id }, { $set: { lastError: message } });
+    }
+  };
+
+  // Do not open 25 handshakes in the same tick: that can starve a small test
+  // server and turn a useful test into a 300+ tick catch-up storm.
+  for (let index = 1; index <= session.requestedBots; index += 1) schedule(() => connectBot(index), (index - 1) * BOT_CONNECT_STAGGER_MS);
   scheduleInterval(sendScriptLine, session.chatIntervalSeconds * 1000);
   schedule(sendScriptLine, 3000);
   schedule(() => stop('completed'), session.durationMinutes * 60 * 1000);

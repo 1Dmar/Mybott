@@ -77,6 +77,8 @@ const { operationIdForRequest } = require('./observability');
 const { mapWithConcurrency } = require('./asyncPool');
 const { getTrustpilotStats } = require('./trustpilotStats');
 const { getSmartActionPreset, getSmartActionState, validateSmartActionChannel } = require('../bot/utils/smartActions');
+const { sendSupportEmail, DEFAULT_FROM_EMAIL } = require('../bot/utils/emailService');
+const { tokenMatches, parseInbound, storeInbound, replyToConversation } = require('../bot/utils/supportInboxService');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -87,10 +89,13 @@ const ProfileFollow    = require('../bot/Models/ProfileFollow');
 const ProfileLike      = require('../bot/Models/ProfileLike');
 const Review           = require('../bot/Models/Review');
 const NetworkRole      = require('../bot/Models/NetworkRole');
+const SupportConversation = require('../bot/Models/SupportConversation');
+const SupportMessage = require('../bot/Models/SupportMessage');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
 const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
+const emailSendLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'email_send_rate_limited' } });
 
 app.use((req, res, next) => {
   req.operationId = operationIdForRequest(req.get('x-request-id'));
@@ -107,7 +112,7 @@ app.use(cors({
 app.use(express.json({
   limit: '512kb',
   verify: (req, res, buffer) => {
-    if (req.path === '/api/v1/telemetry/events' || req.path === '/api/v1/plugin/capabilities' || req.path.startsWith('/api/billing/webhook/')) req.rawBody = Buffer.from(buffer);
+    if (req.path === '/api/v1/telemetry/events' || req.path === '/api/v1/plugin/capabilities' || req.path.startsWith('/api/billing/webhook/') || req.path === '/api/inbound/support') req.rawBody = Buffer.from(buffer);
   }
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -163,6 +168,16 @@ app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max:
     await BillingEvent.updateOne({ provider, eventId: req.body?.id }, { $set: { status: 'failed', error: String(error.message).slice(0, 500) } }).catch(() => null);
     console.error('[billing webhook] error:', error.message);
     res.status(400).json({ success: false, error: 'billing_event_rejected' });
+  }
+});
+
+app.post('/api/inbound/support', rateLimit({ windowMs: 60 * 1000, max: 120 }), requireDatabaseReady, async (req, res) => {
+  if (!tokenMatches(req)) return res.status(401).json({ success: false, error: 'invalid_inbound_token' });
+  try {
+    const result = await storeInbound(parseInbound(req.body));
+    res.status(202).json({ success: true, ...result });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message || 'inbound_message_rejected' });
   }
 });
 
@@ -661,6 +676,8 @@ Object.entries(legalPages).forEach(([route, file]) => {
 });
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
 app.get('/admin/test-lab', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-test-lab.html')));
+app.get('/admin/email', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-email.html')));
+app.get('/admin/inbox', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-inbox.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
 app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
 app.get('/api/partners/me', isAuthenticated, async (req, res) => {
@@ -807,6 +824,44 @@ app.post('/api/admin/test-lab/sessions/:id/signal', isAuthenticated, requireAdmi
   await touchTestPlugin(session, onlinePlayers, 'online');
   const automation = await runEnabledRules(global.__botClient).catch(error => [{ status: 'failed', reason: error.message }]);
   res.json({ success: true, type, emittedAt: now.toISOString(), automation: automation.filter(item => String(item.ruleId || '').length) });
+});
+app.post('/api/email/send', isAuthenticated, requireAdminRole, emailSendLimiter, async (req, res) => {
+  try {
+    const result = await sendSupportEmail({ recipients: req.body?.recipients || req.body?.to, subject: req.body?.subject, html: req.body?.html });
+    res.status(202).json({ success: true, ...result, sender: DEFAULT_FROM_EMAIL });
+  } catch (error) {
+    const known = new Set(['email_provider_not_configured', 'email_sender_not_configured', 'email_recipient_required', 'email_recipient_limit_exceeded', 'invalid_email_recipient', 'email_subject_required', 'email_content_required']);
+    const code = known.has(error.message) ? error.message : 'email_delivery_failed';
+    if (code === 'email_delivery_failed') console.error('[email] delivery failed:', error.response?.data || error.message);
+    res.status(code === 'email_provider_not_configured' ? 503 : 400).json({ success: false, error: code, message: code === 'email_provider_not_configured' ? 'Email delivery is not configured on the server.' : 'The email could not be sent.' });
+  }
+});
+app.get('/api/admin/support/conversations', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const status = ['open', 'closed'].includes(String(req.query.status || '')) ? String(req.query.status) : null;
+  const conversations = await SupportConversation.find(status ? { status } : {}).sort({ lastMessageAt: -1 }).limit(100).lean();
+  res.json({ success: true, conversations });
+});
+app.get('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const conversation = await SupportConversation.findById(req.params.id).lean();
+  if (!conversation) return res.status(404).json({ success: false, error: 'support_conversation_not_found' });
+  const messages = await SupportMessage.find({ conversationId: conversation._id }).sort({ receivedAt: 1 }).lean();
+  res.json({ success: true, conversation, messages });
+});
+app.post('/api/admin/support/conversations/:id/reply', isAuthenticated, requireAdminRole, emailSendLimiter, requireDatabaseReady, async (req, res) => {
+  try {
+    const result = await replyToConversation(req.params.id, req.body || {}, req.user.id);
+    res.status(202).json({ success: true, ...result, from: DEFAULT_FROM_EMAIL });
+  } catch (error) {
+    const status = error.message === 'support_conversation_not_found' ? 404 : error.message === 'email_provider_not_configured' ? 503 : 400;
+    res.status(status).json({ success: false, error: error.message || 'support_reply_failed' });
+  }
+});
+app.patch('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const status = String(req.body?.status || '');
+  if (!['open', 'closed'].includes(status)) return res.status(400).json({ success: false, error: 'invalid_support_status' });
+  const conversation = await SupportConversation.findByIdAndUpdate(req.params.id, { $set: { status } }, { new: true }).lean();
+  if (!conversation) return res.status(404).json({ success: false, error: 'support_conversation_not_found' });
+  res.json({ success: true, conversation });
 });
 app.get('/api/admin/changelog', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   await seedChangelogIfEmpty();

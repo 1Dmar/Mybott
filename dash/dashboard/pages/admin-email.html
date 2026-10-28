@@ -145,26 +145,16 @@
                         </select>
                     </div>
                     
-                    <div style="display: flex; gap: 16px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="recipientEmail">Recipient Email</label>
-                            <input type="email" id="recipientEmail" class="form-control" required placeholder="user@example.com">
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="recipientName">Recipient Name</label>
-                            <input type="text" id="recipientName" class="form-control" placeholder="John Doe">
-                        </div>
+                    <div class="form-group">
+                        <label for="recipientEmails">Recipient Email(s)</label>
+                        <textarea id="recipientEmails" class="form-control" required placeholder="user@example.com\nsecond@example.com\nthird@example.com"></textarea>
+                        <small>Enter one or more addresses separated by a new line, comma, or semicolon. Maximum 50 recipients per message.</small>
                     </div>
 
-                    <div style="display: flex; gap: 16px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="senderEmail">Sender Email</label>
-                            <input type="email" id="senderEmail" class="form-control" value="support@promcbot.dev" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="senderName">Sender Name</label>
-                            <input type="text" id="senderName" class="form-control" value="ProMcBot" required>
-                        </div>
+                    <div class="form-group">
+                        <label>Official sender and reply address</label>
+                        <input type="text" class="form-control" value="support@promcbot.dev" readonly aria-readonly="true">
+                        <small>All outgoing messages and replies use support@promcbot.dev. The API key is never exposed to this page.</small>
                     </div>
 
                     <div class="form-group">
@@ -263,10 +253,7 @@
         emailForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const to = document.getElementById('recipientEmail').value;
-            const name = document.getElementById('recipientName').value;
-            const from_email = document.getElementById('senderEmail').value;
-            const from_name = document.getElementById('senderName').value;
+            const recipients = document.getElementById('recipientEmails').value;
             const subject = emailSubject.value;
             const content = emailContent.value;
             
@@ -284,7 +271,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ to, name, subject, html, from_name, from_email })
+                        body: JSON.stringify({ recipients, subject, html })
                 });
 
                 if (res.ok) {
