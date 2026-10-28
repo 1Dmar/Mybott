@@ -203,3 +203,41 @@ body.homepage-refresh .review-form button { background: linear-gradient(135deg, 
   body.homepage-refresh .preview-lower { grid-template-columns: 1fr; }
   body.homepage-refresh .section-heading h2, body.homepage-refresh .capability-intro h2 { font-size: 2.65rem; }
 }
+
+/* Final visual direction: calm dashboard-indigo, with Minecraft imagery carrying the energy. */
+body.homepage-refresh {
+  --home-ink: #111827;
+  --home-muted: #63718a;
+  --home-bg: #f7f8fc;
+  --home-surface: #ffffff;
+  --home-soft: #eef1f7;
+  --home-line: rgba(30,41,59,.11);
+  --home-orange: #5865f2;
+  --home-coral: #7c3aed;
+  --home-navy: #131d38;
+  --home-shadow: 0 20px 65px rgba(35,48,89,.11);
+  background: radial-gradient(circle at 7% -4%, rgba(88,101,242,.12), transparent 30rem), radial-gradient(circle at 95% 23%, rgba(124,58,237,.08), transparent 30rem), var(--home-bg);
+}
+body.homepage-refresh .landing-nav-inner { border-color: rgba(88,101,242,.17); box-shadow: 0 18px 48px rgba(35,48,89,.10), inset 0 1px rgba(255,255,255,.96); }
+body.homepage-refresh .hero-section { padding-top: clamp(82px, 10vw, 126px); }
+body.homepage-refresh .eyebrow { color: var(--home-orange); }
+body.homepage-refresh .hero-copy h1 { color: var(--home-ink); letter-spacing: -.075em; }
+body.homepage-refresh .hero-copy h1 span { color: var(--home-orange); }
+body.homepage-refresh .hero-copy > p { color: var(--home-muted); }
+body.homepage-refresh .landing-button-primary { background: linear-gradient(135deg, var(--home-orange), var(--home-coral)); box-shadow: 0 15px 28px rgba(88,101,242,.22); }
+body.homepage-refresh .landing-button-primary:hover { background: linear-gradient(135deg, #4752c4, #6d28d9); }
+body.homepage-refresh .landing-button-secondary { color: var(--home-ink); border-color: var(--home-line); background: rgba(255,255,255,.82); }
+body.homepage-refresh .product-preview { transform: rotate(.7deg); box-shadow: 0 35px 90px rgba(35,48,89,.25), 0 0 0 9px rgba(255,255,255,.74); }
+body.homepage-refresh .product-preview-wrap::before { background: rgba(88,101,242,.17); }
+body.homepage-refresh .preview-brand i, body.homepage-refresh .preview-server-avatar { color: #aeb5ff; background: rgba(88,101,242,.18); }
+body.homepage-refresh .trust-item i, body.homepage-refresh .step i, body.homepage-refresh .capability i, body.homepage-refresh .privacy-points i { color: var(--home-orange); }
+body.homepage-refresh .section-heading h2, body.homepage-refresh .capability-intro h2 { color: var(--home-ink); }
+body.homepage-refresh .section-heading p:not(.eyebrow), body.homepage-refresh .step p, body.homepage-refresh .capability p, body.homepage-refresh .privacy-points li { color: var(--home-muted); }
+body.homepage-refresh .feature-card { border-color: rgba(30,41,59,.14); box-shadow: 0 16px 44px rgba(35,48,89,.09); }
+body.homepage-refresh .feature-card:hover, body.homepage-refresh .feature-card.is-active { border-color: var(--home-orange); box-shadow: 0 24px 55px rgba(35,48,89,.18); }
+body.homepage-refresh .feature-icon { color: #b6bcff; }
+body.homepage-refresh .capability-section { background: linear-gradient(135deg, #edf0f7, #fafbfe 72%); }
+body.homepage-refresh .privacy-panel { background: linear-gradient(145deg, #fff, #f4f5ff); border-color: rgba(88,101,242,.20); }
+body.homepage-refresh .plan.featured { border-color: rgba(88,101,242,.42); background: linear-gradient(145deg, #fff, #f4f3ff); box-shadow: 0 23px 58px rgba(88,101,242,.15); }
+body.homepage-refresh .plan-badge, body.homepage-refresh .plan-link, body.homepage-refresh .faq-item summary::after, body.homepage-refresh .review-stars { color: var(--home-orange); }
+@media (max-width: 760px) { body.homepage-refresh .product-preview { transform: none; } }

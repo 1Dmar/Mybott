@@ -679,6 +679,8 @@ app.get('/admin/test-lab', isAuthenticated, requireAdmin, (req, res) => res.send
 app.get('/admin/email', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-email.html')));
 app.get('/admin/inbox', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-inbox.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));
+app.get('/contact', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'contact.html')));
+app.get('/plugin', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'plugin.html')));
 app.get('/partners/apply', isAuthenticated, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partner-apply.html')));
 app.get('/api/partners/me', isAuthenticated, async (req, res) => {
   const [application, partner] = mongoose.connection.readyState === 1 ? await Promise.all([

@@ -221,3 +221,72 @@ body.public-theme.docs-theme .card.link-card:hover { background: var(--surface2)
 @media (prefers-reduced-motion: reduce) {
   body.public-theme *, body.public-theme *::before, body.public-theme *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* 2026 public surface refresh: dashboard-indigo foundation with a restrained Minecraft signal. */
+:root {
+  --pm-accent: #5865f2;
+  --pm-accent-deep: #4752c4;
+  --pm-accent-hot: #7c3aed;
+  --pm-warm: #f0783c;
+  --pm-ink: #111827;
+  --pm-muted: #64748b;
+  --pm-line: rgba(30, 41, 59, .11);
+  --pm-line-strong: rgba(88, 101, 242, .34);
+  --pm-shadow: 0 22px 70px rgba(35, 48, 89, .10);
+}
+body.public-theme {
+  color: var(--pm-ink);
+  background: radial-gradient(circle at 6% -8%, rgba(88,101,242,.13), transparent 29rem), radial-gradient(circle at 98% 18%, rgba(124,58,237,.08), transparent 31rem), var(--pm-bg);
+}
+body.public-theme:not(.docs-theme) {
+  --landing-accent: var(--pm-accent);
+  --landing-accent-deep: var(--pm-accent-deep);
+  --landing-accent-soft: rgba(88,101,242,.10);
+  --text: var(--pm-ink);
+  --text-secondary: #53627a;
+  --text-muted: var(--pm-muted);
+}
+body.public-theme .landing-nav,
+body.public-theme .topbar,
+body.public-theme .legal-nav,
+body.public-theme .plugin-nav { border-color: var(--pm-line); background: rgba(246,248,252,.80); box-shadow: 0 10px 30px rgba(35,48,89,.06); }
+body.public-theme .landing-nav-inner { border-color: rgba(88,101,242,.16); background: rgba(255,255,255,.80); box-shadow: 0 15px 40px rgba(35,48,89,.10), inset 0 1px rgba(255,255,255,.95); }
+body.public-theme .landing-nav .nav-links a:hover,
+body.public-theme .landing-nav .nav-links a.active,
+body.public-theme .plugin-links a:hover,
+body.public-theme .plugin-links a.active { color: var(--pm-accent); background: rgba(88,101,242,.08); }
+body.public-theme .landing-button-primary,
+body.public-theme .top-link.primary,
+body.public-theme .plugin-button.primary,
+body.public-theme .btn.primary { background: linear-gradient(135deg, var(--pm-accent), var(--pm-accent-hot)); box-shadow: 0 12px 25px rgba(88,101,242,.20); }
+body.public-theme .landing-button-primary:hover,
+body.public-theme .top-link.primary:hover,
+body.public-theme .plugin-button.primary:hover,
+body.public-theme .btn.primary:hover { background: linear-gradient(135deg, var(--pm-accent-deep), #6d28d9); }
+body.public-theme .eyebrow,
+body.public-theme .kicker,
+body.public-theme .section-kicker,
+body.public-theme .partner-eyebrow,
+body.public-theme .plugin-trust i { color: var(--pm-accent); }
+body.public-theme h1 em,
+body.public-theme .hero-copy h1 span,
+body.public-theme .partner-hero h1 span { color: var(--pm-accent); }
+body.public-theme .feature:hover,
+body.public-theme .partner-card:hover,
+body.public-theme .card.link-card:hover,
+body.public-theme .release-card:hover { border-color: var(--pm-line-strong); box-shadow: 0 25px 70px rgba(35,48,89,.15); }
+body.public-theme .partner-card-icon,
+body.public-theme .feature i,
+body.public-theme .card i.icon { background: rgba(88,101,242,.10); color: var(--pm-accent); }
+body.public-theme .step-number { background: linear-gradient(135deg, var(--pm-accent), var(--pm-accent-hot)); }
+body.public-theme .notice { border-color: rgba(88,101,242,.22); background: rgba(88,101,242,.07); }
+body.public-theme .notice i { color: var(--pm-accent); }
+body.public-theme .legal-hero,
+body.public-theme .partner-hero { background: radial-gradient(circle at 92% 10%, rgba(88,101,242,.25), transparent 35%), linear-gradient(135deg, #111827, #202b4a 68%, #29356a); box-shadow: 0 25px 70px rgba(35,48,89,.18); }
+body.public-theme .legal-kicker,
+body.public-theme .legal-toc a:hover,
+body.public-theme .legal-cta { color: var(--pm-accent); }
+body.public-theme .legal-cta { color: #fff; background: linear-gradient(135deg, var(--pm-accent), var(--pm-accent-hot)); }
+body.public-theme .legal-note { border-left-color: var(--pm-accent); background: rgba(88,101,242,.08); }
+body.public-theme .legal-table th { background: rgba(88,101,242,.06); }
+body.public-theme .mark { border-color: rgba(88,101,242,.35); background: linear-gradient(135deg, var(--pm-accent), var(--pm-accent-hot)); box-shadow: 0 0 26px rgba(88,101,242,.22); }
