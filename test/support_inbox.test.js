@@ -14,6 +14,13 @@ test('support inbound parser accepts provider sender objects and bounds message 
   assert.equal(parsed.providerMessageId, '<abc@example.com>');
 });
 
+test('support inbound parser accepts Mailgun inbound fields', () => {
+  const parsed = parseInbound({ sender: 'mailgun-customer@example.com', subject: 'Mailgun help', 'body-plain': 'Please help', 'Message-Id': '<mailgun-1@example.com>', 'In-Reply-To': '<previous@example.com>' });
+  assert.equal(parsed.fromEmail, 'mailgun-customer@example.com');
+  assert.equal(parsed.text, 'Please help');
+  assert.equal(parsed.inReplyTo, '<previous@example.com>');
+});
+
 test('support inbound webhook requires a timing-safe configured token', () => {
   const previous = process.env.SUPPORT_INBOUND_TOKEN;
   process.env.SUPPORT_INBOUND_TOKEN = 'secret-token';

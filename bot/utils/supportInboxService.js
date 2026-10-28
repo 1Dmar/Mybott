@@ -16,13 +16,13 @@ function tokenMatches(req) {
   return receivedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 }
 function parseInbound(body = {}) {
-  const fromEmail = email(body.fromEmail || body.from?.email || body.sender?.email || body.from);
+  const fromEmail = email(body.fromEmail || body.from?.email || body.sender?.email || body.sender || body.from);
   const subject = clean(body.subject || '(No subject)', 200) || '(No subject)';
-  const text = clean(body.text || body.textContent || body.body || '', 100000);
-  const html = clean(body.html || body.htmlContent || '', 200000);
-  const providerMessageId = clean(body.messageId || body['message-id'] || body.providerMessageId || '', 500) || null;
-  const inReplyTo = clean(body.inReplyTo || body['in-reply-to'] || '', 500) || null;
-  const references = (Array.isArray(body.references) ? body.references : String(body.references || '').split(/\s+/)).map(value => clean(value, 500)).filter(Boolean).slice(0, 20);
+  const text = clean(body.text || body.textContent || body['body-plain'] || body.body || '', 100000);
+  const html = clean(body.html || body.htmlContent || body['body-html'] || '', 200000);
+  const providerMessageId = clean(body.messageId || body['message-id'] || body['Message-Id'] || body.providerMessageId || '', 500) || null;
+  const inReplyTo = clean(body.inReplyTo || body['in-reply-to'] || body['In-Reply-To'] || '', 500) || null;
+  const references = (Array.isArray(body.references) ? body.references : String(body.references || body.References || '').split(/\s+/)).map(value => clean(value, 500)).filter(Boolean).slice(0, 20);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) throw new Error('invalid_inbound_sender');
   if (!text && !html) throw new Error('inbound_content_required');
   return { fromEmail, subject, text, html, providerMessageId, inReplyTo, references };
