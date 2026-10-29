@@ -7,6 +7,27 @@ const { sendSupportEmail, normalizeRecipients, DEFAULT_FROM_EMAIL } = require('.
 
 function clean(value, max) { return String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, max); }
 function email(value) { return clean(value, 254).toLowerCase(); }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
+function getInboxNotificationRecipients(env = process.env) {
+  const configured = String(env.SUPPORT_INBOX_NOTIFICATION_EMAILS || env.SUPPORT_INBOX_NOTIFICATION_EMAIL || '').trim();
+  return configured ? normalizeRecipients(configured) : [];
+}
+function buildInboxNotificationHtml(payload, env = process.env) {
+  const preview = clean(payload.text || String(payload.html || '').replace(/<[^>]*>/g, ' '), 4000);
+  const baseUrl = String(env.PUBLIC_BASE_URL || 'https://promcbot.dev').replace(/\/$/, '');
+  return `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#202945"><h2>New ProMcBot support message</h2><p><strong>From:</strong> ${escapeHtml(payload.fromEmail)}</p><p><strong>Subject:</strong> ${escapeHtml(payload.subject)}</p><hr><p style="white-space:pre-wrap">${escapeHtml(preview)}</p><p><a href="${escapeHtml(baseUrl)}/admin/inbox">Open Support Inbox</a></p></div>`;
+}
+async function notifyNewInboundMessage(payload, env = process.env) {
+  const recipients = getInboxNotificationRecipients(env);
+  if (!recipients.length) return { sent: false, reason: 'notification_recipient_not_configured' };
+  try {
+    const result = await sendSupportEmail({ recipients, subject: `[ProMcBot] New support message: ${payload.subject}`, html: buildInboxNotificationHtml(payload, env) }, env);
+    return { sent: true, messageId: result.messageId || null, recipients: result.recipients };
+  } catch (error) {
+    console.error('[support inbox] notification delivery failed:', error.response?.data || error.message);
+    return { sent: false, reason: 'notification_delivery_failed' };
+  }
+}
 function tokenMatches(req) {
   const expected = String(process.env.SUPPORT_INBOUND_TOKEN || '').trim();
   const received = String(req.get('x-support-inbound-token') || req.query?.token || '').trim();
@@ -42,6 +63,7 @@ async function storeInbound(payload) {
   }
   const message = await SupportMessage.create({ conversationId: conversation._id, direction: 'inbound', fromEmail: payload.fromEmail, toEmails: [DEFAULT_FROM_EMAIL], subject: payload.subject, text: payload.text, html: payload.html, providerMessageId: payload.providerMessageId, inReplyTo: payload.inReplyTo, references: payload.references });
   await SupportConversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.receivedAt, lastInboundMessageId: payload.providerMessageId }, $inc: { messageCount: 1 } });
+  await notifyNewInboundMessage(payload);
   return { duplicate: false, conversationId: conversation._id, messageId: message._id };
 }
 async function replyToConversation(conversationId, body, adminId) {
@@ -58,4 +80,4 @@ async function replyToConversation(conversationId, body, adminId) {
   await SupportConversation.updateOne({ _id: conversationId }, { $set: { lastMessageAt: message.receivedAt, status: 'open' }, $inc: { messageCount: 1 } });
   return { messageId: message._id, providerMessageId: sent.messageId };
 }
-module.exports = { tokenMatches, parseInbound, storeInbound, replyToConversation };
+module.exports = { tokenMatches, parseInbound, storeInbound, replyToConversation, getInboxNotificationRecipients, buildInboxNotificationHtml, notifyNewInboundMessage };

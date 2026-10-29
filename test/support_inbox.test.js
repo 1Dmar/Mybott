@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseInbound, tokenMatches } = require('../bot/utils/supportInboxService');
+const { parseInbound, tokenMatches, getInboxNotificationRecipients, buildInboxNotificationHtml } = require('../bot/utils/supportInboxService');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'dash', 'index.js'), 'utf8');
 const page = fs.readFileSync(path.join(__dirname, '..', 'dash', 'dashboard', 'pages', 'admin-inbox.html'), 'utf8');
@@ -31,10 +31,23 @@ test('support inbound webhook requires a timing-safe configured token', () => {
   else process.env.SUPPORT_INBOUND_TOKEN = previous;
 });
 
+test('support inbox notification recipients are configured separately and normalized', () => {
+  assert.deepEqual(getInboxNotificationRecipients({ SUPPORT_INBOX_NOTIFICATION_EMAILS: 'Admin@Example.com, ops@example.com' }), ['admin@example.com', 'ops@example.com']);
+  assert.deepEqual(getInboxNotificationRecipients({}), []);
+});
+
+test('support inbox notification preview escapes inbound content and links to the inbox', () => {
+  const html = buildInboxNotificationHtml({ fromEmail: 'customer@example.com', subject: '<urgent>', text: '<script>alert(1)</script>' }, { PUBLIC_BASE_URL: 'https://promcbot.dev' });
+  assert.match(html, /&lt;urgent&gt;/);
+  assert.doesNotMatch(html, /<script>/);
+  assert.match(html, /https:\/\/promcbot\.dev\/admin\/inbox/);
+});
+
 test('support inbox routes are protected and replies use the official address', () => {
   assert.match(source, /app\.post\('\/api\/inbound\/support'/);
   assert.match(source, /app\.get\('\/api\/admin\/support\/conversations'/);
   assert.match(source, /app\.post\('\/api\/admin\/support\/conversations\/:id\/reply', isAuthenticated, requireAdminRole/);
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'bot', 'utils', 'supportInboxService.js'), 'utf8'), /await notifyNewInboundMessage\(payload\)/);
   assert.match(source, /app\.get\('\/admin\/inbox', isAuthenticated, requireAdmin/);
   assert.match(page, /Reply from support@promcbot\.dev/);
 });
