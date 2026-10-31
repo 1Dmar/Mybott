@@ -881,8 +881,13 @@ app.get('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRol
 app.get('/api/admin/support/attachments/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   const attachment = await SupportAttachment.findById(req.params.id).select('filename contentType size data').lean();
   if (!attachment) return res.status(404).send('Attachment not found');
-  res.set({ 'Content-Type': attachment.contentType, 'Content-Length': String(attachment.size), 'Content-Disposition': `inline; filename="${String(attachment.filename).replace(/["\\\r\n]/g, '_')}"`, 'Cache-Control': 'private, no-store' });
-  res.send(attachment.data);
+  const data = Buffer.isBuffer(attachment.data)
+    ? attachment.data
+    : attachment.data?.buffer
+      ? Buffer.from(attachment.data.buffer)
+      : Buffer.from(attachment.data || []);
+  res.set({ 'Content-Type': attachment.contentType, 'Content-Length': String(data.length), 'Content-Disposition': `inline; filename="${String(attachment.filename).replace(/["\\\r\n]/g, '_')}"`, 'Cache-Control': 'private, no-store' });
+  res.send(data);
 });
 app.post('/api/admin/support/conversations/:id/reply', isAuthenticated, requireAdminRole, emailSendLimiter, requireDatabaseReady, async (req, res) => {
   try {

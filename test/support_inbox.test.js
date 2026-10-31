@@ -46,6 +46,16 @@ test('support inbound parser accepts attachment maps and file buffers', async ()
   assert.equal(parsed.attachments[1].data.toString(), 'mp4-data');
 });
 
+test('support inbound parser accepts serialized buffers from webhook JSON payloads', async () => {
+  const parsed = await parseInbound({
+    from: 'customer@example.com', subject: 'JSON file', text: 'Attached.',
+    attachments: [{ filename: 'scan.png', contentType: 'image/png', data: { type: 'Buffer', data: [137, 80, 78, 71] } }],
+  });
+  assert.equal(parsed.attachments.length, 1);
+  assert.equal(parsed.attachments[0].filename, 'scan.png');
+  assert.deepEqual([...parsed.attachments[0].data], [137, 80, 78, 71]);
+});
+
 test('support inbound webhook requires a timing-safe configured token', () => {
   const previous = process.env.SUPPORT_INBOUND_TOKEN;
   process.env.SUPPORT_INBOUND_TOKEN = 'secret-token';
@@ -80,4 +90,5 @@ test('support inbox routes are protected and replies use the official address', 
   assert.match(page, /renderAttachments/);
   assert.match(page, /message-body img,.message-body video/);
   assert.match(source, /api\/admin\/support\/attachments/);
+  assert.match(source, /Buffer\.isBuffer\(attachment\.data\)/);
 });

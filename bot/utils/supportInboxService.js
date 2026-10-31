@@ -42,6 +42,13 @@ function decodeBase64(value) {
   if (!text || text.length < 4 || text.length % 4 === 1 || !/^[A-Za-z0-9+/=_-]+$/.test(text)) return null;
   try { const data = Buffer.from(text, 'base64'); return data.length ? data : null; } catch (_) { return null; }
 }
+function asBuffer(value) {
+  if (Buffer.isBuffer(value)) return value;
+  if (value instanceof Uint8Array) return Buffer.from(value);
+  if (Array.isArray(value)) return Buffer.from(value);
+  if (value && value.type === 'Buffer' && Array.isArray(value.data)) return Buffer.from(value.data);
+  return null;
+}
 function safeAttachmentUrl(value) {
   try {
     const url = new URL(String(value || '').trim());
@@ -53,12 +60,12 @@ function safeAttachmentUrl(value) {
   } catch (_) { return null; }
 }
 async function loadAttachmentData(item) {
-  const direct = [item.buffer, item.data, item.contentBytes].find(value => Buffer.isBuffer(value));
+  const direct = [item.buffer, item.data, item.contentBytes].map(asBuffer).find(Boolean);
   if (direct) return direct;
-  const encoded = item.base64 || (typeof item.content === 'string' && /^data:[^;]+;base64,|^[A-Za-z0-9+/=_-]{8,}$/.test(item.content) ? item.content : null);
+  const encoded = item.base64 || item.contentBytes || (typeof item.content === 'string' && /^data:[^;]+;base64,|^[A-Za-z0-9+/=_-]{8,}$/.test(item.content) ? item.content : null);
   const decoded = decodeBase64(encoded);
   if (decoded) return decoded;
-  const remote = safeAttachmentUrl(item.url || item.downloadUrl || item.download_url || item.attachmentUrl);
+  const remote = safeAttachmentUrl(item.url || item.downloadUrl || item.download_url || item.attachmentUrl || item.fileUrl || item.href || (typeof item.content === 'string' && /^https:\/\//i.test(item.content) ? item.content : null));
   if (!remote) return null;
   try {
     const response = await axios.get(remote.toString(), { responseType: 'arraybuffer', timeout: 15000, maxContentLength: MAX_ATTACHMENT_BYTES, maxBodyLength: MAX_ATTACHMENT_BYTES, validateStatus: status => status >= 200 && status < 300 });
@@ -67,8 +74,8 @@ async function loadAttachmentData(item) {
 }
 async function normalizeAttachments(body = {}) {
   const items = await Promise.all(attachmentCandidates(body).map(async (item, index) => {
-    const filename = clean(item.originalname || item.filename || item.name || `attachment-${index + 1}`, 255).replace(/[\\/]/g, '_') || `attachment-${index + 1}`;
-    const contentType = clean(item.mimetype || item.contentType || item.type || 'application/octet-stream', 120).toLowerCase();
+    const filename = clean(item.originalname || item.originalFilename || item.filename || item.name || item.fileName || `attachment-${index + 1}`, 255).replace(/[\\/]/g, '_') || `attachment-${index + 1}`;
+    const contentType = clean(item.mimetype || item.contentType || item.mimeType || item.type || item.headers?.['content-type'] || 'application/octet-stream', 120).toLowerCase();
     const data = await loadAttachmentData(item);
     if (!data || !data.length || data.length > MAX_ATTACHMENT_BYTES || !SAFE_CONTENT_TYPE.test(contentType)) return null;
     return { filename, contentType, size: data.length, data };
