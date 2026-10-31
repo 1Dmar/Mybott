@@ -7,6 +7,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 const express    = require('express');
+const multer     = require('multer');
 const passport   = require('passport');
 const mongoose   = require('mongoose');
 const path       = require('path');
@@ -91,11 +92,13 @@ const Review           = require('../bot/Models/Review');
 const NetworkRole      = require('../bot/Models/NetworkRole');
 const SupportConversation = require('../bot/Models/SupportConversation');
 const SupportMessage = require('../bot/Models/SupportMessage');
+const SupportAttachment = require('../bot/Models/SupportAttachment');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
 const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
 const emailSendLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'email_send_rate_limited' } });
+const inboundUpload = multer({ storage: multer.memoryStorage(), limits: { files: 8, fileSize: 12 * 1024 * 1024, fields: 40, fieldSize: 256 * 1024 } });
 
 app.use((req, res, next) => {
   req.operationId = operationIdForRequest(req.get('x-request-id'));
@@ -171,10 +174,10 @@ app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max:
   }
 });
 
-app.post('/api/inbound/support', rateLimit({ windowMs: 60 * 1000, max: 120 }), requireDatabaseReady, async (req, res) => {
+app.post('/api/inbound/support', rateLimit({ windowMs: 60 * 1000, max: 120 }), inboundUpload.any(), requireDatabaseReady, async (req, res) => {
   if (!tokenMatches(req)) return res.status(401).json({ success: false, error: 'invalid_inbound_token' });
   try {
-    const result = await storeInbound(parseInbound(req.body));
+    const result = await storeInbound(parseInbound({ ...(req.body || {}), multipartFiles: req.files || [] }));
     res.status(202).json({ success: true, ...result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message || 'inbound_message_rejected' });
@@ -847,7 +850,22 @@ app.get('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRol
   const conversation = await SupportConversation.findById(req.params.id).lean();
   if (!conversation) return res.status(404).json({ success: false, error: 'support_conversation_not_found' });
   const messages = await SupportMessage.find({ conversationId: conversation._id }).sort({ receivedAt: 1 }).lean();
-  res.json({ success: true, conversation, messages });
+  const messageIds = messages.map(message => message._id);
+  const attachments = messageIds.length ? await SupportAttachment.find({ messageId: { $in: messageIds } }).select('messageId filename contentType size').sort({ createdAt: 1 }).lean() : [];
+  const byMessage = new Map();
+  for (const attachment of attachments) {
+    const key = String(attachment.messageId);
+    const list = byMessage.get(key) || [];
+    list.push({ id: String(attachment._id), filename: attachment.filename, contentType: attachment.contentType, size: attachment.size, url: `/api/admin/support/attachments/${encodeURIComponent(String(attachment._id))}` });
+    byMessage.set(key, list);
+  }
+  res.json({ success: true, conversation, messages: messages.map(message => ({ ...message, attachments: byMessage.get(String(message._id)) || [] })) });
+});
+app.get('/api/admin/support/attachments/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const attachment = await SupportAttachment.findById(req.params.id).select('filename contentType size data').lean();
+  if (!attachment) return res.status(404).send('Attachment not found');
+  res.set({ 'Content-Type': attachment.contentType, 'Content-Length': String(attachment.size), 'Content-Disposition': `inline; filename="${String(attachment.filename).replace(/["\\\r\n]/g, '_')}"`, 'Cache-Control': 'private, no-store' });
+  res.send(attachment.data);
 });
 app.post('/api/admin/support/conversations/:id/reply', isAuthenticated, requireAdminRole, emailSendLimiter, requireDatabaseReady, async (req, res) => {
   try {

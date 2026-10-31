@@ -3,11 +3,33 @@
 const crypto = require('crypto');
 const SupportConversation = require('../Models/SupportConversation');
 const SupportMessage = require('../Models/SupportMessage');
+const SupportAttachment = require('../Models/SupportAttachment');
 const { sendSupportEmail, normalizeRecipients, DEFAULT_FROM_EMAIL } = require('./emailService');
 
 function clean(value, max) { return String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, max); }
 function email(value) { return clean(value, 254).toLowerCase(); }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
+const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+const MAX_ATTACHMENTS = 8;
+const SAFE_CONTENT_TYPE = /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i;
+function parseAttachmentList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') { try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; } catch (_) { return []; } }
+  return [];
+}
+function normalizeAttachments(body = {}) {
+  const candidates = [...parseAttachmentList(body.attachments), ...parseAttachmentList(body.attachment), ...(Array.isArray(body.multipartFiles) ? body.multipartFiles : [])];
+  return candidates.slice(0, MAX_ATTACHMENTS).map((item, index) => {
+    const filename = clean(item.originalname || item.filename || item.name || `attachment-${index + 1}`, 255).replace(/[\\/]/g, '_') || `attachment-${index + 1}`;
+    const contentType = clean(item.mimetype || item.contentType || item.type || 'application/octet-stream', 120).toLowerCase();
+    let data = Buffer.isBuffer(item.buffer) ? item.buffer : null;
+    if (!data && item.content) { try { data = Buffer.from(String(item.content).replace(/^data:[^;]+;base64,/, ''), 'base64'); } catch (_) {} }
+    if (!data && item.base64) { try { data = Buffer.from(String(item.base64), 'base64'); } catch (_) {} }
+    if (!data || !data.length || data.length > MAX_ATTACHMENT_BYTES || !SAFE_CONTENT_TYPE.test(contentType)) return null;
+    return { filename, contentType, size: data.length, data };
+  }).filter(Boolean);
+}
 function getInboxNotificationRecipients(env = process.env) {
   const configured = String(env.SUPPORT_INBOX_NOTIFICATION_EMAILS || env.SUPPORT_INBOX_NOTIFICATION_EMAIL || '').trim();
   return configured ? normalizeRecipients(configured) : [];
@@ -44,9 +66,10 @@ function parseInbound(body = {}) {
   const providerMessageId = clean(body.messageId || body['message-id'] || body['Message-Id'] || body.providerMessageId || '', 500) || null;
   const inReplyTo = clean(body.inReplyTo || body['in-reply-to'] || body['In-Reply-To'] || '', 500) || null;
   const references = (Array.isArray(body.references) ? body.references : String(body.references || body.References || '').split(/\s+/)).map(value => clean(value, 500)).filter(Boolean).slice(0, 20);
+  const attachments = normalizeAttachments(body);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) throw new Error('invalid_inbound_sender');
-  if (!text && !html) throw new Error('inbound_content_required');
-  return { fromEmail, subject, text, html, providerMessageId, inReplyTo, references };
+  if (!text && !html && !attachments.length) throw new Error('inbound_content_required');
+  return { fromEmail, subject, text, html, providerMessageId, inReplyTo, references, attachments };
 }
 async function storeInbound(payload) {
   if (payload.providerMessageId) {
@@ -62,6 +85,7 @@ async function storeInbound(payload) {
     conversation = await SupportConversation.create({ contactEmail: payload.fromEmail, subject: payload.subject, lastMessageAt: new Date() });
   }
   const message = await SupportMessage.create({ conversationId: conversation._id, direction: 'inbound', fromEmail: payload.fromEmail, toEmails: [DEFAULT_FROM_EMAIL], subject: payload.subject, text: payload.text, html: payload.html, providerMessageId: payload.providerMessageId, inReplyTo: payload.inReplyTo, references: payload.references });
+  if (payload.attachments?.length) await SupportAttachment.insertMany(payload.attachments.map(attachment => ({ ...attachment, messageId: message._id })));
   await SupportConversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.receivedAt, lastInboundMessageId: payload.providerMessageId }, $inc: { messageCount: 1 } });
   await notifyNewInboundMessage(payload);
   return { duplicate: false, conversationId: conversation._id, messageId: message._id };

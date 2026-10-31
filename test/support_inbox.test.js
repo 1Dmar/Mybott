@@ -21,6 +21,20 @@ test('support inbound parser accepts Mailgun inbound fields', () => {
   assert.equal(parsed.inReplyTo, '<previous@example.com>');
 });
 
+test('support inbound parser preserves image and video attachments', () => {
+  const parsed = parseInbound({
+    from: 'customer@example.com', subject: 'Files', text: 'Please review these.',
+    attachments: [
+      { filename: 'screenshot.png', contentType: 'image/png', base64: Buffer.from('png-data').toString('base64') },
+      { filename: 'clip.mp4', contentType: 'video/mp4', base64: Buffer.from('video-data').toString('base64') },
+    ],
+  });
+  assert.equal(parsed.attachments.length, 2);
+  assert.equal(parsed.attachments[0].contentType, 'image/png');
+  assert.equal(parsed.attachments[1].contentType, 'video/mp4');
+  assert.equal(parsed.attachments[1].data.toString(), 'video-data');
+});
+
 test('support inbound webhook requires a timing-safe configured token', () => {
   const previous = process.env.SUPPORT_INBOUND_TOKEN;
   process.env.SUPPORT_INBOUND_TOKEN = 'secret-token';
@@ -50,4 +64,7 @@ test('support inbox routes are protected and replies use the official address', 
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'bot', 'utils', 'supportInboxService.js'), 'utf8'), /await notifyNewInboundMessage\(payload\)/);
   assert.match(source, /app\.get\('\/admin\/inbox', isAuthenticated, requireAdmin/);
   assert.match(page, /Reply from support@promcbot\.dev/);
+  assert.match(page, /renderAttachments/);
+  assert.match(page, /message-body img,.message-body video/);
+  assert.match(source, /api\/admin\/support\/attachments/);
 });
