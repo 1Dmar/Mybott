@@ -886,7 +886,8 @@ app.get('/api/admin/support/attachments/:id', isAuthenticated, requireAdminRole,
     : attachment.data?.buffer
       ? Buffer.from(attachment.data.buffer)
       : Buffer.from(attachment.data || []);
-  res.set({ 'Content-Type': attachment.contentType, 'Content-Length': String(data.length), 'Content-Disposition': `inline; filename="${String(attachment.filename).replace(/["\\\r\n]/g, '_')}"`, 'Cache-Control': 'private, no-store' });
+  const disposition = req.query.download === '1' ? 'attachment' : 'inline';
+  res.set({ 'Content-Type': attachment.contentType, 'Content-Length': String(data.length), 'Content-Disposition': `${disposition}; filename="${String(attachment.filename).replace(/["\\\r\n]/g, '_')}"`, 'Cache-Control': 'private, no-store' });
   res.send(data);
 });
 app.post('/api/admin/support/conversations/:id/reply', isAuthenticated, requireAdminRole, emailSendLimiter, requireDatabaseReady, async (req, res) => {
