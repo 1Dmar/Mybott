@@ -70,6 +70,8 @@ test('support inbox notification preview escapes inbound content and links to th
 
 test('support inbox routes are protected and replies use the official address', () => {
   assert.match(source, /app\.post\('\/api\/inbound\/support'/);
+  assert.match(source, /req\.path === '\/api\/inbound\/support'/);
+  assert.match(source, /attachmentCount: result\.attachmentCount/);
   assert.match(source, /app\.get\('\/api\/admin\/support\/conversations'/);
   assert.match(source, /app\.post\('\/api\/admin\/support\/conversations\/:id\/reply', isAuthenticated, requireAdminRole/);
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'bot', 'utils', 'supportInboxService.js'), 'utf8'), /await notifyNewInboundMessage\(payload\)/);

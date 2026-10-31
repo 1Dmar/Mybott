@@ -32,7 +32,8 @@ function attachmentCandidates(body = {}) {
     ...(Array.isArray(body.multipartFiles) ? body.multipartFiles : []),
   ];
   for (const [key, value] of Object.entries(body)) {
-    if (/^attachment(?:[-_]\d+)?$/i.test(key) && typeof value !== 'object') candidates.push({ name: key, content: value });
+    if (!/^attachment(?:[-_]\d+)?$/i.test(key)) continue;
+    candidates.push(value && typeof value === 'object' ? value : { name: key, content: value });
   }
   return candidates.slice(0, MAX_ATTACHMENTS);
 }
@@ -131,7 +132,7 @@ async function storeInbound(payload) {
   if (payload.attachments?.length) await SupportAttachment.insertMany(payload.attachments.map(attachment => ({ ...attachment, messageId: message._id })));
   await SupportConversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.receivedAt, lastInboundMessageId: payload.providerMessageId }, $inc: { messageCount: 1 } });
   await notifyNewInboundMessage(payload);
-  return { duplicate: false, conversationId: conversation._id, messageId: message._id };
+  return { duplicate: false, conversationId: conversation._id, messageId: message._id, attachmentCount: payload.attachments?.length || 0 };
 }
 async function replyToConversation(conversationId, body, adminId) {
   const conversation = await SupportConversation.findById(conversationId);

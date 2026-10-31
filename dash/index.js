@@ -120,7 +120,7 @@ app.use(express.json({
 }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use((req, res, next) => {
-  const isExternalProtocol = req.path.startsWith('/api/v1/') || req.path.startsWith('/api/billing/webhook/');
+  const isExternalProtocol = req.path.startsWith('/api/v1/') || req.path.startsWith('/api/billing/webhook/') || req.path === '/api/inbound/support';
   if (!isExternalProtocol && !isSameOriginMutation(req)) return res.status(403).json({ success: false, error: 'cross_origin_request_blocked' });
   next();
 });
@@ -178,7 +178,7 @@ app.post('/api/inbound/support', rateLimit({ windowMs: 60 * 1000, max: 120 }), i
   if (!tokenMatches(req)) return res.status(401).json({ success: false, error: 'invalid_inbound_token' });
   try {
     const result = await storeInbound(await parseInbound({ ...(req.body || {}), multipartFiles: req.files || [] }));
-    res.status(202).json({ success: true, ...result });
+    res.status(202).json({ success: true, ...result, attachmentCount: result.attachmentCount || 0 });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message || 'inbound_message_rejected' });
   }
