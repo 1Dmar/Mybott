@@ -98,7 +98,7 @@ const SupportAttachment = require('../bot/Models/SupportAttachment');
 const app = express();
 const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
 const emailSendLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'email_send_rate_limited' } });
-const inboundUpload = multer({ storage: multer.memoryStorage(), limits: { files: 8, fileSize: 12 * 1024 * 1024, fields: 40, fieldSize: 256 * 1024 } });
+const inboundUpload = multer({ storage: multer.memoryStorage(), limits: { files: 8, fileSize: 15 * 1024 * 1024, fields: 40, fieldSize: 256 * 1024 } });
 // Rich dashboard forms and image metadata can exceed the old parser ceiling.
 // Keep the limit bounded while allowing normal image-related payloads.
 const REQUEST_BODY_LIMIT = '5mb';
@@ -2095,6 +2095,12 @@ const automationInterval = setInterval(() => {
 if (typeof automationInterval.unref === 'function') automationInterval.unref();
 
 // 404 Handler
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError || error?.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ success: false, error: 'support_attachment_too_large', message: 'Each support attachment must be 15MB or smaller.' });
+  }
+  return next(error);
+});
 app.use((req, res) => {
   res.status(404).sendFile(path.join(dashDir, '404', '404.html'));
 });

@@ -11,7 +11,9 @@ const { sendSupportEmail, normalizeRecipients, DEFAULT_FROM_EMAIL } = require('.
 function clean(value, max) { return String(value ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, max); }
 function email(value) { return clean(value, 254).toLowerCase(); }
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character])); }
-const MAX_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+// MongoDB's BSON document ceiling is 16MB, so keep each binary attachment
+// below that ceiling while accepting Mailgun videos up to 15MB.
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const MAX_ATTACHMENTS = 8;
 const SAFE_CONTENT_TYPE = /^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i;
 
