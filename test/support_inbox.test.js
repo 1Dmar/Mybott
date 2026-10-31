@@ -8,21 +8,21 @@ const { parseInbound, tokenMatches, getInboxNotificationRecipients, buildInboxNo
 const source = fs.readFileSync(path.join(__dirname, '..', 'dash', 'index.js'), 'utf8');
 const page = fs.readFileSync(path.join(__dirname, '..', 'dash', 'dashboard', 'pages', 'admin-inbox.html'), 'utf8');
 
-test('support inbound parser accepts provider sender objects and bounds message data', () => {
-  const parsed = parseInbound({ from: { email: 'Customer@example.com' }, subject: 'Help', text: 'Hello', 'message-id': '<abc@example.com>' });
+test('support inbound parser accepts provider sender objects and bounds message data', async () => {
+  const parsed = await parseInbound({ from: { email: 'Customer@example.com' }, subject: 'Help', text: 'Hello', 'message-id': '<abc@example.com>' });
   assert.equal(parsed.fromEmail, 'customer@example.com');
   assert.equal(parsed.providerMessageId, '<abc@example.com>');
 });
 
-test('support inbound parser accepts Mailgun inbound fields', () => {
-  const parsed = parseInbound({ sender: 'mailgun-customer@example.com', subject: 'Mailgun help', 'body-plain': 'Please help', 'Message-Id': '<mailgun-1@example.com>', 'In-Reply-To': '<previous@example.com>' });
+test('support inbound parser accepts Mailgun inbound fields', async () => {
+  const parsed = await parseInbound({ sender: 'mailgun-customer@example.com', subject: 'Mailgun help', 'body-plain': 'Please help', 'Message-Id': '<mailgun-1@example.com>', 'In-Reply-To': '<previous@example.com>' });
   assert.equal(parsed.fromEmail, 'mailgun-customer@example.com');
   assert.equal(parsed.text, 'Please help');
   assert.equal(parsed.inReplyTo, '<previous@example.com>');
 });
 
-test('support inbound parser preserves image and video attachments', () => {
-  const parsed = parseInbound({
+test('support inbound parser preserves image and video attachments', async () => {
+  const parsed = await parseInbound({
     from: 'customer@example.com', subject: 'Files', text: 'Please review these.',
     attachments: [
       { filename: 'screenshot.png', contentType: 'image/png', base64: Buffer.from('png-data').toString('base64') },
@@ -33,6 +33,17 @@ test('support inbound parser preserves image and video attachments', () => {
   assert.equal(parsed.attachments[0].contentType, 'image/png');
   assert.equal(parsed.attachments[1].contentType, 'video/mp4');
   assert.equal(parsed.attachments[1].data.toString(), 'video-data');
+});
+
+test('support inbound parser accepts attachment maps and file buffers', async () => {
+  const parsed = await parseInbound({
+    from: 'customer@example.com', subject: 'Files', text: 'Attached.',
+    attachments: { first: { name: 'photo.jpg', type: 'image/jpeg', content: Buffer.from('jpg-data').toString('base64') } },
+    multipartFiles: [{ originalname: 'clip.mp4', mimetype: 'video/mp4', buffer: Buffer.from('mp4-data') }],
+  });
+  assert.equal(parsed.attachments.length, 2);
+  assert.equal(parsed.attachments[0].filename, 'photo.jpg');
+  assert.equal(parsed.attachments[1].data.toString(), 'mp4-data');
 });
 
 test('support inbound webhook requires a timing-safe configured token', () => {

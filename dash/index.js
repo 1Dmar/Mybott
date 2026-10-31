@@ -177,7 +177,7 @@ app.post('/api/billing/webhook/:provider', rateLimit({ windowMs: 60 * 1000, max:
 app.post('/api/inbound/support', rateLimit({ windowMs: 60 * 1000, max: 120 }), inboundUpload.any(), requireDatabaseReady, async (req, res) => {
   if (!tokenMatches(req)) return res.status(401).json({ success: false, error: 'invalid_inbound_token' });
   try {
-    const result = await storeInbound(parseInbound({ ...(req.body || {}), multipartFiles: req.files || [] }));
+    const result = await storeInbound(await parseInbound({ ...(req.body || {}), multipartFiles: req.files || [] }));
     res.status(202).json({ success: true, ...result });
   } catch (error) {
     res.status(400).json({ success: false, error: error.message || 'inbound_message_rejected' });
