@@ -48,6 +48,7 @@
     "jimp": "^0.22.12",
     "list": "^2.0.19",
     "luxon": "^3.7.1",
+    "mailparser": "^3.14.1",
     "mcquery": "^1.0.3",
     "minecraft-protocol": "^1.61.0",
     "mineflayer": "^4.32.0",

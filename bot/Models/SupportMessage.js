@@ -10,6 +10,8 @@ const supportMessageSchema = new mongoose.Schema({
   text: { type: String, default: '', maxlength: 100000 },
   html: { type: String, default: '', maxlength: 200000 },
   providerMessageId: { type: String, default: null, maxlength: 500 },
+  mailgunStorageUrl: { type: String, default: null, maxlength: 1000 },
+  mailgunStorageKey: { type: String, default: null, maxlength: 500 },
   inReplyTo: { type: String, default: null, maxlength: 500 },
   references: { type: [String], default: [] },
   sentBy: { type: String, default: null, maxlength: 64 },

@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const axios = require('axios');
 const net = require('net');
+const { simpleParser } = require('mailparser');
 const SupportConversation = require('../Models/SupportConversation');
 const SupportMessage = require('../Models/SupportMessage');
 const SupportAttachment = require('../Models/SupportAttachment');
@@ -50,6 +51,28 @@ function asBuffer(value) {
   if (Array.isArray(value)) return Buffer.from(value);
   if (value && value.type === 'Buffer' && Array.isArray(value.data)) return Buffer.from(value.data);
   return null;
+}
+function mailgunStorageUrl(value) {
+  try {
+    const url = new URL(String(value || '').trim());
+    const allowed = url.protocol === 'https:' && (url.hostname === 'api.mailgun.net' || url.hostname === 'api.eu.mailgun.net' || /^storage-[a-z0-9-]+\.api\.mailgun\.net$/i.test(url.hostname));
+    return allowed ? url.toString() : null;
+  } catch (_) { return null; }
+}
+function storageDetails(body = {}) {
+  const storage = body.storage && typeof body.storage === 'object' ? body.storage : {};
+  const storageUrlValue = storage.url || body['storage.url'];
+  const urls = Array.isArray(storageUrlValue) ? storageUrlValue : [storageUrlValue, body.storageUrl, body['message-url']];
+  const url = urls.map(mailgunStorageUrl).find(Boolean) || null;
+  const key = clean(storage.key || body['storage.key'] || body.storageKey || '', 500) || null;
+  return { url, key };
+}
+function storageUrlFromKey(key, env = process.env) {
+  const domain = String(env.MAILGUN_DOMAIN || '').trim();
+  const region = String(env.MAILGUN_REGION || 'us').trim().toLowerCase();
+  if (!domain || !key || !/^[a-z0-9.-]+$/i.test(domain) || !/^[a-z0-9_-]+$/i.test(key)) return null;
+  const host = region === 'eu' ? 'api.eu.mailgun.net' : 'api.mailgun.net';
+  return `https://${host}/v3/domains/${encodeURIComponent(domain)}/messages/${encodeURIComponent(key)}`;
 }
 function safeAttachmentUrl(value) {
   try {
@@ -122,9 +145,10 @@ async function parseInbound(body = {}) {
   const inReplyTo = clean(body.inReplyTo || body['in-reply-to'] || body['In-Reply-To'] || '', 500) || null;
   const references = (Array.isArray(body.references) ? body.references : String(body.references || body.References || '').split(/\s+/)).map(value => clean(value, 500)).filter(Boolean).slice(0, 20);
   const attachments = await normalizeAttachments(body);
+  const storage = storageDetails(body);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fromEmail)) throw new Error('invalid_inbound_sender');
   if (!text && !html && !attachments.length) throw new Error('inbound_content_required');
-  return { fromEmail, subject, text, html, providerMessageId, inReplyTo, references, attachments };
+  return { fromEmail, subject, text, html, providerMessageId, inReplyTo, references, attachments, mailgunStorageUrl: storage.url, mailgunStorageKey: storage.key };
 }
 async function storeInbound(payload) {
   if (payload.providerMessageId) {
@@ -137,12 +161,36 @@ async function storeInbound(payload) {
     if (previous) conversation = await SupportConversation.findById(previous.conversationId);
   }
   if (!conversation) conversation = await SupportConversation.create({ contactEmail: payload.fromEmail, subject: payload.subject, lastMessageAt: new Date() });
-  const message = await SupportMessage.create({ conversationId: conversation._id, direction: 'inbound', fromEmail: payload.fromEmail, toEmails: [DEFAULT_FROM_EMAIL], subject: payload.subject, text: payload.text, html: payload.html, providerMessageId: payload.providerMessageId, inReplyTo: payload.inReplyTo, references: payload.references });
+  const message = await SupportMessage.create({ conversationId: conversation._id, direction: 'inbound', fromEmail: payload.fromEmail, toEmails: [DEFAULT_FROM_EMAIL], subject: payload.subject, text: payload.text, html: payload.html, providerMessageId: payload.providerMessageId, mailgunStorageUrl: payload.mailgunStorageUrl, mailgunStorageKey: payload.mailgunStorageKey, inReplyTo: payload.inReplyTo, references: payload.references });
   if (payload.attachments?.length) await SupportAttachment.insertMany(payload.attachments.map(attachment => ({ ...attachment, messageId: message._id })));
   await SupportConversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.receivedAt, lastInboundMessageId: payload.providerMessageId }, $inc: { messageCount: 1 } });
   await notifyNewInboundMessage(payload);
   return { duplicate: false, conversationId: conversation._id, messageId: message._id, attachmentCount: payload.attachments?.length || 0 };
 }
+async function restoreMailgunAttachments(messageId, env = process.env) {
+  const message = await SupportMessage.findById(messageId);
+  if (!message) throw new Error('support_message_not_found');
+  const apiKey = String(env.MAILGUN_API_KEY || '').trim();
+  if (!apiKey) throw new Error('mailgun_api_key_not_configured');
+  const url = mailgunStorageUrl(message.mailgunStorageUrl) || storageUrlFromKey(message.mailgunStorageKey, env);
+  if (!url) throw new Error('mailgun_storage_reference_missing');
+  const response = await axios.get(url, { auth: { username: 'api', password: apiKey }, headers: { Accept: 'message/rfc2822, application/json;q=0.9' }, timeout: 20000, maxContentLength: 16 * 1024 * 1024, maxBodyLength: 16 * 1024 * 1024 });
+  const data = response.data || {};
+  const mime = typeof data === 'string' ? data : Buffer.isBuffer(data) ? data.toString() : data['body-mime'] || data['Body-mime'] || data.bodyMime || data.mime;
+  if (!mime) throw new Error('mailgun_stored_message_mime_missing');
+  const parsed = await simpleParser(mime);
+  const attachments = parsed.attachments || [];
+  if (!attachments.length) return { restored: 0, messageId: message._id };
+  const existing = await SupportAttachment.find({ messageId: message._id }).select('filename size').lean();
+  const seen = new Set(existing.map(item => `${item.filename}:${item.size}`));
+  const docs = attachments.map(item => ({ filename: clean(item.filename || 'attachment', 255).replace(/[\\/]/g, '_'), contentType: clean(item.contentType || 'application/octet-stream', 120).toLowerCase(), size: item.size || item.content?.length || 0, data: item.content })).filter(item => item.data?.length && item.size <= MAX_ATTACHMENT_BYTES && SAFE_CONTENT_TYPE.test(item.contentType) && !seen.has(`${item.filename}:${item.size}`)).slice(0, MAX_ATTACHMENTS);
+  if (docs.length) await SupportAttachment.insertMany(docs.map(item => ({ ...item, messageId: message._id })));
+  if (!message.text && parsed.text) message.text = clean(parsed.text, 100000);
+  if (!message.html && parsed.html) message.html = clean(parsed.html, 200000);
+  await message.save();
+  return { restored: docs.length, messageId: message._id };
+}
+
 async function replyToConversation(conversationId, body, adminId) {
   const conversation = await SupportConversation.findById(conversationId);
   if (!conversation) throw new Error('support_conversation_not_found');
@@ -157,4 +205,4 @@ async function replyToConversation(conversationId, body, adminId) {
   await SupportConversation.updateOne({ _id: conversationId }, { $set: { lastMessageAt: message.receivedAt, status: 'open' }, $inc: { messageCount: 1 } });
   return { messageId: message._id, providerMessageId: sent.messageId };
 }
-module.exports = { tokenMatches, parseInbound, normalizeAttachments, storeInbound, replyToConversation, getInboxNotificationRecipients, buildInboxNotificationHtml, notifyNewInboundMessage };
+module.exports = { tokenMatches, parseInbound, normalizeAttachments, storeInbound, restoreMailgunAttachments, replyToConversation, getInboxNotificationRecipients, buildInboxNotificationHtml, notifyNewInboundMessage };

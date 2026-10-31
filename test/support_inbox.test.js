@@ -21,6 +21,18 @@ test('support inbound parser accepts Mailgun inbound fields', async () => {
   assert.equal(parsed.inReplyTo, '<previous@example.com>');
 });
 
+test('support inbound parser preserves a safe Mailgun storage reference', async () => {
+  const parsed = await parseInbound({ sender: 'mailgun-customer@example.com', subject: 'Stored files', text: 'Restore me', storage: { key: 'storage-key', url: ['https://storage-us-east4.api.mailgun.net/v3/domains/promcbot.dev/messages/storage-key'] } });
+  assert.equal(parsed.mailgunStorageKey, 'storage-key');
+  assert.match(parsed.mailgunStorageUrl, /^https:\/\/storage-us-east4\.api\.mailgun\.net\//);
+});
+
+test('support inbound parser accepts flattened Mailgun storage fields', async () => {
+  const parsed = await parseInbound({ sender: 'mailgun-customer@example.com', subject: 'Stored files', text: 'Restore me', 'storage.key': 'flat-key', 'storage.url': 'https://storage-us-east4.api.mailgun.net/v3/domains/promcbot.dev/messages/flat-key' });
+  assert.equal(parsed.mailgunStorageKey, 'flat-key');
+  assert.match(parsed.mailgunStorageUrl, /flat-key$/);
+});
+
 test('support inbound parser preserves image and video attachments', async () => {
   const parsed = await parseInbound({
     from: 'customer@example.com', subject: 'Files', text: 'Please review these.',
@@ -91,4 +103,6 @@ test('support inbox routes are protected and replies use the official address', 
   assert.match(page, /message-body img,.message-body video/);
   assert.match(source, /api\/admin\/support\/attachments/);
   assert.match(source, /Buffer\.isBuffer\(attachment\.data\)/);
+  assert.match(source, /messages\/:id\/restore/);
+  assert.match(source, /app\.delete\('\/api\/admin\/support\/conversations\/:id'/);
 });

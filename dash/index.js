@@ -79,7 +79,7 @@ const { mapWithConcurrency } = require('./asyncPool');
 const { getTrustpilotStats } = require('./trustpilotStats');
 const { getSmartActionPreset, getSmartActionState, validateSmartActionChannel } = require('../bot/utils/smartActions');
 const { sendSupportEmail, DEFAULT_FROM_EMAIL } = require('../bot/utils/emailService');
-const { tokenMatches, parseInbound, storeInbound, replyToConversation } = require('../bot/utils/supportInboxService');
+const { tokenMatches, parseInbound, storeInbound, restoreMailgunAttachments, replyToConversation } = require('../bot/utils/supportInboxService');
 
 // ── Models ──────────────────────────────────────────────────────
 const ServerInfo     = require('../bot/Models/Server');
@@ -876,7 +876,29 @@ app.get('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRol
     list.push({ id: String(attachment._id), filename: attachment.filename, contentType: attachment.contentType, size: attachment.size, url: `/api/admin/support/attachments/${encodeURIComponent(String(attachment._id))}` });
     byMessage.set(key, list);
   }
-  res.json({ success: true, conversation, messages: messages.map(message => ({ ...message, attachments: byMessage.get(String(message._id)) || [] })) });
+  res.json({ success: true, conversation, messages: messages.map(message => ({ ...message, canRestoreFromMailgun: Boolean(message.mailgunStorageUrl), attachments: byMessage.get(String(message._id)) || [] })) });
+});
+app.post('/api/admin/support/messages/:id/restore', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  try {
+    if (req.body?.storageUrl || req.body?.storageKey) {
+      await SupportMessage.updateOne({ _id: req.params.id }, { $set: { ...(req.body.storageUrl ? { mailgunStorageUrl: String(req.body.storageUrl).slice(0, 1000) } : {}), ...(req.body.storageKey ? { mailgunStorageKey: String(req.body.storageKey).slice(0, 500) } : {}) } });
+    }
+    const result = await restoreMailgunAttachments(req.params.id);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    const known = new Set(['support_message_not_found', 'mailgun_api_key_not_configured', 'mailgun_storage_reference_missing', 'mailgun_stored_message_mime_missing']);
+    res.status(error.response?.status === 404 ? 404 : 400).json({ success: false, error: known.has(error.message) ? error.message : 'mailgun_restore_failed', message: known.has(error.message) ? error.message : 'Mailgun attachments could not be restored.' });
+  }
+});
+app.delete('/api/admin/support/conversations/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
+  const conversation = await SupportConversation.findById(req.params.id).select('_id').lean();
+  if (!conversation) return res.status(404).json({ success: false, error: 'support_conversation_not_found' });
+  const messages = await SupportMessage.find({ conversationId: conversation._id }).select('_id').lean();
+  const messageIds = messages.map(message => message._id);
+  if (messageIds.length) await SupportAttachment.deleteMany({ messageId: { $in: messageIds } });
+  await SupportMessage.deleteMany({ conversationId: conversation._id });
+  await SupportConversation.deleteOne({ _id: conversation._id });
+  res.json({ success: true, deleted: true, deletedMessages: messageIds.length });
 });
 app.get('/api/admin/support/attachments/:id', isAuthenticated, requireAdminRole, requireDatabaseReady, async (req, res) => {
   const attachment = await SupportAttachment.findById(req.params.id).select('filename contentType size data').lean();
