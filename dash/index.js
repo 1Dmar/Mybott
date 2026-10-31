@@ -99,6 +99,10 @@ const app = express();
 const dashboardApiLimiter = rateLimit({ windowMs: 60 * 1000, max: 180, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'dashboard_api_rate_limited' } });
 const emailSendLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false, message: { success: false, error: 'email_send_rate_limited' } });
 const inboundUpload = multer({ storage: multer.memoryStorage(), limits: { files: 8, fileSize: 12 * 1024 * 1024, fields: 40, fieldSize: 256 * 1024 } });
+// Rich dashboard forms and image metadata can exceed the old parser ceiling.
+// Keep the limit bounded while allowing normal image-related payloads.
+const REQUEST_BODY_LIMIT = '5mb';
+const REQUEST_PARAMETER_LIMIT = 1000;
 
 app.use((req, res, next) => {
   req.operationId = operationIdForRequest(req.get('x-request-id'));
@@ -113,12 +117,12 @@ app.use(cors({
   methods: ['GET', 'HEAD', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
 }));
 app.use(express.json({
-  limit: '512kb',
+  limit: REQUEST_BODY_LIMIT,
   verify: (req, res, buffer) => {
     if (req.path === '/api/v1/telemetry/events' || req.path === '/api/v1/plugin/capabilities' || req.path.startsWith('/api/billing/webhook/') || req.path === '/api/inbound/support') req.rawBody = Buffer.from(buffer);
   }
 }));
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT, parameterLimit: REQUEST_PARAMETER_LIMIT }));
 app.use((req, res, next) => {
   const isExternalProtocol = req.path.startsWith('/api/v1/') || req.path.startsWith('/api/billing/webhook/') || req.path === '/api/inbound/support';
   if (!isExternalProtocol && !isSameOriginMutation(req)) return res.status(403).json({ success: false, error: 'cross_origin_request_blocked' });
@@ -126,6 +130,19 @@ app.use((req, res, next) => {
 });
 app.use(cookieParser());
 app.use('/api/guilds', dashboardApiLimiter);
+
+// Return a stable API response for oversized requests instead of leaking an
+// Express parser stack trace to Railway logs and the browser.
+app.use((error, req, res, next) => {
+  if (error?.type === 'entity.too.large' || error?.status === 413) {
+    return res.status(413).json({
+      success: false,
+      error: 'request_entity_too_large',
+      message: `Request body must be ${REQUEST_BODY_LIMIT} or smaller.`,
+    });
+  }
+  return next(error);
+});
 
 // Trust proxy for Railway/Cloudflare
 app.set('trust proxy', 1);
