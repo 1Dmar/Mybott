@@ -93,6 +93,7 @@ const NetworkRole      = require('../bot/Models/NetworkRole');
 const SupportConversation = require('../bot/Models/SupportConversation');
 const SupportMessage = require('../bot/Models/SupportMessage');
 const SupportAttachment = require('../bot/Models/SupportAttachment');
+const ProductEvent = require('../bot/Models/ProductEvent');
 
 // ── Express App ──────────────────────────────────────────────────
 const app = express();
@@ -993,6 +994,7 @@ app.get('/auth/discord/callback', (req, res, next) => {
       });
     });
     await ensureDefaultProfileFollow(req.user?.id);
+    if (mongoose.connection.readyState === 1) ProductEvent.create({ event: 'login_completed', userId: String(req.user.id), path: '/auth/discord/callback', metadata: {} }).catch(() => null);
     res.redirect('/dashboard');
   } catch (error) {
     console.error('[oauth callback] session initialization failed:', error.message);
@@ -1182,24 +1184,50 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
   const botClient = getBotClient();
   const inviteUrl = buildBotInviteUrl(DISCORD_CLIENT_ID);
   const ownedGuilds = getWorkspaceGuilds(req.user);
-  const assignedGuilds = mongoose.connection.readyState === 1 ? await NetworkRole.find({ userId: String(req.user.id), role: { $in: ['editor', 'viewer'] } }).lean() : [];
+  const databaseReady = mongoose.connection.readyState === 1;
+  const assignedGuilds = databaseReady ? await NetworkRole.find({ userId: String(req.user.id), role: { $in: ['editor', 'viewer'] } }).lean() : [];
   const collaboratorGuilds = assignedGuilds.map(role => ({ id: String(role.guildId), name: String(role.guildId), owner: false, permissions: '0', managePermission: role.role === 'editor' ? 'collaborator_editor' : 'collaborator_viewer', permissionSource: 'collaborator', collaboratorRole: role.role, isCollaborator: true }));
   const sourceGuilds = [...ownedGuilds, ...collaboratorGuilds.filter(guild => !ownedGuilds.some(owned => String(owned.id) === String(guild.id)))];
-  const guilds = await mapWithConcurrency(sourceGuilds, async guild => {
+  const ids = sourceGuilds.map(guild => String(guild.id));
+  const [plugins, subscriptions, telemetry] = databaseReady && ids.length ? await Promise.all([
+    PluginInstance.find({ serverId: { $in: ids }, revokedAt: null }).sort({ lastSeenAt: -1 }).lean(),
+    Subscription.find({ guildId: { $in: ids } }).lean(),
+    TelemetryEvent.aggregate([{ $match: { serverId: { $in: ids }, occurredAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }, { $group: { _id: '$serverId', count: { $sum: 1 } } }]),
+  ]) : [[], [], []];
+  const pluginByGuild = new Map();
+  for (const plugin of plugins) if (!pluginByGuild.has(String(plugin.serverId))) pluginByGuild.set(String(plugin.serverId), plugin);
+  const subscriptionByGuild = new Map(subscriptions.map(item => [String(item.guildId), item]));
+  const telemetryByGuild = new Map(telemetry.map(item => [String(item._id), Number(item.count) || 0]));
+  const now = Date.now();
+  const enriched = await mapWithConcurrency(sourceGuilds, async guild => {
     try {
       const membership = await resolveBotMembership(botClient, guild.id);
-      const namedGuild = guild.isCollaborator && membership.guild?.name
-        ? { ...guild, name: membership.guild.name, icon: membership.guild.icon || guild.icon }
-        : guild;
-      return {
-        ...namedGuild,
-        ...botAccessPayload(namedGuild, membership, inviteUrl),
-      };
+      const namedGuild = guild.isCollaborator && membership.guild?.name ? { ...guild, name: membership.guild.name, icon: membership.guild.icon || guild.icon } : guild;
+      const plugin = pluginByGuild.get(String(guild.id));
+      const pluginOnline = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
+      const entitlement = subscriptionByGuild.get(String(guild.id)) ? getEntitlement(subscriptionByGuild.get(String(guild.id))) : getEntitlement(null);
+      const access = botAccessPayload(namedGuild, membership, inviteUrl);
+      const nextAction = !access.installed ? 'invite_bot' : !plugin ? 'connect_plugin' : !pluginOnline ? 'start_server' : !telemetryByGuild.get(String(guild.id)) ? 'play_to_measure' : 'open_health';
+      return { ...namedGuild, ...access, setup: { pluginStatus: pluginOnline ? 'online' : plugin ? 'offline' : 'not_configured', lastSeenAt: plugin?.lastSeenAt || null, telemetry24h: telemetryByGuild.get(String(guild.id)) || 0, plan: entitlement.plan, nextAction } };
     } catch (_) {
-      return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl) };
+      return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl), setup: { pluginStatus: 'unknown', telemetry24h: 0, plan: 'free', nextAction: 'check_status' } };
     }
   }, 4);
+  const guilds = enriched.sort((a, b) => {
+    const rank = item => (item.botStatus === 'installed' ? 100 : 0) + (item.setup?.pluginStatus === 'online' ? 20 : 0) + (item.setup?.plan === 'ultimate' ? 6 : item.setup?.plan === 'pro' ? 4 : 0);
+    return rank(b) - rank(a) || String(a.name || '').localeCompare(String(b.name || ''));
+  });
   res.json({ success: true, guilds, count: guilds.length, scope: 'owner_administrator_or_assigned_collaborator' });
+});
+
+app.post('/api/analytics/events', isAuthenticated, async (req, res) => {
+  const event = String(req.body?.event || '').trim().toLowerCase();
+  const allowed = new Set(['login_completed', 'dashboard_opened', 'servers_opened', 'server_selected', 'first_value_viewed', 'onboarding_started', 'onboarding_step_opened', 'plugin_setup_started', 'plugin_setup_completed', 'heartbeat_received', 'report_viewed', 'notification_enabled']);
+  if (!allowed.has(event)) return res.status(400).json({ success: false, error: 'invalid_product_event' });
+  if (mongoose.connection.readyState === 1) {
+    await ProductEvent.create({ event, userId: String(req.user.id), guildId: req.body?.guildId ? String(req.body.guildId).slice(0, 40) : null, path: String(req.body?.path || '').slice(0, 240) || null, metadata: {} }).catch(() => null);
+  }
+  res.status(202).json({ success: true });
 });
 
 app.get('/api/guilds/:guildId/visual', isAuthenticated, requireGuildAccess, async (req, res) => {

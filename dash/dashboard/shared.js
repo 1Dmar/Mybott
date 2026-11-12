@@ -235,6 +235,11 @@
     setTimeout(() => toast.remove(), 3000);
   };
   window.copyToClipboard = function (text) { navigator.clipboard.writeText(text).then(() => window.showToast('Copied to clipboard!')); };
-  window.ProMcBot = Object.freeze({ serverPath });
+  window.trackProductEvent = function (event, guildId = null) {
+    if (!event) return;
+    const body = { event, guildId, path: window.location.pathname };
+    fetch('/api/analytics/events', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), keepalive: true }).catch(() => null);
+  };
+  window.ProMcBot = Object.freeze({ serverPath, track: window.trackProductEvent });
   document.addEventListener('DOMContentLoaded', init);
 })();

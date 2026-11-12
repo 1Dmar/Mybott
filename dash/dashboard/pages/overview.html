@@ -41,6 +41,15 @@
     .quick-link span { display: block; font-size: 13px; font-weight: 700; }
     .quick-link small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 11px; font-weight: 400; }
     .empty-inline { color: var(--text-muted); font-size: 13px; }
+    .weekly-report { margin-top:16px; padding:19px; background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow-sm); }
+    .weekly-report h2 { margin:0 0 5px; font-size:18px; }
+    .weekly-report p { margin:0; color:var(--text-muted); font-size:13px; line-height:1.55; }
+    .report-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .report-metric { padding:11px; border-radius:12px; background:var(--surface-2); }
+    .report-metric small,.report-metric strong { display:block; }
+    .report-metric small { color:var(--text-muted); font-size:10px; }
+    .report-metric strong { margin-top:4px; font-size:17px; }
+    @media (max-width:560px) { .report-metrics { grid-template-columns:1fr; } }
     @media (max-width: 900px) { .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .home-columns { grid-template-columns: 1fr; } }
     @media (max-width: 560px) { .server-hero { align-items: flex-start; flex-direction: column; padding: 18px; } .server-hero .button-secondary { width: 100%; } .overview-grid { gap: 9px; } .overview-card { padding: 13px; } .overview-card .value { font-size: 16px; } }
   </style>
@@ -70,7 +79,8 @@
     <div class="server-hero"><div class="server-identity"><img src="" class="server-lg-icon" id="guildIcon" alt=""><div><div class="eyebrow" style="color:rgba(255,255,255,.72)">Server workspace</div><h1 id="guildName">Loading server…</h1><p id="guildIdText">Checking access…</p></div></div><a class="button-secondary" href="/myservers"><i class="bx bx-left-arrow-alt"></i> My servers</a></div>
     <div class="health-strip"><strong>Live setup</strong><span class="health-item"><span id="discordDot" class="status-dot"></span><span id="discordState">Discord checking</span></span><span class="health-item"><span id="pluginDot" class="status-dot"></span><span id="pluginState">Minecraft checking</span></span><span class="health-item"><span class="status-dot good"></span><span>Server access verified</span></span></div>
     <div class="overview-grid" aria-label="Server summary"><div class="overview-card"><span class="card-icon"><i class="bx bx-group"></i></span><span class="label">Discord members</span><span class="value" id="memberCount">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-pulse"></i></span><span class="label">Telemetry events</span><span class="value" id="telemetryCount">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-crown"></i></span><span class="label">Current plan</span><span class="value" id="planValue">—</span></div><div class="overview-card"><span class="card-icon"><i class="bx bx-command"></i></span><span class="label">Command prefix</span><span class="value" id="prefixValue">—</span></div></div>
-    <div class="home-columns"><section class="setup-card"><h2>Setup path</h2><p id="setupSummary">Checking the next useful step for this server.</p><ul class="setup-list" id="setupList"><li class="setup-row"><i class="bx bx-loader-alt bx-spin"></i><span><strong>Loading connection evidence</strong><small>Measured server state will appear here.</small></span></li></ul></section><aside class="quick-card"><h2>Server control</h2><p>Keep the important actions one click away.</p><div class="quick-links"><a class="quick-link" id="intelligenceLink" href="#"><i class="bx bx-line-chart"></i><span>Intelligence<small>See measured signals</small></span></a><a class="quick-link" id="settingsLink" href="#"><i class="bx bx-cog"></i><span>Setup & settings<small>Connect and configure</small></span></a><a class="quick-link" id="modulesLink" href="#"><i class="bx bx-extension"></i><span>Modules<small>Enable bot features</small></span></a><a class="quick-link" href="/actions"><i class="bx bx-check-shield"></i><span>Action center<small>Review important signals</small></span></a></div></aside></div>
+    <div class="home-columns"><section class="setup-card"><h2>Setup path</h2><p id="setupSummary">Checking the next useful step for this server.</p><ul class="setup-list" id="setupList"><li class="setup-row"><i class="bx bx-loader-alt bx-spin"></i><span><strong>Loading connection evidence</strong><small>Measured server state will appear here.</small></span></li></ul></section><aside class="quick-card"><h2>Server control</h2><p>Keep the important actions one click away.</p><div class="quick-links"><a class="quick-link" id="intelligenceLink" href="#"><i class="bx bx-line-chart"></i><span>Intelligence<small>See measured signals</small></span></a><a class="quick-link" id="settingsLink" href="#"><i class="bx bx-cog"></i><span>Setup & settings<small>Connect and configure</small></span></a><a class="quick-link" id="modulesLink" href="#"><i class="bx bx-extension"></i><span>Modules<small>Enable bot features</small></span></a><a class="quick-link" id="reportLink" href="#"><i class="bx bx-calendar-week"></i><span>Weekly report<small>Review measured activity</small></span></a><a class="quick-link" href="/actions"><i class="bx bx-check-shield"></i><span>Action center<small>Review important signals</small></span></a></div></aside></div>
+    <section class="weekly-report" id="weekly-report"><h2>Weekly measured report</h2><p id="reportSummary">Loading measured activity…</p><div class="report-metrics" id="reportMetrics"><div class="report-metric"><small>Players analyzed</small><strong>—</strong></div><div class="report-metric"><small>Returning players</small><strong>—</strong></div><div class="report-metric"><small>Observed events</small><strong>—</strong></div></div></section>
   </section></main>
   <script src="/shared.js"></script>
   <script>
@@ -81,8 +91,10 @@
       document.getElementById('intelligenceLink').href = path('intelligence');
       document.getElementById('settingsLink').href = path('settings');
       document.getElementById('modulesLink').href = path('modules');
+      document.getElementById('reportLink').href = path('intelligence') + '#weekly-report';
       const iconFor = guild => guild?.icon ? `https://cdn.discordapp.com/icons/${encodeURIComponent(guild.id)}/${guild.icon}.png` : '/dashboard/logo.png';
       const setDot = (id, good) => { document.getElementById(id).className = `status-dot ${good ? 'good' : 'warn'}`; };
+      async function loadReport() { try { const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/reports/weekly`, { credentials:'same-origin' }); const data = await response.json(); if (!response.ok) throw new Error(data.message || data.error || 'Report unavailable'); const report = data.report || {}; const evidence = report.evidence || {}; const players = evidence.players || {}; const values = [report.playersAnalyzed ?? players.players ?? 0, report.returningPlayers ?? 0, players.observedEvents ?? evidence.server?.recentEvents ?? 0]; document.getElementById('reportSummary').textContent = values[2] ? 'This summary is based only on telemetry received from your server.' : 'Keep the server online and the plugin connected to build your first measured report.'; document.getElementById('reportMetrics').innerHTML = [['Joins', values[0]], ['Leaves', values[1]], ['Observed events', values[2]]].map(([label, value]) => `<div class="report-metric"><small>${label}</small><strong>${Number(value).toLocaleString()}</strong></div>`).join(''); window.trackProductEvent?.('report_viewed', guildId); } catch (_) { document.getElementById('reportSummary').textContent = 'A weekly report will appear after ProMcBot receives enough measured activity.'; } }
       async function loadOverview() {
         try {
           const response = await fetch(`/api/guilds/${encodeURIComponent(guildId)}/overview`, { credentials: 'same-origin' });
@@ -109,7 +121,7 @@
           document.getElementById('setupList').innerHTML = '<li class="empty-inline">No server evidence available.</li>';
         }
       }
-      document.addEventListener('DOMContentLoaded', loadOverview);
+      document.addEventListener('DOMContentLoaded', () => { window.trackProductEvent?.('server_selected', guildId); loadOverview(); loadReport(); });
     })();
   </script>
 </body>

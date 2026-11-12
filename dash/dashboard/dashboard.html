@@ -13,6 +13,12 @@
     .dashboard-actions { display:flex; flex-wrap:wrap; gap:8px; }
     .dashboard-actions a { display:inline-flex; align-items:center; gap:6px; padding:9px 12px; border-radius:10px; background:var(--primary); color:#fff; text-decoration:none; font-size:13px; font-weight:700; }
     .dashboard-actions a.secondary { background:var(--surface); color:var(--primary); border:1px solid var(--border); }
+    .first-value { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:center; margin:0 0 24px; padding:20px; border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border)); border-radius:var(--radius-lg); background:linear-gradient(135deg,color-mix(in srgb,var(--primary-soft) 82%,var(--surface)),var(--surface)); box-shadow:var(--shadow-sm); }
+    .first-value h2 { margin:0 0 5px; font-size:18px; }
+    .first-value p { margin:0; color:var(--text-muted); font-size:12px; line-height:1.55; }
+    .first-value strong { display:block; margin-top:10px; color:var(--text); font-size:14px; }
+    .first-value a { display:inline-flex; align-items:center; gap:7px; min-height:42px; padding:10px 14px; border-radius:11px; background:var(--primary); color:#fff; text-decoration:none; font-size:12px; font-weight:800; white-space:nowrap; }
+    @media (max-width:768px) { .first-value { grid-template-columns:1fr; } .first-value a { width:100%; justify-content:center; } }
     .empty-state { padding:18px; border:1px dashed var(--border); border-radius:12px; color:var(--text-muted); background:var(--surface-2); }
     .public-profile-settings { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:18px; align-items:end; margin:0 0 24px; padding:20px; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); box-shadow:var(--shadow-sm); }
     .public-profile-settings h2 { margin:0 0 5px; font-size:18px; }
@@ -138,6 +144,8 @@
       </div>
     </section>
 
+    <section class="first-value" id="firstValueCard" aria-live="polite"><div><h2>Start with your server</h2><p id="firstValueDescription">Loading your first useful result…</p><strong id="firstValueAction">Finding a managed server</strong></div><a id="firstValueLink" href="/myservers">Open my servers <i class="bx bx-right-arrow-alt"></i></a></section>
+
     <section class="dashboard-grid" aria-label="Account overview">
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-server"></i></div><div class="stat-info"><h3>Managed servers</h3><p id="serverCount" aria-live="polite">Loading…</p></div></article>
       <article class="stat-card"><div class="stat-icon"><i class="bx bx-shield-quarter"></i></div><div class="stat-info"><h3>Current plan</h3><p id="planValue" aria-live="polite">FREE</p></div></article>
@@ -209,7 +217,13 @@
           const [guildResponse, membershipResponse] = await Promise.all([fetch('/api/guilds'), fetch('/api/user/membership')]);
           const guilds = await guildResponse.json();
           const membership = await membershipResponse.json();
-          $('serverCount').textContent = Array.isArray(guilds.guilds) ? guilds.guilds.length : '0';
+          const list = Array.isArray(guilds.guilds) ? guilds.guilds : [];
+          $('serverCount').textContent = list.length;
+          window.trackProductEvent?.('dashboard_opened');
+          const first = list[0];
+          if (!first) { $('firstValueDescription').textContent = 'Add ProMcBot to a Discord server where you have Manage Server permission to begin.'; $('firstValueAction').textContent = 'No managed server yet'; $('firstValueLink').href = '/invitebot'; $('firstValueLink').innerHTML = 'Invite ProMcBot <i class="bx bx-link-external"></i>'; }
+          else if (first.botStatus !== 'installed') { $('firstValueDescription').textContent = `${first.name || 'Your server'} is ready to connect, but the bot is not installed yet.`; $('firstValueAction').textContent = 'Next: invite the bot'; $('firstValueLink').href = first.inviteUrl || '/invitebot'; $('firstValueLink').target = '_blank'; $('firstValueLink').rel = 'noopener noreferrer'; $('firstValueLink').innerHTML = 'Invite bot <i class="bx bx-link-external"></i>'; }
+          else { const setup = first.setup || {}; const actions = { connect_plugin: 'Next: connect Minecraft for live health signals', start_server: 'Next: start the server and wait for heartbeat', play_to_measure: 'Next: let players join to generate your first result', open_health: 'Your server is ready — view its health now' }; $('firstValueDescription').textContent = `${first.name || 'Your server'} is connected. ProMcBot will show measured results, never guesses.`; $('firstValueAction').textContent = actions[setup.nextAction] || 'Next: open your server workspace'; $('firstValueLink').href = `/myservers/${encodeURIComponent(first.id)}/${setup.nextAction === 'connect_plugin' || setup.nextAction === 'play_to_measure' ? 'intelligence' : 'overview'}`; window.trackProductEvent?.('first_value_viewed', first.id); }
           const label = membership.success ? planLabel(membership.membership?.plan) : 'FREE';
           $('planBadge').textContent = label;
           $('planValue').textContent = label;
