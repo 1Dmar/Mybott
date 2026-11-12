@@ -241,3 +241,97 @@ body.homepage-refresh .privacy-panel { background: linear-gradient(145deg, #fff,
 body.homepage-refresh .plan.featured { border-color: rgba(88,101,242,.42); background: linear-gradient(145deg, #fff, #f4f3ff); box-shadow: 0 23px 58px rgba(88,101,242,.15); }
 body.homepage-refresh .plan-badge, body.homepage-refresh .plan-link, body.homepage-refresh .faq-item summary::after, body.homepage-refresh .review-stars { color: var(--home-orange); }
 @media (max-width: 760px) { body.homepage-refresh .product-preview { transform: none; } }
+
+
+/* 2026 product direction: dark control room / measured signal. */
+body.homepage-refresh.dark {
+  --home-ink: #f5f7ff;
+  --home-muted: #a7b3ca;
+  --home-bg: #070b16;
+  --home-surface: rgba(17, 25, 45, .82);
+  --home-soft: #111a2f;
+  --home-line: rgba(173, 190, 232, .16);
+  --home-orange: #ff7043;
+  --home-coral: #ffb36b;
+  --home-navy: #0d1730;
+  --home-shadow: 0 28px 90px rgba(0, 0, 0, .32);
+  color: var(--home-ink);
+  background:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px),
+    radial-gradient(circle at 12% -8%, rgba(255, 112, 67, .16), transparent 27rem),
+    radial-gradient(circle at 94% 20%, rgba(88, 101, 242, .17), transparent 32rem),
+    var(--home-bg);
+  background-size: 46px 46px, 46px 46px, auto, auto, auto;
+}
+body.homepage-refresh.dark .landing-nav-inner {
+  border-color: rgba(173, 190, 232, .18);
+  background: rgba(10, 16, 31, .76);
+  box-shadow: 0 20px 60px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.08);
+}
+body.homepage-refresh.dark .landing-nav .logo,
+body.homepage-refresh.dark .landing-nav .logo span { color: var(--home-ink); }
+body.homepage-refresh.dark .landing-nav .nav-links a { color: #9aa9c2; }
+body.homepage-refresh.dark .landing-nav .nav-links a:hover { color: #fff; background: rgba(255,112,67,.12); }
+body.homepage-refresh.dark .hero-section { padding-top: clamp(94px, 12vw, 158px); }
+body.homepage-refresh.dark .eyebrow { color: var(--home-orange); }
+body.homepage-refresh.dark .hero-copy h1 { color: #fff; font-size: clamp(3.7rem, 7.2vw, 7.2rem); letter-spacing: -.09em; }
+body.homepage-refresh.dark .hero-copy h1 span { color: var(--home-orange); }
+body.homepage-refresh.dark .hero-copy > p { color: var(--home-muted); }
+body.homepage-refresh.dark .landing-button-secondary { color: #fff; border-color: var(--home-line); background: rgba(255,255,255,.055); }
+body.homepage-refresh.dark .landing-button-secondary:hover { background: rgba(255,255,255,.1); border-color: rgba(255,112,67,.5); }
+body.homepage-refresh.dark .product-preview { border-color: rgba(255,255,255,.16); background: linear-gradient(145deg, #1b294b, #0d152b 68%, #0a1021); box-shadow: 0 38px 110px rgba(0,0,0,.42), 0 0 0 8px rgba(255,255,255,.045); }
+body.homepage-refresh.dark .product-preview-wrap::before { background: rgba(255,112,67,.2); }
+body.homepage-refresh.dark .trust-strip-inner { border-color: var(--home-line); }
+body.homepage-refresh.dark .trust-item + .trust-item { border-left-color: var(--home-line); }
+body.homepage-refresh.dark .trust-item strong,
+body.homepage-refresh.dark .section-heading h2,
+body.homepage-refresh.dark .capability-intro h2,
+body.homepage-refresh.dark .step h3,
+body.homepage-refresh.dark .capability h3,
+body.homepage-refresh.dark .plan h3,
+body.homepage-refresh.dark .plan-price,
+body.homepage-refresh.dark .privacy-panel-header strong,
+body.homepage-refresh.dark .review-author,
+body.homepage-refresh.dark .review-form label,
+body.homepage-refresh.dark .review-form-card h3,
+body.homepage-refresh.dark .faq-item summary { color: var(--home-ink); }
+body.homepage-refresh.dark .section-heading p:not(.eyebrow),
+body.homepage-refresh.dark .step p,
+body.homepage-refresh.dark .capability p,
+body.homepage-refresh.dark .privacy-points li,
+body.homepage-refresh.dark .plan p,
+body.homepage-refresh.dark .review-item p,
+body.homepage-refresh.dark .review-form-card > p,
+body.homepage-refresh.dark .review-empty,
+body.homepage-refresh.dark .faq-item p { color: var(--home-muted); }
+body.homepage-refresh.dark .feature-card,
+body.homepage-refresh.dark .step,
+body.homepage-refresh.dark .capability,
+body.homepage-refresh.dark .plan,
+body.homepage-refresh.dark .reviews-list,
+body.homepage-refresh.dark .review-form-card,
+body.homepage-refresh.dark .faq-item { border-color: var(--home-line); background: rgba(16, 25, 46, .76); box-shadow: 0 20px 55px rgba(0,0,0,.18); }
+body.homepage-refresh.dark .feature-card:hover,
+body.homepage-refresh.dark .feature-card.is-active,
+body.homepage-refresh.dark .capability:hover { border-color: rgba(255,112,67,.65); box-shadow: 0 25px 65px rgba(0,0,0,.3); }
+body.homepage-refresh.dark .capability-section { background: linear-gradient(135deg, rgba(13,23,48,.9), rgba(7,11,22,.88)); }
+body.homepage-refresh.dark .privacy-panel { border-color: rgba(255,112,67,.28); background: linear-gradient(145deg, rgba(25,35,62,.94), rgba(13,20,39,.94)); }
+body.homepage-refresh.dark .privacy-panel-header { border-bottom-color: var(--home-line); }
+body.homepage-refresh.dark .plan.featured { border-color: rgba(255,112,67,.6); background: linear-gradient(145deg, rgba(46,37,55,.96), rgba(18,27,49,.96)); box-shadow: 0 25px 70px rgba(255,112,67,.12); }
+body.homepage-refresh.dark .faq-item { padding: 0 18px; }
+body.homepage-refresh.dark .review-item { border-color: var(--home-line); background: rgba(255,255,255,.045); }
+body.homepage-refresh.dark .review-form input,
+body.homepage-refresh.dark .review-form textarea,
+body.homepage-refresh.dark .review-form select { border-color: var(--home-line); background: rgba(255,255,255,.06); color: #fff; }
+body.homepage-refresh.dark .premium-footer-inner { border-color: var(--home-line); background: linear-gradient(145deg, rgba(17,25,45,.96), rgba(8,13,27,.96)); }
+body.homepage-refresh.dark .premium-footer-brand > p,
+body.homepage-refresh.dark .premium-footer-col a { color: var(--home-muted); }
+
+@media (max-width: 760px) {
+  body.homepage-refresh.dark .hero-copy h1 { font-size: clamp(3.1rem, 14vw, 5.2rem); }
+  body.homepage-refresh.dark .feature-card,
+  body.homepage-refresh.dark .step,
+  body.homepage-refresh.dark .capability,
+  body.homepage-refresh.dark .plan { box-shadow: 0 14px 38px rgba(0,0,0,.2); }
+}

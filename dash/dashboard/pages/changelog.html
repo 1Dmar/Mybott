@@ -42,12 +42,45 @@
     .theme-toggle:hover{border-color:var(--primary);background:var(--primary-soft)}
     .theme-toggle:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,white 45%);outline-offset:3px}
     .theme-toggle i{font-size:16px}
+
+    /* Editorial release log direction. */
+    body.public-theme { background: radial-gradient(circle at 8% -6%, rgba(255,112,67,.17), transparent 28rem), radial-gradient(circle at 96% 22%, rgba(88,101,242,.18), transparent 32rem), #070b16; }
+    body.public-theme .shell { width:min(100% - 36px, 1220px); padding-top:32px; }
+    body.public-theme .hero { display:grid; grid-template-columns:minmax(0,.88fr) minmax(420px,1.12fr); min-height:420px; border-color:rgba(173,190,232,.16); border-radius:28px; background:linear-gradient(145deg,rgba(18,28,51,.92),rgba(9,15,29,.96)); box-shadow:0 35px 110px rgba(0,0,0,.34); }
+    body.public-theme .hero-copy { display:flex; flex-direction:column; justify-content:center; padding:clamp(28px,5vw,58px); }
+    body.public-theme .kicker { display:inline-flex; align-items:center; gap:7px; color:#ff8d61; }
+    body.public-theme .kicker::before { display:inline-block; width:26px; height:2px; border-radius:99px; background:currentColor; content:''; }
+    body.public-theme .hero h1 { max-width:500px; font-size:clamp(42px,5.6vw,78px); letter-spacing:-.075em; }
+    body.public-theme .hero p { max-width:500px; font-size:15px; line-height:1.75; }
+    body.public-theme .hero-meta { gap:9px; }
+    body.public-theme .hero-meta span { display:inline-flex; align-items:center; gap:6px; border-color:rgba(173,190,232,.18); background:rgba(255,255,255,.055); color:#d5def2; }
+    body.public-theme .hero-meta i { color:#ff8d61; font-size:14px; }
+    body.public-theme .hero-image { align-self:stretch; height:100%; min-height:420px; border:0; border-left:1px solid rgba(173,190,232,.12); filter:saturate(1.05) contrast(1.04); }
+    body.public-theme .feed { margin-top:58px; }
+    body.public-theme .feed:before { left:132px; background:linear-gradient(#ff7043,#5865f2,transparent); }
+    body.public-theme .feed-header { margin-bottom:26px; }
+    body.public-theme .feed-header h2 { font-size:32px; letter-spacing:-.055em; }
+    body.public-theme .feed-header p { color:#93a2bd; }
+    body.public-theme .release { grid-template-columns:112px minmax(0,1fr); gap:42px; }
+    body.public-theme .release-meta { padding-top:26px; }
+    body.public-theme .release-meta strong { color:#e5eaff; font-size:14px; }
+    body.public-theme .release-card { border-color:rgba(173,190,232,.16); border-radius:22px; background:linear-gradient(145deg,rgba(20,31,56,.92),rgba(11,18,35,.94)); box-shadow:0 18px 55px rgba(0,0,0,.2); }
+    body.public-theme .release-card:hover { border-color:rgba(255,112,67,.55); box-shadow:0 26px 70px rgba(0,0,0,.32); }
+    body.public-theme .release-card h3 { font-size:26px; letter-spacing:-.045em; }
+    body.public-theme .description { color:#a7b3ca; font-size:14px; line-height:1.7; }
+    body.public-theme .section { padding:15px; border:1px solid rgba(173,190,232,.12); border-radius:14px; background:rgba(255,255,255,.035); }
+    body.public-theme .section h4 { color:#cdd7ee; }
+    body.public-theme .section ul { color:#aebbd0; }
+    body.public-theme .release-art { border-radius:13px; border-bottom:1px solid rgba(173,190,232,.14); }
+    body.public-theme .release-dot { background:#ff7043; box-shadow:0 0 0 4px rgba(255,112,67,.16); }
+    body.public-theme .footer { color:#7f90ad; }
+    @media (max-width:760px) { body.public-theme .shell { width:min(100% - 20px,1220px); padding-top:16px; } body.public-theme .hero { display:block; min-height:0; border-radius:21px; } body.public-theme .hero-image { height:190px; min-height:190px; border-top:1px solid rgba(173,190,232,.12); border-left:0; } body.public-theme .hero-copy { padding:28px 21px 24px; } body.public-theme .hero h1 { font-size:clamp(40px,12vw,58px); } body.public-theme .feed { margin-top:35px; } body.public-theme .feed:before { display:none; } body.public-theme .release { display:block; } body.public-theme .release-meta { padding:0 4px 10px; text-align:left; } body.public-theme .release-dot { display:none; } body.public-theme .release-card { padding:18px; } body.public-theme .release-card h3 { font-size:22px; } }
   </style>
   <link rel="stylesheet" href="/dashboard/public-theme.css">
 </head>
 <body class="public-theme">
   <header class="landing-nav"><div class="landing-nav-inner"><a href="/" class="logo" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot"><span>Pro<em>Mc</em>Bot</span></a><nav class="nav-links" aria-label="Primary navigation"><a href="/partners">Partners</a><a href="/changelog">Change Log</a><a href="/plugin">Plugin</a></nav><div id="navActions"><button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><a href="/auth/discord" class="landing-button landing-button-primary landing-button-quiet">Login <i class="bx bx-log-in-alt" aria-hidden="true"></i></a></div></div></header><main class="shell">
-    <header class="hero"><div class="hero-copy"><p class="kicker">Official product updates</p><h1>What’s new in ProMcBot</h1><p>Follow the work behind a more reliable, intelligent, and connected Minecraft server experience.</p><div class="hero-meta"><span>Release notes</span><span>Product · Reliability · Security</span></div></div><img class="hero-image" src="/dashboard/assets/changelog-banner.png" alt="ProMcBot changelog banner"></header>
+    <header class="hero"><div class="hero-copy"><p class="kicker">Official product updates</p><h1>Product, in motion.</h1><p>A living record of the decisions, releases, and reliability work behind ProMcBot.</p><div class="hero-meta"><span><i class="bx bx-radio-circle-marked"></i> Release notes</span><span><i class="bx bx-shield-quarter"></i> Reliability · Security</span></div></div><img class="hero-image" src="/dashboard/assets/changelog-banner.png" alt="ProMcBot changelog banner"></header>
     <section class="feed" aria-labelledby="updates-heading"><div class="feed-header"><div><h2 id="updates-heading">Latest updates</h2><p>A chronological record of product changes.</p></div></div><div id="changelogFeed">
       <article class="release"><div class="release-meta"><strong>v1.6.0</strong><time datetime="2026-10-23">October 23, 2026</time></div><span class="release-dot" aria-hidden="true"></span><div class="release-card"><div class="tags"><span class="tag tag-new">NEW</span><span class="tag tag-improved">IMPROVED</span><span class="tag tag-security">SECURITY</span></div><h3>Your Minecraft identity, ready to share</h3><p class="description">Player accounts now connect Discord and Minecraft into one privacy-first identity that is useful in the dashboard and inside Discord.</p><div class="sections"><div class="section"><h4>What’s new</h4><ul><li>Global Player Account with verified Minecraft identities and server-scoped measurements.</li><li>Shareable <code>/playercard</code> command with global or current-server views and optional cards for other users.</li><li>Measured player cards show real joins and play time instead of invented statistics.</li><li>Player Center now supports templates, bio, privacy, and public card visibility.</li></ul></div><div class="section"><h4>Reliability and security</h4><ul><li>Legacy player links migrate automatically into the new account model.</li><li>Public cards never expose another user’s server-scoped activity.</li><li>One-time link claims remain expiring, signed, and tenant-scoped.</li></ul></div></div></div></article>
       <article class="release"><div class="release-meta"><strong>v1.1.0</strong><time datetime="2026-09-03">September 3, 2026</time></div><span class="release-dot" aria-hidden="true"></span><div class="release-card"><div class="tags"><span class="tag tag-new">NEW</span><span class="tag tag-improved">IMPROVED</span></div><h3>Unified server connection setup</h3><p class="description">Connect a Minecraft server with less guesswork and keep both supported connection methods together.</p><div class="sections"><div class="section"><h4>What’s new</h4><ul><li>Intelligence is now a free setup hub for every managed server.</li><li>IP and port status checks and Plugin telemetry setup are presented as one guided flow.</li></ul></div><div class="section"><h4>Improvements</h4><ul><li>Settings now directs Minecraft connection setup to the Intelligence hub.</li><li>Activation steps show measured heartbeat and telemetry readiness.</li></ul></div></div></div></article>
