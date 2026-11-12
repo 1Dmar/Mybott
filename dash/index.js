@@ -1207,7 +1207,7 @@ app.get('/api/guilds', isAuthenticated, async (req, res) => {
       const pluginOnline = Boolean(plugin?.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= now - 15 * 60 * 1000);
       const entitlement = subscriptionByGuild.get(String(guild.id)) ? getEntitlement(subscriptionByGuild.get(String(guild.id))) : getEntitlement(null);
       const access = botAccessPayload(namedGuild, membership, inviteUrl);
-      const nextAction = !access.installed ? 'invite_bot' : !plugin ? 'connect_plugin' : !pluginOnline ? 'start_server' : !telemetryByGuild.get(String(guild.id)) ? 'play_to_measure' : 'open_health';
+      const nextAction = !access.botInstalled ? 'invite_bot' : !plugin ? 'connect_plugin' : !pluginOnline ? 'start_server' : !telemetryByGuild.get(String(guild.id)) ? 'play_to_measure' : 'open_health';
       return { ...namedGuild, ...access, setup: { pluginStatus: pluginOnline ? 'online' : plugin ? 'offline' : 'not_configured', lastSeenAt: plugin?.lastSeenAt || null, telemetry24h: telemetryByGuild.get(String(guild.id)) || 0, plan: entitlement.plan, nextAction } };
     } catch (_) {
       return { ...guild, ...botAccessPayload(guild, { state: 'unknown', installed: false }, inviteUrl), setup: { pluginStatus: 'unknown', telemetry24h: 0, plan: 'free', nextAction: 'check_status' } };

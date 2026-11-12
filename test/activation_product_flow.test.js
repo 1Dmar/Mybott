@@ -12,6 +12,8 @@ test('Guild API returns server-scoped setup evidence and prioritizes ready serve
   assert.match(serverSource, /PluginInstance\.find\(\{ serverId: \{ \$in: ids \}/);
   assert.match(serverSource, /TelemetryEvent\.aggregate/);
   assert.match(serverSource, /nextAction/);
+  assert.match(serverSource, /!access\.botInstalled \? 'invite_bot'/);
+  assert.doesNotMatch(serverSource, /!access\.installed \? 'invite_bot'/);
   assert.match(serverSource, /botStatus === 'installed'/);
   assert.match(servers, /server-health/);
   assert.match(servers, /server-next/);
