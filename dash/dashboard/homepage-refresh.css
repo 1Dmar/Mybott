@@ -143,3 +143,41 @@ html[data-theme="light"] body.modern-home-page .home-hero-art .home-orbit{border
 @media (max-width:390px){body.modern-home-page .landing-shell{width:calc(100% - 22px)}body.modern-home-page .home-hero-copy h1{font-size:clamp(2.7rem,14vw,3.8rem)}body.modern-home-page .home-lead{font-size:14px}body.modern-home-page .home-hero-art{min-height:315px}body.modern-home-page .home-orbit-one{width:330px;height:330px}body.modern-home-page .home-orbit-two{width:250px;height:250px}body.modern-home-page .command-stats small{font-size:8px}body.modern-home-page .command-stats strong{font-size:15px}body.modern-home-page .command-stats span{font-size:7px}body.modern-home-page .command-feed>div:nth-child(3){display:none}body.modern-home-page .home-premium-payment .plan{padding:21px 18px}body.modern-home-page .home-premium-payment .plan-price{margin-top:14px;font-size:29px}}
 @media (min-width:601px) and (max-width:1024px){body.modern-home-page .landing-shell{width:calc(100% - 54px)}body.modern-home-page .home-hero-grid{grid-template-columns:1fr 1fr;gap:35px}body.modern-home-page .home-hero-copy h1{font-size:clamp(3.25rem,6.3vw,4.8rem)}body.modern-home-page .home-command-card{transform:none}body.modern-home-page .home-feature-grid{grid-template-columns:1fr 1fr}body.modern-home-page .home-feature-card-wide{grid-column:1/-1;grid-row:auto;min-height:400px}body.modern-home-page .home-premium-payment .plans{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}body.modern-home-page .home-premium-payment .plan{padding:21px 17px}}
 @media (min-width:1400px){body.modern-home-page .home-hero{min-height:760px}body.modern-home-page .landing-shell{width:min(calc(100% - 72px),1280px)}body.modern-home-page .home-hero-copy h1{font-size:clamp(5rem,6.4vw,7.7rem)}body.modern-home-page .home-command-card{width:570px}}
+
+/* Final public-surface alignment: the shell must change as one system. */
+body.modern-home-page .landing-nav-inner,
+body.modern-home-page .landing-menu-toggle,
+body.modern-home-page .landing-button-secondary {
+  border-color:var(--home-border);
+  background:color-mix(in srgb,var(--home-surface) 90%,transparent);
+  color:var(--home-text);
+}
+body.modern-home-page .landing-nav .logo,
+body.modern-home-page .landing-nav .logo span { color:var(--home-heading); }
+body.modern-home-page .landing-nav .nav-links a { color:var(--home-muted); }
+body.modern-home-page .landing-nav .nav-links a:hover { color:var(--home-accent); background:color-mix(in srgb,var(--home-accent) 10%,var(--home-surface)); }
+body.modern-home-page .landing-button-secondary:hover { border-color:var(--home-accent); background:color-mix(in srgb,var(--home-accent) 8%,var(--home-surface)); }
+body.modern-home-page .home-process { background:var(--home-bg-soft); }
+body.modern-home-page .home-process-grid article { color:var(--home-text); }
+body.modern-home-page .home-process-grid article>span { color:var(--home-accent); }
+body.modern-home-page .home-process-grid article i { color:#6978df; }
+body.modern-home-page .home-feature-card a,
+body.modern-home-page .plan-link { color:var(--home-accent); }
+body.modern-home-page .home-feature-card-wide { background:radial-gradient(circle at 80% 12%,color-mix(in srgb,var(--home-accent) 17%,transparent),transparent 18rem),var(--home-surface); }
+body.modern-home-page .home-feature-card p { color:var(--home-muted); }
+body.modern-home-page .home-feature-card h3 { color:var(--home-heading); }
+body.modern-home-page .home-feature-card .home-feature-icon { background:color-mix(in srgb,var(--home-accent) 12%,var(--home-surface-raised)); color:var(--home-accent); }
+body.modern-home-page .home-feature-card .home-feature-icon.purple { color:#6572dc; }
+body.modern-home-page .home-feature-card .home-feature-icon.green { color:#07966a; }
+html[data-theme="light"] body.modern-home-page .home-process-grid article { box-shadow:0 15px 38px rgba(33,49,82,.09); }
+html[data-theme="light"] body.modern-home-page .home-feature-card { box-shadow:0 16px 42px rgba(33,49,82,.1); }
+html[data-theme="light"] body.modern-home-page .home-feature-card-wide { background:radial-gradient(circle at 80% 12%,rgba(255,112,67,.12),transparent 18rem),var(--home-surface); }
+html[data-theme="light"] body.modern-home-page .home-process-grid article i { color:#5968d4; }
+html[data-theme="light"] body.modern-home-page .home-kicker { color:var(--home-accent); }
+
+@media (max-width:600px) {
+  body.modern-home-page .landing-nav-inner { gap:6px; }
+  body.modern-home-page .landing-nav .logo { min-width:0; }
+  body.modern-home-page .landing-nav .logo span { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.modern-home-page #navActions { gap:5px; }
+}

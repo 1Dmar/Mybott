@@ -136,6 +136,47 @@
     @media (max-width:600px){body.changelog-redesign .landing-nav-inner{width:calc(100vw - 20px)}body.changelog-redesign .theme-toggle-label{display:none}body.changelog-redesign .hero h1{font-size:clamp(2.7rem,12vw,4rem)}body.changelog-redesign .hero p{font-size:14px}body.changelog-redesign .release-card{overflow-wrap:anywhere}body.changelog-redesign code{word-break:break-word}}
     @media (min-width:1400px){body.changelog-redesign .shell{width:min(calc(100% - 72px),1320px)}body.changelog-redesign .changelog-hero{min-height:580px}}
   </style>
+
+  <style id="changelog-banner-final-fix">
+    /* The source banner is panoramic; contain preserves both sides on every device. */
+    body.changelog-redesign .hero-image {
+      width:100%;
+      height:100%;
+      min-height:500px;
+      object-fit:contain;
+      object-position:center;
+      background:#0b1225;
+      border-left:1px solid rgba(175,192,232,.14);
+      filter:none;
+    }
+    body.changelog-redesign .landing-nav-inner,
+    body.changelog-redesign .theme-toggle {
+      border-color:rgba(175,192,232,.2);
+      background:rgba(10,16,31,.86);
+      color:#f5f7ff;
+    }
+    body.changelog-redesign .landing-nav .logo,
+    body.changelog-redesign .landing-nav .logo span { color:#f5f7ff; }
+    body.changelog-redesign .landing-nav .nav-links a { color:#aab6cc; }
+    body.changelog-redesign .landing-nav .nav-links a:hover { color:#ff8b61; background:rgba(255,112,67,.1); }
+    html[data-theme="light"] body.changelog-redesign .hero-image {
+      background:#edf2f9;
+      border-color:rgba(42,61,99,.14);
+    }
+    html[data-theme="light"] body.changelog-redesign .landing-nav-inner,
+    html[data-theme="light"] body.changelog-redesign .theme-toggle {
+      border-color:rgba(42,61,99,.16);
+      background:rgba(255,255,255,.9);
+      color:#17223b;
+    }
+    html[data-theme="light"] body.changelog-redesign .landing-nav .logo,
+    html[data-theme="light"] body.changelog-redesign .landing-nav .logo span { color:#17223b; }
+    html[data-theme="light"] body.changelog-redesign .landing-nav .nav-links a { color:#596984; }
+    html[data-theme="light"] body.changelog-redesign .landing-nav .nav-links a:hover { color:#e55726; background:rgba(229,87,38,.08); }
+    @media (max-width:800px) {
+      body.changelog-redesign .hero-image { height:auto; min-height:0; aspect-ratio:1983 / 793; object-fit:contain; border-top:1px solid rgba(175,192,232,.14); border-left:0; }
+    }
+  </style>
 </head>
 <body class="public-theme changelog-redesign">
   <header class="landing-nav"><div class="landing-nav-inner"><a href="/" class="logo" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot"><span>Pro<em>Mc</em>Bot</span></a><nav class="nav-links" aria-label="Primary navigation"><a href="/partners">Partners</a><a href="/changelog">Change Log</a><a href="/plugin">Plugin</a></nav><div id="navActions"><button class="theme-toggle public-theme-toggle" id="darkLight" type="button" aria-label="Toggle light and dark mode"><i class="bx bx-sun" aria-hidden="true"></i><span class="theme-toggle-label">Theme</span></button><button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><a href="/auth/discord" class="landing-button landing-button-primary landing-button-quiet">Login <i class="bx bx-log-in-alt" aria-hidden="true"></i></a></div></div></header><main class="shell">
