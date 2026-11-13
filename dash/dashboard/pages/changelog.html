@@ -177,6 +177,28 @@
       body.changelog-redesign .hero-image { height:auto; min-height:0; aspect-ratio:1983 / 793; object-fit:contain; border-top:1px solid rgba(175,192,232,.14); border-left:0; }
     }
   </style>
+
+  <style id="changelog-contrast-final">
+    /* These selectors intentionally match public-theme.css specificity. */
+    body.public-theme.changelog-redesign .hero-copy h1,
+    body.public-theme.changelog-redesign .feed-header h2,
+    body.public-theme.changelog-redesign .release-card h3 { color:#f5f7ff; }
+    body.public-theme.changelog-redesign .hero-copy > p:not(.kicker),
+    body.public-theme.changelog-redesign .feed-header p,
+    body.public-theme.changelog-redesign .description { color:#aab6cc; }
+    body.public-theme.changelog-redesign .section h4 { color:#dbe4f6; }
+    body.public-theme.changelog-redesign .section ul { color:#a8b6cc; }
+    body.public-theme.changelog-redesign .footer { color:#788ba8; }
+    html[data-theme="light"] body.public-theme.changelog-redesign .hero-copy h1,
+    html[data-theme="light"] body.public-theme.changelog-redesign .feed-header h2,
+    html[data-theme="light"] body.public-theme.changelog-redesign .release-card h3 { color:#17223b; }
+    html[data-theme="light"] body.public-theme.changelog-redesign .hero-copy > p:not(.kicker),
+    html[data-theme="light"] body.public-theme.changelog-redesign .feed-header p,
+    html[data-theme="light"] body.public-theme.changelog-redesign .description { color:#596984; }
+    html[data-theme="light"] body.public-theme.changelog-redesign .section h4 { color:#34415d; }
+    html[data-theme="light"] body.public-theme.changelog-redesign .section ul { color:#53627b; }
+    html[data-theme="light"] body.public-theme.changelog-redesign .footer { color:#667692; }
+  </style>
 </head>
 <body class="public-theme changelog-redesign">
   <header class="landing-nav"><div class="landing-nav-inner"><a href="/" class="logo" aria-label="ProMcBot home"><img src="/dashboard/logo.png" alt="ProMcBot"><span>Pro<em>Mc</em>Bot</span></a><nav class="nav-links" aria-label="Primary navigation"><a href="/partners">Partners</a><a href="/changelog">Change Log</a><a href="/plugin">Plugin</a></nav><div id="navActions"><button class="theme-toggle public-theme-toggle" id="darkLight" type="button" aria-label="Toggle light and dark mode"><i class="bx bx-sun" aria-hidden="true"></i><span class="theme-toggle-label">Theme</span></button><button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><a href="/auth/discord" class="landing-button landing-button-primary landing-button-quiet">Login <i class="bx bx-log-in-alt" aria-hidden="true"></i></a></div></div></header><main class="shell">
