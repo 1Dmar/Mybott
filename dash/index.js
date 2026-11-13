@@ -697,6 +697,7 @@ Object.entries(legalPages).forEach(([route, file]) => {
 });
 app.get('/admin/changelog', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-changelog.html')));
 app.get('/admin/test-lab', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-test-lab.html')));
+app.get('/admin/assistant', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-assistant.html')));
 app.get('/admin/email', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-email.html')));
 app.get('/admin/inbox', isAuthenticated, requireAdmin, (req, res) => res.sendFile(path.join(dashDir, 'pages', 'admin-inbox.html')));
 app.get('/partners', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'partners.html')));

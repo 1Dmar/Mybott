@@ -147,6 +147,7 @@
           <li class="item"><a href="/admin/inbox" class="nav_link ${active('/admin/inbox') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-conversation"></i></span><span class="navlink">Support Inbox</span></a></li>
           <li class="item"><a href="/admin/email" class="nav_link ${active('/admin/email') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-envelope"></i></span><span class="navlink">Send Email</span></a></li>
           <li class="item"><a href="/admin/test-lab" class="nav_link ${active('/admin/test-lab') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-bot"></i></span><span class="navlink">Test Lab</span></a></li>
+          <li class="item"><a href="/admin/assistant" class="nav_link ${active('/admin/assistant') ? 'active' : ''}"><span class="navlink_icon"><i class="bx bx-sparkles"></i></span><span class="navlink">AI Assistant</span><span class="nav-badge nav-badge-new">LAB</span></a></li>
         </ul>
         <ul class="menu_items">
           <div class="menu_title"><span>Workspace</span></div>
