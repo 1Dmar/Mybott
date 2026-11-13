@@ -48,7 +48,7 @@
     const avatar = safeAvatarUrl(user.avatar);
     const publicNavActions = document.getElementById('navActions');
     if (publicNavActions) {
-      publicNavActions.innerHTML = `<button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><div><span style="font-size:13px;font-weight:700">${escapeHtml(displayName)}</span><a href="/dashboard" aria-label="Open your Dashboard"><img src="${escapeHtml(avatar)}" style="width:35px;height:35px;border-radius:50%;border:2px solid #ff6a2b;object-fit:cover" alt="Account avatar"></a></div>`;
+      publicNavActions.innerHTML = `<button class="theme-toggle public-theme-toggle" id="darkLight" type="button" aria-label="Toggle light and dark mode"><i class="bx bx-sun" aria-hidden="true"></i><span class="theme-toggle-label">Theme</span></button><button class="landing-menu-toggle" id="landingMenuToggle" type="button" aria-label="Open navigation" aria-expanded="false"><i class="bx bx-menu"></i></button><div><span style="font-size:13px;font-weight:700">${escapeHtml(displayName)}</span><a href="/dashboard" aria-label="Open your Dashboard"><img src="${escapeHtml(avatar)}" style="width:35px;height:35px;border-radius:50%;border:2px solid #ff6a2b;object-fit:cover" alt="Account avatar"></a></div>`;
     }
     document.querySelectorAll('[data-user-name]').forEach(el => { el.textContent = displayName; });
     document.querySelectorAll('[data-user-avatar]').forEach(el => {
@@ -62,6 +62,7 @@
 
   function initTheme() {
     document.body.classList.toggle('dark', state.theme === 'dark');
+    document.documentElement.setAttribute('data-theme', state.theme);
     updateThemeIcon();
   }
 
@@ -74,6 +75,7 @@
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     localStorage.setItem('pmcbot_theme', state.theme);
     document.body.classList.toggle('dark', state.theme === 'dark');
+    document.documentElement.setAttribute('data-theme', state.theme);
     updateThemeIcon();
   }
 
