@@ -487,7 +487,7 @@
   <link rel="stylesheet" href="/dashboard/public-theme.css">
   <link rel="stylesheet" href="/dashboard/homepage-refresh.css">
 </head>
-<body class="dark public-theme homepage-refresh">
+<body class="dark public-theme homepage-refresh modern-home-page">
   <header class="landing-nav">
     <div class="landing-nav-inner">
       <a href="/" class="logo" aria-label="ProMcBot home">
@@ -506,210 +506,78 @@
     </div>
   </header>
 
-  <main>
-    <section class="hero-section">
-      <div class="landing-shell hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">OPERATIONS FOR MINECRAFT COMMUNITIES</p>
-          <h1>See the signal.<br><span>Move the community forward.</span></h1>
-          <p>ProMcBot turns your Minecraft server activity into a clear, useful workspace for the people running the community — with Discord, setup, intelligence, and action in one place.</p>
-          <div class="hero-actions">
-            <a href="/invitebot" class="landing-button landing-button-primary"><i class="bx bx-bot" aria-hidden="true"></i> Invite ProMcBot</a>
-            <a href="/loading-auth" class="landing-button landing-button-secondary"><i class="bx bx-grid-alt" aria-hidden="true"></i> Open Dashboard</a>
+  <main class="modern-home">
+    <section class="home-hero" aria-labelledby="home-title">
+      <div class="landing-shell home-hero-grid">
+        <div class="home-hero-copy">
+          <p class="home-kicker"><span class="home-kicker-dot"></span> Discord × Minecraft control</p>
+          <h1 id="home-title">The bot that makes your server feel <span>alive.</span></h1>
+          <p class="home-lead">Monitoring, moderation, automation, and Minecraft setup — designed to help your community run better without adding more work.</p>
+          <div class="home-hero-actions">
+            <a href="/invitebot" class="landing-button landing-button-primary"><i class="bx bx-bot" aria-hidden="true"></i> Add to Discord</a>
+            <a href="/loading-auth" class="landing-button landing-button-secondary"><i class="bx bx-grid-alt" aria-hidden="true"></i> Open dashboard</a>
           </div>
-          <p class="hero-note"><i class="bx bx-check-circle" aria-hidden="true"></i> Built around measured server activity, not guessed numbers.</p>
+          <div class="home-trust-line"><i class="bx bx-check-circle" aria-hidden="true"></i><span>Start free. Connect your Minecraft server when you are ready.</span></div>
         </div>
-
-        <div class="product-preview-wrap" aria-label="Illustrative ProMcBot dashboard preview">
-          <div class="product-preview">
-            <div class="preview-topbar">
-              <div class="preview-brand"><i class="bx bx-layer" aria-hidden="true"></i><span>ProMcBot workspace</span></div>
-              <small>server overview</small>
-            </div>
-            <div class="preview-body">
-              <aside class="preview-rail" aria-hidden="true">
-                <i class="bx bx-home-alt"></i><i class="bx bx-pulse"></i><i class="bx bx-shield-quarter"></i><i class="bx bx-bell"></i><i class="bx bx-cog"></i>
-              </aside>
-              <div class="preview-content">
-                <div class="preview-heading">
-                  <div><h2>Server overview</h2><p>A single view for the signals that matter.</p></div>
-                  <span class="preview-status">Connected</span>
-                </div>
-                <div class="preview-card">
-                  <div class="preview-server">
-                    <div class="preview-server-avatar"><i class="bx bx-cube-alt" aria-hidden="true"></i></div>
-                    <div><strong>Your Minecraft server</strong><span>Discord community connected</span></div>
-                  </div>
-                  <div class="preview-metrics">
-                    <div class="preview-metric"><small>Players online</small><strong>24</strong></div>
-                    <div class="preview-metric"><small>Server status</small><strong>Online</strong></div>
-                    <div class="preview-metric"><small>Latency</small><strong>42ms</strong></div>
-                  </div>
-                </div>
-                <div class="preview-lower">
-                  <div class="preview-event"><i class="bx bx-bot" aria-hidden="true"></i><div><strong>Automation ready</strong><span>Use activity signals to keep Discord informed.</span></div></div>
-                  <div class="preview-chart"><small>Activity pulse</small><svg viewBox="0 0 180 72" role="img" aria-label="Illustrative activity line"><defs><linearGradient id="previewLine" x1="0" x2="1"><stop offset="0" stop-color="#ff6a2b" stop-opacity=".35"/><stop offset="1" stop-color="#ffb07f"/></linearGradient></defs><path d="M0 58 C18 56, 24 45, 39 49 S60 60, 74 43 S91 24, 108 38 S126 48, 143 27 S163 23, 180 11" fill="none" stroke="url(#previewLine)" stroke-linecap="round" stroke-width="3"/></svg></div>
-                </div>
-                <p class="preview-caption">Illustrative preview. Live values appear after your server publishes measured telemetry.</p>
-              </div>
-            </div>
+        <div class="home-hero-art" aria-label="ProMcBot server command center preview">
+          <div class="home-orbit home-orbit-one"></div><div class="home-orbit home-orbit-two"></div>
+          <div class="home-command-card">
+            <div class="command-top"><span class="command-live"><i></i> LIVE COMMAND CENTER</span><span class="command-dots">•••</span></div>
+            <div class="command-server"><div class="command-server-icon"><i class="bx bx-cube-alt"></i></div><div><strong>Skyblock Network</strong><span>Discord community connected</span></div><b>ONLINE</b></div>
+            <div class="command-stats"><div><small>Players</small><strong>248</strong><span>+18 today</span></div><div><small>Uptime</small><strong>99.9%</strong><span>All systems good</span></div><div><small>Actions</small><strong>32</strong><span>handled today</span></div></div>
+            <div class="command-feed"><div><i class="bx bx-bot"></i><span><b>Automation ready</b> New player welcome is active.</span><time>now</time></div><div><i class="bx bx-shield-quarter"></i><span><b>Moderation protected</b> 4 actions reviewed.</span><time>2m</time></div><div><i class="bx bx-line-chart"></i><span><b>Server pulse</b> Activity is trending up.</span><time>8m</time></div></div>
           </div>
+          <div class="home-floating-badge badge-top"><i class="bx bx-pulse"></i><span>Real-time signals</span></div>
+          <div class="home-floating-badge badge-bottom"><i class="bx bx-check-shield"></i><span>Built for communities</span></div>
         </div>
       </div>
     </section>
 
-    <section class="trust-strip" aria-label="ProMcBot product foundations">
-      <div class="landing-shell trust-strip-inner">
-        <div class="trust-item"><i class="bx bx-link-alt" aria-hidden="true"></i><div><strong>One bridge, two communities</strong><span>Connect Minecraft context with Discord conversations.</span></div></div>
-        <div class="trust-item"><i class="bx bx-line-chart" aria-hidden="true"></i><div><strong>Measured, not guessed</strong><span>Public stats stay grounded in received telemetry.</span></div></div>
-        <div class="trust-item"><i class="bx bx-slider-alt" aria-hidden="true"></i><div><strong>Configure around your server</strong><span>Shape messages, moderation, and automation to fit.</span></div></div>
+    <section class="home-proof" aria-label="Product value">
+      <div class="landing-shell home-proof-grid">
+        <div><strong>One workspace.</strong><span>Everything your team needs to run the server.</span></div>
+        <div><strong>Measured activity.</strong><span>Useful signals instead of made-up numbers.</span></div>
+        <div><strong>Less busywork.</strong><span>Automations that keep Discord moving.</span></div>
       </div>
     </section>
 
-    <section class="section" id="features" aria-labelledby="features-heading">
+    <section class="home-section home-features" id="features" aria-labelledby="features-heading">
       <div class="landing-shell">
-        <div class="section-heading">
-          <p class="eyebrow">A focused toolkit</p>
-          <h2 id="features-heading">Your server has a pulse.<br>Make it useful.</h2>
-          <p>Bring the day-to-day work of running a Minecraft community into the place your team already uses to communicate.</p>
-        </div>
-        <div class="features">
-          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/Jjc6zBjP/images-5.jpg');" tabindex="0" role="button" aria-label="Live Monitoring feature">
-            <i class="bx bx-stats feature-icon" aria-hidden="true"></i>
-            <h3>Live Monitoring</h3>
-            <p>Real-time player counts, server status, and latency monitoring directly in Discord and your dashboard.</p>
-          </div>
-          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/FLMYsHPn/file-0000000003f881f4bfa30abd818d72e7.png');" tabindex="0" role="button" aria-label="Auto Management feature">
-            <i class="bx bx-bot feature-icon" aria-hidden="true"></i>
-            <h3>Auto Management</h3>
-            <p>Powerful auto-responder, ticket systems, and moderation tools to keep your community safe 24/7.</p>
-          </div>
-          <div class="feature-card" style="--feature-card-image: url('https://i.ibb.co/9mZj9BLX/file-000000004ad882439c3ca35e3277c769.png');" tabindex="0" role="button" aria-label="Full Customization feature">
-            <i class="bx bx-palette feature-icon" aria-hidden="true"></i>
-            <h3>Full Customization</h3>
-            <p>Personalize every message, embed, and status image to match your server's unique brand.</p>
-          </div>
+        <div class="home-section-heading"><p class="home-kicker">Everything in one place</p><h2 id="features-heading">Powerful enough for big servers.<br><span>Simple enough to start today.</span></h2><p>Choose what your community needs now. Add more as it grows.</p></div>
+        <div class="home-feature-grid">
+          <article class="home-feature-card home-feature-card-wide"><div class="home-feature-icon"><i class="bx bx-pulse"></i></div><div><h3>Know what is happening</h3><p>See server status, player activity, plugin health, and the signals that deserve attention.</p><a href="/plugin">Explore monitoring <i class="bx bx-right-arrow-alt"></i></a></div><div class="feature-mini-chart"><span style="height:32%"></span><span style="height:48%"></span><span style="height:41%"></span><span style="height:70%"></span><span style="height:58%"></span><span style="height:84%"></span><span style="height:73%"></span></div></article>
+          <article class="home-feature-card"><div class="home-feature-icon purple"><i class="bx bx-bot"></i></div><h3>Automate the routine</h3><p>Welcome players, publish updates, handle repeatable actions, and give staff a calmer workflow.</p><a href="/loading-auth">See the dashboard <i class="bx bx-right-arrow-alt"></i></a></article>
+          <article class="home-feature-card"><div class="home-feature-icon green"><i class="bx bx-shield-quarter"></i></div><h3>Protect the community</h3><p>Bring moderation, support, tickets, and clear permissions into the same trusted workspace.</p><a href="/loading-auth">Open the workspace <i class="bx bx-right-arrow-alt"></i></a></article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="how-it-works" aria-labelledby="how-heading">
+    <section class="home-section home-process" aria-labelledby="process-heading">
       <div class="landing-shell">
-        <div class="section-heading centered">
-          <p class="eyebrow">A clear starting point</p>
-          <h2 id="how-heading">From connection to confident moderation.</h2>
-          <p>Set up the bridge once, then keep the useful work close to your community.</p>
-        </div>
-        <div class="steps">
-          <article class="step"><i class="bx bx-plug" aria-hidden="true"></i><h3>Connect the server</h3><p>Invite ProMcBot to Discord and connect the Minecraft server context your community needs to see.</p></article>
-          <article class="step"><i class="bx bx-slider" aria-hidden="true"></i><h3>Configure the bot</h3><p>Choose the channels, messages, moderation tools, and server visuals that fit your workflow.</p></article>
-          <article class="step"><i class="bx bx-radar" aria-hidden="true"></i><h3>Monitor and automate</h3><p>Keep an eye on measured activity and let the bot turn meaningful signals into timely community actions.</p></article>
-        </div>
+        <div class="home-section-heading centered"><p class="home-kicker">Start in minutes</p><h2 id="process-heading">From invite to insight.</h2><p>No complicated launch plan. Just three clear steps.</p></div>
+        <div class="home-process-grid"><article><span>01</span><i class="bx bx-bot"></i><h3>Invite the bot</h3><p>Add ProMcBot to your Discord server with the permissions your workflow needs.</p></article><article><span>02</span><i class="bx bx-link-alt"></i><h3>Connect Minecraft</h3><p>Use the guided setup to connect your server address or the ProMcSecure plugin.</p></article><article><span>03</span><i class="bx bx-rocket"></i><h3>Grow with signal</h3><p>Watch real activity, automate the routine, and make better community decisions.</p></article></div>
       </div>
     </section>
 
-    <section class="section capability-section" aria-labelledby="capabilities-heading">
-      <div class="landing-shell capability-layout">
-        <div class="capability-intro">
-          <p class="eyebrow">Made for the real workflow</p>
-          <h2 id="capabilities-heading">One place to see what needs attention.</h2>
-          <p>ProMcBot keeps the interface practical: the status, community, and controls sit close enough to act on without turning the page into a control-room wall.</p>
-        </div>
-        <div class="capability-list" id="capabilities">
-          <article class="capability"><i class="bx bx-pulse" aria-hidden="true"></i><h3>Server status</h3><p>See connection state, player activity, and the latest measured heartbeat in context.</p></article>
-          <article class="capability"><i class="bx bx-shield-quarter" aria-hidden="true"></i><h3>Moderation and tickets</h3><p>Give your staff a consistent way to manage conversations, support, and community safety.</p></article>
-          <article class="capability"><i class="bx bx-broadcast" aria-hidden="true"></i><h3>Embeds and automation</h3><p>Shape how important changes are shared, then let configured rules handle repeatable responses.</p></article>
-          <article class="capability"><i class="bx bx-share-alt" aria-hidden="true"></i><h3>Public server cards</h3><p>Share aggregate server context when you want to, without presenting unmeasured values as facts.</p></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="privacy-heading">
-      <div class="landing-shell privacy-layout">
-        <div class="section-heading">
-          <p class="eyebrow">Clarity by default</p>
-          <h2 id="privacy-heading">Know what is connected and what is shared.</h2>
-          <p>Good community tooling should make its boundaries easy to understand. ProMcBot’s public surfaces distinguish received data from information that has not been measured.</p>
-          <a href="/privacy-policy" class="landing-button landing-button-secondary" style="margin-top: 24px;">Read Privacy Policy <i class="bx bx-arrow-up-right" aria-hidden="true"></i></a>
-        </div>
-        <div class="privacy-panel">
-          <div class="privacy-panel-header"><i class="bx bx-lock-alt" aria-hidden="true"></i><strong>What the product makes visible</strong></div>
-          <ul class="privacy-points">
-            <li><i class="bx bx-check" aria-hidden="true"></i><span>Discord permissions are part of the connection you choose to authorize and configure.</span></li>
-            <li><i class="bx bx-check" aria-hidden="true"></i><span>Public server cards are limited to aggregate telemetry intended for sharing.</span></li>
-            <li><i class="bx bx-check" aria-hidden="true"></i><span>When a value has not been received, it remains unmeasured rather than being estimated.</span></li>
-            <li><i class="bx bx-check" aria-hidden="true"></i><span>Review the project’s privacy and terms pages for the complete, current boundaries.</span></li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="plans-heading">
+    <section class="section home-premium-payment" aria-labelledby="plans-heading">
       <div class="landing-shell">
-        <div class="section-heading centered">
-          <p class="eyebrow">Plans that scale with the server</p>
-          <h2 id="plans-heading">Start small. Add room when you need it.</h2>
-          <p>Current plan definitions are shown here from the project configuration. Limits and access are enforced inside the dashboard.</p>
-        </div>
+        <div class="section-heading centered"><p class="eyebrow">Premium Payment</p><h2 id="plans-heading">More room for your community.</h2><p>Start free, then choose the plan that matches the way your server operates.</p></div>
         <div class="plans">
-          <article class="plan"><h3>Free</h3><div class="plan-price">$0 <small>/ month</small></div><p>Help small servers become better.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
-          <article class="plan featured"><span class="plan-badge">Popular starting point</span><h3>Pro</h3><div class="plan-price">$4.99 <small>/ month</small></div><p>Help me grow my server.</p><a class="plan-link" href="/loading-auth">See your options <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
-          <article class="plan"><h3>Ultimate</h3><div class="plan-price">$9.99 <small>/ month</small></div><p>Help me operate and scale my network.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+          <article class="plan"><h3>Free</h3><div class="plan-price">$0 <small>/ month</small></div><p>Essential tools for small communities getting started.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+          <article class="plan featured"><span class="plan-badge">Most popular</span><h3>Pro</h3><div class="plan-price">$4.99 <small>/ month</small></div><p>More automation, intelligence, and room to grow.</p><a class="plan-link" href="/loading-auth">See your options <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
+          <article class="plan"><h3>Ultimate</h3><div class="plan-price">$9.99 <small>/ month</small></div><p>Advanced control for active servers and networks.</p><a class="plan-link" href="/loading-auth">Open Dashboard <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a></article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="faq" aria-labelledby="faq-heading">
-      <div class="landing-shell">
-        <div class="section-heading centered">
-          <p class="eyebrow">Before you connect</p>
-          <h2 id="faq-heading">Useful answers, without the fine print fog.</h2>
-        </div>
-        <div class="faq-grid">
-          <details class="faq-item"><summary>How do I get started?</summary><p>Use Invite ProMcBot to add the bot to your Discord community, then open the Dashboard to continue configuration.</p></details>
-          <details class="faq-item"><summary>Which permissions are required?</summary><p>The required permissions depend on the Discord tools you enable. Review the authorization screen and configure only what your community workflow needs.</p></details>
-          <details class="faq-item"><summary>Does it work with my Minecraft server?</summary><p>Plugin and server compatibility is documented in the project’s compatibility materials. Check the current documentation before connecting a production server.</p></details>
-          <details class="faq-item"><summary>How many servers can I connect?</summary><p>Access and limits can depend on the plan and current entitlement. Sign in to the Dashboard to see the options available to your account.</p></details>
-          <details class="faq-item"><summary>What happens when telemetry is missing?</summary><p>Public stats keep the value unmeasured rather than inferring it. A server owner can choose whether to share the resulting aggregate card.</p></details>
-          <details class="faq-item"><summary>Where can I find support and terms?</summary><p>Use the Documentation link for setup guidance, and review the Privacy Policy and Terms of Service in the footer for the current product boundaries.</p></details>
-        </div>
+    <section class="home-community" id="community-feedback" aria-labelledby="reviews-heading">
+      <div class="landing-shell home-community-inner">
+        <div class="home-community-copy"><p class="home-kicker">Built with server owners</p><h2 id="reviews-heading">Your feedback shapes the next release.</h2><p>Tell us what would make your server easier to run. Submissions are reviewed before they appear publicly.</p></div>
+        <div class="home-review-compact"><div class="review-list" id="reviewList"><p class="review-empty">No public reviews yet. Be the first to share your experience.</p></div><form class="review-form" id="reviewForm"><div class="review-compact-fields"><select name="rating" required aria-label="Rating"><option value="5">5 — Excellent</option><option value="4">4 — Great</option><option value="3">3 — Good</option><option value="2">2 — Needs improvement</option><option value="1">1 — Poor</option></select><input name="title" maxlength="120" placeholder="Short title" autocomplete="off"><textarea name="body" minlength="12" maxlength="1200" required placeholder="What should we improve?"></textarea></div><label class="review-consent"><input type="checkbox" name="consentToPublish" required><span>I agree that ProMcBot may review and publish this feedback.</span></label><button class="landing-button landing-button-primary" type="submit">Send feedback <i class="bx bx-send" aria-hidden="true"></i></button><p class="review-form-message" id="reviewFormMessage" aria-live="polite"></p></form></div>
       </div>
     </section>
 
-    <section class="reviews-section" id="community-feedback" aria-labelledby="reviews-heading">
-      <div class="landing-shell">
-        <div class="section-heading">
-          <p class="eyebrow">Community feedback</p>
-          <h2 id="reviews-heading">Real experiences. Carefully reviewed.</h2>
-          <p>Read feedback shared by ProMcBot users. New submissions are moderated before they appear publicly.</p>
-        </div>
-        <div class="reviews-layout">
-          <div class="reviews-list" aria-live="polite">
-            <div class="review-list" id="reviewList"><p class="review-empty">No public reviews yet. Be the first to share your experience.</p></div>
-          </div>
-          <div class="review-form-card">
-            <h3>Share your experience</h3>
-            <p>Sign in with Discord to submit one review. Your display name comes from your authenticated account.</p>
-            <form class="review-form" id="reviewForm">
-              <label>Rating<select name="rating" required><option value="5">5 — Excellent</option><option value="4">4 — Great</option><option value="3">3 — Good</option><option value="2">2 — Needs improvement</option><option value="1">1 — Poor</option></select></label>
-              <label>Title<input name="title" maxlength="120" placeholder="What stood out?" autocomplete="off"></label>
-              <label>Your review<textarea name="body" minlength="12" maxlength="1200" required placeholder="Tell the community about your experience with ProMcBot."></textarea></label>
-              <label class="review-consent"><input type="checkbox" name="consentToPublish" required><span>I agree that ProMcBot may review and publish this feedback with my authenticated display name.</span></label>
-              <button class="landing-button landing-button-primary" type="submit">Submit for review <i class="bx bx-send" aria-hidden="true"></i></button>
-              <p class="review-form-message" id="reviewFormMessage" aria-live="polite"></p>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="final-cta" aria-labelledby="final-cta-heading">
-      <div class="landing-shell final-cta-inner">
-        <div><h2 id="final-cta-heading">Connect your server. Keep your community moving.</h2><p>Bring Discord and Minecraft together, then keep the work moving from one focused dashboard.</p></div>
-        <div class="final-cta-actions"><a href="/invitebot" class="landing-button landing-button-primary">Invite ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a><a href="/loading-auth" class="landing-button landing-button-secondary">Open Dashboard</a></div>
-      </div>
-    </section>
-
+    <section class="final-cta" aria-labelledby="final-cta-heading"><div class="landing-shell final-cta-inner"><div><p class="home-kicker">Ready when you are</p><h2 id="final-cta-heading">Give your community a better command center.</h2><p>Connect Discord and Minecraft, then let ProMcBot handle the busywork.</p></div><div class="final-cta-actions"><a href="/invitebot" class="landing-button landing-button-primary">Invite ProMcBot <i class="bx bx-right-arrow-alt" aria-hidden="true"></i></a><a href="/loading-auth" class="landing-button landing-button-secondary">Open Dashboard</a></div></div></section>
   </main>
 
   <footer class="premium-footer">
