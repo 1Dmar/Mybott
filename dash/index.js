@@ -70,6 +70,7 @@ const { DEFAULT_AUTOMOD, normalizeAutomod } = require('./moderationConfig');
 const { buildPublicStats } = require('./publicStats');
 const { validatePublicUsername, normalizePublicUsername } = require('./publicProfile');
 const { renderPublicProfileCard } = require('./publicProfileCard');
+const { generatePlayerCard, rendererAvailable: playerCardRendererAvailable } = require('../bot/utils/playerCardGenerator');
 const { buildTelemetryDocuments, buildTelemetryBulkOperations, summarizeTelemetryWrite, MAX_EVENTS } = require('./telemetryIngest');
 const { isAllowedCorsOrigin, isSameOriginMutation } = require('./securityPolicy');
 const { buildPublicBaseUrl } = require('./urlPolicy');
@@ -672,6 +673,29 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(dashDir, 'home.html')));
+let demoPlayerCardCache = null;
+let demoPlayerCardCacheAt = 0;
+app.get('/api/demo/playercard', rateLimit({ windowMs: 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false }), async (req, res) => {
+  try {
+    if (!playerCardRendererAvailable) return res.status(503).json({ success: false, error: 'player_card_renderer_unavailable' });
+    const now = Date.now();
+    if (!demoPlayerCardCache || now - demoPlayerCardCacheAt > 5 * 60 * 1000) {
+      demoPlayerCardCache = await generatePlayerCard('Notch', 'minecraft', null, {
+        accountType: 'online',
+        firstSeenAt: new Date(now - 1000 * 60 * 60 * 24 * 30).toISOString(),
+        lastSeenAt: new Date(now - 1000 * 60 * 12).toISOString(),
+        stats: { joins: 128, sessionSeconds: 68200 },
+        scopeLabel: 'ProMcBot Demo Server',
+      });
+      demoPlayerCardCacheAt = now;
+    }
+    return res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' }).send(demoPlayerCardCache);
+  } catch (error) {
+    console.error('[demo] player card generation failed:', error.message);
+    return res.status(503).json({ success: false, error: 'demo_playercard_unavailable' });
+  }
+});
+app.get('/demo', (req, res) => res.sendFile(path.join(dashDir, 'pages', 'demo.html')));
 const docsPages = {
   '/docs': 'index.html',
   '/docs/getting-started': 'getting-started.html',
