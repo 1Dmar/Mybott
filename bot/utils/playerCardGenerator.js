@@ -577,7 +577,20 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         playerData.profileContext = profileContext;
     }
     
-    // 1. The supplied PNG is the fixed background and layout. Keep it unchanged.
+    const skinImg = await loadFirstAvailableImage(buildSkinCandidates(playerData));
+
+    // Draw the skin underneath the supplied PNG so the original frame and glow stay on top.
+    const avatarX = 250, avatarY = 245, avatarSize = 295;
+    if (skinImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 42);
+        ctx.clip();
+        ctx.drawImage(skinImg, avatarX, avatarY, avatarSize, avatarSize);
+        ctx.restore();
+    }
+
+    // The supplied PNG is the fixed background and layout. Keep it unchanged and on top.
     try {
         const template = await loadImage(path.join(__dirname, '../assets/player-card-template.png'));
         ctx.drawImage(template, 0, 0, width, height);
@@ -588,19 +601,6 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
 
     const state = playerData.profileContext?.cardState || (playerData.endpointOffline ? 'server_offline' : playerData.notFound || playerData.neverJoinedServer ? 'never_joined' : 'measured');
     const isOnline = state === 'measured' && playerData.isOnline;
-    const skinImg = await loadFirstAvailableImage(buildSkinCandidates(playerData));
-
-    // Avatar: only the checkerboard/avatar placeholder area is replaced.
-    const avatarX = 245, avatarY = 238, avatarSize = 305;
-    if (skinImg) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 42);
-        ctx.clip();
-        ctx.drawImage(skinImg, avatarX, avatarY, avatarSize, avatarSize);
-        ctx.restore();
-    }
-
     // Name: clear only the name field from the template, then place the live name.
     ctx.save();
     ctx.fillStyle = 'rgba(8, 14, 32, 0.82)';

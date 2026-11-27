@@ -49,7 +49,8 @@ test('staff badge permissions are resolved from the card target, not the command
 
 test('player card uses the supplied layout for avatar, account identity, status, and reserved slots', () => {
   assert.match(rendererSource, /player-card-template\.png/);
-  assert.match(rendererSource, /const avatarX = 245, avatarY = 238/);
+  assert.match(rendererSource, /const avatarX = 250, avatarY = 245, avatarSize = 295/);
+  assert.match(rendererSource, /fixed background and layout\. Keep it unchanged and on top/);
   assert.match(rendererSource, /Original Account/);
   assert.match(rendererSource, /Verification check: visible only for an original account/);
   assert.match(rendererSource, /Online\/offline: replace only the status text\/dot/);

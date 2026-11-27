@@ -9,7 +9,8 @@ test('renderer accepts trusted profile context and uses measured card scope', ()
   assert.match(source, /profileContext\.isOnline/);
   assert.match(source, /Original Account/);
   assert.match(source, /player-card-template\.png/);
-  assert.match(source, /const avatarX = 245, avatarY = 238/);
+  assert.match(source, /const avatarX = 250, avatarY = 245, avatarSize = 295/);
+  assert.match(source, /underneath the supplied PNG/);
 });
 
 test('renderer does not use a fabricated default server address', () => {
