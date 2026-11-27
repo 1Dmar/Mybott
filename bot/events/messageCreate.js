@@ -16,6 +16,7 @@ const Jimp = require("jimp");
 const path = require('path');
 const fs = require('fs');
 const ServerInfo = require("../Models/Server");
+const PluginInstance = require("../Models/PluginInstance");
 const { getForGuild } = require('../utils/entitlementService');
 const { legacyPrefixEnabled } = require('../utils/legacyCommandPolicy');
 const { generateServerStatusImage, WALLPAPERS } = require("./interactionCreate");
@@ -74,6 +75,7 @@ const EMOJIS = {
 
 const url = "https://promcbot.dev";
 const botConfigCache = new Map();
+const PLUGIN_FRESHNESS_MS = 15 * 60 * 1000;
 
 async function getBotConfig(guildId) {
     const cached = botConfigCache.get(guildId);
@@ -301,14 +303,21 @@ const handleMcMessage = async (client, message) => {
             const javaIP = serverInfo.javaIP;
             const javaPort = serverInfo.javaPort || 25565;
             let javaServerData = {};
+            const plugin = await PluginInstance.findOne({ serverId, revokedAt: null }).sort({ lastSeenAt: -1 }).lean();
+            const pluginOnline = Boolean(plugin && (plugin.status === 'online' || (plugin.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= Date.now() - PLUGIN_FRESHNESS_MS)));
             if (serverInfo.serverType === "java" || serverInfo.serverType === "custom") {
                 emoji = EMOJIS.JAVA;
-                try {
-                    const javaResponse = await axios.get(`https://api.mcsrvstat.us/3/${javaIP}:${javaPort}`);
-                    javaServerData = javaResponse.data;
-                } catch (error) {
-                    console.error("Error fetching Java server information:", error);
-                    javaServerData = { online: false };
+                if (pluginOnline) {
+                    const onlinePlayers = Number.isFinite(Number(plugin.lastOnlinePlayers)) ? Math.max(0, Number(plugin.lastOnlinePlayers)) : 0;
+                    javaServerData = { online: true, players: { online: onlinePlayers, max: 0 }, version: plugin.protocolVersion || "Plugin heartbeat" };
+                } else {
+                    try {
+                        const javaResponse = await axios.get(`https://api.mcsrvstat.us/3/${javaIP}:${javaPort}`);
+                        javaServerData = javaResponse.data;
+                    } catch (error) {
+                        console.error("Error fetching Java server information:", error);
+                        javaServerData = { online: false };
+                    }
                 }
             }
 
