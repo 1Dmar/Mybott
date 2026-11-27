@@ -13,6 +13,16 @@ const PluginInstance = require('../../../Models/PluginInstance');
 
 const PLUGIN_FRESHNESS_MS = 15 * 60 * 1000;
 
+function uuidVariants(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return [];
+  const compact = raw.replace(/-/g, '');
+  const dashed = compact.length === 32
+    ? `${compact.slice(0, 8)}-${compact.slice(8, 12)}-${compact.slice(12, 16)}-${compact.slice(16, 20)}-${compact.slice(20)}`
+    : raw;
+  return [...new Set([raw, compact, dashed])];
+}
+
 function buildBadges({ interaction, stats, account, identity }) {
   const badges = [];
   const memberPermissions = interaction.member?.permissions;
@@ -105,7 +115,16 @@ module.exports = {
         ign = identity.username;
         template = requestedTemplate === 'saved' ? (card?.template || 'minecraft') : requestedTemplate;
         const link = await PlayerServerLink.findOne({ accountId: account._id, identityId: identity._id, serverId: interaction.guild.id }).sort({ lastSeenAt: -1 }).lean();
-        const events = link ? await TelemetryEvent.find({ serverId: interaction.guild.id, 'data.uuid': identity.uuid, type: { $in: ['player_join', 'player_leave'] } }).sort({ occurredAt: -1 }).limit(5000).lean() : [];
+        const uuidMatches = uuidVariants(identity.uuid);
+        const username = String(identity.username || '').trim();
+        const events = link ? await TelemetryEvent.find({
+          serverId: interaction.guild.id,
+          type: { $in: ['player_join', 'player_leave'] },
+          $or: [
+            { 'data.uuid': { $in: uuidMatches } },
+            ...(username ? [{ 'data.username': new RegExp(`^${username.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, 'i') }] : []),
+          ],
+        }).sort({ occurredAt: -1 }).limit(5000).lean() : [];
         const joins = events.filter(event => event.type === 'player_join');
         const leaves = events.filter(event => event.type === 'player_leave');
         const stats = {

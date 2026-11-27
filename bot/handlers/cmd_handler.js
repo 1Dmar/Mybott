@@ -28,6 +28,9 @@ module.exports = async (client) => {
         const command = require(`../Commands/Message/${dir}/${cmd}`);
         if (command.name && command.type1) {
           client.mcommands.set(command.name, command);
+          for (const alias of Array.isArray(command.aliases) ? command.aliases : []) {
+            if (typeof alias === 'string' && alias.trim()) client.mcommands.set(alias.trim().toLowerCase(), command);
+          }
           // إضافة الأمر إلى المصفوفة
           loadedCommands.push(command);
          } else {

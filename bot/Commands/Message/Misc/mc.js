@@ -21,7 +21,8 @@ const formatEmoji = (emoji) => {
 };
 
 module.exports = {
-  name: "info",
+  name: "mc",
+  aliases: ["info"],
   description: "Show Minecraft server status in a better way",
   userPermissions: PermissionFlagsBits.SendMessages,
   botPermissions: PermissionFlagsBits.SendMessages,
