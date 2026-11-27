@@ -133,16 +133,30 @@ module.exports = {
           sessionSeconds: leaves.reduce((sum, event) => sum + (Number.isFinite(Number(event.data?.sessionSeconds)) ? Math.max(0, Number(event.data.sessionSeconds)) : 0), 0),
           activeDays: new Set(events.map(event => new Date(event.occurredAt).toISOString().slice(0, 10))).size,
         };
-        const hasMeasuredActivity = Boolean(events.length);
+        // A verified PlayerServerLink is already proof that the player reached
+        // this server (the link command can only be consumed in-game). Do not
+        // treat a quiet/offline server or expired raw telemetry as "never joined".
+        const hasVerifiedServerPresence = Boolean(link?.firstSeenAt);
+        const hasMeasuredActivity = Boolean(events.length || hasVerifiedServerPresence);
         const latestPlayerEvent = events[0] || null;
+        const fallbackFirstSeenAt = link?.firstSeenAt || identity.createdAt || null;
+        const fallbackLastSeenAt = link?.lastSeenAt || identity.lastSeenAt || fallbackFirstSeenAt;
+        const measuredStats = events.length ? stats : {
+          joins: 1,
+          leaves: 0,
+          sessionSeconds: 0,
+          activeDays: fallbackFirstSeenAt ? 1 : 0,
+        };
         profileContext = {
           accountType: identity.accountType,
-          firstSeenAt: hasMeasuredActivity ? identity.createdAt : null,
-          lastSeenAt: hasMeasuredActivity ? identity.lastSeenAt : null,
-          stats: hasMeasuredActivity ? stats : null,
-          badges: hasMeasuredActivity ? buildBadges({ interaction, stats, account, identity }) : [{ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' }],
+          firstSeenAt: hasMeasuredActivity ? fallbackFirstSeenAt : null,
+          lastSeenAt: hasMeasuredActivity ? fallbackLastSeenAt : null,
+          stats: hasMeasuredActivity ? measuredStats : null,
+          badges: hasMeasuredActivity ? buildBadges({ interaction, stats: measuredStats, account, identity }) : [{ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' }],
           scopeLabel: cardLabel,
-          cardState: !plugin ? 'server_not_configured' : !pluginOnline ? 'server_offline' : !events.length ? 'never_joined' : 'measured',
+          // Historical presence wins over current server availability. The
+          // renderer then shows OFFLINE while keeping the useful player data.
+          cardState: hasMeasuredActivity ? 'measured' : !plugin ? 'server_not_configured' : !pluginOnline ? 'server_offline' : 'never_joined',
           isOnline: Boolean(pluginOnline && latestPlayerEvent?.type === 'player_join'),
         };
       }

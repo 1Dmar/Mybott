@@ -43,7 +43,15 @@ test('playercard passes real measured stats and badges to the renderer', () => {
 test('playercard does not use the legacy API token to decide server status', () => {
   assert.match(source, /rendererServerConfig/);
   assert.match(source, /wallpaper: serverConfig\.wallpaper/);
-  assert.match(source, /cardState: !plugin \? 'server_not_configured' : !pluginOnline \? 'server_offline'/);
+  assert.match(source, /cardState: hasMeasuredActivity \? 'measured'/);
+});
+
+test('playercard preserves verified presence when raw telemetry is empty or the server is offline', () => {
+  assert.match(source, /hasVerifiedServerPresence = Boolean\(link\?\.firstSeenAt\)/);
+  assert.match(source, /expired raw telemetry as "never joined"/);
+  assert.match(source, /const fallbackFirstSeenAt = link\?\.firstSeenAt/);
+  assert.match(source, /joins: 1/);
+  assert.match(source, /Historical presence wins over current server availability/);
 });
 
 test('playercard creates explicit state for setup, offline, and never-joined cases', () => {
