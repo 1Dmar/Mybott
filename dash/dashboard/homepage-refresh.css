@@ -181,3 +181,32 @@ html[data-theme="light"] body.modern-home-page .home-kicker { color:var(--home-a
   body.modern-home-page .landing-nav .logo span { max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   body.modern-home-page #navActions { gap:5px; }
 }
+
+/* Home-specific bridge: footer and navigation inherit the same Home tokens. */
+body.modern-home-page.dark {
+  --landing-surface:var(--home-surface);
+  --landing-surface-soft:var(--home-bg-soft);
+  --landing-line:var(--home-border);
+  --landing-muted:var(--home-muted);
+  --landing-accent:var(--home-accent);
+  --landing-accent-deep:var(--home-accent-2);
+  --text:var(--home-text);
+  --text-secondary:var(--home-muted);
+}
+html[data-theme="light"] body.modern-home-page {
+  --landing-surface:var(--home-surface);
+  --landing-surface-soft:var(--home-bg-soft);
+  --landing-line:var(--home-border);
+  --landing-muted:var(--home-muted);
+  --landing-accent:var(--home-accent);
+  --landing-accent-deep:var(--home-accent-2);
+  --text:var(--home-text);
+  --text-secondary:var(--home-muted);
+}
+body.modern-home-page .premium-footer { background:var(--home-bg); }
+body.modern-home-page .premium-footer-inner { color:var(--home-muted); }
+body.modern-home-page .premium-footer-brand > p,
+body.modern-home-page .premium-footer-col a { color:var(--home-muted); }
+body.modern-home-page .premium-footer-col h3 { color:var(--home-heading); }
+body.modern-home-page .premium-footer-bottom { color:var(--home-subtle); border-color:var(--home-border); }
+body.modern-home-page .premium-footer-bottom strong { color:var(--home-muted); }
