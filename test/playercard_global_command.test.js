@@ -53,7 +53,10 @@ test('player card uses the supplied layout for avatar, account identity, status,
   assert.match(rendererSource, /Original Account/);
   assert.match(rendererSource, /Verification check: visible only for an original account/);
   assert.match(rendererSource, /Online\/offline: replace only the status text\/dot/);
-  assert.match(rendererSource, /three lower cards remain the exact empty placeholders/);
+  assert.match(rendererSource, /Fill only the three existing lower placeholders with measured Player API data/);
+  assert.match(rendererSource, /sessionSeconds/);
+  assert.match(rendererSource, /formatCardDate/);
+  assert.match(rendererSource, /isBanned/);
 });
 
 test('playercard passes real measured stats and badges to the renderer', () => {

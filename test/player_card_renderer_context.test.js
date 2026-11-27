@@ -14,5 +14,5 @@ test('renderer accepts trusted profile context and uses measured card scope', ()
 
 test('renderer does not use a fabricated default server address', () => {
   assert.doesNotMatch(source, /play\.server\.com/);
-  assert.match(source, /The supplied PNG is the visual template/);
+  assert.match(source, /The supplied PNG is the fixed background and layout/);
 });

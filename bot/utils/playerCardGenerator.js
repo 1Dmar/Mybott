@@ -496,6 +496,63 @@ function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
     });
 }
 
+function formatCardDuration(seconds) {
+    const value = Number(seconds);
+    if (!Number.isFinite(value) || value < 0) return '—';
+    const totalMinutes = Math.floor(value / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return hours ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+function formatCardDate(value) {
+    const timestamp = value instanceof Date ? value.getTime() : new Date(value || 0).getTime();
+    if (!Number.isFinite(timestamp) || timestamp <= 0) return '—';
+    return new Date(timestamp).toISOString().slice(0, 10);
+}
+
+function drawCardText(ctx, text, x, y, maxWidth, options = {}) {
+    const value = String(text ?? '—');
+    const maxSize = options.maxSize || 30;
+    const minSize = options.minSize || 15;
+    let size = maxSize;
+    ctx.font = `${options.weight || 'bold'} ${size}px Arial`;
+    while (ctx.measureText(value).width > maxWidth && size > minSize) {
+        size -= 1;
+        ctx.font = `${options.weight || 'bold'} ${size}px Arial`;
+    }
+    ctx.fillStyle = options.color || '#F8FAFF';
+    ctx.fillText(value, x, y);
+}
+
+function drawPlayerApiCards(ctx, playerData) {
+    const endpoint = playerData.endpointData || {};
+    const profile = playerData.profileContext || {};
+    const stats = endpoint.stats || profile.stats || {};
+    const joins = Number.isFinite(Number(stats.joins)) ? Number(stats.joins) : null;
+    const sessionSeconds = Number.isFinite(Number(stats.sessionSeconds)) ? Number(stats.sessionSeconds) : null;
+    const firstPlayed = endpoint.firstPlayed || playerData.firstPlayed || profile.firstSeenAt;
+    const lastPlayed = endpoint.lastPlayed || playerData.lastPlayed || profile.lastSeenAt;
+    const status = playerData.isBanned ? 'Banned' : playerData.isOnline ? 'Online' : 'Offline';
+    const statusColor = playerData.isBanned ? '#FF7676' : playerData.isOnline ? '#72F0B4' : '#B9C1D8';
+    const cards = [
+        { title: 'STATUS', value: status, detail: endpoint.serverName || profile.scopeLabel || '—' },
+        { title: 'ACTIVITY', value: joins === null ? '—' : `${joins.toLocaleString()} joins`, detail: sessionSeconds === null ? 'Play time —' : `Play time ${formatCardDuration(sessionSeconds)}` },
+        { title: 'LAST SEEN', value: formatCardDate(lastPlayed), detail: `First seen ${formatCardDate(firstPlayed)}` },
+    ];
+    const boxes = [{ x: 145, y: 585, w: 400 }, { x: 575, y: 585, w: 440 }, { x: 1045, y: 585, w: 385 }];
+    cards.forEach((card, index) => {
+        const box = boxes[index];
+        ctx.save();
+        ctx.fillStyle = 'rgba(232, 239, 255, 0.78)';
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText(card.title, box.x + 28, box.y + 38);
+        drawCardText(ctx, card.value, box.x + 28, box.y + 72, box.w - 56, { maxSize: 30, minSize: 17, color: index === 0 ? statusColor : '#FFFFFF' });
+        drawCardText(ctx, card.detail, box.x + 28, box.y + 96, box.w - 56, { maxSize: 16, minSize: 11, color: 'rgba(232, 239, 255, 0.78)', weight: 'normal' });
+        ctx.restore();
+    });
+}
+
 /**
  * توليد بطاقة اللاعب بتصميم فخم
  */
@@ -520,25 +577,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         playerData.profileContext = profileContext;
     }
     
-    // 1. الخلفية (Background)
-    try {
-        const bgUrl = serverConfig?.wallpaper || "https://i.ibb.co/TBVZycXV/2.png";
-        const background = await loadImage(bgUrl);
-        ctx.drawImage(background, 0, 0, width, height);
-        
-        // طبقة تعتيم فخمة (Dark Overlay)
-        const overlay = ctx.createLinearGradient(0, 0, width, 0);
-        overlay.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
-        overlay.addColorStop(0.5, 'rgba(0, 0, 0, 0.6)');
-        overlay.addColorStop(1, 'rgba(0, 0, 0, 0.85)');
-        ctx.fillStyle = overlay;
-        ctx.fillRect(0, 0, width, height);
-    } catch (e) {
-        ctx.fillStyle = '#0f0f1b';
-        ctx.fillRect(0, 0, width, height);
-    }
-
-    // The supplied PNG is the visual template. Do not redraw or alter its background/layout.
+    // 1. The supplied PNG is the fixed background and layout. Keep it unchanged.
     try {
         const template = await loadImage(path.join(__dirname, '../assets/player-card-template.png'));
         ctx.drawImage(template, 0, 0, width, height);
@@ -632,7 +671,8 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
     ctx.fillText(isOnline ? 'Online' : 'Offline', 1422, 154);
     ctx.restore();
 
-    // The three lower cards remain the exact empty placeholders from the supplied template.
+    // Fill only the three existing lower placeholders with measured Player API data.
+    drawPlayerApiCards(ctx, playerData);
     return canvas.toBuffer();
 }
 
