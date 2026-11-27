@@ -1,15 +1,16 @@
 # ProMcBot command surface
 
-This document describes the canonical Discord command surface after the command cleanup. Discord should expose eight top-level groups only: `server`, `minecraft`, `intelligence`, `moderation`, `premium`, `utility`, `admin`, and `help`. The registry is defined in `bot/commands/commandCatalog.js`; `bot/handlers/slash_handler.js` is the only slash registration path.
+This document describes the canonical Discord command surface after the command cleanup. Discord exposes nine top-level commands: `server`, `minecraft`, `playercard`, `intelligence`, `moderation`, `premium`, `utility`, `admin`, and `help`. The registry is defined in `bot/commands/commandCatalog.js`; `bot/handlers/slash_handler.js` is the only slash registration path.
 
 | Group | Supported subcommands | Permission model |
 |---|---|---|
 | `/server` | `setup`, `remove`, `logs`, `language`, `blacklist`, `mentions`, `bump`, `statusbar-setup`, `statusbar-update`, `statusbar-interval` | Manage Guild for the group; individual implementations may require Administrator |
 | `/minecraft` | `players`, `player` | Manage Guild |
+| `/playercard` | `template`, `ign`, `user` | Public server-scoped player card; no global scope |
 | `/intelligence` | `overview`, `health`, `journey`, `retention`, `network`, `report`, `actions` | Manage Guild; plan gates remain server-side |
 | `/moderation` | `settings`, `filter`, `toggle`, `action`, `whitelist`, `log` | Manage Guild |
 | `/premium` | `status` | Manage Guild |
-| `/utility` | `ping`, `avatar`, `invite`, `support`, `playercard`, `stats` | Public utility group; renderer-dependent commands fail clearly when native canvas is unavailable |
+| `/utility` | `ping`, `avatar`, `invite`, `support`, `stats` | Public utility group; renderer-dependent commands fail clearly when native canvas is unavailable |
 | `/admin` | `eval`, `generate-code`, `subscriptions`, `subscription-codes`, `send-free-codes`, `delete-membership` | Administrator and owner checks remain implementation-specific |
 | `/help` | Generated from the same catalog | Available through the canonical registry |
 
@@ -21,4 +22,4 @@ Registration is global and canonical. Guild-local stale commands are cleared by 
 
 ## Verification
 
-The registry smoke test loads every implementation, reports eight top-level groups, detects duplicate names, and validates JavaScript syntax. The current Node test suite and bot startup smoke test must pass before a deployment is considered ready.
+The registry smoke test loads every implementation, reports nine top-level commands, detects duplicate names, and validates JavaScript syntax. The current Node test suite and bot startup smoke test must pass before a deployment is considered ready.

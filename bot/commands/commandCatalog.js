@@ -40,6 +40,12 @@ const COMMAND_CATALOG = [
     ],
   },
   {
+    name: 'playercard',
+    description: 'بطاقة لاعب Minecraft من السيرفر الحالي',
+    category: 'Minecraft',
+    module: 'Commands/Slash/Misc/playercard.js',
+  },
+  {
     name: 'intelligence',
     description: 'ذكاء السيرفر المبني على telemetry حقيقية',
     userPermissions: PermissionFlagsBits.ManageGuild,
@@ -87,7 +93,6 @@ const COMMAND_CATALOG = [
       ['invite', 'رابط دعوة البوت', 'Commands/Slash/Misc/invite.js'],
       ['support', 'رابط الدعم', 'Commands/Slash/Misc/support.js'],
       ['rules', 'نشر قوانين دعم ProMcBot وتاريخ آخر تحديث', 'Commands/Slash/Misc/rules.js'],
-      ['playercard', 'إنشاء بطاقة لاعب', 'Commands/Slash/Misc/playercard.js'],
       ['card', 'إنشاء بطاقة حالة السيرفر', 'Commands/Slash/Misc/card.js'],
       ['stats', 'عرض إحصائيات اللاعبين المتاحة', 'Commands/Slash/Misc/stats.js'],
     ],

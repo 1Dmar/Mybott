@@ -301,6 +301,39 @@ function drawCoinIcon(ctx, cx, cy, r, color) {
     ctx.restore();
 }
 
+function drawClockIcon(ctx, cx, cy, r, color) {
+    ctx.save();
+    ctx.lineWidth = Math.max(1.5, r * 0.13);
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy - r * 0.55);
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * 0.42, cy + r * 0.28);
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawShieldIcon(ctx, cx, cy, r, color) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx + r * 0.78, cy - r * 0.55);
+    ctx.lineTo(cx + r * 0.62, cy + r * 0.45);
+    ctx.lineTo(cx, cy + r);
+    ctx.lineTo(cx - r * 0.62, cy + r * 0.45);
+    ctx.lineTo(cx - r * 0.78, cy - r * 0.55);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillRect(cx - r * 0.1, cy - r * 0.5, r * 0.2, r);
+    ctx.restore();
+}
+
 function drawGlobeIcon(ctx, cx, cy, r, color) {
     ctx.save();
     ctx.lineWidth = Math.max(1.5, r * 0.13);
@@ -324,6 +357,8 @@ function drawStatIcon(ctx, type, cx, cy, r, color) {
     if (type === 'star') drawStarIcon(ctx, cx, cy, r, color);
     else if (type === 'coin') drawCoinIcon(ctx, cx, cy, r, color);
     else if (type === 'globe') drawGlobeIcon(ctx, cx, cy, r, color);
+    else if (type === 'time') drawClockIcon(ctx, cx, cy, r, color);
+    else if (type === 'shield') drawShieldIcon(ctx, cx, cy, r, color);
 }
 
 /**
@@ -428,43 +463,36 @@ function drawLogoMark(ctx, cx, cy, size, colorStart, colorEnd) {
     ctx.restore();
 }
 /**
- * يرسم صف البادجات (الكيبات) تحت السكن - العرض بيتقسم تلقائي حسب عدد البادجات
- * كده لو ضفت بادج جديد في buildCapeBadges مش محتاج تلمس الدالة دي
+ * يرسم شارات اللاعب داخل مساحة السكن. الشارات تأتي من بيانات الحساب والسيرفر،
+ * وليست Cape وهميًا أو صورة احتياطية مضللة.
  */
 function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
-    const gap = 16;
-    const count = badges.length;
+    const safeBadges = Array.isArray(badges) && badges.length ? badges.slice(0, 3) : [{ label: 'New Player', icon: 'star', color: accentColor }];
+    const gap = 12;
+    const count = safeBadges.length;
     const badgeW = (areaW - gap * (count - 1)) / count;
 
-    badges.forEach((badge, i) => {
+    safeBadges.forEach((badge, i) => {
         const bx = areaX + i * (badgeW + gap);
         const by = areaY;
-
-        // إطار البادج (نفس ستايل صناديق الإحصائيات)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+        const color = badge.color || accentColor;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
         ctx.beginPath();
         ctx.roundRect(bx, by, badgeW, areaH, 16);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.13)';
         ctx.stroke();
 
-        // مساحة صورة الكيب فوق، التسمية تحت
-        const imgAreaH = areaH * 0.7;
-        const capeH = imgAreaH - 10;
-        const capeW = capeH * (10 / 16);
-        const capeX = bx + (badgeW - capeW) / 2;
-        const capeY = by + 8;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.beginPath();
+        ctx.arc(bx + badgeW / 2, by + 32, 23, 0, Math.PI * 2);
+        ctx.fill();
+        drawStatIcon(ctx, badge.icon || 'star', bx + badgeW / 2, by + 32, 14, color);
 
-        if (badge.custom) {
-            drawCustomCape(ctx, capeX, capeY, capeW, capeH, accentColor);
-        } else {
-            drawCapeImage(ctx, badge, capeX, capeY, capeW, capeH);
-        }
-
-        ctx.font = '15px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.font = badge.label.length > 13 ? '12px Arial' : '14px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
         ctx.textAlign = 'center';
-        ctx.fillText(badge.label, bx + badgeW / 2, by + areaH - 12);
+        ctx.fillText(badge.label, bx + badgeW / 2, by + areaH - 14);
         ctx.textAlign = 'left';
     });
 }
@@ -484,6 +512,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
 
     const playerData = await getPlayerData(ign, serverConfig);
     if (profileContext && typeof profileContext === 'object') {
+        if (profileContext.cardState !== 'server_not_configured' && playerData.endpointOffline) profileContext.cardState = 'server_offline';
         if (profileContext.accountType === 'online') playerData.isCracked = false;
         if (profileContext.accountType === 'offline') playerData.isCracked = true;
         if (profileContext.firstSeenAt) playerData.firstPlayed = new Date(profileContext.firstSeenAt).getTime();
@@ -561,100 +590,64 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         ctx.restore();
     }
 
-    // 3.5 الكيب (Cape Badges) - بيفحص Mojang و OptiFine، ولو مفيش كيب حقيقي يعرض كيب البوت الخاص
-    const capeBadges = await buildCapeBadges(playerData);
-    drawBadgesRow(ctx, capeBadges, columnX, skinY + skinSize + badgesGapTop, columnW, badgesH, '#FFD700');
+    // 3.5 شارات اللاعب من بيانات السيرفر والحساب
+    const playerBadges = playerData.profileContext?.badges || [{ label: 'New Player', icon: 'star', color: '#8BE28B' }];
+    drawBadgesRow(ctx, playerBadges, columnX, skinY + skinSize + badgesGapTop, columnW, badgesH, '#FFD700');
 
     // 4. معلومات اللاعب (Player Information)
     const infoX = 500;
-    
-    // الاسم (IGN) مع توهج ذهبي
+
     ctx.save();
     ctx.shadowColor = 'rgba(212, 175, 55, 0.6)';
     ctx.shadowBlur = 15;
     ctx.fillStyle = '#FFD700';
-    
+
     let fontSize = 75;
     ctx.font = `bold ${fontSize}px Arial`;
     let textWidth = ctx.measureText(playerData.ign).width;
-    
-    // تصغير الخط إذا كان الاسم طويلاً لكي لا يخرج من البطاقة (المساحة المتاحة حوالي 440 بكسل)
     while (textWidth > 440 && fontSize > 30) {
         fontSize -= 2;
         ctx.font = `bold ${fontSize}px Arial`;
         textWidth = ctx.measureText(playerData.ign).width;
     }
-    
     ctx.fillText(playerData.ign, infoX, 140);
     ctx.restore();
 
-    // حالة الاتصال (Status Badge)
-    let statusText, statusColor, statusBgColor;
-    
-    if (playerData.endpointOffline) {
-        statusText = "API OFFLINE";
-        statusColor = "#FFFFFF";
-        statusBgColor = "#FFA500"; // برتقالي
-    } else if (playerData.isBanned) {
-        statusText = "BANNED";
-        statusColor = "#FFFFFF";
-        statusBgColor = "#8B0000"; // أحمر غامق
-    } else if (playerData.notFound || playerData.neverJoinedServer) {
-        statusText = "NEVER JOINED";
-        statusColor = "#FFFFFF";
-        statusBgColor = "#808080"; // رمادي
-    } else {
-        if (playerData.isOnline) {
-            statusText = "ONLINE";
-            statusColor = "#000000";
-            statusBgColor = "#00F260";
-        } else {
-            statusText = "OFFLINE";
-            statusColor = "#FFFFFF";
-            statusBgColor = "#FF6B6B";
-        }
-    }
-    
-    ctx.fillStyle = statusBgColor;
+    const state = playerData.profileContext?.cardState || (playerData.endpointOffline ? 'server_offline' : playerData.notFound || playerData.neverJoinedServer ? 'never_joined' : 'measured');
+    const stateConfig = {
+        server_not_configured: { text: 'SETUP REQUIRED', color: '#FFFFFF', bg: '#8B5CF6', message: 'Run /server setup to connect this server' },
+        server_offline: { text: 'SERVER OFFLINE', color: '#FFFFFF', bg: '#F59E0B', message: 'Minecraft server data is temporarily unavailable' },
+        never_joined: { text: 'NOT JOINED YET', color: '#FFFFFF', bg: '#64748B', message: 'This player has not joined this server yet' },
+        measured: { text: playerData.isOnline ? 'ONLINE' : 'OFFLINE', color: playerData.isOnline ? '#000000' : '#FFFFFF', bg: playerData.isOnline ? '#00F260' : '#FF6B6B', message: '' },
+    }[state] || null;
+    const currentState = stateConfig || { text: 'NO DATA', color: '#FFFFFF', bg: '#64748B', message: 'No measured data is available' };
+
+    ctx.fillStyle = currentState.bg;
     ctx.beginPath();
-    ctx.roundRect(infoX, 165, 150, 38, 12);
+    ctx.roundRect(infoX, 165, 190, 38, 12);
     ctx.fill();
-    
-    ctx.fillStyle = statusColor;
-    ctx.font = 'bold 20px Arial';
+    ctx.fillStyle = currentState.color;
+    ctx.font = currentState.text.length > 13 ? 'bold 15px Arial' : 'bold 20px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(statusText, infoX + 75, 192);
+    ctx.fillText(currentState.text, infoX + 95, 192);
     ctx.textAlign = 'left';
 
-    // Badge نوع الحساب (Microsoft / Cracked)
-    let accountTypeText, accountTypeColor, accountTypeBgColor;
-    
-    if (playerData.isCracked) {
-        accountTypeText = "CRACKED";
-        accountTypeColor = "#FFFFFF";
-        accountTypeBgColor = "#9C27B0"; // بنفسجي
-    } else {
-        accountTypeText = "MICROSOFT";
-        accountTypeColor = "#000000";
-        accountTypeBgColor = "#1E90FF"; // أزرق
-    }
-    
+    const accountTypeText = playerData.isCracked ? 'CRACKED' : 'MICROSOFT';
+    const accountTypeColor = playerData.isCracked ? '#FFFFFF' : '#000000';
+    const accountTypeBgColor = playerData.isCracked ? '#9C27B0' : '#1E90FF';
     ctx.fillStyle = accountTypeBgColor;
     ctx.beginPath();
-    ctx.roundRect(infoX + 170, 165, 150, 38, 12);
+    ctx.roundRect(infoX + 210, 165, 150, 38, 12);
     ctx.fill();
-    
     ctx.fillStyle = accountTypeColor;
     ctx.font = 'bold 20px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(accountTypeText, infoX + 245, 192);
+    ctx.fillText(accountTypeText, infoX + 285, 192);
     ctx.textAlign = 'left';
 
-    // 5. شبكة الإحصائيات (Stats Grid)
-    const statsY = 230;
-    const rowGap = 75;
-
-    function drawStatBox(label, value, icon, color, index) {
+    const drawStatBox = (label, value, icon, color, index) => {
+        const statsY = 230;
+        const rowGap = 75;
         const y = statsY + (index * rowGap);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
         ctx.beginPath();
@@ -662,70 +655,46 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.stroke();
-
         drawStatIcon(ctx, icon, infoX + 42, y + 32, 16, color);
-        
         ctx.font = '22px Arial';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.fillText(label, infoX + 70, y + 41);
-
-        // تقليل حجم الخط إذا كان النص طويلاً لمنع التداخل
-        if (value.length > 18) {
-            ctx.font = 'bold 18px Arial';
-        } else if (value.length > 14) {
-            ctx.font = 'bold 20px Arial';
-        } else if (value.length > 10) {
-            ctx.font = 'bold 22px Arial';
-        } else {
-            ctx.font = 'bold 24px Arial';
-        }
-        
+        ctx.font = value.length > 18 ? 'bold 16px Arial' : value.length > 14 ? 'bold 18px Arial' : 'bold 22px Arial';
         ctx.fillStyle = color;
         ctx.textAlign = 'right';
         ctx.fillText(value, infoX + 400, y + 42);
         ctx.textAlign = 'left';
-    }
+    };
 
-    if (!playerData.endpointOffline && !playerData.notFound && !playerData.neverJoinedServer) {
-        const formatDate = (timestamp) => {
-            if (!timestamp || timestamp === 0) return "Unknown";
-            const d = new Date(timestamp);
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = String(d.getFullYear()).slice(-2);
-            let hours = d.getHours();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
-            const minutes = String(d.getMinutes()).padStart(2, '0');
-            
-            return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
-        };
-
-        const measured = playerData.profileContext?.stats;
-        const stats = measured
-            ? [
-                { label: "Joins", value: String(Number(measured.joins || 0)), icon: "star", color: "#FFD700" },
-                { label: "Play time", value: `${Math.floor(Number(measured.sessionSeconds || 0) / 3600)}h`, icon: "time", color: "#00F260" },
-              ]
-            : [
-                { label: "First Played", value: formatDate(playerData.firstPlayed), icon: "star", color: "#FFD700" },
-                { label: "Last Played", value: formatDate(playerData.lastPlayed), icon: "star", color: "#00F260" },
-              ];
-
-        if (playerData.isOnline) {
-            stats.push({ label: "Ping", value: `${playerData.endpointData?.ping || 0} ms`, icon: "globe", color: "#A18CD1" });
-        } else {
-            stats.push({ label: "Scope", value: playerData.profileContext?.scopeLabel || serverConfig?.serverName || "Global", icon: "globe", color: "#A18CD1" });
-        }
-
-        stats.forEach((stat, i) => drawStatBox(stat.label, stat.value, stat.icon, stat.color, i));
-    } else if (playerData.endpointOffline) {
-        drawStatBox("Server API", "OFFLINE", "globe", "#FFA500", 0);
+    const formatDate = timestamp => {
+        if (!timestamp || timestamp === 0) return 'Not measured';
+        const d = new Date(timestamp);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
+    };
+    const measured = playerData.profileContext?.stats;
+    if (state === 'measured' && measured) {
+        const hours = Math.floor(Number(measured.sessionSeconds || 0) / 3600);
+        const minutes = Math.floor((Number(measured.sessionSeconds || 0) % 3600) / 60);
+        drawStatBox('Play time', `${hours}h ${minutes}m`, 'time', '#00F260', 0);
+        drawStatBox('Sessions', String(Number(measured.joins || 0)), 'star', '#FFD700', 1);
+        drawStatBox('Active days', String(Number(measured.activeDays || 0)), 'globe', '#A18CD1', 2);
     } else {
-        drawStatBox("Server Data", "NO DATA", "star", "#808080", 0);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
+        ctx.beginPath();
+        ctx.roundRect(infoX, 230, 420, 205, 18);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 21px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(currentState.text === 'SETUP REQUIRED' ? 'Connect this server first' : currentState.text === 'SERVER OFFLINE' ? 'Server data is offline' : 'No player activity yet', infoX + 210, 290);
+        ctx.font = '16px Arial';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+        ctx.fillText(currentState.message, infoX + 210, 330);
+        ctx.textAlign = 'left';
+        drawStatBox('First seen', formatDate(playerData.firstPlayed), 'star', '#FFD700', 3);
     }
-
     // 6. التذييل (Footer)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '16px Arial';

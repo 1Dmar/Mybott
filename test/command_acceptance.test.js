@@ -7,11 +7,11 @@ const { COMMAND_CATALOG, loadCanonicalCommands } = require('../bot/commands/comm
 
 const legacy = new Set(['setup_server', 'remove_server', 'setlanguage', 'automod-settings', 'mc-info', 'mc-players', 'mc-player', 'mc-setup', 'generate-apikey', 'link-apikey']);
 
-test('canonical Discord taxonomy has eight unique top-level groups', () => {
+test('canonical Discord taxonomy has nine unique top-level commands', () => {
   const names = COMMAND_CATALOG.map(command => command.name);
-  assert.equal(names.length, 8);
+  assert.equal(names.length, 9);
   assert.equal(new Set(names).size, names.length);
-  assert.deepEqual(names, ['server', 'minecraft', 'intelligence', 'moderation', 'premium', 'utility', 'admin', 'help']);
+  assert.deepEqual(names, ['server', 'minecraft', 'playercard', 'intelligence', 'moderation', 'premium', 'utility', 'admin', 'help']);
 });
 
 test('canonical commands have descriptions and no legacy public names', () => {
@@ -33,6 +33,7 @@ test('management and premium groups carry runtime permission metadata', () => {
   assert.equal(byName.premium.userPermissions, PermissionFlagsBits.ManageGuild);
   assert.equal(byName.admin.userPermissions, PermissionFlagsBits.Administrator);
   assert.equal(byName.utility.userPermissions, undefined);
+  assert.equal(byName.playercard.userPermissions, PermissionFlagsBits.SendMessages);
 });
 
 test('help is registered from the same canonical surface', () => {

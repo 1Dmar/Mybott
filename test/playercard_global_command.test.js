@@ -1,3 +1,5 @@
+'use strict';
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -6,45 +8,44 @@ const commandPath = require.resolve('../bot/Commands/Slash/Misc/playercard.js');
 const source = fs.readFileSync(commandPath, 'utf8');
 const command = require(commandPath);
 
-test('playercard uses the linked Discord account by default', () => {
-  const scope = command.options.find(option => option.name === 'scope');
-  const ign = command.options.find(option => option.name === 'ign');
-  assert.equal(scope.required, false);
-  assert.equal(ign.required, false);
+test('playercard is a short server-scoped command with optional template only', () => {
+  assert.equal(command.name, 'playercard');
+  assert.equal(command.options.some(option => option.name === 'scope'), false);
+  assert.equal(command.options.find(option => option.name === 'template').required, false);
   assert.match(source, /PlayerAccount\.findOne/);
   assert.match(source, /MinecraftIdentity\.find/);
+  assert.match(source, /interaction\.guild\.id/);
 });
 
-test('server scope requires a measured link for the current guild', () => {
-  assert.match(source, /PlayerServerLink\.find\(/);
+test('playercard selects only the current server link and measured events', () => {
+  assert.match(source, /PlayerServerLink\.findOne\(/);
   assert.match(source, /serverId: interaction\.guild\.id/);
-  assert.match(source, /لا توجد هوية مقاسة لك في هذا السيرفر/);
-});
-
-test('legacy IGN lookup is explicitly unverified and cannot load account data', () => {
-  assert.match(source, /Legacy lookup is intentionally isolated/);
-  assert.match(source, /Unverified public lookup/);
-  assert.match(source, /does not use account statistics/);
-});
-
-test('saved card settings are bounded to approved templates', () => {
-  assert.match(source, /PlayerCardSettings\.findOne/);
-  for (const template of ['minecraft', 'darkmode', 'glass', 'minimal']) assert.match(source, new RegExp(template));
-  assert.match(source, /requestedTemplate === 'saved'/);
-});
-
-test('another user card is global-only and privacy guarded', () => {
-  const user = command.options.find(option => option.name === 'user');
-  assert.equal(user.type, 6);
-  assert.match(source, /account\.publicEnabled === false/);
-  assert.match(source, /!isOwnCard/);
-  assert.match(source, /البطاقات العامة لمستخدم آخر تعرض النطاق العالمي فقط/);
-  assert.match(source, /globalPrivacy\?\.showUsername === false/);
-});
-
-test('playercard passes measured telemetry into the renderer and hides it when disabled', () => {
   assert.match(source, /TelemetryEvent\.find/);
+  assert.match(source, /type: \{ \$in: \['player_join', 'player_leave'\] \}/);
+});
+
+test('playercard keeps public lookup isolated to the current server', () => {
+  assert.match(source, /Public Minecraft name lookup/);
+  assert.match(source, /legacyIgn/);
+  assert.match(source, /لا يمكن استخدام IGN مع بطاقة عضو آخر/);
+});
+
+test('playercard passes real measured stats and badges to the renderer', () => {
   assert.match(source, /sessionSeconds/);
-  assert.match(source, /canShowStats/);
-  assert.match(source, /generatePlayerCard\(ign, template, serverConfig, profileContext\)/);
+  assert.match(source, /activeDays/);
+  assert.match(source, /buildBadges/);
+  assert.match(source, /badges:/);
+  assert.match(source, /generatePlayerCard\(ign \|\| targetUser\.username, template, serverConfig, profileContext\)/);
+});
+
+test('playercard creates explicit state for setup, offline, and never-joined cases', () => {
+  assert.match(source, /server_not_configured/);
+  assert.match(source, /server_offline/);
+  assert.match(source, /never_joined/);
+  assert.match(source, /SETUP REQUIRED|server_not_configured/);
+});
+
+test('playercard only exposes the template and player target as optional parameters', () => {
+  const optionNames = command.options.map(option => option.name);
+  assert.deepEqual(optionNames, ['template', 'ign', 'user']);
 });

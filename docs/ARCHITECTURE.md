@@ -35,7 +35,7 @@ flowchart TD
 
 `bot/index.js` creates the single Discord client and stores it as `global.__botClient` for the dashboard to resolve lazily. The dashboard no longer creates a second client or logs in with the same bot token. This avoids duplicate sessions and keeps guild caches and event handling under one owner.
 
-`bot/commands/commandCatalog.js` is the only public command taxonomy. The slash loader registers eight top-level groups and clears stale guild commands before global synchronization. `messageCreate.js` is the only message event for prefix handling and AutoMod; the duplicate AutoMod event loader was removed.
+`bot/commands/commandCatalog.js` is the only public command taxonomy. The slash loader registers nine top-level commands, including the short server-scoped `/playercard`, and clears stale guild commands before global synchronization. `messageCreate.js` is the only message event for prefix handling and AutoMod; the duplicate AutoMod event loader was removed.
 
 The plugin never owns the Minecraft gameplay control path. Bukkit reads stay on the primary thread, network requests run asynchronously, credentials are runtime-provisioned, and the local queue is finite. When ProMcBot is unavailable, gameplay remains usable and only telemetry freshness is affected.
 
