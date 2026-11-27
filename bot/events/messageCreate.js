@@ -309,7 +309,21 @@ const handleMcMessage = async (client, message) => {
                 emoji = EMOJIS.JAVA;
                 if (pluginOnline) {
                     const onlinePlayers = Number.isFinite(Number(plugin.lastOnlinePlayers)) ? Math.max(0, Number(plugin.lastOnlinePlayers)) : 0;
-                    javaServerData = { online: true, players: { online: onlinePlayers, max: 0 }, version: plugin.protocolVersion || "Plugin heartbeat" };
+                    let metadata = {};
+                    try {
+                        const metadataResponse = await axios.get(`https://api.mcsrvstat.us/3/${javaIP}:${javaPort}`, { timeout: 5000 });
+                        metadata = metadataResponse.data || {};
+                    } catch (error) {
+                        console.warn("Minecraft metadata lookup skipped; using plugin heartbeat:", error.message);
+                    }
+                    const apiMaxPlayers = Number(metadata.players?.max);
+                    javaServerData = {
+                        ...metadata,
+                        // Heartbeat is authoritative for availability and current players.
+                        online: true,
+                        players: { ...metadata.players, online: onlinePlayers, max: Number.isFinite(apiMaxPlayers) && apiMaxPlayers > 0 ? apiMaxPlayers : "?" },
+                        version: metadata.version || plugin.pluginVersion || "Plugin heartbeat",
+                    };
                 } else {
                     try {
                         const javaResponse = await axios.get(`https://api.mcsrvstat.us/3/${javaIP}:${javaPort}`);

@@ -117,14 +117,14 @@ module.exports = {
         const link = await PlayerServerLink.findOne({ accountId: account._id, identityId: identity._id, serverId: interaction.guild.id }).sort({ lastSeenAt: -1 }).lean();
         const uuidMatches = uuidVariants(identity.uuid);
         const username = String(identity.username || '').trim();
-        const events = link ? await TelemetryEvent.find({
+        const events = await TelemetryEvent.find({
           serverId: interaction.guild.id,
           type: { $in: ['player_join', 'player_leave'] },
           $or: [
             { 'data.uuid': { $in: uuidMatches } },
             ...(username ? [{ 'data.username': new RegExp(`^${username.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, 'i') }] : []),
           ],
-        }).sort({ occurredAt: -1 }).limit(5000).lean() : [];
+        }).sort({ occurredAt: -1 }).limit(5000).lean();
         const joins = events.filter(event => event.type === 'player_join');
         const leaves = events.filter(event => event.type === 'player_leave');
         const stats = {
@@ -133,7 +133,7 @@ module.exports = {
           sessionSeconds: leaves.reduce((sum, event) => sum + (Number.isFinite(Number(event.data?.sessionSeconds)) ? Math.max(0, Number(event.data.sessionSeconds)) : 0), 0),
           activeDays: new Set(events.map(event => new Date(event.occurredAt).toISOString().slice(0, 10))).size,
         };
-        const hasMeasuredActivity = Boolean(link && events.length);
+        const hasMeasuredActivity = Boolean(events.length);
         const latestPlayerEvent = events[0] || null;
         profileContext = {
           accountType: identity.accountType,
@@ -142,7 +142,7 @@ module.exports = {
           stats: hasMeasuredActivity ? stats : null,
           badges: hasMeasuredActivity ? buildBadges({ interaction, stats, account, identity }) : [{ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' }],
           scopeLabel: cardLabel,
-          cardState: !plugin ? 'server_not_configured' : !pluginOnline ? 'server_offline' : !link || !events.length ? 'never_joined' : 'measured',
+          cardState: !plugin ? 'server_not_configured' : !pluginOnline ? 'server_offline' : !events.length ? 'never_joined' : 'measured',
           isOnline: Boolean(pluginOnline && latestPlayerEvent?.type === 'player_join'),
         };
       }
