@@ -6,11 +6,12 @@ const source = fs.readFileSync(require.resolve('../bot/utils/playerCardGenerator
 test('renderer accepts trusted profile context and uses measured card scope', () => {
   assert.match(source, /profileContext = null/);
   assert.match(source, /playerData\.profileContext/);
-  assert.match(source, /measured\.sessionSeconds/);
-  assert.match(source, /Global Player Account/);
+  assert.match(source, /profileContext\.isOnline/);
+  assert.match(source, /Original Account/);
+  assert.match(source, /const slotY = 370/);
 });
 
 test('renderer does not use a fabricated default server address', () => {
   assert.doesNotMatch(source, /play\.server\.com/);
-  assert.match(source, /PROMCBOT SYSTEM/);
+  assert.match(source, /ProMcBot/);
 });

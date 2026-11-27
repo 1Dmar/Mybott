@@ -538,168 +538,158 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         ctx.fillRect(0, 0, width, height);
     }
 
-    // 2. لوحة البيانات (Main Panel - Glassmorphism)
-    const panelX = 40, panelY = 40, panelW = width - 80, panelH = height - 80;
-    
+    // 2. Main glass panel matching the supplied template.
+    const panelX = 48, panelY = 48, panelW = width - 96, panelH = height - 96;
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 30;
-    
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    ctx.shadowBlur = 28;
     const panelGrad = ctx.createLinearGradient(panelX, panelY, panelX + panelW, panelY + panelH);
-    panelGrad.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-    panelGrad.addColorStop(1, 'rgba(255, 255, 255, 0.03)');
-    
+    panelGrad.addColorStop(0, 'rgba(255,255,255,0.16)');
+    panelGrad.addColorStop(0.52, 'rgba(15,19,42,0.54)');
+    panelGrad.addColorStop(1, 'rgba(255,255,255,0.06)');
     ctx.fillStyle = panelGrad;
     ctx.beginPath();
-    ctx.roundRect(panelX, panelY, panelW, panelH, 35);
+    ctx.roundRect(panelX, panelY, panelW, panelH, 34);
     ctx.fill();
-    
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 1.5;
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(190,205,255,0.48)';
+    ctx.lineWidth = 1.4;
     ctx.stroke();
     ctx.restore();
 
-    // 3. سكن اللاعب (Player Skin Render) - بيجرب أكثر من API لحد ما ياخد صورة شغالة
-    const skinImg = await loadFirstAvailableImage(buildSkinCandidates(playerData));
-    const columnX = 50, columnW = 420; // عمود السكن والبادجات (نفس العرض)
-    const skinSize = 260;
-    const badgesGapTop = 15;
-    const badgesH = 95;
-    const blockH = skinSize + badgesGapTop + badgesH; // السكن + البادجات كبلوك واحد
-    const blockTop = panelY + (panelH - blockH) / 2; // نتوسط الكل عموديًا داخل اللوحة
-    const skinX = columnX + (columnW - skinSize) / 2; // السكن في النص أفقيًا
-    const skinY = blockTop;
-    if (skinImg) {
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-        ctx.shadowBlur = 40;
-        ctx.drawImage(skinImg, skinX, skinY, skinSize, skinSize);
-        ctx.restore();
-    } else {
-        // لو كل الـ APIs فشلت، نرسم سيلويت بسيطة بدل ما نسيب الفراغ
-        ctx.save();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.beginPath();
-        ctx.roundRect(skinX, skinY, skinSize, skinSize, 24);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.font = `bold ${Math.round(skinSize * 0.33)}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.fillText('?', skinX + skinSize / 2, skinY + skinSize / 2 + skinSize * 0.12);
-        ctx.textAlign = 'left';
-        ctx.restore();
-    }
-
-    // 3.5 شارات اللاعب من بيانات السيرفر والحساب
-    const playerBadges = playerData.profileContext?.badges || [{ label: 'New Player', icon: 'star', color: '#8BE28B' }];
-    drawBadgesRow(ctx, playerBadges, columnX, skinY + skinSize + badgesGapTop, columnW, badgesH, '#FFD700');
-
-    // 4. معلومات اللاعب (Player Information)
-    const infoX = 500;
-
+    // 3. Header branding and server/player state.
     ctx.save();
-    ctx.shadowColor = 'rgba(212, 175, 55, 0.6)';
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = '#FFD700';
-
-    let fontSize = 75;
-    ctx.font = `bold ${fontSize}px Arial`;
-    let textWidth = ctx.measureText(playerData.ign).width;
-    while (textWidth > 440 && fontSize > 30) {
-        fontSize -= 2;
-        ctx.font = `bold ${fontSize}px Arial`;
-        textWidth = ctx.measureText(playerData.ign).width;
-    }
-    ctx.fillText(playerData.ign, infoX, 140);
+    ctx.fillStyle = '#ED1C45';
+    ctx.font = 'bold 58px Arial';
+    ctx.fillText('P', 88, 112);
+    ctx.fillStyle = '#F2F4FF';
+    ctx.font = 'bold 25px Arial';
+    ctx.fillText('ProMcBot', 142, 105);
+    ctx.fillStyle = 'rgba(255,255,255,0.52)';
+    ctx.font = '22px Arial';
+    ctx.fillText('|  Minecraft  ×  Discord  ×  Automation', 270, 105);
     ctx.restore();
 
     const state = playerData.profileContext?.cardState || (playerData.endpointOffline ? 'server_offline' : playerData.notFound || playerData.neverJoinedServer ? 'never_joined' : 'measured');
-    const stateConfig = {
-        server_not_configured: { text: 'SETUP REQUIRED', color: '#FFFFFF', bg: '#8B5CF6', message: 'Run /server setup to connect this server' },
-        server_offline: { text: 'SERVER OFFLINE', color: '#FFFFFF', bg: '#F59E0B', message: 'Minecraft server data is temporarily unavailable' },
-        never_joined: { text: 'NOT JOINED YET', color: '#FFFFFF', bg: '#64748B', message: 'This player has not joined this server yet' },
-        measured: { text: playerData.isOnline ? 'ONLINE' : 'OFFLINE', color: playerData.isOnline ? '#000000' : '#FFFFFF', bg: playerData.isOnline ? '#00F260' : '#FF6B6B', message: '' },
-    }[state] || null;
-    const currentState = stateConfig || { text: 'NO DATA', color: '#FFFFFF', bg: '#64748B', message: 'No measured data is available' };
-
-    ctx.fillStyle = currentState.bg;
+    const isOnline = state === 'measured' && playerData.isOnline;
+    const stateText = isOnline ? 'Online' : 'Offline';
+    const stateColor = isOnline ? '#00F260' : '#FF6B6B';
+    ctx.save();
+    ctx.fillStyle = `${stateColor}28`;
+    ctx.strokeStyle = `${stateColor}CC`;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.roundRect(infoX, 165, 190, 38, 12);
+    ctx.roundRect(805, 72, 145, 40, 20);
     ctx.fill();
-    ctx.fillStyle = currentState.color;
-    ctx.font = currentState.text.length > 13 ? 'bold 15px Arial' : 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(currentState.text, infoX + 95, 192);
-    ctx.textAlign = 'left';
-
-    const accountTypeText = playerData.isCracked ? 'CRACKED' : 'MICROSOFT';
-    const accountTypeColor = playerData.isCracked ? '#FFFFFF' : '#000000';
-    const accountTypeBgColor = playerData.isCracked ? '#9C27B0' : '#1E90FF';
-    ctx.fillStyle = accountTypeBgColor;
+    ctx.stroke();
+    ctx.fillStyle = stateColor;
     ctx.beginPath();
-    ctx.roundRect(infoX + 210, 165, 150, 38, 12);
+    ctx.arc(828, 92, 7, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = accountTypeColor;
-    ctx.font = 'bold 20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(accountTypeText, infoX + 285, 192);
-    ctx.textAlign = 'left';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 19px Arial';
+    ctx.fillText(stateText, 844, 99);
+    ctx.restore();
 
-    const drawStatBox = (label, value, icon, color, index) => {
-        const statsY = 230;
-        const rowGap = 75;
-        const y = statsY + (index * rowGap);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    // 4. Avatar frame and skin. The frame is intentionally kept independent
+    // from the future player-customization slots at the bottom.
+    const skinImg = await loadFirstAvailableImage(buildSkinCandidates(playerData));
+    const avatarX = 138, avatarY = 135, avatarSize = 225;
+    ctx.save();
+    ctx.shadowColor = '#6EA8FFCC';
+    ctx.shadowBlur = 24;
+    const avatarFrame = ctx.createLinearGradient(avatarX, avatarY, avatarX + avatarSize, avatarY + avatarSize);
+    avatarFrame.addColorStop(0, '#B8E3FF');
+    avatarFrame.addColorStop(0.45, '#5C7CFF');
+    avatarFrame.addColorStop(1, '#B85CFF');
+    ctx.fillStyle = avatarFrame;
+    ctx.beginPath();
+    ctx.roundRect(avatarX - 8, avatarY - 8, avatarSize + 16, avatarSize + 16, 32);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(12,16,36,0.86)';
+    ctx.beginPath();
+    ctx.roundRect(avatarX, avatarY, avatarSize, avatarSize, 26);
+    ctx.fill();
+    if (skinImg) {
+        ctx.save();
         ctx.beginPath();
-        ctx.roundRect(infoX, y, 420, 65, 18);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.stroke();
-        drawStatIcon(ctx, icon, infoX + 42, y + 32, 16, color);
-        ctx.font = '22px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillText(label, infoX + 70, y + 41);
-        ctx.font = value.length > 18 ? 'bold 16px Arial' : value.length > 14 ? 'bold 18px Arial' : 'bold 22px Arial';
-        ctx.fillStyle = color;
-        ctx.textAlign = 'right';
-        ctx.fillText(value, infoX + 400, y + 42);
-        ctx.textAlign = 'left';
-    };
-
-    const formatDate = timestamp => {
-        if (!timestamp || timestamp === 0) return 'Not measured';
-        const d = new Date(timestamp);
-        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
-    };
-    const measured = playerData.profileContext?.stats;
-    if (state === 'measured' && measured) {
-        const hours = Math.floor(Number(measured.sessionSeconds || 0) / 3600);
-        const minutes = Math.floor((Number(measured.sessionSeconds || 0) % 3600) / 60);
-        drawStatBox('Play time', `${hours}h ${minutes}m`, 'time', '#00F260', 0);
-        drawStatBox('Sessions', String(Number(measured.joins || 0)), 'star', '#FFD700', 1);
-        drawStatBox('Active days', String(Number(measured.activeDays || 0)), 'globe', '#A18CD1', 2);
+        ctx.roundRect(avatarX + 7, avatarY + 7, avatarSize - 14, avatarSize - 14, 21);
+        ctx.clip();
+        ctx.drawImage(skinImg, avatarX + 7, avatarY + 7, avatarSize - 14, avatarSize - 14);
+        ctx.restore();
     } else {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
-        ctx.beginPath();
-        ctx.roundRect(infoX, 230, 420, 205, 18);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.stroke();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 21px Arial';
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.font = 'bold 80px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(currentState.text === 'SETUP REQUIRED' ? 'Connect this server first' : currentState.text === 'SERVER OFFLINE' ? 'Server data is offline' : 'No player activity yet', infoX + 210, 290);
-        ctx.font = '16px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-        ctx.fillText(currentState.message, infoX + 210, 330);
+        ctx.fillText('?', avatarX + avatarSize / 2, avatarY + avatarSize / 2 + 28);
         ctx.textAlign = 'left';
-        drawStatBox('First seen', formatDate(playerData.firstPlayed), 'star', '#FFD700', 3);
     }
-    // 6. التذييل (Footer)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-    ctx.font = '16px Arial';
+    ctx.restore();
+
+    // 5. Player name, original/cracked account label, and verification check.
+    const infoX = 410;
+    let fontSize = 58;
+    ctx.font = `bold ${fontSize}px Arial`;
+    while (ctx.measureText(playerData.ign).width > 450 && fontSize > 30) {
+        fontSize -= 2;
+        ctx.font = `bold ${fontSize}px Arial`;
+    }
+    ctx.fillStyle = '#F7F8FF';
+    ctx.shadowColor = 'rgba(255,255,255,0.28)';
+    ctx.shadowBlur = 12;
+    ctx.fillText(playerData.ign, infoX, 195);
+    ctx.shadowBlur = 0;
+    if (!playerData.isCracked) {
+        const checkX = Math.min(infoX + ctx.measureText(playerData.ign).width + 22, 900);
+        ctx.fillStyle = '#247BFF';
+        ctx.beginPath();
+        ctx.arc(checkX, 178, 17, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#BBD7FF';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(checkX - 7, 178);
+        ctx.lineTo(checkX - 2, 183);
+        ctx.lineTo(checkX + 8, 172);
+        ctx.stroke();
+    }
+    ctx.fillStyle = playerData.isCracked ? '#C779FF' : '#57E6A5';
+    ctx.font = 'bold 20px Arial';
+    ctx.fillText(playerData.isCracked ? 'Cracked Account' : 'Original Account', infoX, 232);
+
+    // 6. Reserved customization area: intentionally empty until player choices exist.
+    ctx.fillStyle = 'rgba(8,12,30,0.48)';
+    ctx.strokeStyle = 'rgba(220,230,255,0.65)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(infoX, 262, 490, 58, 18);
+    ctx.fill();
+    ctx.stroke();
+
+    const slotY = 370;
+    const slotGap = 18;
+    const slotX = 88;
+    const slotW = (width - 2 * slotX - 2 * slotGap) / 3;
+    for (let i = 0; i < 3; i += 1) {
+        const x = slotX + i * (slotW + slotGap);
+        ctx.fillStyle = i === 2 ? 'rgba(40,80,65,0.25)' : 'rgba(17,20,48,0.48)';
+        ctx.strokeStyle = 'rgba(225,232,255,0.62)';
+        ctx.beginPath();
+        ctx.roundRect(x, slotY, slotW, 72, 18);
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // 7. Footer branding, kept deliberately quiet so the new template remains dominant.
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.font = 'bold 22px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(`${playerData.profileContext?.scopeLabel || serverConfig?.serverName || 'Global Player Account'} • PROMCBOT SYSTEM`, width / 2, height - 65);
+    ctx.fillText('P  ProMcBot', width / 2, height - 48);
+    ctx.textAlign = 'left';
 
     return canvas.toBuffer();
 }

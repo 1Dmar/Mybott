@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const commandPath = require.resolve('../bot/Commands/Slash/Misc/playercard.js');
 const source = fs.readFileSync(commandPath, 'utf8');
 const command = require(commandPath);
+const rendererSource = fs.readFileSync(require.resolve('../bot/utils/playerCardGenerator.js'), 'utf8');
 
 test('playercard is a short server-scoped command with optional template only', () => {
   assert.equal(command.name, 'playercard');
@@ -44,6 +45,15 @@ test('staff badge permissions are resolved from the card target, not the command
   assert.match(source, /interaction\.guild\.members\.fetch\(targetUser\.id\)/);
   assert.match(source, /const memberPermissions = targetMember\?\.permissions/);
   assert.doesNotMatch(source, /interaction\.member\?\.permissions/);
+});
+
+test('player card uses the supplied layout for avatar, account identity, status, and reserved slots', () => {
+  assert.match(rendererSource, /const avatarX = 138, avatarY = 135/);
+  assert.match(rendererSource, /Original Account/);
+  assert.match(rendererSource, /const checkX/);
+  assert.match(rendererSource, /const stateText = isOnline \? 'Online' : 'Offline'/);
+  assert.match(rendererSource, /const slotY = 370/);
+  assert.match(rendererSource, /for \(let i = 0; i < 3; i \+= 1\)/);
 });
 
 test('playercard passes real measured stats and badges to the renderer', () => {
