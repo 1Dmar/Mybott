@@ -22,21 +22,23 @@ function uuidVariants(value) {
   return [...new Set([raw, compact, dashed])];
 }
 
-function buildBadges({ interaction, stats, account, identity }) {
+function buildBadges({ interaction, stats, account, identity, targetMember = null }) {
   const badges = [];
-  const memberPermissions = interaction.member?.permissions;
+  const memberPermissions = targetMember?.permissions;
   const isAdmin = Boolean(
-    interaction.guild?.ownerId === interaction.user?.id ||
+    targetMember?.id && interaction.guild?.ownerId === targetMember.id ||
     memberPermissions?.has?.(PermissionFlagsBits.Administrator),
   );
   const joins = Number(stats?.joins || 0);
   const playtime = Number(stats?.sessionSeconds || 0);
   const activeDays = Number(stats?.activeDays || 0);
 
-  if (isAdmin) badges.push({ key: 'staff', label: 'Server Staff', icon: 'shield', color: '#FFB347' });
-  if (playtime >= 100 * 60 * 60 || joins >= 50) badges.push({ key: 'pro', label: 'Pro Player', icon: 'star', color: '#FFD700' });
+  // Staff is a property of the account shown on the card, never of the command invoker.
+  if (isAdmin) badges.push({ key: 'staff', label: 'Staff', icon: 'shield', color: '#FFB347' });
+  if (playtime >= 10 * 60 * 60 || joins >= 20) badges.push({ key: 'dedicated', label: 'Dedicated', icon: 'time', color: '#FF8A65' });
   if (activeDays >= 7 || joins >= 10) badges.push({ key: 'regular', label: 'Regular', icon: 'globe', color: '#55D6FF' });
-  if (badges.length === 0 && (joins <= 2 || !identity?.lastSeenAt)) badges.push({ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' });
+  if (playtime >= 50 * 60 * 60 || joins >= 50) badges.push({ key: 'veteran', label: 'Veteran', icon: 'star', color: '#FFD700' });
+  if (badges.length === 0 && (joins <= 2 || !identity?.lastSeenAt)) badges.push({ key: 'new', label: 'New', icon: 'star', color: '#8BE28B' });
 
   return badges.slice(0, 3);
 }
@@ -137,6 +139,9 @@ module.exports = {
         const identity = identities.find(item => String(item._id) === String(account.primaryIdentityId)) || identities[0];
         ign = identity.username;
         template = requestedTemplate === 'saved' ? (card?.template || 'minecraft') : requestedTemplate;
+        const targetMember = isOwnCard
+          ? interaction.member
+          : await interaction.guild.members.fetch(targetUser.id).catch(() => null);
         const link = await PlayerServerLink.findOne({ accountId: account._id, identityId: identity._id, serverId: interaction.guild.id }).sort({ lastSeenAt: -1 }).lean();
         const uuidMatches = uuidVariants(identity.uuid);
         const username = String(identity.username || '').trim();
@@ -175,7 +180,7 @@ module.exports = {
           firstSeenAt: hasMeasuredActivity ? fallbackFirstSeenAt : null,
           lastSeenAt: hasMeasuredActivity ? fallbackLastSeenAt : null,
           stats: hasMeasuredActivity ? measuredStats : null,
-          badges: hasMeasuredActivity ? buildBadges({ interaction, stats: measuredStats, account, identity }) : [{ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' }],
+          badges: hasMeasuredActivity ? buildBadges({ interaction, stats: measuredStats, account, identity, targetMember }) : [{ key: 'new', label: 'New', icon: 'star', color: '#8BE28B' }],
           scopeLabel: cardLabel,
           // Historical presence wins over current server availability. The
           // renderer then shows OFFLINE while keeping the useful player data.

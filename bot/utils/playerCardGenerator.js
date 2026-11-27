@@ -483,17 +483,16 @@ function drawBadgesRow(ctx, badges, areaX, areaY, areaW, areaH, accentColor) {
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.13)';
         ctx.stroke();
 
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        const iconX = bx + badgeW / 2;
+        const iconY = by + areaH / 2;
+        ctx.shadowColor = `${color}99`;
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = `${color}22`;
         ctx.beginPath();
-        ctx.arc(bx + badgeW / 2, by + 32, 23, 0, Math.PI * 2);
+        ctx.arc(iconX, iconY, 27, 0, Math.PI * 2);
         ctx.fill();
-        drawStatIcon(ctx, badge.icon || 'star', bx + badgeW / 2, by + 32, 14, color);
-
-        ctx.font = badge.label.length > 13 ? '12px Arial' : '14px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
-        ctx.textAlign = 'center';
-        ctx.fillText(badge.label, bx + badgeW / 2, by + areaH - 14);
-        ctx.textAlign = 'left';
+        ctx.shadowBlur = 0;
+        drawStatIcon(ctx, badge.icon || 'star', iconX, iconY, 17, color);
     });
 }
 

@@ -39,6 +39,13 @@ test('legacy IGN cards use server telemetry when the player has already joined',
   assert.match(source, /legacyStats/);
 });
 
+test('staff badge permissions are resolved from the card target, not the command invoker', () => {
+  assert.match(source, /targetMember = null/);
+  assert.match(source, /interaction\.guild\.members\.fetch\(targetUser\.id\)/);
+  assert.match(source, /const memberPermissions = targetMember\?\.permissions/);
+  assert.doesNotMatch(source, /interaction\.member\?\.permissions/);
+});
+
 test('playercard passes real measured stats and badges to the renderer', () => {
   assert.match(source, /sessionSeconds/);
   assert.match(source, /activeDays/);
