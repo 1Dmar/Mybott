@@ -32,6 +32,13 @@ test('playercard keeps public lookup isolated to the current server', () => {
   assert.match(source, /لا يمكن استخدام IGN مع بطاقة عضو آخر/);
 });
 
+test('legacy IGN cards use server telemetry when the player has already joined', () => {
+  assert.match(source, /const legacyEvents = await TelemetryEvent\.find/);
+  assert.match(source, /'data\.username': new RegExp/);
+  assert.match(source, /cardState: 'measured'/);
+  assert.match(source, /legacyStats/);
+});
+
 test('playercard passes real measured stats and badges to the renderer', () => {
   assert.match(source, /sessionSeconds/);
   assert.match(source, /activeDays/);

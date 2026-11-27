@@ -2,7 +2,6 @@
 
 const { ApplicationCommandType, PermissionFlagsBits, AttachmentBuilder } = require('discord.js');
 const { generatePlayerCard, rendererAvailable } = require('../../../utils/playerCardGenerator');
-const Player = require('../../../Models/Player');
 const Server = require('../../../Models/Server');
 const PlayerAccount = require('../../../Models/PlayerAccount');
 const MinecraftIdentity = require('../../../Models/MinecraftIdentity');
@@ -100,7 +99,31 @@ module.exports = {
       let profileContext = { scopeLabel: cardLabel, cardState: plugin ? (pluginOnline ? 'never_joined' : 'server_offline') : 'server_not_configured', badges: [], isOnline: false };
 
       if (legacyIgn) {
-        await Player.findOneAndUpdate({ ign: legacyIgn.toLowerCase() }, { ign: legacyIgn.toLowerCase(), cardTemplate: template, updatedAt: new Date() }, { upsert: true });
+        const legacyUsername = String(legacyIgn).trim();
+        const legacyEvents = await TelemetryEvent.find({
+          serverId: interaction.guild.id,
+          type: { $in: ['player_join', 'player_leave'] },
+          'data.username': new RegExp(`^${legacyUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+        }).sort({ occurredAt: -1 }).limit(5000).lean();
+        if (legacyEvents.length) {
+          const joins = legacyEvents.filter(event => event.type === 'player_join');
+          const leaves = legacyEvents.filter(event => event.type === 'player_leave');
+          const legacyStats = {
+            joins: joins.length,
+            leaves: leaves.length,
+            sessionSeconds: leaves.reduce((sum, event) => sum + (Number.isFinite(Number(event.data?.sessionSeconds)) ? Math.max(0, Number(event.data.sessionSeconds)) : 0), 0),
+            activeDays: new Set(legacyEvents.map(event => new Date(event.occurredAt).toISOString().slice(0, 10))).size,
+          };
+          profileContext = {
+            ...profileContext,
+            firstSeenAt: legacyEvents[legacyEvents.length - 1]?.occurredAt || null,
+            lastSeenAt: legacyEvents[0]?.occurredAt || null,
+            stats: legacyStats,
+            badges: buildBadges({ interaction, stats: legacyStats, identity: { lastSeenAt: legacyEvents[0]?.occurredAt } }),
+            cardState: 'measured',
+            isOnline: Boolean(pluginOnline && legacyEvents[0]?.type === 'player_join'),
+          };
+        }
       } else {
         const account = await PlayerAccount.findOne({ discordUserId: String(targetUser.id) }).lean();
         if (!account) return interaction.editReply({ content: '❌ لا يوجد حساب لاعب مرتبط بك بعد. استخدم `/player` لإنشاء كود الربط ثم نفّذه داخل Minecraft.' });

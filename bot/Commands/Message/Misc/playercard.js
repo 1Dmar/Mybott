@@ -1,6 +1,6 @@
 const { AttachmentBuilder, PermissionFlagsBits } = require("discord.js");
 const { generatePlayerCard } = require('../../../utils/playerCardGenerator');
-const Player = require('../../../Models/Player');
+const TelemetryEvent = require('../../../Models/TelemetryEvent');
 
 module.exports = {
   name: "playercard",
@@ -27,8 +27,27 @@ module.exports = {
     });
 
     try {
-      // Generate player card
-      const imageBuffer = await generatePlayerCard(ign, template);
+      const events = await TelemetryEvent.find({
+        serverId: message.guild.id,
+        type: { $in: ['player_join', 'player_leave'] },
+        'data.username': new RegExp(`^${ign.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+      }).sort({ occurredAt: -1 }).limit(5000).lean();
+      const joins = events.filter(event => event.type === 'player_join');
+      const leaves = events.filter(event => event.type === 'player_leave');
+      const stats = {
+        joins: joins.length,
+        leaves: leaves.length,
+        sessionSeconds: leaves.reduce((sum, event) => sum + Math.max(0, Number(event.data?.sessionSeconds) || 0), 0),
+        activeDays: new Set(events.map(event => new Date(event.occurredAt).toISOString().slice(0, 10))).size,
+      };
+      const profileContext = events.length ? {
+        cardState: 'measured',
+        firstSeenAt: events[events.length - 1].occurredAt,
+        lastSeenAt: events[0].occurredAt,
+        stats,
+        isOnline: events[0].type === 'player_join',
+      } : undefined;
+      const imageBuffer = await generatePlayerCard(ign, template, null, profileContext);
       
       if (!imageBuffer) {
         return loadingMsg.edit({
@@ -37,21 +56,6 @@ module.exports = {
       }
 
       const attachment = new AttachmentBuilder(imageBuffer, { name: `${ign}-card.png` });
-
-      // Save to database
-      try {
-        await Player.findOneAndUpdate(
-          { ign: ign.toLowerCase() },
-          { 
-            ign: ign.toLowerCase(),
-            cardTemplate: template,
-            updatedAt: new Date()
-          },
-          { upsert: true }
-        );
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-      }
 
       await loadingMsg.edit({
         content: `**${ign}'s Player Card** (Template: ${template})`,
