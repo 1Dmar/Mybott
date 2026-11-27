@@ -515,6 +515,7 @@ async function generatePlayerCard(ign, template = 'glass', serverConfig = null, 
         if (profileContext.cardState !== 'server_not_configured' && playerData.endpointOffline) profileContext.cardState = 'server_offline';
         if (profileContext.accountType === 'online') playerData.isCracked = false;
         if (profileContext.accountType === 'offline') playerData.isCracked = true;
+        if (typeof profileContext.isOnline === 'boolean') playerData.isOnline = profileContext.isOnline;
         if (profileContext.firstSeenAt) playerData.firstPlayed = new Date(profileContext.firstSeenAt).getTime();
         if (profileContext.lastSeenAt) playerData.lastPlayed = new Date(profileContext.lastSeenAt).getTime();
         playerData.profileContext = profileContext;

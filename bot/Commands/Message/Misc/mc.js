@@ -7,6 +7,9 @@ const {
 } = require("discord.js");
 const axios = require("axios");
 const Server = require("../../../Models/Server");
+const PluginInstance = require("../../../Models/PluginInstance");
+
+const PLUGIN_FRESHNESS_MS = 15 * 60 * 1000;
 
 const formatEmoji = (emoji) => {
     if (!emoji) return "";
@@ -35,6 +38,30 @@ module.exports = {
    */
   run: async (client, message, args, prefix) => {
     let ip = args.join(" ").trim();
+
+    // The first source of truth is the signed first-party plugin heartbeat.
+    // The external mcsrvstat lookup is only a fallback for servers without a connected plugin.
+    if (!ip && message.guild?.id) {
+      const plugin = await PluginInstance.findOne({ serverId: message.guild.id, revokedAt: null }).sort({ lastSeenAt: -1 }).lean();
+      const pluginOnline = Boolean(plugin && (plugin.status === 'online' || (plugin.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= Date.now() - PLUGIN_FRESHNESS_MS)));
+      if (pluginOnline) {
+        const onlinePlayers = Number.isFinite(Number(plugin.lastOnlinePlayers)) ? Math.max(0, Number(plugin.lastOnlinePlayers)) : 0;
+        return message.reply({
+          embeds: [new EmbedBuilder()
+            .setAuthor({ name: "ProMcBot | Minecraft Server Info", iconURL: client.user.displayAvatarURL() })
+            .setTitle("🏰 Minecraft Server Status")
+            .setColor("#22C55E")
+            .setDescription(`${formatEmoji(client.emojis.ONLINE)} **Status:** \`Online\`\n${formatEmoji(client.emojis.MEMBERS)} **Players:** \`${onlinePlayers}\``)
+            .addFields(
+              { name: "Source", value: "ProMcBot plugin heartbeat", inline: true },
+              { name: "Last heartbeat", value: `<t:${Math.floor(new Date(plugin.lastSeenAt).getTime() / 1000)}:R>`, inline: true },
+              { name: "Server", value: `\`${plugin.serverName || message.guild.name}\``, inline: false },
+            )
+            .setFooter({ text: "Measured from your connected Minecraft plugin", iconURL: client.user.displayAvatarURL() })
+            .setTimestamp()],
+        });
+      }
+    }
 
     // If no IP is provided, use the default server IP from MongoDB
     if (!ip) {

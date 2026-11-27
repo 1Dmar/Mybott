@@ -18,6 +18,8 @@ test('playercard is a short server-scoped command with optional template only', 
 });
 
 test('playercard selects only the current server link and measured events', () => {
+  assert.match(source, /PluginInstance\.findOne/);
+  assert.match(source, /PLUGIN_FRESHNESS_MS/);
   assert.match(source, /PlayerServerLink\.findOne\(/);
   assert.match(source, /serverId: interaction\.guild\.id/);
   assert.match(source, /TelemetryEvent\.find/);
@@ -35,7 +37,13 @@ test('playercard passes real measured stats and badges to the renderer', () => {
   assert.match(source, /activeDays/);
   assert.match(source, /buildBadges/);
   assert.match(source, /badges:/);
-  assert.match(source, /generatePlayerCard\(ign \|\| targetUser\.username, template, serverConfig, profileContext\)/);
+  assert.match(source, /generatePlayerCard\(ign \|\| targetUser\.username, template, rendererServerConfig, profileContext\)/);
+});
+
+test('playercard does not use the legacy API token to decide server status', () => {
+  assert.match(source, /rendererServerConfig/);
+  assert.match(source, /wallpaper: serverConfig\.wallpaper/);
+  assert.match(source, /cardState: !plugin \? 'server_not_configured' : !pluginOnline \? 'server_offline'/);
 });
 
 test('playercard creates explicit state for setup, offline, and never-joined cases', () => {

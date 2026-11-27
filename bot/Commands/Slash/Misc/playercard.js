@@ -9,6 +9,9 @@ const MinecraftIdentity = require('../../../Models/MinecraftIdentity');
 const PlayerServerLink = require('../../../Models/PlayerServerLink');
 const PlayerCardSettings = require('../../../Models/PlayerCardSettings');
 const TelemetryEvent = require('../../../Models/TelemetryEvent');
+const PluginInstance = require('../../../Models/PluginInstance');
+
+const PLUGIN_FRESHNESS_MS = 15 * 60 * 1000;
 
 function buildBadges({ interaction, stats, account, identity }) {
   const badges = [];
@@ -76,11 +79,15 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      const serverConfig = await Server.findOne({ serverId: interaction.guild.id }).lean();
+      const [serverConfig, plugin] = await Promise.all([
+        Server.findOne({ serverId: interaction.guild.id }).lean(),
+        PluginInstance.findOne({ serverId: interaction.guild.id, revokedAt: null }).sort({ lastSeenAt: -1 }).lean(),
+      ]);
+      const pluginOnline = Boolean(plugin && (plugin.status === 'online' || (plugin.lastSeenAt && new Date(plugin.lastSeenAt).getTime() >= Date.now() - PLUGIN_FRESHNESS_MS)));
       let ign = legacyIgn;
       let template = requestedTemplate === 'saved' ? 'minecraft' : requestedTemplate;
       let cardLabel = interaction.guild.name || interaction.guild.id;
-      let profileContext = { scopeLabel: cardLabel, cardState: serverConfig?.apiToken ? 'server_offline' : 'server_not_configured', badges: [] };
+      let profileContext = { scopeLabel: cardLabel, cardState: plugin ? (pluginOnline ? 'never_joined' : 'server_offline') : 'server_not_configured', badges: [], isOnline: false };
 
       if (legacyIgn) {
         await Player.findOneAndUpdate({ ign: legacyIgn.toLowerCase() }, { ign: legacyIgn.toLowerCase(), cardTemplate: template, updatedAt: new Date() }, { upsert: true });
@@ -108,6 +115,7 @@ module.exports = {
           activeDays: new Set(events.map(event => new Date(event.occurredAt).toISOString().slice(0, 10))).size,
         };
         const hasMeasuredActivity = Boolean(link && events.length);
+        const latestPlayerEvent = events[0] || null;
         profileContext = {
           accountType: identity.accountType,
           firstSeenAt: hasMeasuredActivity ? identity.createdAt : null,
@@ -115,11 +123,13 @@ module.exports = {
           stats: hasMeasuredActivity ? stats : null,
           badges: hasMeasuredActivity ? buildBadges({ interaction, stats, account, identity }) : [{ key: 'new', label: 'New Player', icon: 'star', color: '#8BE28B' }],
           scopeLabel: cardLabel,
-          cardState: !serverConfig?.apiToken ? 'server_not_configured' : !link || !events.length ? 'never_joined' : 'measured',
+          cardState: !plugin ? 'server_not_configured' : !pluginOnline ? 'server_offline' : !link || !events.length ? 'never_joined' : 'measured',
+          isOnline: Boolean(pluginOnline && latestPlayerEvent?.type === 'player_join'),
         };
       }
 
-      const imageBuffer = await generatePlayerCard(ign || targetUser.username, template, serverConfig, profileContext);
+      const rendererServerConfig = serverConfig ? { wallpaper: serverConfig.wallpaper, serverName: serverConfig.serverName } : null;
+      const imageBuffer = await generatePlayerCard(ign || targetUser.username, template, rendererServerConfig, profileContext);
       if (!imageBuffer) return interaction.editReply({ content: `❌ تعذر إنشاء بطاقة **${ign || targetUser.username}**.` });
       const attachment = new AttachmentBuilder(imageBuffer, { name: `${ign || targetUser.username}-player-card.png` });
       await interaction.editReply({ content: `**${ign || targetUser.username}'s Player Card** · ${cardLabel}`, files: [attachment] });
